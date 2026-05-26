@@ -1,0 +1,26 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+	<PropertyGroup>
+		<TargetFramework>net10.0</TargetFramework>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<!--<OutputType>WinExe</OutputType>-->
+		<PublishAot>true</PublishAot>
+		<Company>ExpressThat LTD</Company>
+		<Authors>ExpressThat LTD</Authors>
+		<RootNamespace>ExpressThat.LovelyGit</RootNamespace>
+	</PropertyGroup>
+
+	<ItemGroup>
+	  <PackageReference Include="InfiniLore.InfiniFrame.WebServer" Version="0.13.1" />
+	  <PackageReference Include="KeySharp" Version="1.0.5" />
+	  <PackageReference Include="LibGit2Sharp" Version="0.31.0" />
+	  <PackageReference Include="Microsoft.Extensions.DependencyInjection.AutoActivation" Version="10.6.0" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Folder Include="Frontend\" />
+	  <Folder Include="wwwroot\" />
+	</ItemGroup>
+
+</Project>
