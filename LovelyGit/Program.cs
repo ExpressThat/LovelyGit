@@ -1,9 +1,15 @@
-using ExpressThat.LovelyGit.Services.Git;
+using AutoDependencyRegistration;
+using ExpressThat.LovelyGit.Services.Data;
+using ExpressThat.LovelyGit.Services.Data.Models;
+using ExpressThat.LovelyGit.Services.Data.Repositorys;
+using ExpressThat.LovelyGit.Services.Git.CommitGraph;
+using ExpressThat.LovelyGit.Services.Git.CommitGraph.Models;
 using InfiniFrame;
 using InfiniFrame.WebServer;
 using KeySharp;
 using Microsoft.AspNetCore.Mvc;
 using System.Drawing;
+using System.Text;
 using System.Text.Json.Serialization;
 
 namespace ExpressThat.LazyGit;
@@ -21,9 +27,11 @@ public static class Program
         {
             options.SerializerOptions.TypeInfoResolverChain.Insert(0, AppJsonSerializerContext.Default);
         });
+        appBuilder.Services.AddSingleton<AppDbContext>();
+        
 
-        appBuilder.Services.AddSingleton<RepositoryManager>();
-        appBuilder.Services.AddActivatedSingleton<CommitGraph>();
+        appBuilder.Services.AutoRegisterDependencies();
+
 
         appBuilder.WindowBuilder
                     .SetUseOsDefaultSize(false)
@@ -41,18 +49,13 @@ public static class Program
 
         var application = appBuilder.Build();
 
-        var manager = application.WebApp.Services.GetService<RepositoryManager>();
-        var commitGraph = application.WebApp.Services.GetService<CommitGraph>();
-
-        if (!manager?.IsRepositoryOpened() ?? false)
-        {
-            if (manager != null)
-                manager.OpenRepository(@"C:\Projects\git").GetAwaiter().GetResult();
-        }
-
-        commitGraph?.PrimeMetadataAsync().GetAwaiter().GetResult();
-
-        // Configure the HTTP request pipeline.
+        ClearCommitGraphTransientState(application.WebApp.Services, CancellationToken.None)
+            .GetAwaiter()
+            .GetResult();
+        application.WebApp.Lifetime.ApplicationStopping.Register(() =>
+            ClearCommitGraphTransientState(application.WebApp.Services, CancellationToken.None)
+                .GetAwaiter()
+                .GetResult());
 
         var summaries = new[]
         {
@@ -71,14 +74,75 @@ public static class Program
             return Results.Content(html, "text/html; charset=utf-8");
         });
 
-        application.WebApp.MapGet("/commitGraph", async (
-            [FromQuery] int limit,
-            [FromQuery] int offset,
-            RepositoryManager manager,
-            CommitGraph commitGraph
+        application.WebApp.MapPost("/commitGraph", async (
+            CommitGraphPageRequest request,
+            CommitGraphRepository commitGraphRepository,
+            KnownGitRepositorysRepository knownGitRepositorysRepository,
+            CancellationToken cancellationToken
             ) =>
         {
-            return await commitGraph.GetCommitGraph(offset, limit);
+
+            var dotGitPath = @"C:\Projects\git";
+
+            KnownGitRepository? foundRepo = null;
+
+            foreach (KnownGitRepository repo in await knownGitRepositorysRepository.GetAllAsync())
+            {
+                if (repo.Path == dotGitPath)
+                {
+                    foundRepo = repo;
+                }
+            }
+
+            if (foundRepo == null)
+            {
+                foundRepo = await knownGitRepositorysRepository.AddAsync(new KnownGitRepository
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "Local Git Repository",
+                    Path = dotGitPath,
+                });
+            }
+
+            var repositoryGraphId = foundRepo.Id.ToString("N");
+            var limit = request.Limit;
+            if (limit < 0) limit = 0;
+            var cursorState = DecodeCursorState(request.Cursor);
+
+            try
+            {
+                var openResult = await CommitGraphNative.TryOpenAsync(
+                    dotGitPath,
+                    repositoryGraphId,
+                    commitGraphRepository,
+                    cancellationToken);
+                if (!openResult.Success || openResult.Graph == null)
+                {
+                    return Results.Json(
+                        new ApiErrorResponse
+                        {
+                            Error = openResult.Error ?? "Failed to open native commit-graph.",
+                        },
+                        AppJsonSerializerContext.Default.ApiErrorResponse,
+                        statusCode: StatusCodes.Status500InternalServerError);
+                }
+
+                using var graph = openResult.Graph;
+                var page = await graph.GetCommitGraphPageAsync(cursorState, limit, cancellationToken);
+                var response = page.Response;
+                response.NextCursor = response.HasMore ? EncodeCursorState(page.NextCursor) : null;
+                return Results.Json(response, AppJsonSerializerContext.Default.CommitGraphResponse);
+            }
+            catch (Exception ex)
+            {
+                return Results.Json(
+                    new ApiErrorResponse
+                    {
+                        Error = ex.Message,
+                    },
+                    AppJsonSerializerContext.Default.ApiErrorResponse,
+                    statusCode: StatusCodes.Status500InternalServerError);
+            }
         });
 
         application.UseAutoServerClose();
@@ -89,6 +153,35 @@ public static class Program
         application.Run();
 
     }
+    private static CommitGraphCursorState DecodeCursorState(string? cursor)
+    {
+        if (string.IsNullOrWhiteSpace(cursor))
+        {
+            return new CommitGraphCursorState(null, 0);
+        }
+
+        var parts = cursor.Split(':', 2);
+        if (parts.Length == 2 && int.TryParse(parts[1], out var offset))
+        {
+            return new CommitGraphCursorState(parts[0], offset);
+        }
+
+        return new CommitGraphCursorState(cursor, 0);
+    }
+
+    private static string EncodeCursorState(CommitGraphCursorState cursor)
+    {
+        return cursor.RepositoryId == null ? string.Empty : $"{cursor.RepositoryId}:{cursor.Offset}";
+    }
+
+    private static Task ClearCommitGraphTransientState(
+        IServiceProvider services,
+        CancellationToken cancellationToken)
+    {
+        return services
+            .GetRequiredService<CommitGraphRepository>()
+            .ClearTransientGraphStateAsync(cancellationToken);
+    }
 }
 
 
@@ -97,7 +190,20 @@ internal record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary
     public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
 }
 
+internal record ApiErrorResponse
+{
+    public string Error { get; set; } = string.Empty;
+}
+
+internal record CommitGraphPageRequest
+{
+    public int Limit { get; set; }
+    public string? Cursor { get; set; }
+}
+
 [JsonSerializable(typeof(WeatherForecast[]))]
+[JsonSerializable(typeof(ApiErrorResponse))]
+[JsonSerializable(typeof(CommitGraphPageRequest))]
 [JsonSerializable(typeof(CommitStats))]
 [JsonSerializable(typeof(CommitInfo))]
 [JsonSerializable(typeof(CommitLaneEdge))]

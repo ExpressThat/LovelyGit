@@ -1,10 +1,4 @@
-import {
-	startTransition,
-	useEffect,
-	useEffectEvent,
-	useRef,
-	useState,
-} from "react";
+import { startTransition, useEffect, useEffectEvent, useRef, useState } from "react";
 import type { CommitGraphResponse, CommitGraphRow } from "../types/graph";
 
 const PAGE_SIZE = 400;
@@ -20,17 +14,17 @@ type CommitGraphState = {
 };
 
 type GraphSessionCache = {
+	hasMore: boolean;
 	laneCount: number;
-	loadedPages: Set<number>;
-	pageCache: Map<number, CommitGraphResponse>;
+	nextCursor: string | null;
 	rows: Array<CommitGraphRow | null>;
 	totalRows: number;
 };
 
 const sessionCache: GraphSessionCache = {
+	hasMore: true,
 	laneCount: 0,
-	loadedPages: new Set<number>(),
-	pageCache: new Map<number, CommitGraphResponse>(),
+	nextCursor: null,
 	rows: [],
 	totalRows: 0,
 };
@@ -38,161 +32,160 @@ const sessionCache: GraphSessionCache = {
 export function useCommitGraphData() {
 	const [state, setState] = useState<CommitGraphState>({
 		error: null,
-		isInitialLoading: sessionCache.totalRows === 0,
+		isInitialLoading: sessionCache.rows.length === 0,
 		isPageLoading: false,
 		laneCount: sessionCache.laneCount,
 		rows: sessionCache.rows,
-		totalRows: sessionCache.totalRows,
+		totalRows: sessionCache.hasMore
+			? Math.min(sessionCache.totalRows, sessionCache.rows.length + PAGE_SIZE)
+			: sessionCache.totalRows,
 	});
 
-	const loadedPagesRef = useRef(new Set<number>(sessionCache.loadedPages));
-	const loadingPagesRef = useRef(new Set<number>());
-	const pendingPagesRef = useRef(new Set<number>());
-	const runningRef = useRef(false);
-	const centerPageRef = useRef(0);
+	const hasMoreRef = useRef(sessionCache.hasMore);
+	const loadingRef = useRef(false);
+	const nextCursorRef = useRef<string | null>(sessionCache.nextCursor);
+	const requestedEndRef = useRef(0);
 	const stateRef = useRef(state);
 	stateRef.current = state;
 
-	const mergeRows = (
-		currentRows: Array<CommitGraphRow | null>,
-		response: CommitGraphResponse,
-	) => {
-		const nextRows =
-			currentRows.length === response.total_rows
-				? currentRows.slice()
-				: Array.from(
-						{ length: response.total_rows },
-						(_, index) => currentRows[index] ?? null,
-					);
+	const normalizeStringArray = (value: unknown): string[] =>
+		Array.isArray(value) ? value.filter((item) => typeof item === "string") : [];
 
-		for (const row of response.rows) {
-			nextRows[row.row_index] = row;
-		}
-
-		return nextRows;
-	};
+	const normalizeCommit = (rawCommit: any) => ({
+		hash: rawCommit?.hash ?? rawCommit?.Hash ?? "",
+		parents: normalizeStringArray(rawCommit?.parents ?? rawCommit?.Parents),
+		author: rawCommit?.author ?? rawCommit?.Author ?? "",
+		email: rawCommit?.email ?? rawCommit?.Email ?? "",
+		date: rawCommit?.date ?? rawCommit?.Date ?? 0,
+		message: rawCommit?.message ?? rawCommit?.Message ?? "",
+		branches: normalizeStringArray(rawCommit?.branches ?? rawCommit?.Branches),
+		tags: normalizeStringArray(rawCommit?.tags ?? rawCommit?.Tags),
+		stats: rawCommit?.stats ?? rawCommit?.Stats ?? null,
+	});
 
 	const normalizeResponse = (raw: any): CommitGraphResponse => {
-		const rawRows = Array.isArray(raw?.rows) ? raw.rows : [];
+		const rawRows = Array.isArray(raw?.rows)
+			? raw.rows
+			: Array.isArray(raw?.Rows)
+				? raw.Rows
+				: [];
 		const rows: CommitGraphRow[] = rawRows.map((row: any) => ({
-			commit: row?.commit,
-			row_index: row?.row_index ?? row?.rowIndex ?? 0,
-			lane: row?.lane ?? 0,
-			active_lanes: row?.active_lanes ?? row?.activeLanes ?? [],
+			commit: normalizeCommit(row?.commit ?? row?.Commit),
+			row_index: row?.row_index ?? row?.rowIndex ?? row?.RowIndex ?? 0,
+			lane: row?.lane ?? row?.Lane ?? 0,
+			active_lanes: row?.active_lanes ?? row?.activeLanes ?? row?.ActiveLanes ?? [],
 			active_lanes_above:
-				row?.active_lanes_above ?? row?.activeLanesAbove ?? [],
+				row?.active_lanes_above ?? row?.activeLanesAbove ?? row?.ActiveLanesAbove ?? [],
 			active_lanes_below:
-				row?.active_lanes_below ?? row?.activeLanesBelow ?? [],
-			edges_above: (row?.edges_above ?? row?.edgesAbove ?? []).map(
+				row?.active_lanes_below ?? row?.activeLanesBelow ?? row?.ActiveLanesBelow ?? [],
+			edges_above: (row?.edges_above ?? row?.edgesAbove ?? row?.EdgesAbove ?? []).map(
 				(edge: any) => ({
-					from_lane: edge?.from_lane ?? edge?.fromLane ?? 0,
-					to_lane: edge?.to_lane ?? edge?.toLane ?? 0,
+					from_lane: edge?.from_lane ?? edge?.fromLane ?? edge?.FromLane ?? 0,
+					to_lane: edge?.to_lane ?? edge?.toLane ?? edge?.ToLane ?? 0,
 					kind: edge?.kind ?? "straight",
 				}),
 			),
-			edges_below: (row?.edges_below ?? row?.edgesBelow ?? []).map(
+			edges_below: (row?.edges_below ?? row?.edgesBelow ?? row?.EdgesBelow ?? []).map(
 				(edge: any) => ({
-					from_lane: edge?.from_lane ?? edge?.fromLane ?? 0,
-					to_lane: edge?.to_lane ?? edge?.toLane ?? 0,
-					kind: edge?.kind ?? "straight",
+					from_lane: edge?.from_lane ?? edge?.fromLane ?? edge?.FromLane ?? 0,
+					to_lane: edge?.to_lane ?? edge?.toLane ?? edge?.ToLane ?? 0,
+					kind: edge?.kind ?? edge?.Kind ?? "straight",
 				}),
 			),
-			is_merge_commit: row?.is_merge_commit ?? row?.isMergeCommit ?? false,
-			is_branch_tip: row?.is_branch_tip ?? row?.isBranchTip ?? false,
+			is_merge_commit:
+				row?.is_merge_commit ?? row?.isMergeCommit ?? row?.IsMergeCommit ?? false,
+			is_branch_tip: row?.is_branch_tip ?? row?.isBranchTip ?? row?.IsBranchTip ?? false,
 		}));
 
 		return {
-			total_rows: raw?.total_rows ?? raw?.totalRows ?? 0,
-			lane_count: raw?.lane_count ?? raw?.laneCount ?? 0,
+			total_rows: raw?.total_rows ?? raw?.totalRows ?? raw?.TotalRows ?? 0,
+			lane_count: raw?.lane_count ?? raw?.laneCount ?? raw?.LaneCount ?? 0,
 			rows,
+			next_cursor: raw?.next_cursor ?? raw?.nextCursor ?? raw?.NextCursor ?? null,
+			has_more: raw?.has_more ?? raw?.hasMore ?? raw?.HasMore ?? false,
 		};
 	};
 
-	const pickNextPage = () => {
-		const candidates = Array.from(pendingPagesRef.current).filter(
-			(page) =>
-				!loadedPagesRef.current.has(page) && !loadingPagesRef.current.has(page),
-		);
-
-		if (candidates.length === 0) {
-			return null;
-		}
-
-		candidates.sort(
-			(left, right) =>
-				Math.abs(left - centerPageRef.current) -
-				Math.abs(right - centerPageRef.current),
-		);
-		return candidates[0];
-	};
-
-	const runQueue = useEffectEvent(async () => {
-		if (runningRef.current) {
+	const runLoader = useEffectEvent(async () => {
+		if (loadingRef.current) {
 			return;
 		}
 
-		const initialPage = pickNextPage();
-		if (initialPage === null) {
+		const requiredLength = requestedEndRef.current + PAGE_SIZE * PREFETCH_PAGES;
+		if (!hasMoreRef.current || stateRef.current.rows.length >= requiredLength) {
 			return;
 		}
 
-		runningRef.current = true;
-		setState((current) => ({
-			...current,
-			isPageLoading: true,
-			error: null,
-		}));
+		loadingRef.current = true;
+		setState((current) => ({ ...current, isPageLoading: true, error: null }));
 
 		try {
-			let nextPage: number | null = initialPage;
-			while (true) {
-				if (nextPage === null) {
-					break;
+			let loadedLength = stateRef.current.rows.length;
+			while (hasMoreRef.current && loadedLength < requiredLength) {
+				const fetchResponse = await fetch("/commitGraph", {
+					body: JSON.stringify({
+						limit: PAGE_SIZE,
+						cursor: nextCursorRef.current,
+					}),
+					headers: {
+						"content-type": "application/json",
+					},
+					method: "POST",
+				});
+				if (!fetchResponse.ok) {
+					throw new Error(`Failed to load commit graph (${fetchResponse.status})`);
 				}
-				const pageIndex = nextPage;
 
-				loadingPagesRef.current.add(pageIndex);
-				pendingPagesRef.current.delete(pageIndex);
+				const raw = await fetchResponse.json();
+				const response = normalizeResponse(raw);
 
-				try {
-					const raw = await fetch(
-						`/commitGraph?offset=${pageIndex * PAGE_SIZE}&limit=${PAGE_SIZE}`,
-					).then((x) => x.json());
-					const response = normalizeResponse(raw);
+				nextCursorRef.current = response.next_cursor;
+				hasMoreRef.current = response.has_more;
+				const responseEnd = response.rows.reduce(
+					(max, row) => Math.max(max, row.row_index + 1),
+					loadedLength,
+				);
+				loadedLength = Math.max(loadedLength, responseEnd);
+				const visibleTotal = response.has_more
+					? Math.max(loadedLength + PAGE_SIZE, requiredLength)
+					: Math.max(response.total_rows, loadedLength);
 
-					sessionCache.pageCache.set(pageIndex, response);
-					sessionCache.loadedPages.add(pageIndex);
+				startTransition(() => {
+					setState((current) => {
+						const nextRows = current.rows.slice();
+						for (const row of response.rows) {
+							nextRows[row.row_index] = row;
+						}
 
-					loadedPagesRef.current.add(pageIndex);
-					startTransition(() => {
-						setState((current) => ({
+						return {
 							...current,
 							error: null,
 							isInitialLoading: false,
 							isPageLoading: true,
 							laneCount: Math.max(current.laneCount, response.lane_count),
-							rows: mergeRows(current.rows, response),
-							totalRows: response.total_rows,
-						}));
+							rows: nextRows,
+							totalRows: response.has_more
+								? Math.max(current.totalRows, visibleTotal)
+								: visibleTotal,
+						};
 					});
-				} catch (error) {
-					const message =
-						error instanceof Error
-							? error.message
-							: "Failed to load commit graph";
-					setState((current) => ({
-						...current,
-						error: message,
-						isInitialLoading: false,
-					}));
-				} finally {
-					loadingPagesRef.current.delete(pageIndex);
-				}
+				});
 
-				nextPage = pickNextPage();
+				if (response.rows.length === 0) {
+					hasMoreRef.current = false;
+					break;
+				}
 			}
+		} catch (error) {
+			const message =
+				error instanceof Error ? error.message : "Failed to load commit graph";
+			setState((current) => ({
+				...current,
+				error: message,
+				isInitialLoading: false,
+			}));
 		} finally {
-			runningRef.current = false;
+			loadingRef.current = false;
 			setState((current) =>
 				current.isPageLoading
 					? {
@@ -204,60 +197,28 @@ export function useCommitGraphData() {
 		}
 	});
 
-	const ensureRangeLoaded = useEffectEvent(
-		(startIndex: number, endIndex: number) => {
-			if (endIndex < startIndex) {
-				return;
-			}
+	const ensureRangeLoaded = useEffectEvent((startIndex: number, endIndex: number) => {
+		if (endIndex < startIndex) {
+			return;
+		}
 
-			const firstPage = Math.max(
-				0,
-				Math.floor(startIndex / PAGE_SIZE) - PREFETCH_PAGES,
-			);
-			const lastPage = Math.max(
-				0,
-				Math.floor(endIndex / PAGE_SIZE) + PREFETCH_PAGES,
-			);
-			centerPageRef.current = Math.floor(
-				(startIndex + endIndex) / 2 / PAGE_SIZE,
-			);
-
-			pendingPagesRef.current = new Set<number>();
-			for (let pageIndex = firstPage; pageIndex <= lastPage; pageIndex += 1) {
-				const pageStart = pageIndex * PAGE_SIZE;
-				const pageEnd = Math.min(
-					pageStart + PAGE_SIZE,
-					stateRef.current.totalRows || pageStart + PAGE_SIZE,
-				);
-				const pageHasMissingRows = stateRef.current.rows
-					.slice(pageStart, pageEnd)
-					.some((row) => row === null);
-
-				if (
-					stateRef.current.totalRows === 0 ||
-					pageHasMissingRows ||
-					pageEnd <= pageStart
-				) {
-					pendingPagesRef.current.add(pageIndex);
-				}
-			}
-
-			void runQueue();
-		},
-	);
+		requestedEndRef.current = Math.max(requestedEndRef.current, endIndex);
+		void runLoader();
+	});
 
 	useEffect(() => {
+		sessionCache.hasMore = hasMoreRef.current;
 		sessionCache.laneCount = state.laneCount;
+		sessionCache.nextCursor = nextCursorRef.current;
 		sessionCache.rows = state.rows;
 		sessionCache.totalRows = state.totalRows;
 	}, [state.laneCount, state.rows, state.totalRows]);
 
 	const reloadGraph = useEffectEvent(() => {
-		loadedPagesRef.current = new Set<number>();
-		loadingPagesRef.current = new Set<number>();
-		pendingPagesRef.current = new Set<number>([0]);
-		centerPageRef.current = 0;
-		runningRef.current = false;
+		hasMoreRef.current = true;
+		loadingRef.current = false;
+		nextCursorRef.current = null;
+		requestedEndRef.current = 0;
 
 		setState({
 			error: null,
@@ -268,18 +229,17 @@ export function useCommitGraphData() {
 			totalRows: 0,
 		});
 
-		void runQueue();
+		void runLoader();
 	});
 
 	// biome-ignore lint/correctness/useExhaustiveDependencies: this is intended
 	useEffect(() => {
-		if (sessionCache.totalRows > 0) {
+		if (sessionCache.rows.length > 0) {
 			return;
 		}
-		pendingPagesRef.current = new Set([0]);
-		centerPageRef.current = 0;
-		void runQueue();
-	}, [runQueue]);
+		requestedEndRef.current = PAGE_SIZE;
+		void runLoader();
+	}, [runLoader]);
 
 	return {
 		...state,

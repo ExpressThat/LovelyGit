@@ -23,4 +23,6 @@ export type CommitGraphResponse = {
 	total_rows: number;
 	lane_count: number;
 	rows: CommitGraphRow[];
+	next_cursor: string | null;
+	has_more: boolean;
 };
