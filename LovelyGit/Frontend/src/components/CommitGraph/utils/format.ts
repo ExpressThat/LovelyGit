@@ -13,11 +13,11 @@ export function formatDate(seconds: number) {
 }
 
 export function messagePrefix(row: CommitGraphRow) {
-	if (row.is_merge_commit && row.commit.branches.length > 0) {
+	if (row.isMergeCommit && row.commit.branches.length > 0) {
 		return `Merge branch '${refLabel(row.commit.branches[0])}' into seen`;
 	}
 
-	if (row.is_merge_commit) {
+	if (row.isMergeCommit) {
 		return "Merge branch into seen";
 	}
 

@@ -32,20 +32,20 @@ export function GraphCell({
 	const dotX = xForLane(row.lane);
 	const dotColor = laneColor(row.lane);
 	const { coveredAbove, coveredBelow } = lanesCoveredByEdges(row);
-	const activeLanesAbove = new Set(row.active_lanes_above);
-	const activeLanesBelow = new Set(row.active_lanes_below);
+	const activeLanesAbove = new Set(row.activeLanesAbove);
+	const activeLanesBelow = new Set(row.activeLanesBelow);
 	const visibleLanes = Array.from(
-		new Set([...row.active_lanes_above, ...row.active_lanes_below]),
+		new Set([...row.activeLanesAbove, ...row.activeLanesBelow]),
 	);
-	const curvedEdgesAbove = row.edges_above.filter(
-		(edge) => edge.from_lane !== edge.to_lane,
+	const curvedEdgesAbove = row.edgesAbove.filter(
+		(edge) => edge.fromLane !== edge.toLane,
 	);
-	const curvedEdgesBelow = row.edges_below.filter(
-		(edge) => edge.from_lane !== edge.to_lane,
+	const curvedEdgesBelow = row.edgesBelow.filter(
+		(edge) => edge.fromLane !== edge.toLane,
 	);
 	const hasCurveMask =
 		curvedEdgesAbove.length > 0 || curvedEdgesBelow.length > 0;
-	const curveMaskId = `graph-curve-mask-${row.row_index}`;
+	const curveMaskId = `graph-curve-mask-${row.rowIndex}`;
 
 	return (
 		<div className="h-full w-full overflow-hidden">
@@ -81,7 +81,7 @@ export function GraphCell({
 										index < curvedEdgesAbove.length ? "above" : "below",
 									)}
 									fill="none"
-									key={`${row.row_index}-mask-${edge.from_lane}-${edge.to_lane}-${row.commit.hash}`}
+									key={`${row.rowIndex}-mask-${edge.fromLane}-${edge.toLane}-${row.commit.hash}`}
 									stroke="black"
 									strokeLinecap="butt"
 									strokeWidth={GRAPH_CURVE_MASK_WIDTH}
@@ -108,7 +108,7 @@ export function GraphCell({
 						}
 
 						return (
-							<g key={`${row.row_index}-active-${lane}`}>
+							<g key={`${row.rowIndex}-active-${lane}`}>
 								{drawAbove ? (
 									<line
 										stroke={laneColor(lane)}
@@ -138,34 +138,34 @@ export function GraphCell({
 					})}
 				</g>
 
-				{row.edges_above.map((edge, _) => (
+				{row.edgesAbove.map((edge, _) => (
 					<path
 						d={edgePath(edge, "above")}
 						fill="none"
-						key={`${row.row_index}-above-${edge.from_lane}-${edge.to_lane}-${row.commit.hash}`}
-						stroke={laneColor(edge.from_lane)}
+						key={`${row.rowIndex}-above-${edge.fromLane}-${edge.toLane}-${row.commit.hash}`}
+						stroke={laneColor(edge.fromLane)}
 						strokeLinecap="butt"
 						strokeWidth={GRAPH_STROKE_WIDTH}
 						className="above"
 					/>
 				))}
 
-				{row.edges_below.map((edge, _) => {
-					const x = xForLane(edge.to_lane);
+				{row.edgesBelow.map((edge, _) => {
+					const x = xForLane(edge.toLane);
 					return (
 						<Fragment
-							key={`${row.row_index}-below-${edge.from_lane}-${edge.to_lane}-${row.commit.hash}`}
+							key={`${row.rowIndex}-below-${edge.fromLane}-${edge.toLane}-${row.commit.hash}`}
 						>
 							<path
 								d={edgePath(edge, "below")}
 								fill="none"
-								stroke={laneColor(edge.to_lane)}
+								stroke={laneColor(edge.toLane)}
 								strokeLinecap="butt"
 								strokeWidth={GRAPH_STROKE_WIDTH}
 								className="below"
 							/>
 							<line
-								stroke={laneColor(edge.to_lane)}
+								stroke={laneColor(edge.toLane)}
 								strokeLinecap="butt"
 								strokeOpacity="0.82"
 								strokeWidth={GRAPH_STROKE_WIDTH}

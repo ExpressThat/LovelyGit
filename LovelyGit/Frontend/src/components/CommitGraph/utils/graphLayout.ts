@@ -18,18 +18,18 @@ export function xForLane(lane: number) {
 }
 
 export function edgePath(edge: CommitLaneEdge, direction: "above" | "below") {
-	const fromX = xForLane(edge.from_lane);
-	const toX = xForLane(edge.to_lane);
+	const fromX = xForLane(edge.fromLane);
+	const toX = xForLane(edge.toLane);
 	const midX = fromX + (toX - fromX) * 0.55;
 
 	if (direction === "above") {
-		if (edge.from_lane === edge.to_lane) {
+		if (edge.fromLane === edge.toLane) {
 			return `M ${fromX} ${GRAPH_TOP_Y} L ${toX} ${ROW_CENTER_Y}`;
 		}
 		return `M ${fromX} 0 Q ${midX} ${ROW_CENTER_Y} ${toX} ${ROW_CENTER_Y}`;
 	}
 
-	if (edge.from_lane === edge.to_lane) {
+	if (edge.fromLane === edge.toLane) {
 		return `M ${fromX} ${ROW_CENTER_Y} L ${toX} ${GRAPH_BOTTOM_Y}`;
 	}
 
@@ -40,14 +40,14 @@ export function lanesCoveredByEdges(row: CommitGraphRow) {
 	const coveredAbove = new Set<number>();
 	const coveredBelow = new Set<number>();
 
-	for (const edge of row.edges_above) {
-		coveredAbove.add(edge.from_lane);
-		coveredAbove.add(edge.to_lane);
+	for (const edge of row.edgesAbove) {
+		coveredAbove.add(edge.fromLane);
+		coveredAbove.add(edge.toLane);
 	}
 
-	for (const edge of row.edges_below) {
-		coveredBelow.add(edge.from_lane);
-		coveredBelow.add(edge.to_lane);
+	for (const edge of row.edgesBelow) {
+		coveredBelow.add(edge.fromLane);
+		coveredBelow.add(edge.toLane);
 	}
 
 	return { coveredAbove, coveredBelow };

@@ -1,28 +1,28 @@
 import type { CommitInfo } from "./commit";
 
 export type CommitLaneEdge = {
-	from_lane: number;
-	to_lane: number;
+	fromLane: number;
+	toLane: number;
 	kind: "straight" | "merge_in" | "fork_out";
 };
 
 export type CommitGraphRow = {
 	commit: CommitInfo;
-	row_index: number;
+	rowIndex: number;
 	lane: number;
-	active_lanes: number[];
-	active_lanes_above: number[];
-	active_lanes_below: number[];
-	edges_above: CommitLaneEdge[];
-	edges_below: CommitLaneEdge[];
-	is_merge_commit: boolean;
-	is_branch_tip: boolean;
+	activeLanes: number[];
+	activeLanesAbove: number[];
+	activeLanesBelow: number[];
+	edgesAbove: CommitLaneEdge[];
+	edgesBelow: CommitLaneEdge[];
+	isMergeCommit: boolean;
+	isBranchTip: boolean;
 };
 
 export type CommitGraphResponse = {
-	total_rows: number;
-	lane_count: number;
+	totalRows: number;
+	laneCount: number;
 	rows: CommitGraphRow[];
-	next_cursor: string | null;
-	has_more: boolean;
+	nextCursor: string | null;
+	hasMore: boolean;
 };

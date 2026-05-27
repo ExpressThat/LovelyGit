@@ -1,15 +1,19 @@
+using BLite.Core;
 using ExpressThat.LovelyGit.Services.Data;
 using ExpressThat.LovelyGit.Services.Data.Models;
 using ExpressThat.LovelyGit.Services.Data.Repositorys;
 using ExpressThat.LovelyGit.Services.Git.CommitGraph;
-using ExpressThat.LovelyGit.Services.Git.CommitGraph.Models;
-using BLite.Core;
+using ExpressThat.LovelyGit.Services.Hubs;
+using ExpressThat.LovelyGit.Services.Hubs.CommandResolvers;
+using ExpressThat.LovelyGit.Services.Hubs.CommandResolvers.KnownRepository;
+using ExpressThat.LovelyGit.Services.Hubs.Commands;
 using InfiniFrame;
 using InfiniFrame.WebServer;
 using KeySharp;
 using Microsoft.AspNetCore.Mvc;
 using System.Drawing;
 using System.Text;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace ExpressThat.LazyGit;
@@ -44,12 +48,30 @@ public static class Program
         appBuilder.Services.ConfigureHttpJsonOptions(options =>
         {
             options.SerializerOptions.TypeInfoResolverChain.Insert(0, AppJsonSerializerContext.Default);
+            options.SerializerOptions.TypeInfoResolverChain.Insert(0, CommandReponseJsonSerializerContext.Default);
+            options.SerializerOptions.Converters.Add(new JsonStringEnumConverter<CommsHubCommandType>());
+            options.SerializerOptions.Converters.Add(new JsonStringEnumConverter<CommsHubSubCommandType>());
         });
         
         appBuilder.Services.AddSingleton<AppDbContext>();
         appBuilder.Services.AddSingleton<GitRepoCacheDbContext>();
         appBuilder.Services.AddSingleton<CommitGraphRepository>();
         appBuilder.Services.AddSingleton<KnownGitRepositorysRepository>();
+        appBuilder.Services.AddSingleton<CommandResolver>();
+        appBuilder.Services.AddSingleton<ICommandResponder, KnownGitRepositorysCommandResolver>();
+
+        appBuilder.Services
+            .AddSignalR(options =>
+            {
+                options.EnableDetailedErrors = true;
+            })
+            .AddJsonProtocol(options =>
+            {
+                options.PayloadSerializerOptions.TypeInfoResolverChain.Insert(0, AppJsonSerializerContext.Default);
+                options.PayloadSerializerOptions.TypeInfoResolverChain.Insert(0, CommandReponseJsonSerializerContext.Default);
+                options.PayloadSerializerOptions.Converters.Add(new JsonStringEnumConverter<CommsHubCommandType>());
+                options.PayloadSerializerOptions.Converters.Add(new JsonStringEnumConverter<CommsHubSubCommandType>());
+            });
 
 
         appBuilder.WindowBuilder
@@ -99,7 +121,7 @@ public static class Program
             ) =>
         {
 
-            var dotGitPath = @"C:\Projects\Commited";
+            var dotGitPath = @"C:\Projects\LovelyGit-rust";
 
             KnownGitRepository? foundRepo = null;
 
@@ -164,6 +186,8 @@ public static class Program
 
         application.UseAutoServerClose();
 
+        application.WebApp.MapHub<CommsHub>("/commsHub");
+
         application.WebApp.UseStaticFiles();
         application.WebApp.MapStaticAssets();
 
@@ -214,16 +238,4 @@ internal record CommitGraphPageRequest
 {
     public int Limit { get; set; }
     public string? Cursor { get; set; }
-}
-
-[JsonSerializable(typeof(WeatherForecast[]))]
-[JsonSerializable(typeof(ApiErrorResponse))]
-[JsonSerializable(typeof(CommitGraphPageRequest))]
-[JsonSerializable(typeof(CommitStats))]
-[JsonSerializable(typeof(CommitInfo))]
-[JsonSerializable(typeof(CommitLaneEdge))]
-[JsonSerializable(typeof(CommitGraphRow))]
-[JsonSerializable(typeof(CommitGraphResponse))]
-internal partial class AppJsonSerializerContext : JsonSerializerContext
-{
 }

@@ -11,7 +11,7 @@ export function CommitMessage({ row }: { row: CommitGraphRow | null }) {
 
 	const prefix = messagePrefix(row);
 	const details =
-		row.is_merge_commit && row.commit.message && row.commit.message !== prefix
+		row.isMergeCommit && row.commit.message && row.commit.message !== prefix
 			? row.commit.message
 			: "";
 

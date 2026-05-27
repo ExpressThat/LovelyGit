@@ -48,64 +48,6 @@ export function useCommitGraphData() {
 	const stateRef = useRef(state);
 	stateRef.current = state;
 
-	const normalizeStringArray = (value: unknown): string[] =>
-		Array.isArray(value) ? value.filter((item) => typeof item === "string") : [];
-
-	const normalizeCommit = (rawCommit: any) => ({
-		hash: rawCommit?.hash ?? rawCommit?.Hash ?? "",
-		parents: normalizeStringArray(rawCommit?.parents ?? rawCommit?.Parents),
-		author: rawCommit?.author ?? rawCommit?.Author ?? "",
-		email: rawCommit?.email ?? rawCommit?.Email ?? "",
-		date: rawCommit?.date ?? rawCommit?.Date ?? 0,
-		message: rawCommit?.message ?? rawCommit?.Message ?? "",
-		branches: normalizeStringArray(rawCommit?.branches ?? rawCommit?.Branches),
-		tags: normalizeStringArray(rawCommit?.tags ?? rawCommit?.Tags),
-		stats: rawCommit?.stats ?? rawCommit?.Stats ?? null,
-	});
-
-	const normalizeResponse = (raw: any): CommitGraphResponse => {
-		const rawRows = Array.isArray(raw?.rows)
-			? raw.rows
-			: Array.isArray(raw?.Rows)
-				? raw.Rows
-				: [];
-		const rows: CommitGraphRow[] = rawRows.map((row: any) => ({
-			commit: normalizeCommit(row?.commit ?? row?.Commit),
-			row_index: row?.row_index ?? row?.rowIndex ?? row?.RowIndex ?? 0,
-			lane: row?.lane ?? row?.Lane ?? 0,
-			active_lanes: row?.active_lanes ?? row?.activeLanes ?? row?.ActiveLanes ?? [],
-			active_lanes_above:
-				row?.active_lanes_above ?? row?.activeLanesAbove ?? row?.ActiveLanesAbove ?? [],
-			active_lanes_below:
-				row?.active_lanes_below ?? row?.activeLanesBelow ?? row?.ActiveLanesBelow ?? [],
-			edges_above: (row?.edges_above ?? row?.edgesAbove ?? row?.EdgesAbove ?? []).map(
-				(edge: any) => ({
-					from_lane: edge?.from_lane ?? edge?.fromLane ?? edge?.FromLane ?? 0,
-					to_lane: edge?.to_lane ?? edge?.toLane ?? edge?.ToLane ?? 0,
-					kind: edge?.kind ?? "straight",
-				}),
-			),
-			edges_below: (row?.edges_below ?? row?.edgesBelow ?? row?.EdgesBelow ?? []).map(
-				(edge: any) => ({
-					from_lane: edge?.from_lane ?? edge?.fromLane ?? edge?.FromLane ?? 0,
-					to_lane: edge?.to_lane ?? edge?.toLane ?? edge?.ToLane ?? 0,
-					kind: edge?.kind ?? edge?.Kind ?? "straight",
-				}),
-			),
-			is_merge_commit:
-				row?.is_merge_commit ?? row?.isMergeCommit ?? row?.IsMergeCommit ?? false,
-			is_branch_tip: row?.is_branch_tip ?? row?.isBranchTip ?? row?.IsBranchTip ?? false,
-		}));
-
-		return {
-			total_rows: raw?.total_rows ?? raw?.totalRows ?? raw?.TotalRows ?? 0,
-			lane_count: raw?.lane_count ?? raw?.laneCount ?? raw?.LaneCount ?? 0,
-			rows,
-			next_cursor: raw?.next_cursor ?? raw?.nextCursor ?? raw?.NextCursor ?? null,
-			has_more: raw?.has_more ?? raw?.hasMore ?? raw?.HasMore ?? false,
-		};
-	};
-
 	const runLoader = useEffectEvent(async () => {
 		if (loadingRef.current) {
 			return;
@@ -137,24 +79,24 @@ export function useCommitGraphData() {
 				}
 
 				const raw = await fetchResponse.json();
-				const response = normalizeResponse(raw);
+				const response = raw as CommitGraphResponse;
 
-				nextCursorRef.current = response.next_cursor;
-				hasMoreRef.current = response.has_more;
+				nextCursorRef.current = response.nextCursor;
+				hasMoreRef.current = response.hasMore;
 				const responseEnd = response.rows.reduce(
-					(max, row) => Math.max(max, row.row_index + 1),
+					(max, row) => Math.max(max, row.rowIndex + 1),
 					loadedLength,
 				);
 				loadedLength = Math.max(loadedLength, responseEnd);
-				const visibleTotal = response.has_more
+				const visibleTotal = response.hasMore
 					? Math.max(loadedLength + PAGE_SIZE, requiredLength)
-					: Math.max(response.total_rows, loadedLength);
+					: Math.max(response.totalRows, loadedLength);
 
 				startTransition(() => {
 					setState((current) => {
 						const nextRows = current.rows.slice();
 						for (const row of response.rows) {
-							nextRows[row.row_index] = row;
+							nextRows[row.rowIndex] = row;
 						}
 
 						return {
@@ -162,9 +104,9 @@ export function useCommitGraphData() {
 							error: null,
 							isInitialLoading: false,
 							isPageLoading: true,
-							laneCount: Math.max(current.laneCount, response.lane_count),
+							laneCount: Math.max(current.laneCount, response.laneCount),
 							rows: nextRows,
-							totalRows: response.has_more
+							totalRows: response.hasMore
 								? Math.max(current.totalRows, visibleTotal)
 								: visibleTotal,
 						};
