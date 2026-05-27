@@ -10,9 +10,11 @@ namespace ExpressThat.LovelyGit.Services.Data.Models
         public Guid Id { get; set; }
 
         [Required]
+        [Column("name")]
         public string? Name { get; set; }
 
         [Required]
+        [Column("path")]
         public string? Path { get; set; }
     }
 }

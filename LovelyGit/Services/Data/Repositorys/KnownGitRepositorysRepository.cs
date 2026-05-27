@@ -1,11 +1,9 @@
-﻿using AutoDependencyRegistration.Attributes;
-using BLite.Core.Query;
+﻿using BLite.Core.Query;
 using ExpressThat.LovelyGit.Services.Data.Models;
 using System.Collections;
 
 namespace ExpressThat.LovelyGit.Services.Data.Repositorys
 {
-    [RegisterClassAsSingleton]
     public class KnownGitRepositorysRepository
     {
         private AppDbContext _appDbContext { get; set; }

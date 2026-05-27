@@ -8,9 +8,17 @@ namespace ExpressThat.LovelyGit.Services.Data.Models.Git.CommitGraph
     {
         [Key]
         public string Id { get; set; } = string.Empty;
+
+        [Column("repositoryid")]
         public string RepositoryId { get; set; } = string.Empty;
+
+        [Column("offset")]
         public int Offset { get; set; }
+
+        [Column("maxlanecount")]
         public int MaxLaneCount { get; set; }
+
+        [Column("lanes")]
         public string Lanes { get; set; } = string.Empty;
     }
 
@@ -19,8 +27,14 @@ namespace ExpressThat.LovelyGit.Services.Data.Models.Git.CommitGraph
     {
         [Key]
         public string Id { get; set; } = string.Empty;
+
+        [Column("repositoryid")]
         public string RepositoryId { get; set; } = string.Empty;
+
+        [Column("hash")]
         public string Hash { get; set; } = string.Empty;
+
+        [Column("seconds")]
         public long Seconds { get; set; }
     }
 
@@ -29,7 +43,11 @@ namespace ExpressThat.LovelyGit.Services.Data.Models.Git.CommitGraph
     {
         [Key]
         public string Id { get; set; } = string.Empty;
+
+        [Column("repositoryid")]
         public string RepositoryId { get; set; } = string.Empty;
+
+        [Column("hash")]
         public string Hash { get; set; } = string.Empty;
     }
 }

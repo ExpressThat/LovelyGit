@@ -10,7 +10,7 @@
 		<Authors>ExpressThat LTD</Authors>
 		<RootNamespace>ExpressThat.LovelyGit</RootNamespace>
 		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-		<NoWarn>$(NoWarn);IL2026;IL3050</NoWarn>
+		<NoWarn>$(NoWarn);IL2026;IL3050;IL2104</NoWarn>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -19,7 +19,6 @@
 	  <PackageReference Include="InfiniLore.InfiniFrame.WebServer" Version="0.13.1" />
 	  <PackageReference Include="KeySharp" Version="1.0.5" />
 	  <PackageReference Include="Microsoft.Extensions.DependencyInjection.AutoActivation" Version="10.6.0" />
-	  <PackageReference Include="Stax.AutoDependencyInjectionRegistration" Version="4.0.0" />
 	</ItemGroup>
 
 	<ItemGroup>

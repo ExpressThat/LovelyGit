@@ -1,9 +1,9 @@
-using AutoDependencyRegistration;
 using ExpressThat.LovelyGit.Services.Data;
 using ExpressThat.LovelyGit.Services.Data.Models;
 using ExpressThat.LovelyGit.Services.Data.Repositorys;
 using ExpressThat.LovelyGit.Services.Git.CommitGraph;
 using ExpressThat.LovelyGit.Services.Git.CommitGraph.Models;
+using BLite.Core;
 using InfiniFrame;
 using InfiniFrame.WebServer;
 using KeySharp;
@@ -19,6 +19,24 @@ public static class Program
     [STAThread]
     public static void Main(string[] args)
     {
+        GitRepoCacheDbContext.ClearCache();
+        RegisterBsonKeys(
+            AppDbContext.GetBasePath(),
+            "id",
+            "_id",
+            "name",
+            "path");
+        RegisterBsonKeys(
+            GitRepoCacheDbContext.GetBasePath(),
+            "id",
+            "_id",
+            "repositoryid",
+            "offset",
+            "maxlanecount",
+            "lanes",
+            "hash",
+            "seconds");
+
         InfiniFrameWebApplicationBuilder appBuilder = InfiniFrameWebApplication.CreateBuilder(args);
 
 
@@ -27,10 +45,11 @@ public static class Program
         {
             options.SerializerOptions.TypeInfoResolverChain.Insert(0, AppJsonSerializerContext.Default);
         });
-        appBuilder.Services.AddSingleton<AppDbContext>();
         
-
-        appBuilder.Services.AutoRegisterDependencies();
+        appBuilder.Services.AddSingleton<AppDbContext>();
+        appBuilder.Services.AddSingleton<GitRepoCacheDbContext>();
+        appBuilder.Services.AddSingleton<CommitGraphRepository>();
+        appBuilder.Services.AddSingleton<KnownGitRepositorysRepository>();
 
 
         appBuilder.WindowBuilder
@@ -49,13 +68,11 @@ public static class Program
 
         var application = appBuilder.Build();
 
-        ClearCommitGraphTransientState(application.WebApp.Services, CancellationToken.None)
-            .GetAwaiter()
-            .GetResult();
         application.WebApp.Lifetime.ApplicationStopping.Register(() =>
-            ClearCommitGraphTransientState(application.WebApp.Services, CancellationToken.None)
-                .GetAwaiter()
-                .GetResult());
+        {
+            application.WebApp.Services.GetService<GitRepoCacheDbContext>()?.Dispose();
+            GitRepoCacheDbContext.ClearCache();
+        });
 
         var summaries = new[]
         {
@@ -82,7 +99,7 @@ public static class Program
             ) =>
         {
 
-            var dotGitPath = @"C:\Projects\git";
+            var dotGitPath = @"C:\Projects\Commited";
 
             KnownGitRepository? foundRepo = null;
 
@@ -153,6 +170,13 @@ public static class Program
         application.Run();
 
     }
+
+    private static void RegisterBsonKeys(string path, params string[] keys)
+    {
+        using var engine = new BLiteEngine(path);
+        engine.RegisterKeys(keys);
+    }
+
     private static CommitGraphCursorState DecodeCursorState(string? cursor)
     {
         if (string.IsNullOrWhiteSpace(cursor))
@@ -172,15 +196,6 @@ public static class Program
     private static string EncodeCursorState(CommitGraphCursorState cursor)
     {
         return cursor.RepositoryId == null ? string.Empty : $"{cursor.RepositoryId}:{cursor.Offset}";
-    }
-
-    private static Task ClearCommitGraphTransientState(
-        IServiceProvider services,
-        CancellationToken cancellationToken)
-    {
-        return services
-            .GetRequiredService<CommitGraphRepository>()
-            .ClearTransientGraphStateAsync(cancellationToken);
     }
 }
 
