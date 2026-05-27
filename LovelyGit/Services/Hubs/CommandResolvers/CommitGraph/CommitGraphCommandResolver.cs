@@ -51,7 +51,12 @@ namespace ExpressThat.LovelyGit.Services.Hubs.CommandResolvers.CommitGraph
                     });
                 }
 
-                if (string.IsNullOrWhiteSpace(command.Arguments?["limit"]) || !int.TryParse(command.Arguments?["limit"], out int limit))
+                var limit = 0;
+
+                var limitText = command.Arguments?.GetValueOrDefault("limit");
+                var cursorText = command.Arguments?.GetValueOrDefault("cursor");
+
+                if (string.IsNullOrWhiteSpace(limitText) || !int.TryParse(limitText, out limit))
                 {
                     return new CommandResponse
                     {
@@ -63,9 +68,12 @@ namespace ExpressThat.LovelyGit.Services.Hubs.CommandResolvers.CommitGraph
                     };
                 }
 
-                if (limit < 0) limit = 0;
+                if (limit < 0)
+                {
+                    limit = 0;
+                }
 
-                if (string.IsNullOrWhiteSpace(command.Arguments?["cursor"]))
+                if (string.IsNullOrWhiteSpace(cursorText))
                 {
                     GitRepoCacheDbContext.ClearCache();
                     if (_activeGraphs.Remove(foundRepo.Id, out var oldGraph))
@@ -74,7 +82,7 @@ namespace ExpressThat.LovelyGit.Services.Hubs.CommandResolvers.CommitGraph
                     }
                 }
 
-                var cursorState = CommitGraphManager.DecodeCursorState(command.Arguments?["cursor"]);
+                var cursorState = CommitGraphManager.DecodeCursorState(cursorText);
 
                 using (GitRepoCacheDbContext cache = new GitRepoCacheDbContext())
                 {

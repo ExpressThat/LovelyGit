@@ -63,12 +63,43 @@ public sealed class CommitGraphManager : IDisposable
         }
 
         var session = await OpenTraversalSessionAsync(cursor, cancellationToken).ConfigureAwait(false);
+        var response = await ReadRowsAsync(session, limit, collectRows: true, cancellationToken).ConfigureAwait(false);
+
+        if (!response.HasMore)
+        {
+            _session = null;
+        }
+
+        var nextCursor = new CommitGraphCursorState(response.HasMore ? session.RepositoryId : null, session.Offset);
+        return new CommitGraphPageResult(response, nextCursor);
+    }
+
+    public void Dispose()
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        _repository.Dispose();
+        _disposed = true;
+    }
+
+    private async Task<CommitGraphResponse> ReadRowsAsync(
+        CommitGraphTraversalSession session,
+        int limit,
+        bool collectRows,
+        CancellationToken cancellationToken)
+    {
         var offset = session.Offset;
         var activeLaneTargets = session.ActiveLaneTargets;
         var maxLaneCount = session.MaxLaneCount;
-        var rows = new List<CommitGraphRow>(limit);
+        var rows = collectRows
+            ? limit == int.MaxValue ? new List<CommitGraphRow>() : new List<CommitGraphRow>(limit)
+            : new List<CommitGraphRow>();
+        var rowCount = 0;
 
-        while (rows.Count < limit && session.Frontier.TryDequeue(out var nextCommit, out _))
+        while (rowCount < limit && session.Frontier.TryDequeue(out var nextCommit, out _))
         {
             cancellationToken.ThrowIfCancellationRequested();
 
@@ -78,14 +109,19 @@ public sealed class CommitGraphManager : IDisposable
                 continue;
             }
 
-            var rowIndex = offset + rows.Count;
+            var rowIndex = offset + rowCount;
             var hash = commit.Hash.ToString();
             var parents = commit.ParentHashes.Select(parent => parent.ToString()).ToList();
 
             foreach (var parentHash in parents)
             {
+                if (!session.MarkSeen(parentHash))
+                {
+                    continue;
+                }
+
                 var parent = await TryGetCommitAsync(parentHash, cancellationToken).ConfigureAwait(false);
-                if (parent != null && session.MarkSeen(parentHash))
+                if (parent != null)
                 {
                     session.EnqueueFrontier(
                         parentHash,
@@ -94,7 +130,9 @@ public sealed class CommitGraphManager : IDisposable
             }
 
             var incomingLanes = CommitGraphLaneLayout.FindAllLanesByTarget(activeLaneTargets, hash);
-            var activeLanesAbove = CommitGraphLaneLayout.GetActiveLanes(activeLaneTargets);
+            var activeLanesAbove = collectRows
+                ? CommitGraphLaneLayout.GetActiveLanes(activeLaneTargets)
+                : null;
             var currentLane = incomingLanes.Count > 0
                 ? incomingLanes[0]
                 : CommitGraphLaneLayout.AllocateLane(activeLaneTargets);
@@ -136,56 +174,61 @@ public sealed class CommitGraphManager : IDisposable
             CommitGraphLaneLayout.TrimTrailingEmptyLanes(activeLaneTargets);
             maxLaneCount = Math.Max(maxLaneCount, activeLaneTargets.Count);
 
-            var activeLanesBelow = CommitGraphLaneLayout.GetActiveLanes(activeLaneTargets);
-            var edgesAbove = incomingLanes
-                .Select(lane => new CommitLaneEdge
-                {
-                    FromLane = lane,
-                    ToLane = currentLane,
-                    Kind = lane == currentLane ? "straight" : "merge_in",
-                })
-                .ToList();
-
-            var edgesBelow = new List<CommitLaneEdge>();
-            if (!string.IsNullOrEmpty(mainParent))
+            if (collectRows)
             {
-                edgesBelow.Add(new CommitLaneEdge
-                {
-                    FromLane = currentLane,
-                    ToLane = currentLane,
-                    Kind = "straight",
-                });
-            }
+                var activeLanesBelow = CommitGraphLaneLayout.GetActiveLanes(activeLaneTargets);
+                var edgesAbove = incomingLanes
+                    .Select(lane => new CommitLaneEdge
+                    {
+                        FromLane = lane,
+                        ToLane = currentLane,
+                        Kind = lane == currentLane ? "straight" : "merge_in",
+                    })
+                    .ToList();
 
-            if (mergeParentLanes != null)
-            {
-                foreach (var parentLane in mergeParentLanes)
+                var edgesBelow = new List<CommitLaneEdge>();
+                if (!string.IsNullOrEmpty(mainParent))
                 {
                     edgesBelow.Add(new CommitLaneEdge
                     {
                         FromLane = currentLane,
-                        ToLane = parentLane,
-                        Kind = "merge_in",
+                        ToLane = currentLane,
+                        Kind = "straight",
                     });
                 }
+
+                if (mergeParentLanes != null)
+                {
+                    foreach (var parentLane in mergeParentLanes)
+                    {
+                        edgesBelow.Add(new CommitLaneEdge
+                        {
+                            FromLane = currentLane,
+                            ToLane = parentLane,
+                            Kind = "merge_in",
+                        });
+                    }
+                }
+
+                var commitInfo = CommitGraphCommitMapper.BuildInfo(commit, parents);
+                rows.Add(new CommitGraphRow
+                {
+                    Commit = commitInfo,
+                    RowIndex = rowIndex,
+                    Lane = currentLane,
+                    ActiveLanesAbove = activeLanesAbove!,
+                    ActiveLanesBelow = activeLanesBelow,
+                    EdgesAbove = edgesAbove,
+                    EdgesBelow = edgesBelow,
+                    IsMergeCommit = parents.Count > 1,
+                    IsBranchTip = commitInfo.Branches.Count > 0,
+                });
             }
 
-            var commitInfo = CommitGraphCommitMapper.BuildInfo(commit, parents);
-            rows.Add(new CommitGraphRow
-            {
-                Commit = commitInfo,
-                RowIndex = rowIndex,
-                Lane = currentLane,
-                ActiveLanesAbove = activeLanesAbove,
-                ActiveLanesBelow = activeLanesBelow,
-                EdgesAbove = edgesAbove,
-                EdgesBelow = edgesBelow,
-                IsMergeCommit = parents.Count > 1,
-                IsBranchTip = commitInfo.Branches.Count > 0,
-            });
+            rowCount++;
         }
 
-        var nextOffset = offset + rows.Count;
+        var nextOffset = offset + rowCount;
         var hasMore = session.Frontier.Count > 0;
         session.SaveState(nextOffset, activeLaneTargets, maxLaneCount);
 
@@ -197,24 +240,7 @@ public sealed class CommitGraphManager : IDisposable
             HasMore = hasMore,
         };
 
-        if (!hasMore)
-        {
-            _session = null;
-        }
-
-        var nextCursor = new CommitGraphCursorState(hasMore ? session.RepositoryId : null, nextOffset);
-        return new CommitGraphPageResult(response, nextCursor);
-    }
-
-    public void Dispose()
-    {
-        if (_disposed)
-        {
-            return;
-        }
-
-        _repository.Dispose();
-        _disposed = true;
+        return response;
     }
 
     private async Task<CommitGraphTraversalSession> OpenTraversalSessionAsync(
@@ -226,6 +252,12 @@ public sealed class CommitGraphManager : IDisposable
             return _session;
         }
 
+        _session = await CreateTraversalSessionAsync(cancellationToken).ConfigureAwait(false);
+        return _session;
+    }
+
+    private async Task<CommitGraphTraversalSession> CreateTraversalSessionAsync(CancellationToken cancellationToken)
+    {
         var created = new CommitGraphTraversalSession(_repositoryId);
         foreach (var head in await GetStartingCommitsAsync(cancellationToken).ConfigureAwait(false))
         {
@@ -237,7 +269,6 @@ public sealed class CommitGraphManager : IDisposable
         }
 
         created.SaveState(0, new List<string?>(), 0);
-        _session = created;
         return created;
     }
 
