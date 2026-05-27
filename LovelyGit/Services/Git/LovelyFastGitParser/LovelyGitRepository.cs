@@ -51,27 +51,16 @@ internal sealed class LovelyGitRepository : IDisposable
             var kind = GetRefKind(fullName);
             var displayName = GetDisplayRefName(fullName, kind);
 
-            GitObjectId? resolved = kind switch
+            if (kind is GitRefKind.Head or GitRefKind.Remote)
             {
-                GitRefKind.Head or GitRefKind.Remote => rawRef.Target,
-                GitRefKind.Tag when rawRef.PeeledTarget != null => rawRef.PeeledTarget.Value,
-                GitRefKind.Tag => await ResolveCommitTargetAsync(objectStore, objectFormat, rawRef.Target, cancellationToken).ConfigureAwait(false),
-                _ => null,
-            };
-
-            if (resolved == null)
-            {
-                continue;
+                refsByFullName[fullName] = new GitRef(displayName, rawRef.Target, kind);
+                AddName(branchNamesByCommit, rawRef.Target, displayName);
             }
-
-            refsByFullName[fullName] = new GitRef(displayName, resolved.Value, kind);
-            if (kind == GitRefKind.Tag)
+            else if (kind == GitRefKind.Tag)
             {
-                AddName(tagNamesByCommit, resolved.Value, displayName);
-            }
-            else if (kind is GitRefKind.Head or GitRefKind.Remote)
-            {
-                AddName(branchNamesByCommit, resolved.Value, displayName);
+                var commitTarget = rawRef.PeeledTarget ?? rawRef.Target;
+                refsByFullName[fullName] = new GitRef(displayName, commitTarget, kind);
+                AddName(tagNamesByCommit, commitTarget, displayName);
             }
         }
 
