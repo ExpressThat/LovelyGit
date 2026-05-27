@@ -5,7 +5,6 @@ namespace ExpressThat.LovelyGit.Services.Git.CommitGraph.Models
         public CommitInfo Commit { get; set; } = new();
         public int RowIndex { get; set; }
         public int Lane { get; set; }
-        public List<int> ActiveLanes { get; set; } = new();
         public List<int> ActiveLanesAbove { get; set; } = new();
         public List<int> ActiveLanesBelow { get; set; } = new();
         public List<CommitLaneEdge> EdgesAbove { get; set; } = new();

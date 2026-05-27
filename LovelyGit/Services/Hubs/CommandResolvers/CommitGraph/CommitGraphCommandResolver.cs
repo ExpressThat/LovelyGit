@@ -12,6 +12,8 @@ namespace ExpressThat.LovelyGit.Services.Hubs.CommandResolvers.CommitGraph
     {
         private KnownGitRepositorysRepository _knownGitRepositorysRepository;
         private SemaphoreSlim _semaphore = new SemaphoreSlim(1, 1);
+        private readonly Dictionary<Guid, CommitGraphManager> _activeGraphs = new();
+
         public CommitGraphCommandResolver(KnownGitRepositorysRepository knownGitRepositorysRepository)
         {
             _knownGitRepositorysRepository = knownGitRepositorysRepository;
@@ -27,7 +29,7 @@ namespace ExpressThat.LovelyGit.Services.Hubs.CommandResolvers.CommitGraph
             try
             {
                 await _semaphore.WaitAsync();
-                var dotGitPath = @"C:\Projects\git";
+                var dotGitPath = @"C:\Projects\linux";
 
                 KnownGitRepository? foundRepo = null;
 
@@ -66,9 +68,13 @@ namespace ExpressThat.LovelyGit.Services.Hubs.CommandResolvers.CommitGraph
                 if (string.IsNullOrWhiteSpace(command.Arguments?["cursor"]))
                 {
                     GitRepoCacheDbContext.ClearCache();
+                    if (_activeGraphs.Remove(foundRepo.Id, out var oldGraph))
+                    {
+                        oldGraph.Dispose();
+                    }
                 }
 
-                var cursorState = CommitGraphNative.DecodeCursorState(command.Arguments?["cursor"]);
+                var cursorState = CommitGraphManager.DecodeCursorState(command.Arguments?["cursor"]);
 
                 using (GitRepoCacheDbContext cache = new GitRepoCacheDbContext())
                 {
@@ -77,27 +83,38 @@ namespace ExpressThat.LovelyGit.Services.Hubs.CommandResolvers.CommitGraph
 
                     try
                     {
-                        var openResult = await CommitGraphNative.TryOpenAsync(
-                            dotGitPath,
-                            foundRepo.Id,
-                            cacheRepository);
-                        if (!openResult.Success || openResult.Graph == null)
+                        if (!_activeGraphs.TryGetValue(foundRepo.Id, out var graph))
                         {
-                            return new CommandResponse
+                            var openResult = await CommitGraphManager.TryOpenAsync(
+                                dotGitPath,
+                                foundRepo.Id,
+                                cacheRepository);
+                            if (!openResult.Success || openResult.Graph == null)
                             {
-                                CommandUniqueId = command.CommandUniqueId,
-                                CommandType = command.CommandType,
-                                SubCommandType = command.SubCommandType,
-                                IsSuccess = false,
-                                ErrorMessage = openResult.Error ?? "Failed to open native commit-graph."
-                            };
+                                return new CommandResponse
+                                {
+                                    CommandUniqueId = command.CommandUniqueId,
+                                    CommandType = command.CommandType,
+                                    SubCommandType = command.SubCommandType,
+                                    IsSuccess = false,
+                                    ErrorMessage = openResult.Error ?? "Failed to open native commit-graph."
+                                };
 
+                            }
+
+                            graph = openResult.Graph;
+                            _activeGraphs[foundRepo.Id] = graph;
                         }
 
-                        using var graph = openResult.Graph;
                         var page = await graph.GetCommitGraphPageAsync(cursorState, limit);
+
                         var response = page.Response;
-                        response.NextCursor = response.HasMore ? CommitGraphNative.EncodeCursorState(page.NextCursor) : null;
+                        response.NextCursor = response.HasMore ? CommitGraphManager.EncodeCursorState(page.NextCursor) : null;
+                        if (!response.HasMore && _activeGraphs.Remove(foundRepo.Id, out var completedGraph))
+                        {
+                            completedGraph.Dispose();
+                        }
+
                         return new CommandResponse<CommitGraphResponse>
                         {
                             CommandUniqueId = command.CommandUniqueId,

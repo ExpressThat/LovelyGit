@@ -10,7 +10,6 @@ export type CommitGraphRow = {
 	commit: CommitInfo;
 	rowIndex: number;
 	lane: number;
-	activeLanes: number[];
 	activeLanesAbove: number[];
 	activeLanesBelow: number[];
 	edgesAbove: CommitLaneEdge[];

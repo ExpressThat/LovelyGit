@@ -15,10 +15,10 @@
 
 	<ItemGroup>
 	  <PackageReference Include="BLite" Version="4.4.2" />
-	  <PackageReference Include="GitReader" Version="1.16.0" />
 	  <PackageReference Include="InfiniLore.InfiniFrame.WebServer" Version="0.13.1" />
 	  <PackageReference Include="KeySharp" Version="1.0.5" />
 	  <PackageReference Include="Microsoft.Extensions.DependencyInjection.AutoActivation" Version="10.6.0" />
+	  <PackageReference Include="SharpZipLib" Version="1.4.2" />
 	</ItemGroup>
 
 	<ItemGroup>
