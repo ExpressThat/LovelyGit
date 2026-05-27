@@ -5,6 +5,7 @@ using ExpressThat.LovelyGit.Services.Data.Repositorys;
 using ExpressThat.LovelyGit.Services.Git.CommitGraph;
 using ExpressThat.LovelyGit.Services.Hubs;
 using ExpressThat.LovelyGit.Services.Hubs.CommandResolvers;
+using ExpressThat.LovelyGit.Services.Hubs.CommandResolvers.CommitGraph;
 using ExpressThat.LovelyGit.Services.Hubs.CommandResolvers.KnownRepository;
 using ExpressThat.LovelyGit.Services.Hubs.Commands;
 using InfiniFrame;
@@ -30,16 +31,7 @@ public static class Program
             "_id",
             "name",
             "path");
-        RegisterBsonKeys(
-            GitRepoCacheDbContext.GetBasePath(),
-            "id",
-            "_id",
-            "repositoryid",
-            "offset",
-            "maxlanecount",
-            "lanes",
-            "hash",
-            "seconds");
+        GitRepoCacheDbContext.RegisterBsonKeys();
 
         InfiniFrameWebApplicationBuilder appBuilder = InfiniFrameWebApplication.CreateBuilder(args);
 
@@ -52,13 +44,12 @@ public static class Program
             options.SerializerOptions.Converters.Add(new JsonStringEnumConverter<CommsHubCommandType>());
             options.SerializerOptions.Converters.Add(new JsonStringEnumConverter<CommsHubSubCommandType>());
         });
-        
+
         appBuilder.Services.AddSingleton<AppDbContext>();
-        appBuilder.Services.AddSingleton<GitRepoCacheDbContext>();
-        appBuilder.Services.AddSingleton<CommitGraphRepository>();
         appBuilder.Services.AddSingleton<KnownGitRepositorysRepository>();
         appBuilder.Services.AddSingleton<CommandResolver>();
         appBuilder.Services.AddSingleton<ICommandResponder, KnownGitRepositorysCommandResolver>();
+        appBuilder.Services.AddSingleton<ICommandResponder, CommitGraphCommandResolver>();
 
         appBuilder.Services
             .AddSignalR(options =>
@@ -93,7 +84,7 @@ public static class Program
         application.WebApp.Lifetime.ApplicationStopping.Register(() =>
         {
             application.WebApp.Services.GetService<GitRepoCacheDbContext>()?.Dispose();
-            GitRepoCacheDbContext.ClearCache();
+            GitRepoCacheDbContext.ClearCache(registerKeys: false);
         });
 
         var summaries = new[]
@@ -113,77 +104,6 @@ public static class Program
             return Results.Content(html, "text/html; charset=utf-8");
         });
 
-        application.WebApp.MapPost("/commitGraph", async (
-            CommitGraphPageRequest request,
-            CommitGraphRepository commitGraphRepository,
-            KnownGitRepositorysRepository knownGitRepositorysRepository,
-            CancellationToken cancellationToken
-            ) =>
-        {
-
-            var dotGitPath = @"C:\Projects\LovelyGit-rust";
-
-            KnownGitRepository? foundRepo = null;
-
-            foreach (KnownGitRepository repo in await knownGitRepositorysRepository.GetAllAsync())
-            {
-                if (repo.Path == dotGitPath)
-                {
-                    foundRepo = repo;
-                }
-            }
-
-            if (foundRepo == null)
-            {
-                foundRepo = await knownGitRepositorysRepository.AddAsync(new KnownGitRepository
-                {
-                    Id = Guid.NewGuid(),
-                    Name = "Local Git Repository",
-                    Path = dotGitPath,
-                });
-            }
-
-            var repositoryGraphId = foundRepo.Id.ToString("N");
-            var limit = request.Limit;
-            if (limit < 0) limit = 0;
-            var cursorState = DecodeCursorState(request.Cursor);
-
-            try
-            {
-                var openResult = await CommitGraphNative.TryOpenAsync(
-                    dotGitPath,
-                    repositoryGraphId,
-                    commitGraphRepository,
-                    cancellationToken);
-                if (!openResult.Success || openResult.Graph == null)
-                {
-                    return Results.Json(
-                        new ApiErrorResponse
-                        {
-                            Error = openResult.Error ?? "Failed to open native commit-graph.",
-                        },
-                        AppJsonSerializerContext.Default.ApiErrorResponse,
-                        statusCode: StatusCodes.Status500InternalServerError);
-                }
-
-                using var graph = openResult.Graph;
-                var page = await graph.GetCommitGraphPageAsync(cursorState, limit, cancellationToken);
-                var response = page.Response;
-                response.NextCursor = response.HasMore ? EncodeCursorState(page.NextCursor) : null;
-                return Results.Json(response, AppJsonSerializerContext.Default.CommitGraphResponse);
-            }
-            catch (Exception ex)
-            {
-                return Results.Json(
-                    new ApiErrorResponse
-                    {
-                        Error = ex.Message,
-                    },
-                    AppJsonSerializerContext.Default.ApiErrorResponse,
-                    statusCode: StatusCodes.Status500InternalServerError);
-            }
-        });
-
         application.UseAutoServerClose();
 
         application.WebApp.MapHub<CommsHub>("/commsHub");
@@ -200,42 +120,4 @@ public static class Program
         using var engine = new BLiteEngine(path);
         engine.RegisterKeys(keys);
     }
-
-    private static CommitGraphCursorState DecodeCursorState(string? cursor)
-    {
-        if (string.IsNullOrWhiteSpace(cursor))
-        {
-            return new CommitGraphCursorState(null, 0);
-        }
-
-        var parts = cursor.Split(':', 2);
-        if (parts.Length == 2 && int.TryParse(parts[1], out var offset))
-        {
-            return new CommitGraphCursorState(parts[0], offset);
-        }
-
-        return new CommitGraphCursorState(cursor, 0);
-    }
-
-    private static string EncodeCursorState(CommitGraphCursorState cursor)
-    {
-        return cursor.RepositoryId == null ? string.Empty : $"{cursor.RepositoryId}:{cursor.Offset}";
-    }
-}
-
-
-internal record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}
-
-internal record ApiErrorResponse
-{
-    public string Error { get; set; } = string.Empty;
-}
-
-internal record CommitGraphPageRequest
-{
-    public int Limit { get; set; }
-    public string? Cursor { get; set; }
 }

@@ -16,12 +16,7 @@ namespace ExpressThat.LovelyGit.Services.Hubs.CommandResolvers.KnownRepository
 
         public bool CanRespondTo(CommsHubCommand command)
         {
-            if (command.CommandType == CommsHubCommandType.KnownGitRepositorys)
-            {
-                return true;
-            }
-
-            return false;
+            return command.CommandType == CommsHubCommandType.KnownGitRepositorys;
         }
 
         public async Task<CommandResponse> Resolve(CommsHubCommand command)

@@ -15,12 +15,12 @@ public sealed class CommitGraphNative : IDisposable
 
     private readonly StructuredRepository _repository;
     private readonly CommitGraphRepository _commitGraphRepository;
-    private readonly string _repositoryId;
+    private readonly Guid _repositoryId;
     private bool _disposed;
 
     private CommitGraphNative(
         StructuredRepository repository,
-        string repositoryId,
+        Guid repositoryId,
         CommitGraphRepository commitGraphRepository)
     {
         _repository = repository;
@@ -32,18 +32,13 @@ public sealed class CommitGraphNative : IDisposable
 
     public static async Task<CommitGraphOpenResult> TryOpenAsync(
         string gitDirOrWorkTreePath,
-        string repositoryId,
+        Guid repositoryId,
         CommitGraphRepository commitGraphRepository,
         CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(gitDirOrWorkTreePath))
         {
             return new CommitGraphOpenResult(false, null, "Path is null or empty.");
-        }
-
-        if (!IsSafeRepositoryId(repositoryId))
-        {
-            return new CommitGraphOpenResult(false, null, "Repository id is invalid.");
         }
 
         try
@@ -466,11 +461,6 @@ public sealed class CommitGraphNative : IDisposable
         return lanes;
     }
 
-    private static bool IsSafeRepositoryId(string repositoryId)
-    {
-        return repositoryId.Length == 32 && repositoryId.All(Uri.IsHexDigit);
-    }
-
     private readonly record struct CommitPriority(long Seconds, string Hash)
     {
         public static CommitPriority FromCommit(Commit commit)
@@ -498,7 +488,7 @@ public sealed class CommitGraphNative : IDisposable
         private readonly CommitGraphRepository _repository;
 
         private TraversalSession(
-            string repositoryId,
+            Guid repositoryId,
             CommitGraphRepository repository,
             int offset,
             List<string?> activeLaneTargets,
@@ -513,7 +503,7 @@ public sealed class CommitGraphNative : IDisposable
             Frontier = frontier;
         }
 
-        public string RepositoryId { get; }
+        public Guid RepositoryId { get; }
 
         public int Offset { get; private set; }
 
@@ -525,7 +515,7 @@ public sealed class CommitGraphNative : IDisposable
 
         public static async Task<TraversalSession> CreateAsync(
             CommitGraphRepository repository,
-            string repositoryId,
+            Guid repositoryId,
             CancellationToken cancellationToken)
         {
             return new TraversalSession(
@@ -539,14 +529,9 @@ public sealed class CommitGraphNative : IDisposable
 
         public static async Task<TraversalSession?> TryOpenAsync(
             CommitGraphRepository repository,
-            string repositoryId,
+            Guid repositoryId,
             CancellationToken cancellationToken)
         {
-            if (!IsSafeRepositoryId(repositoryId))
-            {
-                return null;
-            }
-
             var state = await repository.GetRepositoryStateAsync(repositoryId, cancellationToken).ConfigureAwait(false);
             if (state == null)
             {
@@ -612,7 +597,7 @@ public sealed class CommitGraphNative : IDisposable
 
         private static async Task<PriorityQueue<FrontierCommit, CommitPriority>> LoadFrontierAsync(
             CommitGraphRepository repository,
-            string repositoryId,
+            Guid repositoryId,
             CancellationToken cancellationToken)
         {
             var queue = new PriorityQueue<FrontierCommit, CommitPriority>(CommitPriorityComparer.Instance);
@@ -645,8 +630,33 @@ public sealed class CommitGraphNative : IDisposable
         }
 
     }
+
+    public static CommitGraphCursorState DecodeCursorState(string? cursor)
+    {
+        if (string.IsNullOrWhiteSpace(cursor))
+        {
+            return new CommitGraphCursorState(null, 0);
+        }
+
+        var parts = cursor.Split(':', 2);
+        if (parts.Length == 2 && Guid.TryParse(parts[0], out var repositoryId) && int.TryParse(parts[1], out var offset))
+        {
+            return new CommitGraphCursorState(repositoryId, offset);
+        }
+
+        return Guid.TryParse(cursor, out repositoryId)
+            ? new CommitGraphCursorState(repositoryId, 0)
+            : new CommitGraphCursorState(null, 0);
+    }
+
+    public static string EncodeCursorState(CommitGraphCursorState cursor)
+    {
+        return cursor.RepositoryId == null ? string.Empty : $"{cursor.RepositoryId}:{cursor.Offset}";
+    }
 }
 
+
+
 public readonly record struct CommitGraphOpenResult(bool Success, CommitGraphNative? Graph, string? Error);
-public readonly record struct CommitGraphCursorState(string? RepositoryId, int Offset);
+public readonly record struct CommitGraphCursorState(Guid? RepositoryId, int Offset);
 public readonly record struct CommitGraphPageResult(CommitGraphResponse Response, CommitGraphCursorState NextCursor);

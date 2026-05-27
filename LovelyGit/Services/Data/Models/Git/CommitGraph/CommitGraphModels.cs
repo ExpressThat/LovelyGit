@@ -7,10 +7,10 @@ namespace ExpressThat.LovelyGit.Services.Data.Models.Git.CommitGraph
     public sealed record CommitGraphRepositoryState
     {
         [Key]
-        public string Id { get; set; } = string.Empty;
+        public Guid Id { get; set; }
 
         [Column("repositoryid")]
-        public string RepositoryId { get; set; } = string.Empty;
+        public Guid RepositoryId { get; set; }
 
         [Column("offset")]
         public int Offset { get; set; }
@@ -29,7 +29,7 @@ namespace ExpressThat.LovelyGit.Services.Data.Models.Git.CommitGraph
         public string Id { get; set; } = string.Empty;
 
         [Column("repositoryid")]
-        public string RepositoryId { get; set; } = string.Empty;
+        public Guid RepositoryId { get; set; }
 
         [Column("hash")]
         public string Hash { get; set; } = string.Empty;
@@ -45,7 +45,7 @@ namespace ExpressThat.LovelyGit.Services.Data.Models.Git.CommitGraph
         public string Id { get; set; } = string.Empty;
 
         [Column("repositoryid")]
-        public string RepositoryId { get; set; } = string.Empty;
+        public Guid RepositoryId { get; set; }
 
         [Column("hash")]
         public string Hash { get; set; } = string.Empty;

@@ -5,9 +5,6 @@ using System.Text.Json.Serialization;
 namespace ExpressThat.LazyGit;
 
 [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
-[JsonSerializable(typeof(WeatherForecast[]))]
-[JsonSerializable(typeof(ApiErrorResponse))]
-[JsonSerializable(typeof(CommitGraphPageRequest))]
 [JsonSerializable(typeof(CommitStats))]
 [JsonSerializable(typeof(CommitInfo))]
 [JsonSerializable(typeof(CommitLaneEdge))]
@@ -15,6 +12,7 @@ namespace ExpressThat.LazyGit;
 [JsonSerializable(typeof(CommitGraphResponse))]
 [JsonSerializable(typeof(CommsHubCommand))]
 [JsonSerializable(typeof(CommandResponse))]
+[JsonSerializable(typeof(CommandResponse<CommitGraphResponse>))]
 internal partial class AppJsonSerializerContext : JsonSerializerContext
 {
 }

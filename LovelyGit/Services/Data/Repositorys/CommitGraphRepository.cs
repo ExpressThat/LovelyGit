@@ -12,14 +12,14 @@ namespace ExpressThat.LovelyGit.Services.Data.Repositorys
         }
 
         public Task<CommitGraphRepositoryState?> GetRepositoryStateAsync(
-            string repositoryId,
+            Guid repositoryId,
             CancellationToken cancellationToken)
         {
             return _gitRepoCache.CommitGraphStates.FindByIdAsync(repositoryId, cancellationToken).AsTask();
         }
 
         public async IAsyncEnumerable<CommitGraphFrontierEntry> GetFrontierAsync(
-            string repositoryId,
+            Guid repositoryId,
             [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken)
         {
             await foreach (var entry in _gitRepoCache.CommitGraphFrontier.FindAllAsync(cancellationToken)
@@ -33,7 +33,7 @@ namespace ExpressThat.LovelyGit.Services.Data.Repositorys
         }
 
         public async IAsyncEnumerable<CommitGraphSeenEntry> GetSeenAsync(
-            string repositoryId,
+            Guid repositoryId,
             [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken)
         {
             await foreach (var entry in _gitRepoCache.CommitGraphSeen.FindAllAsync(cancellationToken)
@@ -47,7 +47,7 @@ namespace ExpressThat.LovelyGit.Services.Data.Repositorys
         }
 
         public async Task<bool> HasSeenAsync(
-            string repositoryId,
+            Guid repositoryId,
             string hash,
             CancellationToken cancellationToken)
         {
@@ -57,7 +57,7 @@ namespace ExpressThat.LovelyGit.Services.Data.Repositorys
         }
 
         public async Task AddSeenAsync(
-            string repositoryId,
+            Guid repositoryId,
             string hash,
             CancellationToken cancellationToken)
         {
@@ -72,7 +72,7 @@ namespace ExpressThat.LovelyGit.Services.Data.Repositorys
         }
 
         public async Task AddFrontierAsync(
-            string repositoryId,
+            Guid repositoryId,
             string hash,
             long seconds,
             CancellationToken cancellationToken)
@@ -89,7 +89,7 @@ namespace ExpressThat.LovelyGit.Services.Data.Repositorys
         }
 
         public async Task DeleteFrontierAsync(
-            string repositoryId,
+            Guid repositoryId,
             string hash,
             CancellationToken cancellationToken)
         {
@@ -99,7 +99,7 @@ namespace ExpressThat.LovelyGit.Services.Data.Repositorys
         }
 
         public async Task SaveRepositoryStateAsync(
-            string repositoryId,
+            Guid repositoryId,
             int offset,
             int maxLaneCount,
             string lanes,
@@ -126,7 +126,7 @@ namespace ExpressThat.LovelyGit.Services.Data.Repositorys
             await _gitRepoCache.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         }
 
-        public async Task DeleteTraversalEntriesAsync(string repositoryId, CancellationToken cancellationToken)
+        public async Task DeleteTraversalEntriesAsync(Guid repositoryId, CancellationToken cancellationToken)
         {
             await foreach (var entry in GetFrontierAsync(repositoryId, cancellationToken).ConfigureAwait(false))
             {
@@ -141,7 +141,7 @@ namespace ExpressThat.LovelyGit.Services.Data.Repositorys
             await _gitRepoCache.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         }
 
-        private static string MakeRepositoryHashId(string repositoryId, string hash)
+        private static string MakeRepositoryHashId(Guid repositoryId, string hash)
         {
             return string.Concat(repositoryId, ":", hash);
         }

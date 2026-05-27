@@ -3,6 +3,7 @@
     public enum CommsHubCommandType
     {
         KnownGitRepositorys,
+        CommitGraph,
         Settings
     }
 

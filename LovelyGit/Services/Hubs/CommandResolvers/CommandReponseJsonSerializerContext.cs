@@ -8,6 +8,7 @@ namespace ExpressThat.LovelyGit.Services.Hubs.CommandResolvers
 {
     [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
     [JsonSerializable(typeof(CommandResponse<List<KnownGitRepository>>))]
+    [JsonSerializable(typeof(CommandResponse<CommitGraphResponse>))]
     public partial class CommandReponseJsonSerializerContext : JsonSerializerContext
     {
     }

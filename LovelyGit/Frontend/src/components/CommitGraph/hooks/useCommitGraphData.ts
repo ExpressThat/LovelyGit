@@ -1,5 +1,6 @@
 import { startTransition, useEffect, useEffectEvent, useRef, useState } from "react";
 import type { CommitGraphResponse, CommitGraphRow } from "../types/graph";
+import { CommsHubCommandType, sendRequestWithResponse } from "@/lib/registerSignalR";
 
 const PAGE_SIZE = 400;
 const PREFETCH_PAGES = 1;
@@ -64,22 +65,17 @@ export function useCommitGraphData() {
 		try {
 			let loadedLength = stateRef.current.rows.length;
 			while (hasMoreRef.current && loadedLength < requiredLength) {
-				const fetchResponse = await fetch("/commitGraph", {
-					body: JSON.stringify({
-						limit: PAGE_SIZE,
+				const response = await sendRequestWithResponse<CommitGraphResponse>({
+					commandType: CommsHubCommandType.CommitGraph,
+					Arguments: {
 						cursor: nextCursorRef.current,
-					}),
-					headers: {
-						"content-type": "application/json",
-					},
-					method: "POST",
+						limit: PAGE_SIZE.toString()
+					}
 				});
-				if (!fetchResponse.ok) {
-					throw new Error(`Failed to load commit graph (${fetchResponse.status})`);
-				}
 
-				const raw = await fetchResponse.json();
-				const response = raw as CommitGraphResponse;
+				if (!response) {
+					continue;
+				}
 
 				nextCursorRef.current = response.nextCursor;
 				hasMoreRef.current = response.hasMore;
@@ -131,9 +127,9 @@ export function useCommitGraphData() {
 			setState((current) =>
 				current.isPageLoading
 					? {
-							...current,
-							isPageLoading: false,
-						}
+						...current,
+						isPageLoading: false,
+					}
 					: current,
 			);
 		}
