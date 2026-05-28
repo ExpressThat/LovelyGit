@@ -1,6 +1,9 @@
-﻿namespace ExpressThat.LovelyGit.Services.Hubs.Commands
+﻿using Tapper;
+
+namespace ExpressThat.LovelyGit.Services.Hubs.Commands
 {
-    public class CommandResponse
+    [TranspilationSource]
+    public class CommandResponseBase
     {
         public string? CommandUniqueId { get; set; }
         public CommsHubCommandType CommandType { get; set; }
@@ -9,7 +12,9 @@
         public string? ErrorMessage { get; set; }
     }
 
-    public class CommandResponse<T> : CommandResponse
+
+    [TranspilationSource]
+    public class CommandResponse<T> : CommandResponseBase
     {
         public T? Result { get; set; }
     }

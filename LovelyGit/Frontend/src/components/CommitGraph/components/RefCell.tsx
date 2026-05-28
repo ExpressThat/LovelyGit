@@ -1,4 +1,4 @@
-import type { CommitGraphRow } from "../types/graph";
+import type { CommitGraphRow } from "@/generated/ExpressThat.LovelyGit.Services.Git.CommitGraph.Models";
 import { refLabel } from "../utils/format";
 
 export function RefCell({ row }: { row: CommitGraphRow }) {

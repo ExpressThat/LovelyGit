@@ -19,7 +19,7 @@ namespace ExpressThat.LovelyGit.Services.Hubs.CommandResolvers.KnownRepository
             return command.CommandType == CommsHubCommandType.KnownGitRepositorys;
         }
 
-        public async Task<CommandResponse> Resolve(CommsHubCommand command)
+        public async Task<CommandResponseBase> Resolve(CommsHubCommand command)
         {
             var knownGitRepositorys = await _knownGitRepositorysRepository.GetAllAsync();
 

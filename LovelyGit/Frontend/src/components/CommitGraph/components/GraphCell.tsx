@@ -8,7 +8,6 @@ import {
 	ROW_CENTER_Y,
 	ROW_HEIGHT,
 } from "../constants";
-import type { CommitGraphRow, CommitLaneEdge } from "../types/graph";
 import {
 	edgePath,
 	type GraphEdgeDirection,
@@ -16,6 +15,7 @@ import {
 	laneColor,
 	xForLane,
 } from "../utils/graphLayout";
+import type { CommitGraphRow, CommitLaneEdge } from "@/generated/ExpressThat.LovelyGit.Services.Git.CommitGraph.Models";
 
 export function GraphCell({
 	graphContentWidth,

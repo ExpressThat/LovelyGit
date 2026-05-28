@@ -1,5 +1,8 @@
-﻿namespace ExpressThat.LovelyGit.Services.Hubs.Commands
+﻿using Tapper;
+
+namespace ExpressThat.LovelyGit.Services.Hubs.Commands
 {
+    [TranspilationSource]
     public record CommsHubCommand
     {
         public string? CommandUniqueId { get; set; }

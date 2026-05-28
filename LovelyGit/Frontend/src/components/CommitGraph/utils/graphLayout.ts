@@ -1,3 +1,4 @@
+import type { CommitGraphRow, CommitLaneEdge } from "@/generated/ExpressThat.LovelyGit.Services.Git.CommitGraph.Models";
 import {
 	GRAPH_BOTTOM_Y,
 	GRAPH_PADDING_LEFT,
@@ -7,7 +8,6 @@ import {
 	ROW_CENTER_Y,
 	ROW_HEIGHT,
 } from "../constants";
-import type { CommitGraphRow, CommitLaneEdge } from "../types/graph";
 
 export type GraphEdgeDirection = "above" | "below";
 

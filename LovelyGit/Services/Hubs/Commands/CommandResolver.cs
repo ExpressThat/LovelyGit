@@ -9,12 +9,12 @@
             _commandResponders = commandResolvers;
         }
 
-        public async Task<CommandResponse> ResolveCommand(CommsHubCommand command)
+        public async Task<CommandResponseBase> ResolveCommand(CommsHubCommand command)
         {
             var responder = _commandResponders.FirstOrDefault(r => r.CanRespondTo(command));
             if (responder == null)
             {
-                return new CommandResponse
+                return new CommandResponseBase
                 {
                     CommandUniqueId = command.CommandUniqueId,
                     CommandType = command.CommandType,
@@ -29,7 +29,7 @@
             }
             catch (Exception ex)
             {
-                return new CommandResponse
+                return new CommandResponseBase
                 {
                     CommandUniqueId = command.CommandUniqueId,
                     CommandType = command.CommandType,

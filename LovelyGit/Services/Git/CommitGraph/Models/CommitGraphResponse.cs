@@ -1,5 +1,8 @@
+using Tapper;
+
 namespace ExpressThat.LovelyGit.Services.Git.CommitGraph.Models
 {
+    [TranspilationSource]
     public record CommitGraphResponse
     {
         public int TotalRows { get; set; }

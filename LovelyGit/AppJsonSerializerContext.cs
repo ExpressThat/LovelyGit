@@ -11,7 +11,7 @@ namespace ExpressThat.LazyGit;
 [JsonSerializable(typeof(CommitGraphRow))]
 [JsonSerializable(typeof(CommitGraphResponse))]
 [JsonSerializable(typeof(CommsHubCommand))]
-[JsonSerializable(typeof(CommandResponse))]
+[JsonSerializable(typeof(CommandResponseBase))]
 [JsonSerializable(typeof(CommandResponse<CommitGraphResponse>))]
 internal partial class AppJsonSerializerContext : JsonSerializerContext
 {

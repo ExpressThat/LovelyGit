@@ -1,9 +1,8 @@
 import { startTransition, useEffect, useEffectEvent, useState } from "react";
 import {
-	CommsHubCommandType,
 	sendRequestWithResponse,
 } from "@/lib/registerSignalR";
-import type { CommitGraphResponse, CommitGraphRow } from "../types/graph";
+import type { CommitGraphResponse, CommitGraphRow } from "@/generated/ExpressThat.LovelyGit.Services.Git.CommitGraph.Models";
 
 const PAGE_SIZE = 400;
 const PREFETCH_PAGES = 1;
@@ -20,7 +19,7 @@ type GraphSession = {
 	hasMore: boolean;
 	laneCount: number;
 	loading: boolean;
-	nextCursor: string | null;
+	nextCursor?: string;
 	requestedEnd: number;
 	rows: Array<CommitGraphRow | null>;
 	totalRows: number;
@@ -30,7 +29,7 @@ const session: GraphSession = {
 	hasMore: true,
 	laneCount: 0,
 	loading: false,
-	nextCursor: null,
+	nextCursor: undefined,
 	requestedEnd: 0,
 	rows: [],
 	totalRows: 0,
@@ -62,9 +61,9 @@ export function useCommitGraphData() {
 			let loadedLength = session.rows.length;
 			while (session.hasMore && loadedLength < requiredLength) {
 				const response = await sendRequestWithResponse<CommitGraphResponse>({
-					commandType: CommsHubCommandType.CommitGraph,
-					Arguments: {
-						cursor: session.nextCursor,
+					commandType: "CommitGraph",
+					arguments: {
+						cursor: session.nextCursor || undefined,
 						limit: PAGE_SIZE.toString(),
 					},
 				});

@@ -1,5 +1,8 @@
+using Tapper;
+
 namespace ExpressThat.LovelyGit.Services.Git.CommitGraph.Models
 {
+    [TranspilationSource]
     public record CommitGraphRow
     {
         public CommitInfo Commit { get; set; } = new();

@@ -1,7 +1,6 @@
 import ReactDOM from "react-dom/client";
 import App from "./App";
 import {
-	CommsHubCommandType,
 	registerSignalR,
 	sendRequestWithResponse,
 } from "./lib/registerSignalR";
@@ -11,7 +10,7 @@ async function bootstrap() {
 
 	console.log(
 		await sendRequestWithResponse({
-			commandType: CommsHubCommandType.KnownGitRepositorys,
+			commandType: "KnownGitRepositorys",
 		}),
 	);
 

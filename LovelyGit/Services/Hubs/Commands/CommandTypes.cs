@@ -1,5 +1,8 @@
-﻿namespace ExpressThat.LovelyGit.Services.Hubs.Commands
+﻿using Tapper;
+
+namespace ExpressThat.LovelyGit.Services.Hubs.Commands
 {
+    [TranspilationSource]
     public enum CommsHubCommandType
     {
         KnownGitRepositorys,
@@ -7,6 +10,7 @@
         Settings
     }
 
+    [TranspilationSource]
     public enum CommsHubSubCommandType
     {
         Get,

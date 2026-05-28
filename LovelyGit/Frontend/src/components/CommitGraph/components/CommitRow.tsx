@@ -1,12 +1,12 @@
 /** biome-ignore-all lint/suspicious/noArrayIndexKey: shimmer has no id */
 import type { ReactNode } from "react";
-import type { CommitGraphRow } from "../types/graph";
 import { AuthorCell } from "./AuthorCell";
 import { CommitMessage } from "./CommitMessage";
 import { GraphCell } from "./GraphCell";
 import { HashCell } from "./HashCell";
 import { RefCell } from "./RefCell";
 import { SkeletonShimmer } from "./SkeletonShimmer";
+import type { CommitGraphRow } from "@/generated/ExpressThat.LovelyGit.Services.Git.CommitGraph.Models";
 
 export function CommitRow({
 	graph,

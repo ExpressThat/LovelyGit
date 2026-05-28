@@ -23,7 +23,7 @@ namespace ExpressThat.LovelyGit.Services.Hubs.CommandResolvers.CommitGraph
             return command.CommandType == CommsHubCommandType.CommitGraph;
         }
 
-        public async Task<CommandResponse> Resolve(CommsHubCommand command)
+        public async Task<CommandResponseBase> Resolve(CommsHubCommand command)
         {
 
             var dotGitPath = @"C:\Projects\linux";
@@ -55,7 +55,7 @@ namespace ExpressThat.LovelyGit.Services.Hubs.CommandResolvers.CommitGraph
 
             if (string.IsNullOrWhiteSpace(limitText) || !int.TryParse(limitText, out limit))
             {
-                return new CommandResponse
+                return new CommandResponseBase
                 {
                     CommandUniqueId = command.CommandUniqueId,
                     CommandType = command.CommandType,
@@ -96,7 +96,7 @@ namespace ExpressThat.LovelyGit.Services.Hubs.CommandResolvers.CommitGraph
                             cacheRepository);
                         if (!openResult.Success || openResult.Graph == null)
                         {
-                            return new CommandResponse
+                            return new CommandResponseBase
                             {
                                 CommandUniqueId = command.CommandUniqueId,
                                 CommandType = command.CommandType,
@@ -131,7 +131,7 @@ namespace ExpressThat.LovelyGit.Services.Hubs.CommandResolvers.CommitGraph
                 }
                 catch (Exception ex)
                 {
-                    return new CommandResponse
+                    return new CommandResponseBase
                     {
                         CommandUniqueId = command.CommandUniqueId,
                         CommandType = command.CommandType,

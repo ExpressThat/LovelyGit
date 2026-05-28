@@ -1,3 +1,4 @@
+import type { CommandResponse, CommsHubCommand } from "@/generated/ExpressThat.LovelyGit.Services.Hubs.Commands";
 import { type HubConnection, HubConnectionBuilder } from "@microsoft/signalr";
 import { nanoid } from "nanoid";
 
@@ -24,36 +25,6 @@ export async function registerSignalR() {
 	await connection.start();
 	console.log("done");
 }
-
-export const CommsHubCommandType = {
-	KnownGitRepositorys: "KnownGitRepositorys",
-	CommitGraph: "CommitGraph",
-	Settings: "Settings",
-};
-
-export const CommsHubSubCommandType = {
-	Get: "Get",
-	Create: "Create",
-	Update: "Update",
-	Delete: "Delete",
-};
-
-export type CommandResponse<T> = {
-	commandUniqueId?: string;
-	commandType: (typeof CommsHubCommandType)[keyof typeof CommsHubCommandType];
-	subCommandType?: (typeof CommsHubSubCommandType)[keyof typeof CommsHubSubCommandType];
-	isSuccess: boolean;
-	errorMessage?: string;
-	result?: T;
-};
-
-export type CommsHubCommand = {
-	commandUniqueId?: string;
-	commandType: (typeof CommsHubCommandType)[keyof typeof CommsHubCommandType];
-	subCommandType?: (typeof CommsHubSubCommandType)[keyof typeof CommsHubSubCommandType];
-	Key?: string;
-	Arguments?: Record<string, string | undefined | null>;
-};
 
 export async function sendRequestWithResponse<T>(
 	commandInput: Omit<CommsHubCommand, "commandUniqueId">,

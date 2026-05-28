@@ -5,6 +5,6 @@
     {
         bool CanRespondTo(CommsHubCommand command);
 
-        Task<CommandResponse> Resolve(CommsHubCommand command);
+        Task<CommandResponseBase> Resolve(CommsHubCommand command);
     }
 }
