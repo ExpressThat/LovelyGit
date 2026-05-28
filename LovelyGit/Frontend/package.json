@@ -6,11 +6,27 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build && copyfiles -u 1 \"dist/**/*\" ../wwwroot",
-    "lint": "eslint .",
+    "generate:csharp-types": "node -e \"require('node:fs').rmSync('src/generated', { recursive: true, force: true })\" && dotnet tapper --project ../LovelyGit.csproj --output src/generated --serializer Json --naming-style CamelCase --enum Union",
     "preview": "vite preview",
-    "watch": "npm-watch"
+    "watch": "npm-watch",
+    "format": "pnpm exec biome check src --write",
+    "lint": "pnpm format",
+    "lint:fix": "pnpm exec biome check src --write"
   },
   "watch": {
+    "generate:csharp-types": {
+      "patterns": [
+        "../**/*"
+      ],
+      "extensions": "cs",
+      "ignore": [
+        "Frontend",
+        "bin",
+        "obj",
+        "Properties",
+        "wwwroot"
+      ]
+    },
     "build": {
       "patterns": [
         "src/**/*"

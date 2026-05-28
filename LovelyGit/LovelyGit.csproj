@@ -19,6 +19,7 @@
 	  <PackageReference Include="KeySharp" Version="1.0.5" />
 	  <PackageReference Include="Microsoft.Extensions.DependencyInjection.AutoActivation" Version="10.6.0" />
 	  <PackageReference Include="SharpZipLib" Version="1.4.2" />
+	  <PackageReference Include="Tapper.Attributes" Version="1.14.0" />
 	</ItemGroup>
 
 	<ItemGroup>

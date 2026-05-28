@@ -755,3 +755,5 @@ sketch
 
 # End of https://www.toptal.com/developers/gitignore/api/visualstudio,visualstudiocode,dotnetcore,csharp,react,node
 LovelyGit/wwwroot/
+
+LovelyGit/Frontend/src/generated/

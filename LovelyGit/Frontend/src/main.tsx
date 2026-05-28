@@ -1,18 +1,19 @@
 import ReactDOM from "react-dom/client";
 import App from "./App";
-import { CommsHubCommandType, registerSignalR, sendRequestWithResponse } from "./lib/registerSignalR";
+import {
+	CommsHubCommandType,
+	registerSignalR,
+	sendRequestWithResponse,
+} from "./lib/registerSignalR";
 
 async function bootstrap() {
 	await registerSignalR();
 
-
-
-	console.log(await sendRequestWithResponse({
-		commandType: CommsHubCommandType.KnownGitRepositorys,
-	}))
-
-
-
+	console.log(
+		await sendRequestWithResponse({
+			commandType: CommsHubCommandType.KnownGitRepositorys,
+		}),
+	);
 
 	// await initSettingsStore();
 	//await getCurrentWebview().setZoom(getSetting("ZOOM_LEVEL"));
