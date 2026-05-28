@@ -8,11 +8,12 @@ import {
 	ROW_CENTER_Y,
 	ROW_HEIGHT,
 } from "../constants";
-import type { CommitGraphRow } from "../types/graph";
+import type { CommitGraphRow, CommitLaneEdge } from "../types/graph";
 import {
 	edgePath,
+	type GraphEdgeDirection,
+	graphRowLayout,
 	laneColor,
-	lanesCoveredByEdges,
 	xForLane,
 } from "../utils/graphLayout";
 
@@ -23,29 +24,12 @@ export function GraphCell({
 }: {
 	graphContentWidth: number;
 	graphScrollLeft: number;
-	row: CommitGraphRow | null;
+	row: CommitGraphRow;
 }) {
-	if (!row) {
-		return null;
-	}
-
-	const dotX = xForLane(row.lane);
-	const dotColor = laneColor(row.lane);
-	const { coveredAbove, coveredBelow } = lanesCoveredByEdges(row);
-	const activeLanesAbove = new Set(row.activeLanesAbove);
-	const activeLanesBelow = new Set(row.activeLanesBelow);
-	const visibleLanes = Array.from(
-		new Set([...row.activeLanesAbove, ...row.activeLanesBelow]),
-	);
-	const curvedEdgesAbove = row.edgesAbove.filter(
-		(edge) => edge.fromLane !== edge.toLane,
-	);
-	const curvedEdgesBelow = row.edgesBelow.filter(
-		(edge) => edge.fromLane !== edge.toLane,
-	);
-	const hasCurveMask =
-		curvedEdgesAbove.length > 0 || curvedEdgesBelow.length > 0;
+	const layout = graphRowLayout(row);
 	const curveMaskId = `graph-curve-mask-${row.rowIndex}`;
+	const hasCurveMask = layout.maskEdges.length > 0;
+	const keyPrefix = rowKey(row);
 
 	return (
 		<div className="h-full w-full overflow-hidden">
@@ -58,136 +42,178 @@ export function GraphCell({
 				width={graphContentWidth}
 			>
 				{hasCurveMask ? (
-					<defs>
-						<mask
-							id={curveMaskId}
-							maskUnits="userSpaceOnUse"
-							x={0}
-							y={0}
-							width={graphContentWidth}
-							height={ROW_HEIGHT}
-						>
-							<rect
-								fill="white"
-								height={ROW_HEIGHT}
-								width={graphContentWidth}
-								x={0}
-								y={0}
-							/>
-							{[...curvedEdgesAbove, ...curvedEdgesBelow].map((edge, index) => (
-								<path
-									d={edgePath(
-										edge,
-										index < curvedEdgesAbove.length ? "above" : "below",
-									)}
-									fill="none"
-									key={`${row.rowIndex}-mask-${edge.fromLane}-${edge.toLane}-${row.commit.hash}`}
-									stroke="black"
-									strokeLinecap="butt"
-									strokeWidth={GRAPH_CURVE_MASK_WIDTH}
-								/>
-							))}
-						</mask>
-					</defs>
+					<CurveMask
+						contentWidth={graphContentWidth}
+						id={curveMaskId}
+						maskEdges={layout.maskEdges}
+						rowKey={keyPrefix}
+					/>
 				) : null}
 
 				<g mask={hasCurveMask ? `url(#${curveMaskId})` : undefined}>
-					{visibleLanes.map((lane) => {
-						const drawAbove =
-							activeLanesAbove.has(lane) && !coveredAbove.has(lane);
-						const drawBelow =
-							activeLanesBelow.has(lane) && !coveredBelow.has(lane);
-
-						if (!drawAbove && !drawBelow) {
-							return null;
-						}
-
-						const x = xForLane(lane);
-						if (x > graphContentWidth + LANE_GAP) {
-							return null;
-						}
-
-						return (
-							<g key={`${row.rowIndex}-active-${lane}`}>
-								{drawAbove ? (
-									<line
-										stroke={laneColor(lane)}
-										strokeLinecap="butt"
-										strokeOpacity="0.82"
-										strokeWidth={GRAPH_STROKE_WIDTH}
-										x1={x}
-										x2={x}
-										y1={GRAPH_TOP_Y}
-										y2={ROW_CENTER_Y}
-									/>
-								) : null}
-								{drawBelow ? (
-									<line
-										stroke={laneColor(lane)}
-										strokeLinecap="butt"
-										strokeOpacity="0.82"
-										strokeWidth={GRAPH_STROKE_WIDTH}
-										x1={x}
-										x2={x}
-										y1={ROW_CENTER_Y}
-										y2={GRAPH_BOTTOM_Y}
-									/>
-								) : null}
-							</g>
-						);
-					})}
+					{layout.visibleLanes.map((lane) => (
+						<ActiveLane
+							contentWidth={graphContentWidth}
+							drawAbove={
+								layout.activeAbove.has(lane) && !layout.coveredAbove.has(lane)
+							}
+							drawBelow={
+								layout.activeBelow.has(lane) && !layout.coveredBelow.has(lane)
+							}
+							key={`${row.rowIndex}-active-${lane}`}
+							lane={lane}
+						/>
+					))}
 				</g>
 
-				{row.edgesAbove.map((edge, _) => (
-					<path
-						d={edgePath(edge, "above")}
-						fill="none"
-						key={`${row.rowIndex}-above-${edge.fromLane}-${edge.toLane}-${row.commit.hash}`}
-						stroke={laneColor(edge.fromLane)}
-						strokeLinecap="butt"
-						strokeWidth={GRAPH_STROKE_WIDTH}
-						className="above"
-					/>
+				{row.edgesAbove.map((edge) => (
+					<Fragment key={`${keyPrefix}-above-${edgeKey(edge)}`}>
+						{renderEdgePath(edge, "above", edge.fromLane, "above")}
+					</Fragment>
 				))}
 
-				{row.edgesBelow.map((edge, _) => {
-					const x = xForLane(edge.toLane);
-					return (
-						<Fragment
-							key={`${row.rowIndex}-below-${edge.fromLane}-${edge.toLane}-${row.commit.hash}`}
-						>
-							<path
-								d={edgePath(edge, "below")}
-								fill="none"
-								stroke={laneColor(edge.toLane)}
-								strokeLinecap="butt"
-								strokeWidth={GRAPH_STROKE_WIDTH}
-								className="below"
-							/>
-							<line
-								stroke={laneColor(edge.toLane)}
-								strokeLinecap="butt"
-								strokeOpacity="0.82"
-								strokeWidth={GRAPH_STROKE_WIDTH}
-								x1={x}
-								x2={x}
-								y1={ROW_CENTER_Y}
-								y2={GRAPH_BOTTOM_Y}
-							/>
-						</Fragment>
-					);
-				})}
+				{row.edgesBelow.map((edge) => (
+					<BelowEdge edge={edge} key={`${keyPrefix}-below-${edgeKey(edge)}`} />
+				))}
 
-				<circle
-					cx={dotX}
-					cy={ROW_CENTER_Y}
-					fill="var(--card)"
-					r="5.4"
-					stroke={dotColor}
-					strokeWidth="2.6"
-				/>
-				<circle cx={dotX} cy={ROW_CENTER_Y} fill={dotColor} r="2.2" />
+				{renderCommitDot(layout.dotX, layout.dotColor)}
 			</svg>
 		</div>
 	);
+}
+
+function CurveMask({
+	contentWidth,
+	id,
+	maskEdges,
+	rowKey,
+}: {
+	contentWidth: number;
+	id: string;
+	maskEdges: Array<{ edge: CommitLaneEdge; direction: GraphEdgeDirection }>;
+	rowKey: string;
+}) {
+	return (
+		<defs>
+			<mask
+				height={ROW_HEIGHT}
+				id={id}
+				maskUnits="userSpaceOnUse"
+				width={contentWidth}
+				x={0}
+				y={0}
+			>
+				<rect
+					fill="white"
+					height={ROW_HEIGHT}
+					width={contentWidth}
+					x={0}
+					y={0}
+				/>
+				{maskEdges.map(({ edge, direction }) => (
+					<path
+						d={edgePath(edge, direction)}
+						fill="none"
+						key={`${rowKey}-mask-${direction}-${edgeKey(edge)}`}
+						stroke="black"
+						strokeLinecap="butt"
+						strokeWidth={GRAPH_CURVE_MASK_WIDTH}
+					/>
+				))}
+			</mask>
+		</defs>
+	);
+}
+
+function ActiveLane({
+	contentWidth,
+	drawAbove,
+	drawBelow,
+	lane,
+}: {
+	contentWidth: number;
+	drawAbove: boolean;
+	drawBelow: boolean;
+	lane: number;
+}) {
+	const x = xForLane(lane);
+
+	if ((!drawAbove && !drawBelow) || x > contentWidth + LANE_GAP) {
+		return null;
+	}
+
+	return (
+		<g>
+			{drawAbove ? renderLaneLine(lane, x, GRAPH_TOP_Y, ROW_CENTER_Y) : null}
+			{drawBelow ? renderLaneLine(lane, x, ROW_CENTER_Y, GRAPH_BOTTOM_Y) : null}
+		</g>
+	);
+}
+
+function BelowEdge({ edge }: { edge: CommitLaneEdge }) {
+	const x = xForLane(edge.toLane);
+
+	return (
+		<Fragment>
+			{renderEdgePath(edge, "below", edge.toLane, "below")}
+			{renderLaneLine(edge.toLane, x, ROW_CENTER_Y, GRAPH_BOTTOM_Y)}
+		</Fragment>
+	);
+}
+
+function renderEdgePath(
+	edge: CommitLaneEdge,
+	direction: GraphEdgeDirection,
+	colorLane: number,
+	className: string,
+) {
+	return (
+		<path
+			className={className}
+			d={edgePath(edge, direction)}
+			fill="none"
+			stroke={laneColor(colorLane)}
+			strokeLinecap="butt"
+			strokeWidth={GRAPH_STROKE_WIDTH}
+		/>
+	);
+}
+
+function renderLaneLine(lane: number, x: number, y1: number, y2: number) {
+	return (
+		<line
+			stroke={laneColor(lane)}
+			strokeLinecap="butt"
+			strokeOpacity="0.82"
+			strokeWidth={GRAPH_STROKE_WIDTH}
+			x1={x}
+			x2={x}
+			y1={y1}
+			y2={y2}
+		/>
+	);
+}
+
+function renderCommitDot(x: number, color: string) {
+	return (
+		<>
+			<circle
+				cx={x}
+				cy={ROW_CENTER_Y}
+				fill="var(--card)"
+				r="5.4"
+				stroke={color}
+				strokeWidth="2.6"
+			/>
+			<circle cx={x} cy={ROW_CENTER_Y} fill={color} r="2.2" />
+		</>
+	);
+}
+
+function edgeKey(edge: CommitLaneEdge) {
+	return `${edge.fromLane}-${edge.toLane}`;
+}
+
+function rowKey(row: CommitGraphRow) {
+	return `${row.rowIndex}-${row.commit.hash}`;
 }

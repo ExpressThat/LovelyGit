@@ -1,12 +1,7 @@
 import type { CommitGraphRow } from "../types/graph";
 import { refLabel } from "../utils/format";
-import { SkeletonShimmer } from "./SkeletonShimmer";
 
-export function RefCell({ row }: { row: CommitGraphRow | null }) {
-	if (!row) {
-		return <SkeletonShimmer className="inline-block h-2 w-20 rounded-full" />;
-	}
-
+export function RefCell({ row }: { row: CommitGraphRow }) {
 	const refs = [...row.commit.branches, ...row.commit.tags];
 
 	if (refs.length === 0) {

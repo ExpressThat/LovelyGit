@@ -1,4 +1,5 @@
 /** biome-ignore-all lint/suspicious/noArrayIndexKey: shimmer has no id */
+import type { ReactNode } from "react";
 import type { CommitGraphRow } from "../types/graph";
 import { AuthorCell } from "./AuthorCell";
 import { CommitMessage } from "./CommitMessage";
@@ -8,71 +9,92 @@ import { RefCell } from "./RefCell";
 import { SkeletonShimmer } from "./SkeletonShimmer";
 
 export function CommitRow({
-	graphContentWidth,
-	graphScrollLeft,
+	graph,
 	row,
 	rowIndex,
 	templateColumns,
 }: {
-	graphContentWidth: number;
-	graphScrollLeft: number;
+	graph: {
+		contentWidth: number;
+		scrollLeft: number;
+	};
 	row: CommitGraphRow | null;
 	rowIndex: number;
 	templateColumns: string;
 }) {
+	const rowClassName = `grid h-[22px] leading-[22px] ${rowIndex % 2 === 0 ? "bg-background dark:bg-background" : "bg-card/70 dark:bg-card/45"} hover:bg-accent/75 dark:hover:bg-accent/60`;
+
 	if (!row) {
 		return (
 			<div
-				className={`relative grid h-[22px] overflow-hidden leading-[22px] ${rowIndex % 2 === 0 ? "bg-background dark:bg-background" : "bg-card/70 dark:bg-card/45"} hover:bg-accent/75 dark:hover:bg-accent/60`}
+				className={`relative overflow-hidden ${rowClassName}`}
 				style={{ gridTemplateColumns: templateColumns }}
 			>
-				<div className="min-w-0 overflow-hidden border-r px-[6px] py-[2px]">
+				<Column className="px-[6px] py-[2px]">
 					<SkeletonShimmer className="mt-[7px] block h-2 w-20 rounded-full" />
-				</div>
-				<div className="min-w-0 overflow-hidden border-r bg-card/60 px-2">
+				</Column>
+				<Column className="bg-card/60 px-2">
 					<div className="flex h-full items-center gap-2">
 						<SkeletonShimmer className="block h-1 w-8 rounded-full" />
 						<SkeletonShimmer className="block h-1 w-10 rounded-full" />
 						<SkeletonShimmer className="block h-[6px] w-[6px] rounded-full" />
 					</div>
-				</div>
-				<div className="min-w-0 overflow-hidden border-r px-2">
+				</Column>
+				<Column className="px-2">
 					<SkeletonShimmer className="mt-[7px] block h-2 w-[240px] max-w-full rounded-full" />
-				</div>
-				<div className="min-w-0 overflow-hidden border-r px-2">
+				</Column>
+				<Column className="px-2">
 					<SkeletonShimmer className="mt-[7px] block h-2 w-14 rounded-full" />
-				</div>
-				<div className="min-w-0 overflow-hidden px-2">
+				</Column>
+				<Column className="px-2" isLast>
 					<SkeletonShimmer className="mt-[7px] block h-2 w-28 rounded-full" />
-				</div>
+				</Column>
 			</div>
 		);
 	}
 
 	return (
 		<div
-			className={`grid h-[22px] leading-[22px] ${rowIndex % 2 === 0 ? "bg-background dark:bg-background" : "bg-card/70 dark:bg-card/45"} hover:bg-accent/75 dark:hover:bg-accent/60`}
+			className={rowClassName}
 			style={{ gridTemplateColumns: templateColumns }}
 		>
-			<div className="min-w-0 overflow-hidden border-r px-[6px] py-[2px]">
+			<Column className="px-[6px] py-[2px]">
 				<RefCell row={row} />
-			</div>
-			<div className="min-w-0 overflow-hidden border-r bg-card/60">
+			</Column>
+			<Column className="bg-card/60">
 				<GraphCell
-					graphContentWidth={graphContentWidth}
-					graphScrollLeft={graphScrollLeft}
+					graphContentWidth={graph.contentWidth}
+					graphScrollLeft={graph.scrollLeft}
 					row={row}
 				/>
-			</div>
-			<div className="min-w-0 overflow-hidden border-r px-2">
+			</Column>
+			<Column className="px-2">
 				<CommitMessage row={row} />
-			</div>
-			<div className="min-w-0 overflow-hidden border-r px-2">
+			</Column>
+			<Column className="px-2">
 				<HashCell row={row} />
-			</div>
-			<div className="min-w-0 overflow-hidden px-2">
+			</Column>
+			<Column className="px-2" isLast>
 				<AuthorCell row={row} />
-			</div>
+			</Column>
+		</div>
+	);
+}
+
+function Column({
+	children,
+	className,
+	isLast = false,
+}: {
+	children: ReactNode;
+	className: string;
+	isLast?: boolean;
+}) {
+	return (
+		<div
+			className={`min-w-0 overflow-hidden ${isLast ? "" : "border-r"} ${className}`}
+		>
+			{children}
 		</div>
 	);
 }

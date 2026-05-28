@@ -1,21 +1,5 @@
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { useEffect, useMemo, useRef, useState } from "react";
-import {
-	ContextMenu,
-	ContextMenuCheckboxItem,
-	ContextMenuContent,
-	ContextMenuGroup,
-	ContextMenuItem,
-	ContextMenuLabel,
-	ContextMenuRadioGroup,
-	ContextMenuRadioItem,
-	ContextMenuSeparator,
-	ContextMenuShortcut,
-	ContextMenuSub,
-	ContextMenuSubContent,
-	ContextMenuSubTrigger,
-	ContextMenuTrigger,
-} from "../ui/context-menu";
 import { CommitRow } from "./components/CommitRow";
 import { HeaderCell } from "./components/HeaderCell";
 import type { ColKey } from "./constants";
@@ -31,10 +15,17 @@ import {
 import { useCommitGraphData } from "./hooks/useCommitGraphData";
 import { resolveWidths } from "./utils/columns";
 
+const HEADER_LABELS: Record<ColKey, string> = {
+	author: "Author",
+	branch: "Branch",
+	graph: "Graph",
+	hash: "Hash",
+	message: "Commit Message",
+};
+
 export function CommitGraphView() {
 	const viewportRef = useRef<HTMLDivElement | null>(null);
 	const scrollRef = useRef<HTMLDivElement | null>(null);
-	const reloadGraphRef = useRef<() => void>(() => {});
 	const [containerWidth, setContainerWidth] = useState(0);
 	const [graphScrollLeft, setGraphScrollLeft] = useState(0);
 	const [preferredWidths, setPreferredWidths] =
@@ -46,11 +37,9 @@ export function CommitGraphView() {
 		error,
 		isInitialLoading,
 		laneCount,
-		reloadGraph,
 		rows,
 		totalRows,
 	} = useCommitGraphData();
-	reloadGraphRef.current = reloadGraph;
 
 	useEffect(() => {
 		const node = viewportRef.current;
@@ -156,105 +145,23 @@ export function CommitGraphView() {
 	return (
 		<section className="h-full w-full overflow-hidden bg-background">
 			<div ref={viewportRef} className="flex h-full w-full flex-col">
-				<div>
-					<ContextMenu>
-						<ContextMenuTrigger
-							className="grid h-[22px] border-b bg-card text-[10px] font-bold uppercase leading-[21px] text-muted-foreground"
-							style={{ gridTemplateColumns: templateColumns }}
-						>
-							<div className="relative overflow-hidden whitespace-nowrap border-r px-2">
-								Branch
-								<button
-									aria-label="Resize branch column"
-									className="absolute right-0 top-0 h-full w-2 cursor-col-resize bg-transparent hover:bg-accent/50"
-									onPointerDown={(event) => handleResizeStart("branch", event)}
-									type="button"
-								/>
-							</div>
-
-							<HeaderCell
-								keyName="graph"
-								label="Graph"
-								onResizeStart={handleResizeStart}
-								showHandle
-							/>
-							<HeaderCell
-								keyName="message"
-								label={isInitialLoading ? "Loading" : "Commit Message"}
-								onResizeStart={handleResizeStart}
-								showHandle
-							/>
-							<HeaderCell
-								keyName="hash"
-								label="Hash"
-								onResizeStart={handleResizeStart}
-								showHandle
-							/>
-							<HeaderCell
-								keyName="author"
-								label="Author"
-								onResizeStart={handleResizeStart}
-								showHandle={false}
-							/>
-						</ContextMenuTrigger>
-						<ContextMenuContent className="w-48">
-							<ContextMenuGroup>
-								<ContextMenuItem>
-									Back
-									<ContextMenuShortcut>⌘[</ContextMenuShortcut>
-								</ContextMenuItem>
-								<ContextMenuItem disabled>
-									Forward
-									<ContextMenuShortcut>⌘]</ContextMenuShortcut>
-								</ContextMenuItem>
-								<ContextMenuItem>
-									Reload
-									<ContextMenuShortcut>⌘R</ContextMenuShortcut>
-								</ContextMenuItem>
-								<ContextMenuSub>
-									<ContextMenuSubTrigger>More Tools</ContextMenuSubTrigger>
-									<ContextMenuSubContent className="w-44">
-										<ContextMenuGroup>
-											<ContextMenuItem>Save Page...</ContextMenuItem>
-											<ContextMenuItem>Create Shortcut...</ContextMenuItem>
-											<ContextMenuItem>Name Window...</ContextMenuItem>
-										</ContextMenuGroup>
-										<ContextMenuSeparator />
-										<ContextMenuGroup>
-											<ContextMenuItem>Developer Tools</ContextMenuItem>
-										</ContextMenuGroup>
-										<ContextMenuSeparator />
-										<ContextMenuGroup>
-											<ContextMenuItem variant="destructive">
-												Delete
-											</ContextMenuItem>
-										</ContextMenuGroup>
-									</ContextMenuSubContent>
-								</ContextMenuSub>
-							</ContextMenuGroup>
-							<ContextMenuSeparator />
-							<ContextMenuGroup>
-								<ContextMenuCheckboxItem checked>
-									Show Bookmarks
-								</ContextMenuCheckboxItem>
-								<ContextMenuCheckboxItem>
-									Show Full URLs
-								</ContextMenuCheckboxItem>
-							</ContextMenuGroup>
-							<ContextMenuSeparator />
-							<ContextMenuGroup>
-								<ContextMenuRadioGroup value="pedro">
-									<ContextMenuLabel>People</ContextMenuLabel>
-									<ContextMenuRadioItem value="pedro">
-										Pedro Duarte
-									</ContextMenuRadioItem>
-									<ContextMenuRadioItem value="colm">
-										Colm Tuite
-									</ContextMenuRadioItem>
-								</ContextMenuRadioGroup>
-							</ContextMenuGroup>
-						</ContextMenuContent>
-					</ContextMenu>
+				<div
+					className="grid h-[22px] border-b bg-card text-[10px] font-bold uppercase leading-[21px] text-muted-foreground"
+					style={{ gridTemplateColumns: templateColumns }}
+				>
+					{COL_ORDER.map((keyName, index) => (
+						<HeaderCell
+							key={keyName}
+							keyName={keyName}
+							label={
+								isInitialLoading && keyName === "message"
+									? "Loading"
+									: HEADER_LABELS[keyName]
+							}
+							onResizeStart={handleResizeStart}
+							showHandle={index < COL_ORDER.length - 1}
+						/>
+					))}
 				</div>
 
 				{error ? (
@@ -281,8 +188,10 @@ export function CommitGraphView() {
 								}}
 							>
 								<CommitRow
-									graphContentWidth={graphContentWidth}
-									graphScrollLeft={graphScrollLeft}
+									graph={{
+										contentWidth: graphContentWidth,
+										scrollLeft: graphScrollLeft,
+									}}
 									row={rows[item.index] ?? null}
 									rowIndex={item.index}
 									templateColumns={templateColumns}

@@ -1,6 +1,9 @@
-import { startTransition, useEffect, useEffectEvent, useRef, useState } from "react";
+import { startTransition, useEffect, useEffectEvent, useState } from "react";
+import {
+	CommsHubCommandType,
+	sendRequestWithResponse,
+} from "@/lib/registerSignalR";
 import type { CommitGraphResponse, CommitGraphRow } from "../types/graph";
-import { CommsHubCommandType, sendRequestWithResponse } from "@/lib/registerSignalR";
 
 const PAGE_SIZE = 400;
 const PREFETCH_PAGES = 1;
@@ -8,109 +11,77 @@ const PREFETCH_PAGES = 1;
 type CommitGraphState = {
 	error: string | null;
 	isInitialLoading: boolean;
-	isPageLoading: boolean;
 	laneCount: number;
 	rows: Array<CommitGraphRow | null>;
 	totalRows: number;
 };
 
-type GraphSessionCache = {
+type GraphSession = {
 	hasMore: boolean;
 	laneCount: number;
+	loading: boolean;
 	nextCursor: string | null;
+	requestedEnd: number;
 	rows: Array<CommitGraphRow | null>;
 	totalRows: number;
 };
 
-const sessionCache: GraphSessionCache = {
+const session: GraphSession = {
 	hasMore: true,
 	laneCount: 0,
+	loading: false,
 	nextCursor: null,
+	requestedEnd: 0,
 	rows: [],
 	totalRows: 0,
 };
 
 export function useCommitGraphData() {
-	const [state, setState] = useState<CommitGraphState>({
+	const [state, setState] = useState<CommitGraphState>(() => ({
 		error: null,
-		isInitialLoading: sessionCache.rows.length === 0,
-		isPageLoading: false,
-		laneCount: sessionCache.laneCount,
-		rows: sessionCache.rows,
-		totalRows: sessionCache.hasMore
-			? Math.min(sessionCache.totalRows, sessionCache.rows.length + PAGE_SIZE)
-			: sessionCache.totalRows,
-	});
-
-	const hasMoreRef = useRef(sessionCache.hasMore);
-	const loadingRef = useRef(false);
-	const nextCursorRef = useRef<string | null>(sessionCache.nextCursor);
-	const requestedEndRef = useRef(0);
-	const stateRef = useRef(state);
-	stateRef.current = state;
+		isInitialLoading: session.rows.length === 0,
+		laneCount: session.laneCount,
+		rows: session.rows,
+		totalRows: visibleTotal(),
+	}));
 
 	const runLoader = useEffectEvent(async () => {
-		if (loadingRef.current) {
+		if (session.loading) {
 			return;
 		}
 
-		const requiredLength = requestedEndRef.current + PAGE_SIZE * PREFETCH_PAGES;
-		if (!hasMoreRef.current || stateRef.current.rows.length >= requiredLength) {
+		const requiredLength = session.requestedEnd + PAGE_SIZE * PREFETCH_PAGES;
+		if (!session.hasMore || session.rows.length >= requiredLength) {
 			return;
 		}
 
-		loadingRef.current = true;
-		setState((current) => ({ ...current, isPageLoading: true, error: null }));
+		session.loading = true;
+		setState((current) => ({ ...current, error: null }));
 
 		try {
-			let loadedLength = stateRef.current.rows.length;
-			while (hasMoreRef.current && loadedLength < requiredLength) {
+			let loadedLength = session.rows.length;
+			while (session.hasMore && loadedLength < requiredLength) {
 				const response = await sendRequestWithResponse<CommitGraphResponse>({
 					commandType: CommsHubCommandType.CommitGraph,
 					Arguments: {
-						cursor: nextCursorRef.current,
-						limit: PAGE_SIZE.toString()
-					}
+						cursor: session.nextCursor,
+						limit: PAGE_SIZE.toString(),
+					},
 				});
 
 				if (!response) {
 					continue;
 				}
 
-				nextCursorRef.current = response.nextCursor;
-				hasMoreRef.current = response.hasMore;
-				const responseEnd = response.rows.reduce(
-					(max, row) => Math.max(max, row.rowIndex + 1),
-					loadedLength,
-				);
-				loadedLength = Math.max(loadedLength, responseEnd);
-				const visibleTotal = response.hasMore
-					? Math.max(loadedLength + PAGE_SIZE, requiredLength)
-					: Math.max(response.totalRows, loadedLength);
+				applyResponse(response, requiredLength);
+				loadedLength = session.rows.length;
 
 				startTransition(() => {
-					setState((current) => {
-						const nextRows = current.rows.slice();
-						for (const row of response.rows) {
-							nextRows[row.rowIndex] = row;
-						}
-
-						return {
-							...current,
-							error: null,
-							isInitialLoading: false,
-							isPageLoading: true,
-							laneCount: Math.max(current.laneCount, response.laneCount),
-							rows: nextRows,
-							totalRows: response.hasMore
-								? Math.max(current.totalRows, visibleTotal)
-								: visibleTotal,
-						};
-					});
+					setState(readSessionState);
 				});
 
 				if (response.rows.length === 0) {
-					hasMoreRef.current = false;
+					session.hasMore = false;
 					break;
 				}
 			}
@@ -123,65 +94,63 @@ export function useCommitGraphData() {
 				isInitialLoading: false,
 			}));
 		} finally {
-			loadingRef.current = false;
-			setState((current) =>
-				current.isPageLoading
-					? {
-						...current,
-						isPageLoading: false,
-					}
-					: current,
-			);
+			session.loading = false;
 		}
 	});
 
-	const ensureRangeLoaded = useEffectEvent((startIndex: number, endIndex: number) => {
-		if (endIndex < startIndex) {
-			return;
-		}
+	const ensureRangeLoaded = useEffectEvent(
+		(startIndex: number, endIndex: number) => {
+			if (endIndex < startIndex) {
+				return;
+			}
 
-		requestedEndRef.current = Math.max(requestedEndRef.current, endIndex);
-		void runLoader();
-	});
-
-	useEffect(() => {
-		sessionCache.hasMore = hasMoreRef.current;
-		sessionCache.laneCount = state.laneCount;
-		sessionCache.nextCursor = nextCursorRef.current;
-		sessionCache.rows = state.rows;
-		sessionCache.totalRows = state.totalRows;
-	}, [state.laneCount, state.rows, state.totalRows]);
-
-	const reloadGraph = useEffectEvent(() => {
-		hasMoreRef.current = true;
-		loadingRef.current = false;
-		nextCursorRef.current = null;
-		requestedEndRef.current = 0;
-
-		setState({
-			error: null,
-			isInitialLoading: true,
-			isPageLoading: false,
-			laneCount: 0,
-			rows: [],
-			totalRows: 0,
-		});
-
-		void runLoader();
-	});
+			session.requestedEnd = Math.max(session.requestedEnd, endIndex);
+			void runLoader();
+		},
+	);
 
 	// biome-ignore lint/correctness/useExhaustiveDependencies: this is intended
 	useEffect(() => {
-		if (sessionCache.rows.length > 0) {
+		if (session.rows.length > 0) {
 			return;
 		}
-		requestedEndRef.current = PAGE_SIZE;
+		session.requestedEnd = PAGE_SIZE;
 		void runLoader();
 	}, [runLoader]);
 
 	return {
 		...state,
 		ensureRangeLoaded,
-		reloadGraph,
 	};
+}
+
+function applyResponse(response: CommitGraphResponse, requiredLength: number) {
+	const nextRows = session.rows.slice();
+	for (const row of response.rows) {
+		nextRows[row.rowIndex] = row;
+	}
+
+	session.nextCursor = response.nextCursor;
+	session.hasMore = response.hasMore;
+	session.rows = nextRows;
+	session.laneCount = Math.max(session.laneCount, response.laneCount);
+	session.totalRows = response.hasMore
+		? Math.max(session.totalRows, nextRows.length + PAGE_SIZE, requiredLength)
+		: Math.max(response.totalRows, nextRows.length);
+}
+
+function readSessionState(): CommitGraphState {
+	return {
+		error: null,
+		isInitialLoading: false,
+		laneCount: session.laneCount,
+		rows: session.rows,
+		totalRows: visibleTotal(),
+	};
+}
+
+function visibleTotal() {
+	return session.hasMore
+		? Math.min(session.totalRows, session.rows.length + PAGE_SIZE)
+		: session.totalRows;
 }

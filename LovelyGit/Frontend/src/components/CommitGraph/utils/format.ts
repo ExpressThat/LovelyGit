@@ -9,7 +9,7 @@ export function refLabel(ref: string) {
 }
 
 export function formatDate(seconds: number) {
-	return new Date(seconds * 1000).toISOString().slice(0, 10);
+	return new Date(seconds * 1000).toLocaleString();
 }
 
 export function messagePrefix(row: CommitGraphRow) {
