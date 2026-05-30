@@ -7,6 +7,16 @@ namespace ExpressThat.LovelyGit.Services.Settings
     [JsonConverter(typeof(JsonStringEnumConverter<Setting>))]
     public enum Setting
     {
-        CurrentGitRepositoryId
+        CurrentGitRepositoryId,
+        Theme
+    }
+
+    [TranspilationSource]
+    [JsonConverter(typeof(JsonStringEnumConverter<AppTheme>))]
+    public enum AppTheme
+    {
+        System,
+        Light,
+        Dark
     }
 }

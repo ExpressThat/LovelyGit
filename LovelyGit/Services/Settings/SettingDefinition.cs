@@ -26,10 +26,16 @@ namespace ExpressThat.LovelyGit.Services.Settings
             null,
             GetJsonTypeInfo<Guid?>());
 
+        public static readonly SettingDefinition<AppTheme> Theme = new(
+            nameof(Setting.Theme),
+            AppTheme.System,
+            GetJsonTypeInfo<AppTheme>());
+
         private static readonly IReadOnlyDictionary<Setting, ISettingDefinition> Definitions =
             new Dictionary<Setting, ISettingDefinition>
             {
                 [Setting.CurrentGitRepositoryId] = CurrentGitRepositoryId,
+                [Setting.Theme] = Theme,
             };
 
         public static Dictionary<Setting, ISettingDefinition> GetAllDefinitions()

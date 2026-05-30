@@ -21,6 +21,7 @@ namespace ExpressThat.LazyGit;
 [JsonSerializable(typeof(SetSettingsCommandArguments))]
 [JsonSerializable(typeof(SetMultipleSettingsCommandArguments))]
 [JsonSerializable(typeof(Guid?))]
+[JsonSerializable(typeof(AppTheme))]
 [JsonSerializable(typeof(CommandResponseBase))]
 [JsonSerializable(typeof(CommandResponse<CommitGraphResponse>))]
 [JsonSerializable(typeof(CommandResponse<JsonElement>))]
