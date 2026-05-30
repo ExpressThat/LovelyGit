@@ -7,14 +7,8 @@ namespace ExpressThat.LovelyGit.Services.Hubs.Commands
     {
         KnownGitRepositorys,
         CommitGraph,
-        Settings
-    }
-
-    [TranspilationSource]
-    public enum CommsHubSubCommandType
-    {
-        Get,
-        Set,
-        Delete
+        GetSetting,
+        SetSetting,
+        GetAllSettings
     }
 }

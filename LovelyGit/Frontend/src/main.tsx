@@ -2,7 +2,6 @@ import ReactDOM from "react-dom/client";
 import App from "./App";
 import {
 	registerSignalR,
-	sendRequestWithoutResponse,
 	sendRequestWithResponse,
 } from "./lib/registerSignalR";
 
@@ -15,14 +14,14 @@ async function bootstrap() {
 		}),
 	);
 
-	await sendRequestWithoutResponse({
-		commandType: "Settings",
-		subCommandType: "Set",
+	const currentRepo = await sendRequestWithResponse({
+		commandType: "GetSetting",
 		arguments: {
 			setting: "CurrentGitRepositoryId",
-			value: "7A2E977F-65A6-4723-812E-474BB99CF877",
 		},
 	});
+
+	console.log(currentRepo);
 
 	// await initSettingsStore();
 	//await getCurrentWebview().setZoom(getSetting("ZOOM_LEVEL"));

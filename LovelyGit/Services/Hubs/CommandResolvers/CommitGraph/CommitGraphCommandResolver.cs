@@ -59,7 +59,6 @@ namespace ExpressThat.LovelyGit.Services.Hubs.CommandResolvers.CommitGraph
                 {
                     CommandUniqueId = command.CommandUniqueId,
                     CommandType = command.CommandType,
-                    SubCommandType = command.SubCommandType,
                     IsSuccess = false,
                     ErrorMessage = "Invalid commit graph arguments",
                 };
@@ -103,7 +102,6 @@ namespace ExpressThat.LovelyGit.Services.Hubs.CommandResolvers.CommitGraph
                             {
                                 CommandUniqueId = command.CommandUniqueId,
                                 CommandType = command.CommandType,
-                                SubCommandType = command.SubCommandType,
                                 IsSuccess = false,
                                 ErrorMessage = openResult.Error ?? "Failed to open native commit-graph."
                             };
@@ -130,7 +128,6 @@ namespace ExpressThat.LovelyGit.Services.Hubs.CommandResolvers.CommitGraph
                     {
                         CommandUniqueId = command.CommandUniqueId,
                         CommandType = command.CommandType,
-                        SubCommandType = command.SubCommandType,
                         IsSuccess = true,
                         Result = response
                     };
@@ -141,7 +138,6 @@ namespace ExpressThat.LovelyGit.Services.Hubs.CommandResolvers.CommitGraph
                     {
                         CommandUniqueId = command.CommandUniqueId,
                         CommandType = command.CommandType,
-                        SubCommandType = command.SubCommandType,
                         IsSuccess = false,
                         ErrorMessage = ex.Message
                     };

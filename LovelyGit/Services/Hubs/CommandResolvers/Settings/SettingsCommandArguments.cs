@@ -1,4 +1,5 @@
 using ExpressThat.LovelyGit.Services.Settings;
+using System.Diagnostics.Contracts;
 using Tapper;
 
 namespace ExpressThat.LovelyGit.Services.Hubs.CommandResolvers.Settings

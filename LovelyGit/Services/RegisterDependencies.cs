@@ -20,7 +20,7 @@ namespace ExpressThat.LovelyGit.Services
                 options.SerializerOptions.TypeInfoResolverChain.Insert(0, AppJsonSerializerContext.Default);
                 options.SerializerOptions.TypeInfoResolverChain.Insert(0, CommandReponseJsonSerializerContext.Default);
                 options.SerializerOptions.Converters.Add(new JsonStringEnumConverter<CommsHubCommandType>());
-                options.SerializerOptions.Converters.Add(new JsonStringEnumConverter<CommsHubSubCommandType>());
+                options.SerializerOptions.Converters.Add(new JsonStringEnumConverter<Setting>());
             });
 
             services
@@ -33,7 +33,7 @@ namespace ExpressThat.LovelyGit.Services
                 options.PayloadSerializerOptions.TypeInfoResolverChain.Insert(0, AppJsonSerializerContext.Default);
                 options.PayloadSerializerOptions.TypeInfoResolverChain.Insert(0, CommandReponseJsonSerializerContext.Default);
                 options.PayloadSerializerOptions.Converters.Add(new JsonStringEnumConverter<CommsHubCommandType>());
-                options.PayloadSerializerOptions.Converters.Add(new JsonStringEnumConverter<CommsHubSubCommandType>());
+                options.PayloadSerializerOptions.Converters.Add(new JsonStringEnumConverter<Setting>());
             });
 
             services.AddSingleton<AppDbContext>();
@@ -46,6 +46,7 @@ namespace ExpressThat.LovelyGit.Services
             services.AddSingleton<ICommandResponder, CommitGraphCommandResolver>();
             services.AddSingleton<ICommandResponder, GetSettingsCommandResolver>();
             services.AddSingleton<ICommandResponder, SetSettingsCommandResolver>();
+            services.AddSingleton<ICommandResponder, GetAllSettingsCommandResolver>();
         }
     }
 }

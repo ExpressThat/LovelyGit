@@ -32,7 +32,6 @@ namespace ExpressThat.LovelyGit.Services.Hubs.CommandResolvers.KnownRepository
             {
                 CommandUniqueId = command.CommandUniqueId,
                 CommandType = command.CommandType,
-                SubCommandType = command.SubCommandType,
                 IsSuccess = true,
                 Result = await knownGitRepositorys.ToListAsync()
             };

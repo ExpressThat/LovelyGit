@@ -32,6 +32,11 @@ namespace ExpressThat.LovelyGit.Services.Settings
                 [Setting.CurrentGitRepositoryId] = CurrentGitRepositoryId,
             };
 
+        public static Dictionary<Setting, ISettingDefinition> GetAllDefinitions()
+        {
+            return new Dictionary<Setting, ISettingDefinition>(Definitions);
+        }
+
         public static bool TryGetDefinition(Setting setting, out ISettingDefinition definition)
         {
             return Definitions.TryGetValue(setting, out definition!);

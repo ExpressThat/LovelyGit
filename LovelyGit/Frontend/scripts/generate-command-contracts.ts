@@ -18,7 +18,6 @@ type CommandContract = {
 	name: string;
 	argumentsType: string;
 	commandType: string;
-	subCommandType?: string;
 	responseType?: string;
 };
 
@@ -35,20 +34,14 @@ const modules = new Map<string, Set<string>>();
 const commandModule = findGeneratedModule([
 	"CommsHubCommand",
 	"CommsHubCommandType",
-	"CommsHubSubCommandType",
 	"EmptyCommandArguments",
 ]);
 
 for (const contract of commandContracts) {
-	if (
-		!(
-			contract.commandType === "Settings" &&
-			(contract.subCommandType === "Set" || contract.subCommandType === "Get")
-		)
-	) {
+	if (!["SetSetting", "GetSetting"].includes(contract.commandType)) {
 		registerTypeImports(contract.argumentsType);
 	}
-	if (contract.responseType) {
+	if (contract.responseType && contract.commandType !== "GetAllSettings") {
 		registerTypeImports(contract.responseType);
 	}
 }
@@ -103,7 +96,7 @@ ${commandInputUnion};
 
 export type TypedSetSettingsCommandInput = Extract<
 \tTypedCommsHubCommandInput,
-\t{ commandType: "Settings"; subCommandType: "Set" }
+\t{ commandType: "SetSetting" }
 >;
 
 export type TypedGetSettingsCommandInput<
@@ -111,8 +104,7 @@ export type TypedGetSettingsCommandInput<
 > = Extract<
 \tTypedCommsHubCommandInput,
 \t{
-\t\tcommandType: "Settings";
-\t\tsubCommandType: "Get";
+\t\tcommandType: "GetSetting";
 \t\targuments: TypedGetSettingsCommandArguments<SettingName>;
 \t}
 >;
@@ -174,9 +166,6 @@ function readCommandContractsFromSource(source: string): CommandContract[] {
 		const commandType = body.match(
 			/command\.CommandType\s*==\s*CommsHubCommandType\.(?<commandType>\w+)/,
 		)?.groups?.commandType;
-		const subCommandType = body.match(
-			/command\.SubCommandType\s*==\s*CommsHubSubCommandType\.(?<subCommandType>\w+)/,
-		)?.groups?.subCommandType;
 		const responseType = readCommandResponseType(body);
 
 		if (!commandType) {
@@ -191,7 +180,6 @@ function readCommandContractsFromSource(source: string): CommandContract[] {
 				match.groups?.argumentsType ?? "EmptyCommandArguments"
 			).trim(),
 			commandType,
-			subCommandType,
 			responseType: responseType?.trim(),
 		};
 	});
@@ -225,32 +213,24 @@ function readCommandResponseType(source: string): string | undefined {
 }
 
 function renderCommandInputType(contract: CommandContract): string {
-	if (
-		contract.commandType === "Settings" &&
-		contract.subCommandType === "Set"
-	) {
+	if (contract.commandType === "SetSetting") {
 		return `export type ${commandInputTypeName(contract)} = Omit<
 \tCommandInput<TypedSetSettingsCommandArguments>,
-\t"arguments" | "commandType" | "subCommandType"
+\t"arguments" | "commandType"
 > & {
-\tcommandType: "Settings";
-\tsubCommandType: "Set";
+\tcommandType: "SetSetting";
 \targuments: TypedSetSettingsCommandArguments;
 };`;
 	}
 
-	if (
-		contract.commandType === "Settings" &&
-		contract.subCommandType === "Get"
-	) {
+	if (contract.commandType === "GetSetting") {
 		return `export type ${commandInputTypeName(contract)}<
 \tSettingName extends keyof SettingValueMap = keyof SettingValueMap,
 > = Omit<
 \tCommandInput<TypedGetSettingsCommandArguments<SettingName>>,
-\t"arguments" | "commandType" | "subCommandType"
+\t"arguments" | "commandType"
 > & {
-\tcommandType: "Settings";
-\tsubCommandType: "Get";
+\tcommandType: "GetSetting";
 \targuments: TypedGetSettingsCommandArguments<SettingName>;
 };`;
 	}
@@ -258,28 +238,30 @@ function renderCommandInputType(contract: CommandContract): string {
 	const hasArguments = contract.argumentsType !== "EmptyCommandArguments";
 	return `export type ${commandInputTypeName(contract)} = Omit<
 \tCommandInput<${toTypeScriptType(contract.argumentsType)}>,
-\t"arguments" | "commandType" | "subCommandType"
+\t"arguments" | "commandType"
 > & {
 \tcommandType: "${contract.commandType}";
-\tsubCommandType${contract.subCommandType ? "" : "?"}: ${contract.subCommandType ? `"${contract.subCommandType}"` : "undefined"};
 \targuments${hasArguments ? "" : "?"}: ${toTypeScriptType(contract.argumentsType)};
 };`;
 }
 
 function renderResponseCase(contract: CommandContract): string {
 	const inputType = commandInputTypeName(contract);
-	if (
-		contract.commandType === "Settings" &&
-		contract.subCommandType === "Get"
-	) {
+	if (contract.commandType === "GetSetting") {
 		return `\tTCommand extends ${inputType}<infer SettingName>
 \t\t? SettingValueMap[SettingName]
 \t\t:
 `;
 	}
+	if (contract.commandType === "GetAllSettings") {
+		return `\tTCommand extends ${inputType}
+\t\t? Partial<SettingValueMap>
+\t\t:
+`;
+	}
 
 	const responseType =
-		contract.commandType === "Settings" && contract.subCommandType === "Set"
+		contract.commandType === "SetSetting"
 			? "undefined"
 			: contract.responseType
 				? toTypeScriptType(contract.responseType)
@@ -363,6 +345,9 @@ function mapCoreType(type: string): string {
 	if (generic && isArrayType(generic.name)) {
 		return `Array<${toTypeScriptType(generic.arguments[0])}>`;
 	}
+	if (generic && isDictionaryType(generic.name)) {
+		return `Partial<Record<${toTypeScriptType(generic.arguments[0])}, ${toTypeScriptType(generic.arguments[1])}>>`;
+	}
 
 	if (
 		type === "string" ||
@@ -399,7 +384,10 @@ function mapCoreType(type: string): string {
 function getNamedTypes(type: string): string[] {
 	const generic = parseGenericType(type);
 	if (generic) {
-		const genericName = isArrayType(generic.name) ? [] : [generic.name];
+		const genericName =
+			isArrayType(generic.name) || isDictionaryType(generic.name)
+				? []
+				: [generic.name];
 		return [
 			...genericName,
 			...generic.arguments.flatMap((argument) => getNamedTypes(argument)),
@@ -458,6 +446,10 @@ function isArrayType(type: string): boolean {
 	return ["IReadOnlyList", "IList", "List", "IEnumerable", "HashSet"].includes(
 		type,
 	);
+}
+
+function isDictionaryType(type: string): boolean {
+	return ["Dictionary", "IDictionary", "IReadOnlyDictionary"].includes(type);
 }
 
 function isTypeScriptPrimitive(type: string): boolean {

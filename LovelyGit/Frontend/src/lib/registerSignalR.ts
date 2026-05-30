@@ -103,8 +103,5 @@ function toWireCommand(
 function isSettingsSetCommand(
 	commandInput: TypedCommsHubCommandInput,
 ): commandInput is TypedSetSettingsCommandInput {
-	return (
-		commandInput.commandType === "Settings" &&
-		commandInput.subCommandType === "Set"
-	);
+	return commandInput.commandType === "SetSetting";
 }

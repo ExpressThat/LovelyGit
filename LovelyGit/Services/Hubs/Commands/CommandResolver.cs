@@ -20,7 +20,6 @@ namespace ExpressThat.LovelyGit.Services.Hubs.Commands
                 {
                     CommandUniqueId = command.CommandUniqueId,
                     CommandType = command.CommandType,
-                    SubCommandType = command.SubCommandType,
                     IsSuccess = false,
                     ErrorMessage = $"No responder found for command type: {command.CommandType}",
                 };
@@ -35,7 +34,6 @@ namespace ExpressThat.LovelyGit.Services.Hubs.Commands
                 {
                     CommandUniqueId = command.CommandUniqueId,
                     CommandType = command.CommandType,
-                    SubCommandType = command.SubCommandType,
                     IsSuccess = false,
                     ErrorMessage = ex.Message,
                 };

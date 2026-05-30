@@ -21,7 +21,6 @@ namespace ExpressThat.LovelyGit.Services.Hubs.Commands
             {
                 CommandUniqueId = command.CommandUniqueId,
                 CommandType = command.CommandType,
-                SubCommandType = command.SubCommandType,
                 Arguments = arguments,
             });
         }

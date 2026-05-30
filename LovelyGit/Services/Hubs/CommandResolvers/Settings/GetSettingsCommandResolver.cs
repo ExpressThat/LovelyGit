@@ -1,4 +1,3 @@
-﻿using ExpressThat.LovelyGit.Services.Hubs.CommandResolvers.CommitGraph;
 using ExpressThat.LovelyGit.Services.Hubs.Commands;
 using ExpressThat.LovelyGit.Services.Settings;
 using System.Text.Json;
@@ -8,17 +7,19 @@ namespace ExpressThat.LovelyGit.Services.Hubs.CommandResolvers.Settings
 {
     public class GetSettingsCommandResolver : CommandResponder<GetSettingsCommandArguments>
     {
-        private SettingsManager _settingsManager;
-        public GetSettingsCommandResolver(SettingsManager settingsManager) {
+        private readonly SettingsManager _settingsManager;
+
+        public GetSettingsCommandResolver(SettingsManager settingsManager)
+        {
             _settingsManager = settingsManager;
         }
-        
+
         protected override JsonTypeInfo<GetSettingsCommandArguments> ArgumentsJsonTypeInfo =>
             CommandReponseJsonSerializerContext.Default.GetSettingsCommandArguments;
 
         public override bool CanRespondTo(CommsHubCommand<JsonElement> command)
         {
-            return command.CommandType == CommsHubCommandType.Settings && command.SubCommandType == CommsHubSubCommandType.Get;
+            return command.CommandType == CommsHubCommandType.GetSetting;
         }
 
         public override async Task<CommandResponseBase> Resolve(CommsHubCommand<GetSettingsCommandArguments> command)
@@ -29,7 +30,6 @@ namespace ExpressThat.LovelyGit.Services.Hubs.CommandResolvers.Settings
                 {
                     CommandUniqueId = command.CommandUniqueId,
                     CommandType = command.CommandType,
-                    SubCommandType = command.SubCommandType,
                     IsSuccess = false,
                     ErrorMessage = "Missing setting argument",
                 };
@@ -41,7 +41,6 @@ namespace ExpressThat.LovelyGit.Services.Hubs.CommandResolvers.Settings
                 {
                     CommandUniqueId = command.CommandUniqueId,
                     CommandType = command.CommandType,
-                    SubCommandType = command.SubCommandType,
                     IsSuccess = false,
                     ErrorMessage = $"Unknown setting: {command.Arguments.Setting}",
                 };
@@ -51,7 +50,6 @@ namespace ExpressThat.LovelyGit.Services.Hubs.CommandResolvers.Settings
             {
                 CommandUniqueId = command.CommandUniqueId,
                 CommandType = command.CommandType,
-                SubCommandType = command.SubCommandType,
                 IsSuccess = true,
                 Result = await _settingsManager.GetSettingValue(setting),
             };
@@ -60,7 +58,8 @@ namespace ExpressThat.LovelyGit.Services.Hubs.CommandResolvers.Settings
 
     public class SetSettingsCommandResolver : CommandResponder<SetSettingsCommandArguments>
     {
-        private SettingsManager _settingsManager;
+        private readonly SettingsManager _settingsManager;
+
         public SetSettingsCommandResolver(SettingsManager settingsManager)
         {
             _settingsManager = settingsManager;
@@ -71,7 +70,7 @@ namespace ExpressThat.LovelyGit.Services.Hubs.CommandResolvers.Settings
 
         public override bool CanRespondTo(CommsHubCommand<JsonElement> command)
         {
-            return command.CommandType == CommsHubCommandType.Settings && command.SubCommandType == CommsHubSubCommandType.Set;
+            return command.CommandType == CommsHubCommandType.SetSetting;
         }
 
         public override async Task<CommandResponseBase> Resolve(CommsHubCommand<SetSettingsCommandArguments> command)
@@ -82,7 +81,6 @@ namespace ExpressThat.LovelyGit.Services.Hubs.CommandResolvers.Settings
                 {
                     CommandUniqueId = command.CommandUniqueId,
                     CommandType = command.CommandType,
-                    SubCommandType = command.SubCommandType,
                     IsSuccess = false,
                     ErrorMessage = "Missing setting argument",
                 };
@@ -94,7 +92,6 @@ namespace ExpressThat.LovelyGit.Services.Hubs.CommandResolvers.Settings
                 {
                     CommandUniqueId = command.CommandUniqueId,
                     CommandType = command.CommandType,
-                    SubCommandType = command.SubCommandType,
                     IsSuccess = false,
                     ErrorMessage = "Missing setting value",
                 };
@@ -106,7 +103,6 @@ namespace ExpressThat.LovelyGit.Services.Hubs.CommandResolvers.Settings
                 {
                     CommandUniqueId = command.CommandUniqueId,
                     CommandType = command.CommandType,
-                    SubCommandType = command.SubCommandType,
                     IsSuccess = false,
                     ErrorMessage = $"Unknown setting: {command.Arguments.Setting}",
                 };
@@ -118,8 +114,45 @@ namespace ExpressThat.LovelyGit.Services.Hubs.CommandResolvers.Settings
             {
                 CommandUniqueId = command.CommandUniqueId,
                 CommandType = command.CommandType,
-                SubCommandType = command.SubCommandType,
                 IsSuccess = true,
+            };
+        }
+    }
+
+    public class GetAllSettingsCommandResolver : CommandResponder<EmptyCommandArguments>
+    {
+        private readonly SettingsManager _settingsManager;
+
+        public GetAllSettingsCommandResolver(SettingsManager settingsManager)
+        {
+            _settingsManager = settingsManager;
+        }
+
+        protected override JsonTypeInfo<EmptyCommandArguments> ArgumentsJsonTypeInfo =>
+            CommandReponseJsonSerializerContext.Default.EmptyCommandArguments;
+
+        public override bool CanRespondTo(CommsHubCommand<JsonElement> command)
+        {
+            return command.CommandType == CommsHubCommandType.GetAllSettings;
+        }
+
+        public override async Task<CommandResponseBase> Resolve(CommsHubCommand<EmptyCommandArguments> command)
+        {
+            var definitions = SettingsResolver.GetAllDefinitions();
+            var settings = new Dictionary<Setting, JsonElement>();
+
+            foreach (var setting in definitions)
+            {
+                var value = await _settingsManager.GetSettingValue(setting.Value);
+                settings.Add(setting.Key, value);
+            }
+
+            return new CommandResponse<Dictionary<Setting, JsonElement>>
+            {
+                CommandUniqueId = command.CommandUniqueId,
+                CommandType = command.CommandType,
+                IsSuccess = true,
+                Result = settings,
             };
         }
     }
