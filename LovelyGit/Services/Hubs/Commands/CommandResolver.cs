@@ -1,4 +1,6 @@
-﻿namespace ExpressThat.LovelyGit.Services.Hubs.Commands
+using System.Text.Json;
+
+namespace ExpressThat.LovelyGit.Services.Hubs.Commands
 {
     public class CommandResolver
     {
@@ -9,7 +11,7 @@
             _commandResponders = commandResolvers;
         }
 
-        public async Task<CommandResponseBase> ResolveCommand(CommsHubCommand command)
+        public async Task<CommandResponseBase> ResolveCommand(CommsHubCommand<JsonElement> command)
         {
             var responder = _commandResponders.FirstOrDefault(r => r.CanRespondTo(command));
             if (responder == null)

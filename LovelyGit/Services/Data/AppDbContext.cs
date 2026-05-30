@@ -1,12 +1,15 @@
 using BLite.Core;
 using BLite.Core.Collections;
 using ExpressThat.LovelyGit.Services.Data.Models;
+using ExpressThat.LovelyGit.Services.Settings;
 
 namespace ExpressThat.LovelyGit.Services.Data;
 
 public partial class AppDbContext : DocumentDbContext
 {
     public DocumentCollection<Guid, KnownGitRepository> KnownGitRepositorys { get; set; } = null!;
+
+    public DocumentCollection<string, SettingModel> Settings { get; set; } = null!;
 
     public AppDbContext() : base(GetBasePath())
     {
@@ -20,10 +23,5 @@ public partial class AppDbContext : DocumentDbContext
                 "LovelyGit");
         Directory.CreateDirectory(dataDirectory);
         return Path.Combine(dataDirectory, "LovelyGit.blite");
-    }
-
-    protected override void OnModelCreating(BLite.Core.Metadata.ModelBuilder modelBuilder)
-    {
-        
     }
 }

@@ -1,5 +1,6 @@
-﻿using ExpressThat.LovelyGit.Services.Hubs.Commands;
+using ExpressThat.LovelyGit.Services.Hubs.Commands;
 using Microsoft.AspNetCore.SignalR;
+using System.Text.Json;
 
 namespace ExpressThat.LovelyGit.Services.Hubs
 {
@@ -11,7 +12,7 @@ namespace ExpressThat.LovelyGit.Services.Hubs
             _resolver = resolver;
         }
 
-        public async Task Command(CommsHubCommand command)
+        public async Task Command(CommsHubCommand<JsonElement> command)
         {
             var result = await _resolver.ResolveCommand(command);
             await Clients.All.SendAsync("Result", result);

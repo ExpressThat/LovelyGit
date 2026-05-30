@@ -5,25 +5,30 @@ using ExpressThat.LovelyGit.Services.Data.Repositorys;
 using ExpressThat.LovelyGit.Services.Git.CommitGraph;
 using ExpressThat.LovelyGit.Services.Git.CommitGraph.Models;
 using ExpressThat.LovelyGit.Services.Hubs.Commands;
+using System.Text.Json;
+using System.Text.Json.Serialization.Metadata;
 
 namespace ExpressThat.LovelyGit.Services.Hubs.CommandResolvers.CommitGraph
 {
-    public class CommitGraphCommandResolver : ICommandResponder
+    public class CommitGraphCommandResolver : CommandResponder<CommitGraphCommandArguments>
     {
         private KnownGitRepositorysRepository _knownGitRepositorysRepository;
         private readonly Dictionary<Guid, CommitGraphManager> _activeGraphs = new();
+
+        protected override JsonTypeInfo<CommitGraphCommandArguments> ArgumentsJsonTypeInfo =>
+            CommandReponseJsonSerializerContext.Default.CommitGraphCommandArguments;
 
         public CommitGraphCommandResolver(KnownGitRepositorysRepository knownGitRepositorysRepository)
         {
             _knownGitRepositorysRepository = knownGitRepositorysRepository;
         }
 
-        public bool CanRespondTo(CommsHubCommand command)
+        public override bool CanRespondTo(CommsHubCommand<JsonElement> command)
         {
             return command.CommandType == CommsHubCommandType.CommitGraph;
         }
 
-        public async Task<CommandResponseBase> Resolve(CommsHubCommand command)
+        public override async Task<CommandResponseBase> Resolve(CommsHubCommand<CommitGraphCommandArguments> command)
         {
 
             var dotGitPath = @"C:\Projects\linux";
@@ -48,12 +53,7 @@ namespace ExpressThat.LovelyGit.Services.Hubs.CommandResolvers.CommitGraph
                 });
             }
 
-            var limit = 0;
-
-            var limitText = command.Arguments?.GetValueOrDefault("limit");
-            var cursorText = command.Arguments?.GetValueOrDefault("cursor");
-
-            if (string.IsNullOrWhiteSpace(limitText) || !int.TryParse(limitText, out limit))
+            if (command.Arguments == null)
             {
                 return new CommandResponseBase
                 {
@@ -61,9 +61,12 @@ namespace ExpressThat.LovelyGit.Services.Hubs.CommandResolvers.CommitGraph
                     CommandType = command.CommandType,
                     SubCommandType = command.SubCommandType,
                     IsSuccess = false,
-                    ErrorMessage = "Invalid limit argument",
+                    ErrorMessage = "Invalid commit graph arguments",
                 };
             }
+
+            var limit = command.Arguments.Limit;
+            var cursorText = command.Arguments.Cursor;
 
             if (limit < 0)
             {
@@ -115,9 +118,12 @@ namespace ExpressThat.LovelyGit.Services.Hubs.CommandResolvers.CommitGraph
 
                     var response = page.Response;
                     response.NextCursor = response.HasMore ? CommitGraphManager.EncodeCursorState(page.NextCursor) : null;
-                    if (!response.HasMore && _activeGraphs.Remove(foundRepo.Id, out var completedGraph))
+                    if (!response.HasMore)
                     {
-                        completedGraph.Dispose();
+                        if (_activeGraphs.Remove(foundRepo.Id, out var completedGraph))
+                        {
+                            completedGraph.Dispose();
+                        }
                     }
 
                     return new CommandResponse<CommitGraphResponse>
@@ -145,4 +151,3 @@ namespace ExpressThat.LovelyGit.Services.Hubs.CommandResolvers.CommitGraph
         }
     }
 }
-

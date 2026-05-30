@@ -1,4 +1,4 @@
-import type { CommandResponse, CommsHubCommand } from "@/generated/ExpressThat.LovelyGit.Services.Hubs.Commands";
+import type { CommandResponse, CommsHubCommand, EmptyCommandArguments } from "@/generated/ExpressThat.LovelyGit.Services.Hubs.Commands";
 import { type HubConnection, HubConnectionBuilder } from "@microsoft/signalr";
 import { nanoid } from "nanoid";
 
@@ -26,14 +26,14 @@ export async function registerSignalR() {
 	console.log("done");
 }
 
-export async function sendRequestWithResponse<T>(
-	commandInput: Omit<CommsHubCommand, "commandUniqueId">,
+export async function sendRequestWithResponse<TResponse, TArguments = EmptyCommandArguments>(
+	commandInput: Omit<CommsHubCommand<TArguments>, "commandUniqueId">,
 ) {
 	const sr = getSignalR();
 	const commandId = nanoid();
 
-	const promise = new Promise<CommandResponse<T>>((resolve) => {
-		const handleResult = (result: CommandResponse<T>) => {
+	const promise = new Promise<CommandResponse<TResponse>>((resolve) => {
+		const handleResult = (result: CommandResponse<TResponse>) => {
 			if (result.commandUniqueId === commandId) {
 				sr.off("Result", handleResult);
 				resolve(result);
@@ -62,8 +62,8 @@ export async function sendRequestWithResponse<T>(
 	return response.result;
 }
 
-export async function sendRequestWithoutResponse(
-	commandInput: CommsHubCommand,
+export async function sendRequestWithoutResponse<TArguments = EmptyCommandArguments>(
+	commandInput: CommsHubCommand<TArguments>,
 ) {
 	await getSignalR().invoke("Command", commandInput);
 }

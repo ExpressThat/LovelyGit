@@ -1,10 +1,12 @@
-﻿namespace ExpressThat.LovelyGit.Services.Hubs.Commands
+using System.Text.Json;
+
+namespace ExpressThat.LovelyGit.Services.Hubs.Commands
 {
 
     public interface ICommandResponder
     {
-        bool CanRespondTo(CommsHubCommand command);
+        bool CanRespondTo(CommsHubCommand<JsonElement> command);
 
-        Task<CommandResponseBase> Resolve(CommsHubCommand command);
+        Task<CommandResponseBase> Resolve(CommsHubCommand<JsonElement> command);
     }
 }

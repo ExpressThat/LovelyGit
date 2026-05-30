@@ -1,5 +1,8 @@
 using ExpressThat.LovelyGit.Services.Git.CommitGraph.Models;
+using ExpressThat.LovelyGit.Services.Hubs.CommandResolvers.CommitGraph;
+using ExpressThat.LovelyGit.Services.Hubs.CommandResolvers.Settings;
 using ExpressThat.LovelyGit.Services.Hubs.Commands;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace ExpressThat.LazyGit;
@@ -10,9 +13,15 @@ namespace ExpressThat.LazyGit;
 [JsonSerializable(typeof(CommitLaneEdge))]
 [JsonSerializable(typeof(CommitGraphRow))]
 [JsonSerializable(typeof(CommitGraphResponse))]
-[JsonSerializable(typeof(CommsHubCommand))]
+[JsonSerializable(typeof(CommsHubCommand<JsonElement>))]
+[JsonSerializable(typeof(EmptyCommandArguments))]
+[JsonSerializable(typeof(CommitGraphCommandArguments))]
+[JsonSerializable(typeof(GetSettingsCommandArguments))]
+[JsonSerializable(typeof(SetSettingsCommandArguments))]
+[JsonSerializable(typeof(Guid?))]
 [JsonSerializable(typeof(CommandResponseBase))]
 [JsonSerializable(typeof(CommandResponse<CommitGraphResponse>))]
+[JsonSerializable(typeof(CommandResponse<JsonElement>))]
 internal partial class AppJsonSerializerContext : JsonSerializerContext
 {
 }

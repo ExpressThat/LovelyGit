@@ -11,6 +11,7 @@
 		<RootNamespace>ExpressThat.LovelyGit</RootNamespace>
 		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
 		<NoWarn>$(NoWarn);IL2026;IL3050;IL2104</NoWarn>
+		<SelfContained>true</SelfContained>
 	</PropertyGroup>
 
 	<ItemGroup>

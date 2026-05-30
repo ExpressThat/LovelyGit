@@ -2,6 +2,7 @@ import { startTransition, useEffect, useEffectEvent, useState } from "react";
 import {
 	sendRequestWithResponse,
 } from "@/lib/registerSignalR";
+import type { CommitGraphCommandArguments } from "@/generated/ExpressThat.LovelyGit.Services.Hubs.CommandResolvers.CommitGraph";
 import type { CommitGraphResponse, CommitGraphRow } from "@/generated/ExpressThat.LovelyGit.Services.Git.CommitGraph.Models";
 
 const PAGE_SIZE = 400;
@@ -60,11 +61,14 @@ export function useCommitGraphData() {
 		try {
 			let loadedLength = session.rows.length;
 			while (session.hasMore && loadedLength < requiredLength) {
-				const response = await sendRequestWithResponse<CommitGraphResponse>({
+				const response = await sendRequestWithResponse<
+					CommitGraphResponse,
+					CommitGraphCommandArguments
+				>({
 					commandType: "CommitGraph",
 					arguments: {
 						cursor: session.nextCursor || undefined,
-						limit: PAGE_SIZE.toString(),
+						limit: PAGE_SIZE,
 					},
 				});
 

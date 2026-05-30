@@ -2,24 +2,29 @@
 using ExpressThat.LovelyGit.Services.Data.Models;
 using ExpressThat.LovelyGit.Services.Data.Repositorys;
 using ExpressThat.LovelyGit.Services.Hubs.Commands;
+using System.Text.Json;
+using System.Text.Json.Serialization.Metadata;
 
 namespace ExpressThat.LovelyGit.Services.Hubs.CommandResolvers.KnownRepository
 {
-    public class KnownGitRepositorysCommandResolver : ICommandResponder
+    public class KnownGitRepositorysCommandResolver : CommandResponder<EmptyCommandArguments>
     {
         private readonly KnownGitRepositorysRepository _knownGitRepositorysRepository;
+
+        protected override JsonTypeInfo<EmptyCommandArguments> ArgumentsJsonTypeInfo =>
+            CommandReponseJsonSerializerContext.Default.EmptyCommandArguments;
 
         public KnownGitRepositorysCommandResolver(KnownGitRepositorysRepository knownGitRepositorysRepository)
         {
             _knownGitRepositorysRepository = knownGitRepositorysRepository;
         }
 
-        public bool CanRespondTo(CommsHubCommand command)
+        public override bool CanRespondTo(CommsHubCommand<JsonElement> command)
         {
             return command.CommandType == CommsHubCommandType.KnownGitRepositorys;
         }
 
-        public async Task<CommandResponseBase> Resolve(CommsHubCommand command)
+        public override async Task<CommandResponseBase> Resolve(CommsHubCommand<EmptyCommandArguments> command)
         {
             var knownGitRepositorys = await _knownGitRepositorysRepository.GetAllAsync();
 

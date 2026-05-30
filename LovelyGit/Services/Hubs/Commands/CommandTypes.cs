@@ -14,8 +14,7 @@ namespace ExpressThat.LovelyGit.Services.Hubs.Commands
     public enum CommsHubSubCommandType
     {
         Get,
-        Create,
-        Update,
+        Set,
         Delete
     }
 }
