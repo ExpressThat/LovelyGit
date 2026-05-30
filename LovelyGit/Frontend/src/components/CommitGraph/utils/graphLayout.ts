@@ -1,4 +1,7 @@
-import type { CommitGraphRow, CommitLaneEdge } from "@/generated/ExpressThat.LovelyGit.Services.Git.CommitGraph.Models";
+import type {
+	CommitGraphRow,
+	CommitLaneEdge,
+} from "@/generated/ExpressThat.LovelyGit.Services.Git.CommitGraph.Models";
 import {
 	GRAPH_BOTTOM_Y,
 	GRAPH_PADDING_LEFT,

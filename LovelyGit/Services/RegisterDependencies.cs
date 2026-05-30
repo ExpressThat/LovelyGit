@@ -45,6 +45,7 @@ namespace ExpressThat.LovelyGit.Services
             services.AddSingleton<ICommandResponder, KnownGitRepositorysCommandResolver>();
             services.AddSingleton<ICommandResponder, CommitGraphCommandResolver>();
             services.AddSingleton<ICommandResponder, GetSettingsCommandResolver>();
+            services.AddSingleton<ICommandResponder, SetSettingsCommandResolver>();
         }
     }
 }

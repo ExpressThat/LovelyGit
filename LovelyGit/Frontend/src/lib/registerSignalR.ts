@@ -1,6 +1,16 @@
-import type { CommandResponse, CommsHubCommand, EmptyCommandArguments } from "@/generated/ExpressThat.LovelyGit.Services.Hubs.Commands";
 import { type HubConnection, HubConnectionBuilder } from "@microsoft/signalr";
 import { nanoid } from "nanoid";
+import type {
+	CommandResponse,
+	CommsHubCommand,
+	EmptyCommandArguments,
+} from "@/generated/ExpressThat.LovelyGit.Services.Hubs.Commands";
+import type {
+	SettingValueMap,
+	TypedCommsHubCommandInput,
+	TypedGetSettingsCommandInput,
+	TypedSetSettingsCommandInput,
+} from "@/generated/LovelyGit.SettingContracts";
 
 export function getSignalR() {
 	return (
@@ -26,9 +36,19 @@ export async function registerSignalR() {
 	console.log("done");
 }
 
-export async function sendRequestWithResponse<TResponse, TArguments = EmptyCommandArguments>(
-	commandInput: Omit<CommsHubCommand<TArguments>, "commandUniqueId">,
-) {
+export function sendRequestWithResponse<TSetting extends keyof SettingValueMap>(
+	commandInput: TypedGetSettingsCommandInput<TSetting>,
+): Promise<SettingValueMap[TSetting] | undefined>;
+export function sendRequestWithResponse<
+	TResponse,
+	TArguments = EmptyCommandArguments,
+>(
+	commandInput: TypedCommsHubCommandInput<TArguments>,
+): Promise<TResponse | undefined>;
+export async function sendRequestWithResponse<
+	TResponse,
+	TArguments = EmptyCommandArguments,
+>(commandInput: TypedCommsHubCommandInput<TArguments>) {
 	const sr = getSignalR();
 	const commandId = nanoid();
 
@@ -44,8 +64,8 @@ export async function sendRequestWithResponse<TResponse, TArguments = EmptyComma
 	});
 
 	const startTime = performance.now();
-	await sendRequestWithoutResponse({
-		...commandInput,
+	await invokeCommand({
+		...toWireCommand(commandInput),
 		commandUniqueId: commandId,
 	});
 
@@ -62,8 +82,37 @@ export async function sendRequestWithResponse<TResponse, TArguments = EmptyComma
 	return response.result;
 }
 
-export async function sendRequestWithoutResponse<TArguments = EmptyCommandArguments>(
-	commandInput: CommsHubCommand<TArguments>,
-) {
+export async function sendRequestWithoutResponse<
+	TArguments = EmptyCommandArguments,
+>(commandInput: TypedCommsHubCommandInput<TArguments>) {
+	await invokeCommand(toWireCommand(commandInput));
+}
+
+async function invokeCommand(commandInput: CommsHubCommand<unknown>) {
 	await getSignalR().invoke("Command", commandInput);
+}
+
+function toWireCommand<TArguments>(
+	commandInput: TypedCommsHubCommandInput<TArguments>,
+): CommsHubCommand<unknown> {
+	if (isSettingsSetCommand(commandInput)) {
+		return {
+			...commandInput,
+			arguments: {
+				setting: commandInput.arguments.setting,
+				valueJson: JSON.stringify(commandInput.arguments.value),
+			},
+		};
+	}
+
+	return commandInput;
+}
+
+function isSettingsSetCommand(
+	commandInput: TypedCommsHubCommandInput<unknown>,
+): commandInput is TypedSetSettingsCommandInput {
+	return (
+		commandInput.commandType === "Settings" &&
+		commandInput.subCommandType === "Set"
+	);
 }

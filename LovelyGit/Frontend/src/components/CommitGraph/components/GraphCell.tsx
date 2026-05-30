@@ -1,4 +1,8 @@
 import { Fragment } from "react";
+import type {
+	CommitGraphRow,
+	CommitLaneEdge,
+} from "@/generated/ExpressThat.LovelyGit.Services.Git.CommitGraph.Models";
 import {
 	GRAPH_BOTTOM_Y,
 	GRAPH_CURVE_MASK_WIDTH,
@@ -15,7 +19,6 @@ import {
 	laneColor,
 	xForLane,
 } from "../utils/graphLayout";
-import type { CommitGraphRow, CommitLaneEdge } from "@/generated/ExpressThat.LovelyGit.Services.Git.CommitGraph.Models";
 
 export function GraphCell({
 	graphContentWidth,

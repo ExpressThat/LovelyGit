@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build && copyfiles -u 1 \"dist/**/*\" ../wwwroot",
-    "generate:csharp-types": "node -e \"require('node:fs').rmSync('src/generated', { recursive: true, force: true })\" && dotnet tapper --project ../LovelyGit.csproj --output src/generated --serializer Json --naming-style CamelCase --enum Union",
+    "generate:csharp-types": "node -e \"require('node:fs').rmSync('src/generated', { recursive: true, force: true })\" && dotnet tapper --project ../LovelyGit.csproj --output src/generated --serializer Json --naming-style CamelCase --enum Union && node scripts/generate-setting-contracts.ts",
     "preview": "vite preview",
     "watch": "npm-watch",
     "format": "pnpm exec biome check src --write",
