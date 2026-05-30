@@ -1,8 +1,10 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Tapper;
 
 namespace ExpressThat.LovelyGit.Services.Data.Models
 {
+    [TranspilationSource]
     [Table("known_git_repositorys")]
     public sealed record KnownGitRepository
     {

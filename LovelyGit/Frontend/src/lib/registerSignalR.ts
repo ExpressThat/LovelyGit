@@ -3,14 +3,12 @@ import { nanoid } from "nanoid";
 import type {
 	CommandResponse,
 	CommsHubCommand,
-	EmptyCommandArguments,
 } from "@/generated/ExpressThat.LovelyGit.Services.Hubs.Commands";
 import type {
-	SettingValueMap,
+	ResponseForCommand,
 	TypedCommsHubCommandInput,
-	TypedGetSettingsCommandInput,
 	TypedSetSettingsCommandInput,
-} from "@/generated/LovelyGit.SettingContracts";
+} from "@/generated/LovelyGit.CommandContracts";
 
 export function getSignalR() {
 	return (
@@ -36,32 +34,26 @@ export async function registerSignalR() {
 	console.log("done");
 }
 
-export function sendRequestWithResponse<TSetting extends keyof SettingValueMap>(
-	commandInput: TypedGetSettingsCommandInput<TSetting>,
-): Promise<SettingValueMap[TSetting] | undefined>;
-export function sendRequestWithResponse<
-	TResponse,
-	TArguments = EmptyCommandArguments,
->(
-	commandInput: TypedCommsHubCommandInput<TArguments>,
-): Promise<TResponse | undefined>;
 export async function sendRequestWithResponse<
-	TResponse,
-	TArguments = EmptyCommandArguments,
->(commandInput: TypedCommsHubCommandInput<TArguments>) {
+	TCommand extends TypedCommsHubCommandInput,
+>(commandInput: TCommand): Promise<ResponseForCommand<TCommand> | undefined> {
 	const sr = getSignalR();
 	const commandId = nanoid();
 
-	const promise = new Promise<CommandResponse<TResponse>>((resolve) => {
-		const handleResult = (result: CommandResponse<TResponse>) => {
-			if (result.commandUniqueId === commandId) {
-				sr.off("Result", handleResult);
-				resolve(result);
-			}
-		};
+	const promise = new Promise<CommandResponse<ResponseForCommand<TCommand>>>(
+		(resolve) => {
+			const handleResult = (
+				result: CommandResponse<ResponseForCommand<TCommand>>,
+			) => {
+				if (result.commandUniqueId === commandId) {
+					sr.off("Result", handleResult);
+					resolve(result);
+				}
+			};
 
-		sr.on("Result", handleResult);
-	});
+			sr.on("Result", handleResult);
+		},
+	);
 
 	const startTime = performance.now();
 	await invokeCommand({
@@ -83,8 +75,8 @@ export async function sendRequestWithResponse<
 }
 
 export async function sendRequestWithoutResponse<
-	TArguments = EmptyCommandArguments,
->(commandInput: TypedCommsHubCommandInput<TArguments>) {
+	TCommand extends TypedCommsHubCommandInput,
+>(commandInput: TCommand) {
 	await invokeCommand(toWireCommand(commandInput));
 }
 
@@ -92,8 +84,8 @@ async function invokeCommand(commandInput: CommsHubCommand<unknown>) {
 	await getSignalR().invoke("Command", commandInput);
 }
 
-function toWireCommand<TArguments>(
-	commandInput: TypedCommsHubCommandInput<TArguments>,
+function toWireCommand(
+	commandInput: TypedCommsHubCommandInput,
 ): CommsHubCommand<unknown> {
 	if (isSettingsSetCommand(commandInput)) {
 		return {
@@ -109,7 +101,7 @@ function toWireCommand<TArguments>(
 }
 
 function isSettingsSetCommand(
-	commandInput: TypedCommsHubCommandInput<unknown>,
+	commandInput: TypedCommsHubCommandInput,
 ): commandInput is TypedSetSettingsCommandInput {
 	return (
 		commandInput.commandType === "Settings" &&
