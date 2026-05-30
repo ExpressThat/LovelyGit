@@ -1,5 +1,4 @@
 using ExpressThat.LovelyGit.Services.Settings;
-using System.Diagnostics.Contracts;
 using Tapper;
 
 namespace ExpressThat.LovelyGit.Services.Hubs.CommandResolvers.Settings
@@ -16,5 +15,11 @@ namespace ExpressThat.LovelyGit.Services.Hubs.CommandResolvers.Settings
         public Setting? Setting { get; set; } = null;
 
         public string? ValueJson { get; set; } = null;
+    }
+
+    [TranspilationSource]
+    public record SetMultipleSettingsCommandArguments
+    {
+        public Dictionary<Setting, string> SettingValueJsons { get; set; } = new();
     }
 }

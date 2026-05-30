@@ -1,14 +1,17 @@
-﻿using Tapper;
+using System.Text.Json.Serialization;
+using Tapper;
 
 namespace ExpressThat.LovelyGit.Services.Hubs.Commands
 {
     [TranspilationSource]
+    [JsonConverter(typeof(JsonStringEnumConverter<CommsHubCommandType>))]
     public enum CommsHubCommandType
     {
         KnownGitRepositorys,
         CommitGraph,
         GetSetting,
         SetSetting,
-        GetAllSettings
+        GetAllSettings,
+        SetMultipleSettings
     }
 }

@@ -16,6 +16,7 @@ namespace ExpressThat.LovelyGit.Services.Hubs.CommandResolvers
     [JsonSerializable(typeof(CommitGraphCommandArguments))]
     [JsonSerializable(typeof(GetSettingsCommandArguments))]
     [JsonSerializable(typeof(SetSettingsCommandArguments))]
+    [JsonSerializable(typeof(SetMultipleSettingsCommandArguments))]
     [JsonSerializable(typeof(CommandResponse<List<KnownGitRepository>>))]
     [JsonSerializable(typeof(CommandResponse<CommitGraphResponse>))]
     [JsonSerializable(typeof(CommandResponse<JsonElement>))]

@@ -7,6 +7,7 @@ import type {
 import type {
 	ResponseForCommand,
 	TypedCommsHubCommandInput,
+	TypedSetMultipleSettingsCommandInput,
 	TypedSetSettingsCommandInput,
 } from "@/generated/LovelyGit.CommandContracts";
 
@@ -97,11 +98,37 @@ function toWireCommand(
 		};
 	}
 
+	if (isSettingsSetMultipleCommand(commandInput)) {
+		return {
+			...commandInput,
+			arguments: {
+				settingValueJsons: Object.fromEntries(
+					Object.entries(commandInput.arguments.settingValues).map(
+						([setting, value]) => [setting, JSON.stringify(value)],
+					),
+				),
+			},
+		};
+	}
+
 	return commandInput;
 }
 
 function isSettingsSetCommand(
 	commandInput: TypedCommsHubCommandInput,
 ): commandInput is TypedSetSettingsCommandInput {
-	return commandInput.commandType === "SetSetting";
+	const args = commandInput.arguments;
+	return (
+		typeof args === "object" &&
+		args !== null &&
+		"setting" in args &&
+		"value" in args
+	);
+}
+
+function isSettingsSetMultipleCommand(
+	commandInput: TypedCommsHubCommandInput,
+): commandInput is TypedSetMultipleSettingsCommandInput {
+	const args = commandInput.arguments;
+	return typeof args === "object" && args !== null && "settingValues" in args;
 }

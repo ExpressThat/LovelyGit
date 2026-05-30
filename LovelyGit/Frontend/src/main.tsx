@@ -2,26 +2,10 @@ import ReactDOM from "react-dom/client";
 import App from "./App";
 import {
 	registerSignalR,
-	sendRequestWithResponse,
 } from "./lib/registerSignalR";
 
 async function bootstrap() {
 	await registerSignalR();
-
-	console.log(
-		await sendRequestWithResponse({
-			commandType: "KnownGitRepositorys",
-		}),
-	);
-
-	const currentRepo = await sendRequestWithResponse({
-		commandType: "GetSetting",
-		arguments: {
-			setting: "CurrentGitRepositoryId",
-		},
-	});
-
-	console.log(currentRepo);
 
 	// await initSettingsStore();
 	//await getCurrentWebview().setZoom(getSetting("ZOOM_LEVEL"));

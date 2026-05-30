@@ -38,10 +38,10 @@ const commandModule = findGeneratedModule([
 ]);
 
 for (const contract of commandContracts) {
-	if (!["SetSetting", "GetSetting"].includes(contract.commandType)) {
+	if (!isSettingsCommandWithTypedFrontendArguments(contract)) {
 		registerTypeImports(contract.argumentsType);
 	}
-	if (contract.responseType && contract.commandType !== "GetAllSettings") {
+	if (contract.responseType && !isAllSettingsResponse(contract)) {
 		registerTypeImports(contract.responseType);
 	}
 }
@@ -87,6 +87,10 @@ export type TypedGetSettingsCommandArguments<
 \tsetting: SettingName;
 };
 
+export type TypedSetMultipleSettingsCommandArguments = {
+\tsettingValues: Partial<SettingValueMap>;
+};
+
 type CommandInput<TArguments> = Omit<CommsHubCommand<TArguments>, "commandUniqueId">;
 
 ${commandInputTypes}
@@ -96,7 +100,12 @@ ${commandInputUnion};
 
 export type TypedSetSettingsCommandInput = Extract<
 \tTypedCommsHubCommandInput,
-\t{ commandType: "SetSetting" }
+\t{ arguments: TypedSetSettingsCommandArguments }
+>;
+
+export type TypedSetMultipleSettingsCommandInput = Extract<
+\tTypedCommsHubCommandInput,
+\t{ arguments: TypedSetMultipleSettingsCommandArguments }
 >;
 
 export type TypedGetSettingsCommandInput<
@@ -104,7 +113,6 @@ export type TypedGetSettingsCommandInput<
 > = Extract<
 \tTypedCommsHubCommandInput,
 \t{
-\t\tcommandType: "GetSetting";
 \t\targuments: TypedGetSettingsCommandArguments<SettingName>;
 \t}
 >;
@@ -213,24 +221,34 @@ function readCommandResponseType(source: string): string | undefined {
 }
 
 function renderCommandInputType(contract: CommandContract): string {
-	if (contract.commandType === "SetSetting") {
+	if (isSingleSettingValueArgument(contract.argumentsType)) {
 		return `export type ${commandInputTypeName(contract)} = Omit<
 \tCommandInput<TypedSetSettingsCommandArguments>,
 \t"arguments" | "commandType"
 > & {
-\tcommandType: "SetSetting";
+\tcommandType: "${contract.commandType}";
 \targuments: TypedSetSettingsCommandArguments;
 };`;
 	}
 
-	if (contract.commandType === "GetSetting") {
+	if (isMultipleSettingValueArgument(contract.argumentsType)) {
+		return `export type ${commandInputTypeName(contract)} = Omit<
+\tCommandInput<TypedSetMultipleSettingsCommandArguments>,
+\t"arguments" | "commandType"
+> & {
+\tcommandType: "${contract.commandType}";
+\targuments: TypedSetMultipleSettingsCommandArguments;
+};`;
+	}
+
+	if (isSingleSettingLookupArgument(contract.argumentsType)) {
 		return `export type ${commandInputTypeName(contract)}<
 \tSettingName extends keyof SettingValueMap = keyof SettingValueMap,
 > = Omit<
 \tCommandInput<TypedGetSettingsCommandArguments<SettingName>>,
 \t"arguments" | "commandType"
 > & {
-\tcommandType: "GetSetting";
+\tcommandType: "${contract.commandType}";
 \targuments: TypedGetSettingsCommandArguments<SettingName>;
 };`;
 	}
@@ -247,13 +265,13 @@ function renderCommandInputType(contract: CommandContract): string {
 
 function renderResponseCase(contract: CommandContract): string {
 	const inputType = commandInputTypeName(contract);
-	if (contract.commandType === "GetSetting") {
+	if (isSingleSettingLookupArgument(contract.argumentsType)) {
 		return `\tTCommand extends ${inputType}<infer SettingName>
 \t\t? SettingValueMap[SettingName]
 \t\t:
 `;
 	}
-	if (contract.commandType === "GetAllSettings") {
+	if (isAllSettingsResponse(contract)) {
 		return `\tTCommand extends ${inputType}
 \t\t? Partial<SettingValueMap>
 \t\t:
@@ -261,7 +279,8 @@ function renderResponseCase(contract: CommandContract): string {
 	}
 
 	const responseType =
-		contract.commandType === "SetSetting"
+		isSingleSettingValueArgument(contract.argumentsType) ||
+		isMultipleSettingValueArgument(contract.argumentsType)
 			? "undefined"
 			: contract.responseType
 				? toTypeScriptType(contract.responseType)
@@ -275,6 +294,63 @@ function renderResponseCase(contract: CommandContract): string {
 
 function commandInputTypeName(contract: CommandContract): string {
 	return `${contract.name}CommandInput`;
+}
+
+function isSettingsCommandWithTypedFrontendArguments(
+	contract: CommandContract,
+): boolean {
+	return (
+		isSingleSettingLookupArgument(contract.argumentsType) ||
+		isSingleSettingValueArgument(contract.argumentsType) ||
+		isMultipleSettingValueArgument(contract.argumentsType)
+	);
+}
+
+function isSingleSettingLookupArgument(typeName: string): boolean {
+	const body = readRecordBody(typeName);
+	return hasSettingProperty(body) && !hasValueJsonProperty(body);
+}
+
+function isSingleSettingValueArgument(typeName: string): boolean {
+	const body = readRecordBody(typeName);
+	return hasSettingProperty(body) && hasValueJsonProperty(body);
+}
+
+function isMultipleSettingValueArgument(typeName: string): boolean {
+	return /Dictionary\s*<\s*Setting\s*,\s*string\s*>\s+SettingValueJsons\b/.test(
+		readRecordBody(typeName),
+	);
+}
+
+function isAllSettingsResponse(contract: CommandContract): boolean {
+	return (
+		contract.responseType?.replace(/\s/g, "") ===
+		"Dictionary<Setting,JsonElement>"
+	);
+}
+
+function hasSettingProperty(body: string): boolean {
+	return /\bSetting\?\s+Setting\b/.test(body);
+}
+
+function hasValueJsonProperty(body: string): boolean {
+	return /\bstring\?\s+ValueJson\b/.test(body);
+}
+
+function readRecordBody(typeName: string): string {
+	for (const path of readFiles(servicesRoot)) {
+		const source = readFileSync(path, "utf8");
+		const match = source.match(
+			new RegExp(
+				`public\\s+record\\s+${typeName}\\s*\\{(?<body>[\\s\\S]*?)\\n\\s*\\}`,
+			),
+		);
+		if (match?.groups?.body) {
+			return match.groups.body;
+		}
+	}
+
+	return "";
 }
 
 function readFiles(path: string): string[] {
