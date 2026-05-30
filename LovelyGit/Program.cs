@@ -14,7 +14,6 @@ public static class Program
     public static void Main(string[] args)
     {
         GitRepoCacheDbContext.ClearCache();
-        InfiniFrameSingleFileBootstrap.Initialize();
 
         InfiniFrameWebApplicationBuilder appBuilder = InfiniFrameWebApplication.CreateBuilder(args);
 
