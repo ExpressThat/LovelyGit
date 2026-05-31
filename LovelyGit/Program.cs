@@ -5,6 +5,7 @@ using InfiniFrame;
 using InfiniFrame.WebServer;
 using KeySharp;
 using System.Drawing;
+using Velopack;
 
 namespace ExpressThat.LazyGit;
 
@@ -14,6 +15,7 @@ public static class Program
     public static void Main(string[] args)
     {
         GitRepoCacheDbContext.ClearCache();
+        VelopackApp.Build().Run();
 
         InfiniFrameWebApplicationBuilder appBuilder = InfiniFrameWebApplication.CreateBuilder(args);
 

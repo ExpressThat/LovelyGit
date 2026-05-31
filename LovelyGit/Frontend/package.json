@@ -11,7 +11,8 @@
     "watch": "npm-watch",
     "format": "pnpm exec biome check src --write",
     "lint": "pnpm format",
-    "lint:fix": "pnpm exec biome check src --write"
+    "lint:fix": "pnpm exec biome check src --write",
+    "prod": "pnpm generate:csharp-types && pnpm build"
   },
   "watch": {
     "generate:csharp-types": {
