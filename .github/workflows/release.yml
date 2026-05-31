@@ -17,19 +17,19 @@ jobs:
       matrix:
         include:
           - rid: linux-x64
-            runner: ubuntu-24.04
+            runner: ubuntu-latest
             mainExe: LovelyGit
           - rid: win-x64
-            runner: windows-2025
+            runner: windows-latest
             mainExe: LovelyGit.exe
           - rid: win-arm64
-            runner: windows-11-arm
+            runner: windows-latest
             mainExe: LovelyGit.exe
           - rid: osx-x64
-            runner: macos-15-intel
+            runner: macos-26-intel
             mainExe: LovelyGit
           - rid: osx-arm64
-            runner: macos-15
+            runner: macos-latest
             mainExe: LovelyGit
 
     env:
@@ -94,6 +94,11 @@ jobs:
           --runtime ${{ matrix.rid }}
           --self-contained true
           --output artifacts/publish/${{ matrix.rid }}
+
+      - name: Remove macOS-incompatible static asset folder
+        if: runner.os == 'macOS'
+        shell: bash
+        run: rm -rf "artifacts/publish/${{ matrix.rid }}/wwwroot/_content/InfiniLore.InfiniFrame.Js"
 
       - name: Install Velopack CLI
         run: dotnet tool install --global vpk --version ${{ env.VPK_VERSION }}
@@ -172,7 +177,7 @@ jobs:
       - name: Package with Velopack and Windows signing
         if: runner.os == 'Windows'
         run: >
-          vpk pack
+          vpk --verbose pack
           --packId ${{ env.PACK_ID }}
           --packVersion ${{ env.RELEASE_VERSION }}
           --packDir artifacts/publish/${{ matrix.rid }}
