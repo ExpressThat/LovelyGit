@@ -246,4 +246,14 @@ jobs:
           draft: true
           prerelease: ${{ contains(github.ref_name, '-') }}
           name: LovelyGit ${{ github.ref_name }}
-          files: release-artifacts/**/*
+          # release-artifacts/**/*Portable.zip
+          preserve_order: true
+          files: |
+            release-artifacts/**/*Setup.exe
+            release-artifacts/**/*.pkg
+            release-artifacts/**/*.AppImage
+            release-artifacts/**/*-full.nupkg
+            release-artifacts/**/*-delta.nupkg
+            release-artifacts/**/releases.*.json
+            release-artifacts/**/RELEASES*
+            release-artifacts/**/assets.*.json
