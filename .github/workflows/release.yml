@@ -188,6 +188,7 @@ jobs:
           --mainExe ${{ matrix.mainExe }}
           --runtime ${{ matrix.rid }}
           --channel ${{ matrix.rid }}
+          --framework webview2
           --azureTrustedSignFile "${{ env.AZURE_TRUSTED_SIGNING_METADATA }}"
           --icon LovelyGit/Assets/LovelyGit.ico
           --msi true
