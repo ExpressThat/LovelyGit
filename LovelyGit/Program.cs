@@ -14,6 +14,8 @@ public static class Program
     [STAThread]
     public static void Main(string[] args)
     {
+        Directory.SetCurrentDirectory(AppContext.BaseDirectory);
+
         GitRepoCacheDbContext.ClearCache();
         VelopackApp.Build().Run();
 
