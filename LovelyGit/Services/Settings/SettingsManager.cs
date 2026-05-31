@@ -1,4 +1,5 @@
 using ExpressThat.LovelyGit.Services.Data;
+using ExpressThat.LovelyGit.Services.Data.Models;
 using System.Text.Json;
 
 namespace ExpressThat.LovelyGit.Services.Settings

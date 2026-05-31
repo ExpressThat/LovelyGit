@@ -16,7 +16,7 @@ namespace ExpressThat.LovelyGit.Services.Hubs.CommandResolvers.CommitGraph
         private readonly Dictionary<Guid, CommitGraphManager> _activeGraphs = new();
 
         protected override JsonTypeInfo<CommitGraphCommandArguments> ArgumentsJsonTypeInfo =>
-            CommandReponseJsonSerializerContext.Default.CommitGraphCommandArguments;
+            CommitGraphJsonSerializerContext.Default.CommitGraphCommandArguments;
 
         public CommitGraphCommandResolver(KnownGitRepositorysRepository knownGitRepositorysRepository)
         {

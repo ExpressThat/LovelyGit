@@ -22,7 +22,7 @@ public static class Program
 
         InfiniFrameWebApplicationBuilder appBuilder = InfiniFrameWebApplication.CreateBuilder(args);
 
-        RegisterDependencies.Register(appBuilder.Services);
+        appBuilder.Services.AddLovelyGitServices();
 
 
         appBuilder.WindowBuilder

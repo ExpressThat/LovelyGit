@@ -12,7 +12,7 @@ namespace ExpressThat.LovelyGit.Services.Hubs.CommandResolvers.KnownRepository
         private readonly KnownGitRepositorysRepository _knownGitRepositorysRepository;
 
         protected override JsonTypeInfo<EmptyCommandArguments> ArgumentsJsonTypeInfo =>
-            CommandReponseJsonSerializerContext.Default.EmptyCommandArguments;
+            CommandJsonSerializerContext.Default.EmptyCommandArguments;
 
         public KnownGitRepositorysCommandResolver(KnownGitRepositorysRepository knownGitRepositorysRepository)
         {

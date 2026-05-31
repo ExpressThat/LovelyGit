@@ -1,4 +1,4 @@
-﻿using ExpressThat.LovelyGit;
+using ExpressThat.LovelyGit.Services.Hubs.CommandResolvers.Settings;
 using System.Text.Json.Serialization.Metadata;
 
 namespace ExpressThat.LovelyGit.Services.Settings
@@ -50,7 +50,7 @@ namespace ExpressThat.LovelyGit.Services.Settings
 
         private static JsonTypeInfo<T> GetJsonTypeInfo<T>()
         {
-            var typeInfo = AppJsonSerializerContext.Default.GetTypeInfo(typeof(T));
+            var typeInfo = SettingsJsonSerializerContext.Default.GetTypeInfo(typeof(T));
             if (typeInfo is JsonTypeInfo<T> typedTypeInfo)
             {
                 return typedTypeInfo;

@@ -15,7 +15,7 @@ namespace ExpressThat.LovelyGit.Services.Hubs.CommandResolvers.Settings
         }
 
         protected override JsonTypeInfo<GetSettingsCommandArguments> ArgumentsJsonTypeInfo =>
-            CommandReponseJsonSerializerContext.Default.GetSettingsCommandArguments;
+            SettingsJsonSerializerContext.Default.GetSettingsCommandArguments;
 
         public override bool CanRespondTo(CommsHubCommand<JsonElement> command)
         {
@@ -66,7 +66,7 @@ namespace ExpressThat.LovelyGit.Services.Hubs.CommandResolvers.Settings
         }
 
         protected override JsonTypeInfo<SetSettingsCommandArguments> ArgumentsJsonTypeInfo =>
-            CommandReponseJsonSerializerContext.Default.SetSettingsCommandArguments;
+            SettingsJsonSerializerContext.Default.SetSettingsCommandArguments;
 
         public override bool CanRespondTo(CommsHubCommand<JsonElement> command)
         {
@@ -129,7 +129,7 @@ namespace ExpressThat.LovelyGit.Services.Hubs.CommandResolvers.Settings
         }
 
         protected override JsonTypeInfo<EmptyCommandArguments> ArgumentsJsonTypeInfo =>
-            CommandReponseJsonSerializerContext.Default.EmptyCommandArguments;
+            CommandJsonSerializerContext.Default.EmptyCommandArguments;
 
         public override bool CanRespondTo(CommsHubCommand<JsonElement> command)
         {
@@ -167,7 +167,7 @@ namespace ExpressThat.LovelyGit.Services.Hubs.CommandResolvers.Settings
         }
 
         protected override JsonTypeInfo<SetMultipleSettingsCommandArguments> ArgumentsJsonTypeInfo =>
-            CommandReponseJsonSerializerContext.Default.SetMultipleSettingsCommandArguments;
+            SettingsJsonSerializerContext.Default.SetMultipleSettingsCommandArguments;
 
         public override bool CanRespondTo(CommsHubCommand<JsonElement> command)
         {

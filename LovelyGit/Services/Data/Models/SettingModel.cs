@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace ExpressThat.LovelyGit.Services.Settings
+namespace ExpressThat.LovelyGit.Services.Data.Models
 {
     public sealed record SettingModel
     {

@@ -1,7 +1,6 @@
 using BLite.Core;
 using BLite.Core.Collections;
 using ExpressThat.LovelyGit.Services.Data.Models;
-using ExpressThat.LovelyGit.Services.Settings;
 
 namespace ExpressThat.LovelyGit.Services.Data;
 
