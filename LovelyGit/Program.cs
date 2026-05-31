@@ -2,9 +2,9 @@ using ExpressThat.LovelyGit.Services;
 using ExpressThat.LovelyGit.Services.Data;
 using ExpressThat.LovelyGit.Services.Dialogs;
 using ExpressThat.LovelyGit.Services.Hubs;
+using ExpressThat.LovelyGit.Services.Keyring;
 using InfiniFrame;
 using InfiniFrame.WebServer;
-using KeySharp;
 using System.Diagnostics;
 using System.Drawing;
 using System.Runtime.InteropServices;
@@ -47,7 +47,7 @@ public static class Program
                     ;
 
 
-        Keyring.SetPassword("expressthat.lovelygit", "Security", "MasterPassword", "password");
+        Keyring.GetPassword();
 
         var application = appBuilder.Build();
         application.WebApp.Services
