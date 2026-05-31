@@ -103,6 +103,14 @@ jobs:
       - name: Install Velopack CLI
         run: dotnet tool install --global vpk --version ${{ env.VPK_VERSION }}
 
+      - name: Download previous Velopack release
+        run: >
+          vpk download github
+          --repoUrl https://github.com/${{ github.repository }}
+          --channel ${{ matrix.rid }}
+          --outputDir artifacts/velopack/${{ matrix.rid }}
+          --token ${{ secrets.GITHUB_TOKEN }}
+
       - name: Azure login for Windows signing
         if: runner.os == 'Windows'
         uses: azure/login@v3

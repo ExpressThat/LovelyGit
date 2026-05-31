@@ -5,14 +5,19 @@ using ExpressThat.LovelyGit.Services.Hubs;
 using InfiniFrame;
 using InfiniFrame.WebServer;
 using KeySharp;
+using System.Diagnostics;
 using System.Drawing;
 using System.Runtime.InteropServices;
 using Velopack;
+using Velopack.Sources;
 
 namespace ExpressThat.LovelyGit;
 
 public static class Program
 {
+    private const string GitHubRepositoryUrl = "https://github.com/ExpressThat/LovelyGit";
+    private const bool IncludePrereleases = true;
+
     [STAThread]
     public static void Main(string[] args)
     {
@@ -21,6 +26,7 @@ public static class Program
 #endif
         GitRepoCacheDbContext.ClearCache();
         VelopackApp.Build().Run();
+        CheckForUpdatesAtStartup(args);
 
         InfiniFrameWebApplicationBuilder appBuilder = InfiniFrameWebApplication.CreateBuilder(args);
 
@@ -84,5 +90,44 @@ public static class Program
             : "LovelyGit.png";
 
         return Path.Combine(AppContext.BaseDirectory, "Assets", fileName);
+    }
+
+    private static void CheckForUpdatesAtStartup(string[] args)
+    {
+        try
+        {
+            var source = new GithubSource(
+                GitHubRepositoryUrl,
+                accessToken: null,
+                prerelease: IncludePrereleases,
+                downloader: null);
+
+            var updateManager = new UpdateManager(source);
+            if (!updateManager.IsInstalled)
+            {
+                return;
+            }
+
+            var pendingUpdate = updateManager.UpdatePendingRestart;
+            if (pendingUpdate is not null)
+            {
+                updateManager.ApplyUpdatesAndRestart(pendingUpdate, args);
+                return;
+            }
+
+            var updateInfo = updateManager.CheckForUpdates();
+            if (updateInfo is null)
+            {
+                return;
+            }
+
+            updateManager.DownloadUpdates(updateInfo, progress: null);
+            updateManager.ApplyUpdatesAndRestart(updateInfo.TargetFullRelease, args);
+        }
+        catch (Exception exception)
+        {
+            Trace.TraceWarning("Velopack startup update check failed: {0}", exception);
+            Console.Error.WriteLine("Velopack startup update check failed: {0}", exception);
+        }
     }
 }
