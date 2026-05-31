@@ -8,6 +8,7 @@ namespace ExpressThat.LovelyGit.Services.Hubs.Commands
     public enum CommsHubCommandType
     {
         KnownGitRepositorys,
+        AddKnownGitRepositorys,
         CommitGraph,
         GetSetting,
         SetSetting,

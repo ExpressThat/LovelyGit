@@ -33,7 +33,7 @@ namespace ExpressThat.LovelyGit.Services.Hubs.CommandResolvers.KnownRepository
                 CommandUniqueId = command.CommandUniqueId,
                 CommandType = command.CommandType,
                 IsSuccess = true,
-                Result = await knownGitRepositorys.ToListAsync()
+                Result = knownGitRepositorys
             };
         }
     }

@@ -9,6 +9,7 @@ internal static class KnownRepositoryServiceCollectionExtensions
     {
         services.AddLovelyGitJsonTypeInfoResolver(KnownRepositoriesJsonSerializerContext.Default);
         services.AddSingleton<ICommandResponder, KnownGitRepositorysCommandResolver>();
+        services.AddSingleton<ICommandResponder, AddKnownGitRepositorysCommandResolver>();
 
         return services;
     }

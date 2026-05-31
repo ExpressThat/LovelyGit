@@ -18,11 +18,9 @@ namespace ExpressThat.LovelyGit.Services.Data.Repositorys
             return _gitRepoCache.CommitGraphStates.FindByIdAsync(repositoryId, cancellationToken).AsTask();
         }
 
-        public async IAsyncEnumerable<CommitGraphFrontierEntry> GetFrontierAsync(
-            Guid repositoryId,
-            [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken)
+        public async IAsyncEnumerable<CommitGraphFrontierEntry> GetFrontierAsync(Guid repositoryId)
         {
-            await foreach (var entry in _gitRepoCache.CommitGraphFrontier.FindAllAsync(cancellationToken)
+            await foreach (var entry in _gitRepoCache.CommitGraphFrontier.FindAllAsync()
                 .ConfigureAwait(false))
             {
                 if (entry.RepositoryId == repositoryId)
@@ -32,11 +30,9 @@ namespace ExpressThat.LovelyGit.Services.Data.Repositorys
             }
         }
 
-        public async IAsyncEnumerable<CommitGraphSeenEntry> GetSeenAsync(
-            Guid repositoryId,
-            [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken)
+        public async IAsyncEnumerable<CommitGraphSeenEntry> GetSeenAsync(Guid repositoryId)
         {
-            await foreach (var entry in _gitRepoCache.CommitGraphSeen.FindAllAsync(cancellationToken)
+            await foreach (var entry in _gitRepoCache.CommitGraphSeen.FindAllAsync()
                 .ConfigureAwait(false))
             {
                 if (entry.RepositoryId == repositoryId)
@@ -126,19 +122,36 @@ namespace ExpressThat.LovelyGit.Services.Data.Repositorys
             await _gitRepoCache.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         }
 
-        public async Task DeleteTraversalEntriesAsync(Guid repositoryId, CancellationToken cancellationToken)
+        public async Task DeleteTraversalEntriesAsync(Guid repositoryId)
         {
-            await foreach (var entry in GetFrontierAsync(repositoryId, cancellationToken).ConfigureAwait(false))
+            await foreach (var entry in GetFrontierAsync(repositoryId).ConfigureAwait(false))
             {
-                await _gitRepoCache.CommitGraphFrontier.DeleteAsync(entry.Id, cancellationToken).ConfigureAwait(false);
+                await _gitRepoCache.CommitGraphFrontier.DeleteAsync(entry.Id).ConfigureAwait(false);
             }
 
-            await foreach (var entry in GetSeenAsync(repositoryId, cancellationToken).ConfigureAwait(false))
+            await foreach (var entry in GetSeenAsync(repositoryId).ConfigureAwait(false))
             {
-                await _gitRepoCache.CommitGraphSeen.DeleteAsync(entry.Id, cancellationToken).ConfigureAwait(false);
+                await _gitRepoCache.CommitGraphSeen.DeleteAsync(entry.Id).ConfigureAwait(false);
             }
 
-            await _gitRepoCache.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+            await _gitRepoCache.SaveChangesAsync().ConfigureAwait(false);
+        }
+
+        public async Task ClearRepositoryAsync(Guid repositoryId)
+        {
+            await _gitRepoCache.CommitGraphStates.DeleteAsync(repositoryId).ConfigureAwait(false);
+
+            await foreach (var entry in GetFrontierAsync(repositoryId).ConfigureAwait(false))
+            {
+                await _gitRepoCache.CommitGraphFrontier.DeleteAsync(entry.Id).ConfigureAwait(false);
+            }
+
+            await foreach (var entry in GetSeenAsync(repositoryId).ConfigureAwait(false))
+            {
+                await _gitRepoCache.CommitGraphSeen.DeleteAsync(entry.Id).ConfigureAwait(false);
+            }
+
+            await _gitRepoCache.SaveChangesAsync().ConfigureAwait(false);
         }
 
         private static string MakeRepositoryHashId(Guid repositoryId, string hash)

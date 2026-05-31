@@ -8,6 +8,8 @@ public partial class AppDbContext : DocumentDbContext
 {
     public DocumentCollection<Guid, KnownGitRepository> KnownGitRepositorys { get; set; } = null!;
 
+    public DocumentCollection<string, KnownGitRepositoryOrder> KnownGitRepositoryOrders { get; set; } = null!;
+
     public DocumentCollection<string, SettingModel> Settings { get; set; } = null!;
 
     public AppDbContext() : base(GetBasePath())

@@ -4,6 +4,7 @@ import type {
 	CommitGraphRow,
 } from "@/generated/ExpressThat.LovelyGit.Services.Git.CommitGraph.Models";
 import { sendRequestWithResponse } from "@/lib/registerSignalR";
+import { useSetting } from "@/lib/settings/settingsStore";
 
 const PAGE_SIZE = 400;
 const PREFETCH_PAGES = 1;
@@ -17,20 +18,24 @@ type CommitGraphState = {
 };
 
 type GraphSession = {
+	generation: number;
 	hasMore: boolean;
 	laneCount: number;
 	loading: boolean;
 	nextCursor?: string;
+	repositoryId: string | null;
 	requestedEnd: number;
 	rows: Array<CommitGraphRow | null>;
 	totalRows: number;
 };
 
 const session: GraphSession = {
+	generation: 0,
 	hasMore: true,
 	laneCount: 0,
 	loading: false,
 	nextCursor: undefined,
+	repositoryId: null,
 	requestedEnd: 0,
 	rows: [],
 	totalRows: 0,
@@ -45,11 +50,19 @@ export function useCommitGraphData() {
 		totalRows: visibleTotal(),
 	}));
 
+	const currentGitRepositoryId = useSetting("CurrentGitRepositoryId");
+
 	const runLoader = useEffectEvent(async () => {
 		if (session.loading) {
 			return;
 		}
 
+		if (!currentGitRepositoryId) {
+			return;
+		}
+
+		const loadingRepositoryId = currentGitRepositoryId;
+		const loadingGeneration = session.generation;
 		const requiredLength = session.requestedEnd + PAGE_SIZE * PREFETCH_PAGES;
 		if (!session.hasMore || session.rows.length >= requiredLength) {
 			return;
@@ -64,10 +77,18 @@ export function useCommitGraphData() {
 				const response = await sendRequestWithResponse({
 					commandType: "CommitGraph",
 					arguments: {
+						knownRepositoryId: loadingRepositoryId,
 						cursor: session.nextCursor || undefined,
 						limit: PAGE_SIZE,
 					},
 				});
+
+				if (
+					session.repositoryId !== loadingRepositoryId ||
+					session.generation !== loadingGeneration
+				) {
+					return;
+				}
 
 				if (!response) {
 					continue;
@@ -94,7 +115,12 @@ export function useCommitGraphData() {
 				isInitialLoading: false,
 			}));
 		} finally {
-			session.loading = false;
+			if (
+				session.repositoryId === loadingRepositoryId &&
+				session.generation === loadingGeneration
+			) {
+				session.loading = false;
+			}
 		}
 	});
 
@@ -109,19 +135,41 @@ export function useCommitGraphData() {
 		},
 	);
 
-	// biome-ignore lint/correctness/useExhaustiveDependencies: this is intended
+	// biome-ignore lint/correctness/useExhaustiveDependencies: runLoader is an effect event; reset only when the repo changes.
 	useEffect(() => {
-		if (session.rows.length > 0) {
+		resetSession(currentGitRepositoryId);
+		setState({
+			error: null,
+			isInitialLoading: Boolean(currentGitRepositoryId),
+			laneCount: 0,
+			rows: [],
+			totalRows: currentGitRepositoryId ? PAGE_SIZE : 0,
+		});
+
+		if (!currentGitRepositoryId) {
 			return;
 		}
+
 		session.requestedEnd = PAGE_SIZE;
 		void runLoader();
-	}, [runLoader]);
+	}, [currentGitRepositoryId]);
 
 	return {
 		...state,
 		ensureRangeLoaded,
 	};
+}
+
+function resetSession(repositoryId: string | null) {
+	session.generation++;
+	session.hasMore = true;
+	session.laneCount = 0;
+	session.loading = false;
+	session.nextCursor = undefined;
+	session.repositoryId = repositoryId;
+	session.requestedEnd = 0;
+	session.rows = [];
+	session.totalRows = 0;
 }
 
 function applyResponse(response: CommitGraphResponse, requiredLength: number) {

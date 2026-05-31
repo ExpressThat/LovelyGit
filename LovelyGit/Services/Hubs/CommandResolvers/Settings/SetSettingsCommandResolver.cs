@@ -5,24 +5,24 @@ using System.Text.Json.Serialization.Metadata;
 
 namespace ExpressThat.LovelyGit.Services.Hubs.CommandResolvers.Settings
 {
-    public class GetSettingsCommandResolver : CommandResponder<GetSettingsCommandArguments>
+    public class SetSettingsCommandResolver : CommandResponder<SetSettingsCommandArguments>
     {
         private readonly SettingsManager _settingsManager;
 
-        public GetSettingsCommandResolver(SettingsManager settingsManager)
+        public SetSettingsCommandResolver(SettingsManager settingsManager)
         {
             _settingsManager = settingsManager;
         }
 
-        protected override JsonTypeInfo<GetSettingsCommandArguments> ArgumentsJsonTypeInfo =>
-            SettingsJsonSerializerContext.Default.GetSettingsCommandArguments;
+        protected override JsonTypeInfo<SetSettingsCommandArguments> ArgumentsJsonTypeInfo =>
+            SettingsJsonSerializerContext.Default.SetSettingsCommandArguments;
 
         public override bool CanRespondTo(CommsHubCommand<JsonElement> command)
         {
-            return command.CommandType == CommsHubCommandType.GetSetting;
+            return command.CommandType == CommsHubCommandType.SetSetting;
         }
 
-        public override async Task<CommandResponseBase> Resolve(CommsHubCommand<GetSettingsCommandArguments> command)
+        public override async Task<CommandResponseBase> Resolve(CommsHubCommand<SetSettingsCommandArguments> command)
         {
             if (command.Arguments?.Setting == null)
             {
@@ -32,6 +32,17 @@ namespace ExpressThat.LovelyGit.Services.Hubs.CommandResolvers.Settings
                     CommandType = command.CommandType,
                     IsSuccess = false,
                     ErrorMessage = "Missing setting argument",
+                };
+            }
+
+            if (command.Arguments.ValueJson == null)
+            {
+                return new CommandResponseBase
+                {
+                    CommandUniqueId = command.CommandUniqueId,
+                    CommandType = command.CommandType,
+                    IsSuccess = false,
+                    ErrorMessage = "Missing setting value",
                 };
             }
 
@@ -46,12 +57,13 @@ namespace ExpressThat.LovelyGit.Services.Hubs.CommandResolvers.Settings
                 };
             }
 
-            return new CommandResponse<JsonElement>
+            await _settingsManager.SetSettingValue(setting, command.Arguments.ValueJson);
+
+            return new CommandResponseBase
             {
                 CommandUniqueId = command.CommandUniqueId,
                 CommandType = command.CommandType,
                 IsSuccess = true,
-                Result = await _settingsManager.GetSettingValue(setting),
             };
         }
     }
