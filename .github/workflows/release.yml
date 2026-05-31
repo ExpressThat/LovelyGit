@@ -196,10 +196,9 @@ jobs:
           --mainExe ${{ matrix.mainExe }}
           --runtime ${{ matrix.rid }}
           --channel ${{ matrix.rid }}
-          --framework webview2
+          --framework webview2,vcredist143-x64
           --azureTrustedSignFile "${{ env.AZURE_TRUSTED_SIGNING_METADATA }}"
           --icon LovelyGit/Assets/LovelyGit.ico
-          --msi true
           --outputDir artifacts/velopack/${{ matrix.rid }}
 
       - name: Package with Velopack and macOS signing
