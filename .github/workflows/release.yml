@@ -25,12 +25,12 @@ jobs:
           - rid: win-arm64
             runner: windows-latest
             mainExe: LovelyGit.exe
-          # - rid: osx-x64
-          #   runner: macos-26-intel
-          #   mainExe: LovelyGit
-          # - rid: osx-arm64
-          #   runner: macos-latest
-          #   mainExe: LovelyGit
+          - rid: osx-x64
+            runner: macos-26-intel
+            mainExe: LovelyGit
+          - rid: osx-arm64
+            runner: macos-latest
+            mainExe: LovelyGit
 
     env:
       PROJECT_PATH: LovelyGit/LovelyGit.csproj

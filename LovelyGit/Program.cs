@@ -27,6 +27,7 @@ public static class Program
 
         appBuilder.WindowBuilder
                     .SetUseOsDefaultSize(false)
+                    .SetChromeless(false)
                     .SetResizable(true)
                     .Center()
                     .SetTitle("LovelyGit")
