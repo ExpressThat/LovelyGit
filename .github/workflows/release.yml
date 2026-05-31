@@ -77,12 +77,12 @@ jobs:
         working-directory: ${{ env.FRONTEND_DIR }}
         run: pnpm install --frozen-lockfile
 
+      - name: Restore .NET dependencies
+        run: dotnet restore ${{ env.PROJECT_PATH }} -r ${{ matrix.rid }}
+
       - name: Build frontend
         working-directory: ${{ env.FRONTEND_DIR }}
         run: pnpm run prod
-
-      - name: Restore .NET dependencies
-        run: dotnet restore ${{ env.PROJECT_PATH }} -r ${{ matrix.rid }}
 
       - name: Publish app
         run: >
