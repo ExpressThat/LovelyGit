@@ -1,4 +1,4 @@
-﻿using ExpressThat.LazyGit;
+﻿using ExpressThat.LovelyGit;
 using ExpressThat.LovelyGit.Services.Data;
 using ExpressThat.LovelyGit.Services.Data.Repositorys;
 using ExpressThat.LovelyGit.Services.Hubs.CommandResolvers;

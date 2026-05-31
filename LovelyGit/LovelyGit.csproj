@@ -5,6 +5,11 @@
 		<Nullable>enable</Nullable>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<!--<OutputType>WinExe</OutputType>-->
+		<AssemblyName>LovelyGit</AssemblyName>
+		<AssemblyTitle>LovelyGit</AssemblyTitle>
+		<Product>LovelyGit</Product>
+		<Description>LovelyGit</Description>
+		<ApplicationIcon>Assets\LovelyGit.ico</ApplicationIcon>
 		<PublishAot>true</PublishAot>
 		<Company>ExpressThat LTD</Company>
 		<Authors>ExpressThat LTD</Authors>
@@ -35,6 +40,13 @@
 	<ItemGroup>
 	  <Folder Include="Frontend\" />
 	  <Folder Include="wwwroot\" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Content Include="Assets\LovelyGit.png" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="Always" />
+	  <Content Include="Assets\LovelyGit.ico" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="Always" />
+	  <Content Include="Assets\LovelyGit.icns" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="Always" />
+	  <Content Include="Assets\LovelyGit.logo.png" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="Always" />
 	</ItemGroup>
 
 	<ItemGroup>

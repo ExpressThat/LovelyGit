@@ -6,7 +6,7 @@ using ExpressThat.LovelyGit.Services.Settings;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace ExpressThat.LazyGit;
+namespace ExpressThat.LovelyGit;
 
 [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
 [JsonSerializable(typeof(CommitStats))]

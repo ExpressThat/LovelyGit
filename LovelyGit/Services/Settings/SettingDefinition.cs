@@ -1,4 +1,4 @@
-using ExpressThat.LazyGit;
+﻿using ExpressThat.LovelyGit;
 using System.Text.Json.Serialization.Metadata;
 
 namespace ExpressThat.LovelyGit.Services.Settings

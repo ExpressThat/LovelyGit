@@ -1,4 +1,4 @@
-using ExpressThat.LazyGit;
+﻿using ExpressThat.LovelyGit;
 using ExpressThat.LovelyGit.Services.Data.Models;
 using ExpressThat.LovelyGit.Services.Git.CommitGraph.Models;
 using ExpressThat.LovelyGit.Services.Hubs.CommandResolvers.CommitGraph;

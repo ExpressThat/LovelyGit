@@ -169,10 +169,12 @@ jobs:
           vpk pack
           --packId ${{ env.PACK_ID }}
           --packVersion ${{ env.RELEASE_VERSION }}
+          --packTitle LovelyGit
           --packDir artifacts/publish/${{ matrix.rid }}
           --mainExe ${{ matrix.mainExe }}
           --runtime ${{ matrix.rid }}
           --channel ${{ matrix.rid }}
+          --icon LovelyGit/Assets/LovelyGit.png
           --outputDir artifacts/velopack/${{ matrix.rid }}
 
       - name: Package with Velopack and Windows signing
@@ -181,11 +183,14 @@ jobs:
           vpk --verbose pack
           --packId ${{ env.PACK_ID }}
           --packVersion ${{ env.RELEASE_VERSION }}
+          --packTitle LovelyGit
           --packDir artifacts/publish/${{ matrix.rid }}
           --mainExe ${{ matrix.mainExe }}
           --runtime ${{ matrix.rid }}
           --channel ${{ matrix.rid }}
           --azureTrustedSignFile "${{ env.AZURE_TRUSTED_SIGNING_METADATA }}"
+          --icon LovelyGit/Assets/LovelyGit.ico
+          --msi true
           --outputDir artifacts/velopack/${{ matrix.rid }}
 
       - name: Package with Velopack and macOS signing
@@ -194,10 +199,12 @@ jobs:
           vpk pack
           --packId ${{ env.PACK_ID }}
           --packVersion ${{ env.RELEASE_VERSION }}
+          --packTitle LovelyGit
           --packDir artifacts/publish/${{ matrix.rid }}
           --mainExe ${{ matrix.mainExe }}
           --runtime ${{ matrix.rid }}
           --channel ${{ matrix.rid }}
+          --icon LovelyGit/Assets/LovelyGit.icns
           --signAppIdentity "Developer ID Application: ExpressThat LTD"
           --signInstallIdentity "Developer ID Installer: ExpressThat LTD"
           --notaryProfile velopack-profile

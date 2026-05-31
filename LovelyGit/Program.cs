@@ -5,9 +5,10 @@ using InfiniFrame;
 using InfiniFrame.WebServer;
 using KeySharp;
 using System.Drawing;
+using System.Runtime.InteropServices;
 using Velopack;
 
-namespace ExpressThat.LazyGit;
+namespace ExpressThat.LovelyGit;
 
 public static class Program
 {
@@ -28,7 +29,8 @@ public static class Program
                     .SetUseOsDefaultSize(false)
                     .SetResizable(true)
                     .Center()
-                    .SetTitle("InfiniLore InfiniFrame.NET REACT Sample")
+                    .SetTitle("LovelyGit")
+                    .SetIconFile(GetWindowIconPath())
                     .SetSize(new Size(800, 600))
 #if !DEBUG
                     .SetStartUrl("http://localhost:5000")
@@ -36,7 +38,7 @@ public static class Program
                     ;
 
 
-        Keyring.SetPassword("expressthat.lazygit", "Security", "MasterPassword", "password");
+        Keyring.SetPassword("expressthat.lovelygit", "Security", "MasterPassword", "password");
 
         var application = appBuilder.Build();
 
@@ -67,5 +69,14 @@ public static class Program
 
         application.Run();
 
+    }
+
+    private static string GetWindowIconPath()
+    {
+        var fileName = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+            ? "LovelyGit.ico"
+            : "LovelyGit.png";
+
+        return Path.Combine(AppContext.BaseDirectory, "Assets", fileName);
     }
 }
