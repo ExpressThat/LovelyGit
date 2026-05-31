@@ -158,6 +158,7 @@ jobs:
             --apple-id "$APPLE_ID" \
             --team-id "$APPLE_TEAM" \
             --password "$APPLE_PASSWORD" \
+            --keychain "$KEYCHAIN_PATH" \
             velopack-profile
 
           echo "APPLE_KEYCHAIN_PATH=$KEYCHAIN_PATH" >> "$GITHUB_ENV"
