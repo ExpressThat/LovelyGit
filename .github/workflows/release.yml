@@ -22,9 +22,11 @@ jobs:
           - rid: win-x64
             runner: windows-latest
             mainExe: LovelyGit.exe
+            framework: webview2,vcredist143-x64
           - rid: win-arm64
             runner: windows-latest
             mainExe: LovelyGit.exe
+            framework: webview2,vcredist143-arm64
           - rid: osx-x64
             runner: macos-26-intel
             mainExe: LovelyGit
@@ -196,7 +198,7 @@ jobs:
           --mainExe ${{ matrix.mainExe }}
           --runtime ${{ matrix.rid }}
           --channel ${{ matrix.rid }}
-          --framework webview2,vcredist143-x64
+          --framework ${{ matrix.framework }}
           --azureTrustedSignFile "${{ env.AZURE_TRUSTED_SIGNING_METADATA }}"
           --icon LovelyGit/Assets/LovelyGit.ico
           --outputDir artifacts/velopack/${{ matrix.rid }}
