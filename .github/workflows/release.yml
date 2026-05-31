@@ -67,7 +67,9 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 10.0.x
+          dotnet-version: |
+            10.0.x
+            8.0.x
 
       - name: Restore .NET tools
         working-directory: LovelyGit
@@ -96,7 +98,67 @@ jobs:
       - name: Install Velopack CLI
         run: dotnet tool install --global vpk --version ${{ env.VPK_VERSION }}
 
+      - name: Azure login for Windows signing
+        if: runner.os == 'Windows'
+        uses: azure/login@v3
+        with:
+          creds: >-
+            {
+              "clientId": "${{ secrets.AZURE_CLIENT_ID }}",
+              "clientSecret": "${{ secrets.AZURE_CLIENT_SECRET }}",
+              "tenantId": "${{ secrets.AZURE_TENANT_ID }}",
+              "subscriptionId": "${{ secrets.AZURE_SUBSCRIPTION_ID }}"
+            }
+
+      - name: Create Azure Artifact Signing metadata
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $metadataPath = Join-Path $env:RUNNER_TEMP "trusted-signing-metadata.json"
+          @{
+            Endpoint = "${{ secrets.AZURE_TRUSTED_SIGNING_ENDPOINT }}"
+            CodeSigningAccountName = "${{ secrets.AZURE_TRUSTED_SIGNING_ACCOUNT_NAME }}"
+            CertificateProfileName = "${{ secrets.AZURE_TRUSTED_SIGNING_CERTIFICATE_PROFILE_NAME }}"
+          } | ConvertTo-Json | Set-Content -Path $metadataPath -Encoding utf8NoBOM
+          "AZURE_TRUSTED_SIGNING_METADATA=$metadataPath" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+      - name: Install Apple certificates and notary profile
+        if: runner.os == 'macOS'
+        shell: bash
+        env:
+          BUILD_CERTIFICATE_BASE64: ${{ secrets.BUILD_CERTIFICATE_BASE64 }}
+          INSTALLER_CERTIFICATE_BASE64: ${{ secrets.INSTALLER_CERTIFICATE_BASE64 }}
+          P12_PASSWORD: ${{ secrets.P12_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM: ${{ secrets.APPLE_TEAM }}
+          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
+        run: |
+          CERT_BUILD_PATH="$RUNNER_TEMP/build_certificate.p12"
+          CERT_INSTALLER_PATH="$RUNNER_TEMP/installer_certificate.p12"
+          KEYCHAIN_PATH="$RUNNER_TEMP/app-signing.keychain-db"
+
+          echo -n "$BUILD_CERTIFICATE_BASE64" | base64 --decode -o "$CERT_BUILD_PATH"
+          echo -n "$INSTALLER_CERTIFICATE_BASE64" | base64 --decode -o "$CERT_INSTALLER_PATH"
+
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security import "$CERT_BUILD_PATH" -P "$P12_PASSWORD" -A -t cert -f pkcs12 -k "$KEYCHAIN_PATH"
+          security import "$CERT_INSTALLER_PATH" -P "$P12_PASSWORD" -A -t cert -f pkcs12 -k "$KEYCHAIN_PATH"
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security list-keychain -d user -s "$KEYCHAIN_PATH"
+
+          xcrun notarytool store-credentials \
+            --apple-id "$APPLE_ID" \
+            --team-id "$APPLE_TEAM" \
+            --password "$APPLE_PASSWORD" \
+            velopack-profile
+
+          echo "APPLE_KEYCHAIN_PATH=$KEYCHAIN_PATH" >> "$GITHUB_ENV"
+
       - name: Package with Velopack
+        if: runner.os == 'Linux'
         run: >
           vpk pack
           --packId ${{ env.PACK_ID }}
@@ -107,12 +169,45 @@ jobs:
           --channel ${{ matrix.rid }}
           --outputDir artifacts/velopack/${{ matrix.rid }}
 
+      - name: Package with Velopack and Windows signing
+        if: runner.os == 'Windows'
+        run: >
+          vpk pack
+          --packId ${{ env.PACK_ID }}
+          --packVersion ${{ env.RELEASE_VERSION }}
+          --packDir artifacts/publish/${{ matrix.rid }}
+          --mainExe ${{ matrix.mainExe }}
+          --runtime ${{ matrix.rid }}
+          --channel ${{ matrix.rid }}
+          --azureTrustedSignFile "${{ env.AZURE_TRUSTED_SIGNING_METADATA }}"
+          --outputDir artifacts/velopack/${{ matrix.rid }}
+
+      - name: Package with Velopack and macOS signing
+        if: runner.os == 'macOS'
+        run: >
+          vpk pack
+          --packId ${{ env.PACK_ID }}
+          --packVersion ${{ env.RELEASE_VERSION }}
+          --packDir artifacts/publish/${{ matrix.rid }}
+          --mainExe ${{ matrix.mainExe }}
+          --runtime ${{ matrix.rid }}
+          --channel ${{ matrix.rid }}
+          --signAppIdentity "Developer ID Application: ExpressThat LTD"
+          --signInstallIdentity "Developer ID Installer: ExpressThat LTD"
+          --notaryProfile velopack-profile
+          --keychain "${{ env.APPLE_KEYCHAIN_PATH }}"
+          --outputDir artifacts/velopack/${{ matrix.rid }}
+
       - name: Upload package artifact
         uses: actions/upload-artifact@v4
         with:
           name: velopack-${{ matrix.rid }}
           path: artifacts/velopack/${{ matrix.rid }}/**
           if-no-files-found: error
+
+      - name: Clean up Apple keychain
+        if: ${{ always() && runner.os == 'macOS' && env.APPLE_KEYCHAIN_PATH != '' }}
+        run: security delete-keychain "$APPLE_KEYCHAIN_PATH"
 
   draft-release:
     name: Draft GitHub release
