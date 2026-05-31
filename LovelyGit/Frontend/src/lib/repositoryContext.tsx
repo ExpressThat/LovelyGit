@@ -45,6 +45,23 @@ export function RepositoryProvider({ children }: { children: ReactNode }) {
 		}
 	}, []);
 
+	const closeRepository = useCallback(
+		async (repositoryId: string) => {
+			await sendRequestWithResponse({
+				commandType: "RemoveKnownGitRepositorys",
+				arguments: {
+					knownRepositoryId: repositoryId,
+				},
+			});
+
+			setRepositories((current) =>
+				current.filter((repository) => repository.id !== repositoryId),
+			);
+			await reloadRepositories();
+		},
+		[reloadRepositories],
+	);
+
 	useEffect(() => {
 		void initSettingsStore();
 		void reloadRepositories();
@@ -62,7 +79,7 @@ export function RepositoryProvider({ children }: { children: ReactNode }) {
 		() => ({
 			currentRepository,
 			currentRepositoryId,
-			closeRepository: async () => {},
+			closeRepository,
 			isLoadingRepositories,
 			reloadRepositories,
 			repositories,
@@ -70,6 +87,7 @@ export function RepositoryProvider({ children }: { children: ReactNode }) {
 				setSetting("CurrentGitRepositoryId", repositoryId),
 		}),
 		[
+			closeRepository,
 			currentRepository,
 			currentRepositoryId,
 			isLoadingRepositories,
