@@ -9,6 +9,7 @@ internal static class CommitGraphServiceCollectionExtensions
     {
         services.AddLovelyGitJsonTypeInfoResolver(CommitGraphJsonSerializerContext.Default);
         services.AddSingleton<ICommandResponder, CommitGraphCommandResolver>();
+        services.AddSingleton<ICommandResponder, GetCommitDetailsCommandResolver>();
 
         return services;
     }

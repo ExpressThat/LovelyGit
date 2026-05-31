@@ -1,0 +1,208 @@
+import { File, FilePlus2, FileX2, GitBranch } from "lucide-react";
+import { useEffect, useState } from "react";
+import type {
+	CommitChangedFile,
+	CommitDetailsResponse,
+} from "@/generated/ExpressThat.LovelyGit.Services.Git.CommitGraph.Models";
+import { sendRequestWithResponse } from "@/lib/registerSignalR";
+import { formatDate, shortHash } from "../CommitGraph/utils/format";
+
+type CommitDetailsState =
+	| { status: "loading" }
+	| { status: "error"; message: string }
+	| { status: "loaded"; details: CommitDetailsResponse };
+
+export function CommitDetails({
+	commitHash,
+	repositoryId,
+}: {
+	commitHash: string;
+	repositoryId: string;
+}) {
+	const [state, setState] = useState<CommitDetailsState>({ status: "loading" });
+
+	useEffect(() => {
+		let isActive = true;
+		setState({ status: "loading" });
+
+		sendRequestWithResponse({
+			commandType: "GetCommitDetails",
+			arguments: {
+				repositoryId,
+				commitHash,
+			},
+		})
+			.then((details) => {
+				if (!isActive) {
+					return;
+				}
+
+				if (!details) {
+					setState({ status: "error", message: "Commit details were empty." });
+					return;
+				}
+
+				setState({ status: "loaded", details });
+			})
+			.catch((error: unknown) => {
+				if (!isActive) {
+					return;
+				}
+
+				setState({
+					status: "error",
+					message:
+						error instanceof Error
+							? error.message
+							: "Failed to load commit details.",
+				});
+			});
+
+		return () => {
+			isActive = false;
+		};
+	}, [commitHash, repositoryId]);
+
+	if (state.status === "loading") {
+		return (
+			<div className="space-y-3 p-4">
+				<div className="h-4 w-40 animate-pulse rounded bg-muted" />
+				<div className="h-20 animate-pulse rounded bg-muted" />
+				<div className="h-40 animate-pulse rounded bg-muted" />
+			</div>
+		);
+	}
+
+	if (state.status === "error") {
+		return (
+			<div className="m-4 rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
+				{state.message}
+			</div>
+		);
+	}
+
+	const { details } = state;
+	const title = details.subject || "(no commit message)";
+
+	return (
+		<div className="space-y-4 p-4 text-left text-sm">
+			<section className="space-y-2">
+				<div className="flex items-center gap-2 text-xs text-muted-foreground">
+					<span className="font-mono">{shortHash(details.hash)}</span>
+					<span>{formatDate(details.date)}</span>
+				</div>
+				<h3 className="text-base font-semibold leading-snug text-foreground">
+					{title}
+				</h3>
+				<div className="text-xs text-muted-foreground">
+					{details.author} &lt;{details.email || "unknown"}&gt;
+				</div>
+			</section>
+
+			{details.message ? (
+				<pre className="max-h-56 overflow-auto whitespace-pre-wrap rounded-md border bg-card p-3 font-mono text-xs leading-5 text-card-foreground">
+					{details.message}
+				</pre>
+			) : null}
+
+			<section className="grid grid-cols-3 gap-2">
+				<Stat label="Files" value={details.changedFiles.length} />
+				<Stat
+					label="Additions"
+					value={`+${details.stats.additions.toLocaleString()}`}
+				/>
+				<Stat
+					label="Deletions"
+					value={`-${details.stats.deletions.toLocaleString()}`}
+				/>
+			</section>
+
+			{details.branches.length > 0 || details.tags.length > 0 ? (
+				<section className="flex flex-wrap gap-1.5">
+					{[...details.branches, ...details.tags].map((ref) => (
+						<span
+							className="inline-flex max-w-full items-center gap-1 rounded border bg-card px-1.5 py-0.5 text-xs text-muted-foreground"
+							key={ref}
+							title={ref}
+						>
+							<GitBranch aria-hidden="true" size={12} />
+							<span className="truncate">{ref}</span>
+						</span>
+					))}
+				</section>
+			) : null}
+
+			<section className="space-y-1">
+				{details.changedFiles.map((file) => (
+					<ChangedFileRow file={file} key={`${file.status}:${file.path}`} />
+				))}
+			</section>
+		</div>
+	);
+}
+
+function Stat({ label, value }: { label: string; value: number | string }) {
+	return (
+		<div className="rounded-md border bg-card p-2">
+			<div className="text-[10px] font-semibold uppercase text-muted-foreground">
+				{label}
+			</div>
+			<div className="mt-1 font-mono text-sm text-foreground">{value}</div>
+		</div>
+	);
+}
+
+function ChangedFileRow({ file }: { file: CommitChangedFile }) {
+	const Icon = statusIcon(file.status);
+
+	return (
+		<div className="flex min-h-9 items-center gap-2 border-b py-1.5 last:border-b-0">
+			<Icon aria-hidden="true" className={statusColor(file.status)} size={15} />
+			<div className="min-w-0 flex-1">
+				<div
+					className="truncate font-mono text-xs text-foreground"
+					title={file.path}
+				>
+					{file.path}
+				</div>
+				<div className="text-[10px] uppercase text-muted-foreground">
+					{file.status}
+					{file.isBinary ? " binary" : ""}
+				</div>
+			</div>
+			<div className="shrink-0 font-mono text-xs">
+				<span className="text-emerald-600 dark:text-emerald-400">
+					+{file.additions}
+				</span>{" "}
+				<span className="text-red-600 dark:text-red-400">
+					-{file.deletions}
+				</span>
+			</div>
+		</div>
+	);
+}
+
+function statusIcon(status: string) {
+	switch (status) {
+		case "Added":
+			return FilePlus2;
+		case "Deleted":
+			return FileX2;
+		default:
+			return File;
+	}
+}
+
+function statusColor(status: string) {
+	switch (status) {
+		case "Added":
+			return "shrink-0 text-emerald-600 dark:text-emerald-400";
+		case "Deleted":
+			return "shrink-0 text-red-600 dark:text-red-400";
+		case "Modified":
+		case "TypeChanged":
+			return "shrink-0 text-amber-600 dark:text-amber-400";
+		default:
+			return "shrink-0 text-muted-foreground";
+	}
+}

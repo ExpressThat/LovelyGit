@@ -15,6 +15,7 @@ internal sealed record GitTag(GitObjectId Hash, GitObjectId Target, string Name,
 internal sealed class GitCommit
 {
     public GitObjectId Hash { get; init; }
+    public GitObjectId? TreeHash { get; set; }
     public List<GitObjectId> ParentHashes { get; } = new();
     public string AuthorName { get; set; } = string.Empty;
     public string AuthorEmail { get; set; } = string.Empty;
@@ -23,6 +24,17 @@ internal sealed class GitCommit
     public string Body { get; set; } = string.Empty;
     public List<string> Branches { get; } = new();
     public List<string> Tags { get; } = new();
+}
+
+internal sealed record GitTreeFile(string Path, GitObjectId ObjectId, string Mode);
+
+internal sealed record GitTreeComparison(
+    IReadOnlyDictionary<string, GitTreeFile> ParentFiles,
+    IReadOnlyDictionary<string, GitTreeFile> CurrentFiles);
+
+internal sealed record GitTreeEntry(string Name, string Path, GitObjectId ObjectId, string Mode)
+{
+    public bool IsTree => Mode == "40000";
 }
 
 internal enum GitObjectKind

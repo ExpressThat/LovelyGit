@@ -10,6 +10,8 @@ import { SkeletonShimmer } from "./SkeletonShimmer";
 
 export function CommitRow({
 	graph,
+	isSelected,
+	onSelect,
 	row,
 	rowIndex,
 	templateColumns,
@@ -18,11 +20,13 @@ export function CommitRow({
 		contentWidth: number;
 		scrollLeft: number;
 	};
+	isSelected: boolean;
+	onSelect: (row: CommitGraphRow) => void;
 	row: CommitGraphRow | null;
 	rowIndex: number;
 	templateColumns: string;
 }) {
-	const rowClassName = `grid h-[22px] leading-[22px] ${rowIndex % 2 === 0 ? "bg-background dark:bg-background" : "bg-card/70 dark:bg-card/45"} hover:bg-accent/75 dark:hover:bg-accent/60`;
+	const rowClassName = `grid h-[22px] leading-[22px] ${isSelected ? "bg-primary/12 ring-1 ring-inset ring-primary/35 dark:bg-primary/20" : rowIndex % 2 === 0 ? "bg-background dark:bg-background" : "bg-card/70 dark:bg-card/45"} hover:bg-accent/75 dark:hover:bg-accent/60`;
 
 	if (!row) {
 		return (
@@ -54,9 +58,11 @@ export function CommitRow({
 	}
 
 	return (
-		<div
-			className={rowClassName}
+		<button
+			className={`${rowClassName} w-full cursor-pointer border-0 p-0 text-left text-inherit focus-visible:bg-accent focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-ring`}
+			onClick={() => onSelect(row)}
 			style={{ gridTemplateColumns: templateColumns }}
+			type="button"
 		>
 			<Column className="px-[6px] py-[2px]">
 				<RefCell row={row} />
@@ -77,7 +83,7 @@ export function CommitRow({
 			<Column className="px-2" isLast>
 				<AuthorCell row={row} />
 			</Column>
-		</div>
+		</button>
 	);
 }
 

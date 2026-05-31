@@ -135,7 +135,6 @@ export function useCommitGraphData() {
 		},
 	);
 
-	// biome-ignore lint/correctness/useExhaustiveDependencies: runLoader is an effect event; reset only when the repo changes.
 	useEffect(() => {
 		resetSession(currentGitRepositoryId);
 		setState({

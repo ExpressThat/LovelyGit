@@ -135,6 +135,29 @@ internal sealed class LovelyGitRepository : IDisposable
         return commits;
     }
 
+    public async Task<GitTreeComparison> GetChangedTreeFilesAsync(
+        GitObjectId? parentTreeId,
+        GitObjectId? currentTreeId,
+        CancellationToken cancellationToken)
+    {
+        var parentFiles = new Dictionary<string, GitTreeFile>(StringComparer.Ordinal);
+        var currentFiles = new Dictionary<string, GitTreeFile>(StringComparer.Ordinal);
+        await CompareTreesAsync(parentTreeId, currentTreeId, string.Empty, parentFiles, currentFiles, cancellationToken)
+            .ConfigureAwait(false);
+        return new GitTreeComparison(parentFiles, currentFiles);
+    }
+
+    public async Task<byte[]> ReadBlobAsync(GitObjectId id, CancellationToken cancellationToken)
+    {
+        var data = await _objectStore.ReadObjectAsync(id, cancellationToken).ConfigureAwait(false);
+        if (data.Kind != GitObjectKind.Blob)
+        {
+            throw new InvalidDataException($"Object is not a blob: {id}");
+        }
+
+        return data.Data;
+    }
+
     public IReadOnlyList<GitRef> GetBranches()
     {
         return _refsByFullName.Values
@@ -154,6 +177,164 @@ internal sealed class LovelyGitRepository : IDisposable
 
     public void Dispose()
     {
+    }
+
+    private async Task ReadTreeFilesAsync(
+        GitObjectId treeId,
+        string prefix,
+        Dictionary<string, GitTreeFile> files,
+        CancellationToken cancellationToken)
+    {
+        foreach (var entry in await ReadTreeEntriesAsync(treeId, prefix, cancellationToken).ConfigureAwait(false))
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            if (entry.IsTree)
+            {
+                await ReadTreeFilesAsync(entry.ObjectId, entry.Path, files, cancellationToken).ConfigureAwait(false);
+                continue;
+            }
+
+            files[entry.Path] = new GitTreeFile(entry.Path, entry.ObjectId, entry.Mode);
+        }
+    }
+
+    private async Task CompareTreesAsync(
+        GitObjectId? parentTreeId,
+        GitObjectId? currentTreeId,
+        string prefix,
+        Dictionary<string, GitTreeFile> parentFiles,
+        Dictionary<string, GitTreeFile> currentFiles,
+        CancellationToken cancellationToken)
+    {
+        if (parentTreeId == currentTreeId)
+        {
+            return;
+        }
+
+        var parentEntries = parentTreeId == null
+            ? new Dictionary<string, GitTreeEntry>(StringComparer.Ordinal)
+            : (await ReadTreeEntriesAsync(parentTreeId.Value, prefix, cancellationToken).ConfigureAwait(false))
+                .ToDictionary(entry => entry.Name, StringComparer.Ordinal);
+        var currentEntries = currentTreeId == null
+            ? new Dictionary<string, GitTreeEntry>(StringComparer.Ordinal)
+            : (await ReadTreeEntriesAsync(currentTreeId.Value, prefix, cancellationToken).ConfigureAwait(false))
+                .ToDictionary(entry => entry.Name, StringComparer.Ordinal);
+        var names = parentEntries.Keys
+            .Concat(currentEntries.Keys)
+            .Distinct(StringComparer.Ordinal)
+            .OrderBy(name => name, StringComparer.Ordinal);
+
+        foreach (var name in names)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            parentEntries.TryGetValue(name, out var parentEntry);
+            currentEntries.TryGetValue(name, out var currentEntry);
+
+            if (parentEntry?.ObjectId == currentEntry?.ObjectId && parentEntry?.Mode == currentEntry?.Mode)
+            {
+                continue;
+            }
+
+            if (parentEntry?.IsTree == true && currentEntry?.IsTree == true)
+            {
+                await CompareTreesAsync(
+                        parentEntry.ObjectId,
+                        currentEntry.ObjectId,
+                        parentEntry.Path,
+                        parentFiles,
+                        currentFiles,
+                        cancellationToken)
+                    .ConfigureAwait(false);
+                continue;
+            }
+
+            if (parentEntry != null)
+            {
+                await CollectTreeEntryFilesAsync(parentEntry, parentFiles, cancellationToken).ConfigureAwait(false);
+            }
+
+            if (currentEntry != null)
+            {
+                await CollectTreeEntryFilesAsync(currentEntry, currentFiles, cancellationToken).ConfigureAwait(false);
+            }
+        }
+    }
+
+    private async Task CollectTreeEntryFilesAsync(
+        GitTreeEntry entry,
+        Dictionary<string, GitTreeFile> files,
+        CancellationToken cancellationToken)
+    {
+        if (!entry.IsTree)
+        {
+            files[entry.Path] = new GitTreeFile(entry.Path, entry.ObjectId, entry.Mode);
+            return;
+        }
+
+        await ReadTreeFilesAsync(entry.ObjectId, entry.Path, files, cancellationToken).ConfigureAwait(false);
+    }
+
+    private async Task<List<GitTreeEntry>> ReadTreeEntriesAsync(
+        GitObjectId treeId,
+        string prefix,
+        CancellationToken cancellationToken)
+    {
+        var data = await _objectStore.ReadObjectAsync(treeId, cancellationToken).ConfigureAwait(false);
+        if (data.Kind != GitObjectKind.Tree)
+        {
+            throw new InvalidDataException($"Object is not a tree: {treeId}");
+        }
+
+        var entries = new List<GitTreeEntry>();
+        var index = 0;
+        while (index < data.Data.Length)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var modeStart = index;
+            while (index < data.Data.Length && data.Data[index] != (byte)' ')
+            {
+                index++;
+            }
+
+            if (index >= data.Data.Length)
+            {
+                throw new InvalidDataException("Tree entry has no mode terminator.");
+            }
+
+            var mode = Encoding.ASCII.GetString(data.Data, modeStart, index - modeStart);
+            index++;
+
+            var nameStart = index;
+            while (index < data.Data.Length && data.Data[index] != 0)
+            {
+                index++;
+            }
+
+            if (index >= data.Data.Length)
+            {
+                throw new InvalidDataException("Tree entry has no name terminator.");
+            }
+
+            var name = Encoding.UTF8.GetString(data.Data, nameStart, index - nameStart);
+            index++;
+
+            var hashLength = GitObjectId.GetByteLength(ObjectFormat);
+            if (index + hashLength > data.Data.Length)
+            {
+                throw new InvalidDataException("Tree entry object id is truncated.");
+            }
+
+            var objectId = new GitObjectId(
+                Convert.ToHexString(data.Data.AsSpan(index, hashLength)).ToLowerInvariant(),
+                ObjectFormat);
+            index += hashLength;
+
+            var path = string.IsNullOrEmpty(prefix) ? name : $"{prefix}/{name}";
+            entries.Add(new GitTreeEntry(name, path, objectId, mode));
+        }
+
+        return entries;
     }
 
     private static async Task<string> ResolveGitDirectoryAsync(string path, CancellationToken cancellationToken)
@@ -387,6 +568,10 @@ internal sealed class LovelyGitRepository : IDisposable
             if (line.StartsWith("parent ", StringComparison.Ordinal))
             {
                 commit.ParentHashes.Add(GitObjectId.Parse(line["parent ".Length..].Trim(), id.ObjectFormat));
+            }
+            else if (line.StartsWith("tree ", StringComparison.Ordinal))
+            {
+                commit.TreeHash = GitObjectId.Parse(line["tree ".Length..].Trim(), id.ObjectFormat);
             }
             else if (line.StartsWith("author ", StringComparison.Ordinal))
             {

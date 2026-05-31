@@ -11,6 +11,7 @@ namespace ExpressThat.LovelyGit.Services.Hubs.Commands
         AddKnownGitRepositorys,
         RemoveKnownGitRepositorys,
         CommitGraph,
+        GetCommitDetails,
         GetSetting,
         SetSetting,
         GetAllSettings,

@@ -1,5 +1,6 @@
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { useEffect, useMemo, useRef, useState } from "react";
+import type { CommitGraphRow as CommitGraphRowModel } from "@/generated/ExpressThat.LovelyGit.Services.Git.CommitGraph.Models";
 import { CommitRow } from "./components/CommitRow";
 import { HeaderCell } from "./components/HeaderCell";
 import type { ColKey } from "./constants";
@@ -23,7 +24,13 @@ const HEADER_LABELS: Record<ColKey, string> = {
 	message: "Commit Message",
 };
 
-export function CommitGraphView() {
+export function CommitGraphView({
+	onSelectCommit,
+	selectedCommitHash,
+}: {
+	onSelectCommit: (row: CommitGraphRowModel) => void;
+	selectedCommitHash: string | null;
+}) {
 	const viewportRef = useRef<HTMLDivElement | null>(null);
 	const scrollRef = useRef<HTMLDivElement | null>(null);
 	const [containerWidth, setContainerWidth] = useState(0);
@@ -192,6 +199,11 @@ export function CommitGraphView() {
 										contentWidth: graphContentWidth,
 										scrollLeft: graphScrollLeft,
 									}}
+									isSelected={
+										Boolean(rows[item.index]) &&
+										rows[item.index]?.commit.hash === selectedCommitHash
+									}
+									onSelect={onSelectCommit}
 									row={rows[item.index] ?? null}
 									rowIndex={item.index}
 									templateColumns={templateColumns}
