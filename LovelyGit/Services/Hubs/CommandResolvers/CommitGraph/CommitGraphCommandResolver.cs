@@ -10,19 +10,24 @@ using System.Text.Json.Serialization.Metadata;
 
 namespace ExpressThat.LovelyGit.Services.Hubs.CommandResolvers.CommitGraph
 {
-    public class CommitGraphCommandResolver : CommandResponder<CommitGraphCommandArguments>
+    internal class CommitGraphCommandResolver : CommandResponder<CommitGraphCommandArguments>
     {
-        private KnownGitRepositorysRepository _knownGitRepositorysRepository;
+        private readonly KnownGitRepositorysRepository _knownGitRepositorysRepository;
         private readonly CommitGraphRepository _commitGraphRepository;
+        private readonly CommitDetailsPreloadService _commitDetailsPreloadService;
         private readonly Dictionary<Guid, CommitGraphManager> _activeGraphs = new();
 
         protected override JsonTypeInfo<CommitGraphCommandArguments> ArgumentsJsonTypeInfo =>
             CommitGraphJsonSerializerContext.Default.CommitGraphCommandArguments;
 
-        public CommitGraphCommandResolver(KnownGitRepositorysRepository knownGitRepositorysRepository, CommitGraphRepository commitGraphRepository)
+        public CommitGraphCommandResolver(
+            KnownGitRepositorysRepository knownGitRepositorysRepository,
+            CommitGraphRepository commitGraphRepository,
+            CommitDetailsPreloadService commitDetailsPreloadService)
         {
             _knownGitRepositorysRepository = knownGitRepositorysRepository;
             _commitGraphRepository = commitGraphRepository;
+            _commitDetailsPreloadService = commitDetailsPreloadService;
         }
 
         public override bool CanRespondTo(CommsHubCommand<JsonElement> command)
@@ -75,8 +80,10 @@ namespace ExpressThat.LovelyGit.Services.Hubs.CommandResolvers.CommitGraph
                 limit = 0;
             }
 
-            if (string.IsNullOrWhiteSpace(cursorText))
+            var isFreshGraphLoad = string.IsNullOrWhiteSpace(cursorText);
+            if (isFreshGraphLoad)
             {
+                await _commitDetailsPreloadService.CancelActiveAsync(CancellationToken.None);
                 await _commitGraphRepository.ClearRepositoryAsync(foundRepo.Id);
             }
 
@@ -109,6 +116,11 @@ namespace ExpressThat.LovelyGit.Services.Hubs.CommandResolvers.CommitGraph
 
                 var response = page.Response;
                 response.NextCursor = response.HasMore ? CommitGraphManager.EncodeCursorState(page.NextCursor) : null;
+                await TrySaveCachedCommitsAsync(foundRepo.Id, response).ConfigureAwait(false);
+                await _commitDetailsPreloadService
+                    .StartOrSwitchAsync(foundRepo.Id, foundRepo.Path, CancellationToken.None)
+                    .ConfigureAwait(false);
+
                 if (!response.HasMore)
                 {
                     if (_activeGraphs.Remove(foundRepo.Id, out var completedGraph))
@@ -134,6 +146,19 @@ namespace ExpressThat.LovelyGit.Services.Hubs.CommandResolvers.CommitGraph
                     IsSuccess = false,
                     ErrorMessage = ex.Message
                 };
+            }
+        }
+
+        private async Task TrySaveCachedCommitsAsync(Guid repositoryId, CommitGraphResponse response)
+        {
+            try
+            {
+                await _commitGraphRepository
+                    .SaveCachedCommitsAsync(repositoryId, response, CancellationToken.None)
+                    .ConfigureAwait(false);
+            }
+            catch
+            {
             }
         }
     }

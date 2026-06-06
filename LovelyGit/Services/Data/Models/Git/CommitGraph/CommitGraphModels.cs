@@ -51,6 +51,22 @@ namespace ExpressThat.LovelyGit.Services.Data.Models.Git.CommitGraph
         public string Hash { get; set; } = string.Empty;
     }
 
+    [Table("commit_graph_cached_commit")]
+    public sealed record CommitGraphCachedCommitEntry
+    {
+        [Key]
+        public string Id { get; set; } = string.Empty;
+
+        [Column("repositoryid")]
+        public Guid RepositoryId { get; set; }
+
+        [Column("rowindex")]
+        public int RowIndex { get; set; }
+
+        [Column("hash")]
+        public string Hash { get; set; } = string.Empty;
+    }
+
     [Table("commit_details_cache")]
     public sealed record CommitDetailsCacheEntry
     {
@@ -101,9 +117,6 @@ namespace ExpressThat.LovelyGit.Services.Data.Models.Git.CommitGraph
 
         [Column("stats")]
         public CommitStatsCache Stats { get; set; } = new();
-
-        [Column("changedfiles")]
-        public List<CommitChangedFileCache> ChangedFiles { get; set; } = new();
     }
 
     public sealed record CommitStatsCache
@@ -113,6 +126,25 @@ namespace ExpressThat.LovelyGit.Services.Data.Models.Git.CommitGraph
 
         [Column("deletions")]
         public long Deletions { get; set; }
+    }
+
+    [Table("commit_details_changed_file_cache")]
+    public sealed record CommitChangedFileCacheEntry
+    {
+        [Key]
+        public string Id { get; set; } = string.Empty;
+
+        [Column("repositoryid")]
+        public Guid RepositoryId { get; set; }
+
+        [Column("hash")]
+        public string Hash { get; set; } = string.Empty;
+
+        [Column("fileindex")]
+        public int FileIndex { get; set; }
+
+        [Column("file")]
+        public CommitChangedFileCache File { get; set; } = new();
     }
 
     public sealed record CommitChangedFileCache

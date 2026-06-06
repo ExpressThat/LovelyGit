@@ -9,7 +9,9 @@ public partial class GitRepoCacheDbContext : DocumentDbContext
     public DocumentCollection<Guid, CommitGraphRepositoryState> CommitGraphStates { get; set; } = null!;
     public DocumentCollection<string, CommitGraphFrontierEntry> CommitGraphFrontier { get; set; } = null!;
     public DocumentCollection<string, CommitGraphSeenEntry> CommitGraphSeen { get; set; } = null!;
+    public DocumentCollection<string, CommitGraphCachedCommitEntry> CommitGraphCachedCommits { get; set; } = null!;
     public DocumentCollection<string, CommitDetailsCacheEntry> CommitDetailsCache { get; set; } = null!;
+    public DocumentCollection<string, CommitChangedFileCacheEntry> CommitDetailsChangedFiles { get; set; } = null!;
 
     public GitRepoCacheDbContext() : base(GetBasePath())
     {
@@ -79,7 +81,13 @@ public partial class GitRepoCacheDbContext : DocumentDbContext
         modelBuilder.Entity<CommitGraphSeenEntry>()
             .HasIndex(entity => entity.RepositoryId);
 
+        modelBuilder.Entity<CommitGraphCachedCommitEntry>()
+            .HasIndex(entity => entity.RepositoryId);
+
         modelBuilder.Entity<CommitDetailsCacheEntry>()
+            .HasIndex(entity => entity.RepositoryId);
+
+        modelBuilder.Entity<CommitChangedFileCacheEntry>()
             .HasIndex(entity => entity.RepositoryId);
     }
 }
