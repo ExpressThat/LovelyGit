@@ -165,7 +165,7 @@ function readCommandContracts(): CommandContract[] {
 
 function readCommandContractsFromSource(source: string): CommandContract[] {
 	const classRegex =
-		/public\s+class\s+(?<name>\w+)\s*:\s*CommandResponder<(?<argumentsType>[^>]+)>/g;
+		/(?:public|internal)\s+class\s+(?<name>\w+)\s*:\s*CommandResponder<(?<argumentsType>[^>]+)>/g;
 	const matches = [...source.matchAll(classRegex)];
 
 	return matches.map((match, index) => {
