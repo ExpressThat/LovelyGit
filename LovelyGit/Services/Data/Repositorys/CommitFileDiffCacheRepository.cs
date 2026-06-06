@@ -1,5 +1,8 @@
+using BLite.Core.Query;
 using ExpressThat.LovelyGit.Services.Data.Models.Git.CommitGraph;
 using ExpressThat.LovelyGit.Services.Git.CommitGraph.Models;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace ExpressThat.LovelyGit.Services.Data.Repositorys;
 
@@ -16,25 +19,27 @@ internal sealed class CommitFileDiffCacheRepository
 
     public async IAsyncEnumerable<CommitFileDiffCacheEntry> GetCommitFileDiffEntriesAsync(Guid repositoryId)
     {
-        await foreach (var entry in _gitRepoCache.CommitFileDiffs.FindAllAsync()
-            .ConfigureAwait(false))
+        var entries = await _gitRepoCache.CommitFileDiffs
+            .AsQueryable()
+            .Where(entry => entry.RepositoryId == repositoryId)
+            .ToListAsync()
+            .ConfigureAwait(false);
+        foreach (var entry in entries)
         {
-            if (entry.RepositoryId == repositoryId)
-            {
-                yield return entry;
-            }
+            yield return entry;
         }
     }
 
     public async IAsyncEnumerable<CommitFileDiffLineCacheEntry> GetCommitFileDiffLineEntriesAsync(Guid repositoryId)
     {
-        await foreach (var entry in _gitRepoCache.CommitFileDiffLines.FindAllAsync()
-            .ConfigureAwait(false))
+        var entries = await _gitRepoCache.CommitFileDiffLines
+            .AsQueryable()
+            .Where(entry => entry.RepositoryId == repositoryId)
+            .ToListAsync()
+            .ConfigureAwait(false);
+        foreach (var entry in entries)
         {
-            if (entry.RepositoryId == repositoryId)
-            {
-                yield return entry;
-            }
+            yield return entry;
         }
     }
 
@@ -54,17 +59,7 @@ internal sealed class CommitFileDiffCacheRepository
             return null;
         }
 
-        var lines = new List<CommitFileDiffLineCacheEntry>();
-        await foreach (var lineEntry in GetCommitFileDiffLineEntriesAsync(repositoryId).ConfigureAwait(false))
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            if (string.Equals(lineEntry.Hash, hash, StringComparison.Ordinal)
-                && string.Equals(lineEntry.Path, path, StringComparison.Ordinal)
-                && string.Equals(lineEntry.ViewMode, viewMode.ToString(), StringComparison.Ordinal))
-            {
-                lines.Add(lineEntry);
-            }
-        }
+        var lines = await GetLineEntriesAsync(MakeDiffLineLookupId(id), cancellationToken).ConfigureAwait(false);
 
         return ToResponse(entry, lines);
     }
@@ -123,6 +118,7 @@ internal sealed class CommitFileDiffCacheRepository
                 Hash = hash,
                 Path = path,
                 ViewMode = response.ViewMode.ToString(),
+                DiffId = MakeDiffLineLookupId(id),
                 LineIndex = index,
                 Line = ToCache(Normalize(response.Lines[index])),
             });
@@ -166,25 +162,16 @@ internal sealed class CommitFileDiffCacheRepository
         string hash,
         CancellationToken cancellationToken)
     {
-        var entries = new List<CommitFileDiffCacheEntry>();
-        await foreach (var entry in GetCommitFileDiffEntriesAsync(repositoryId).ConfigureAwait(false))
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            if (string.Equals(entry.Hash, hash, StringComparison.Ordinal))
-            {
-                entries.Add(entry);
-            }
-        }
-
-        var lineEntries = new List<CommitFileDiffLineCacheEntry>();
-        await foreach (var entry in GetCommitFileDiffLineEntriesAsync(repositoryId).ConfigureAwait(false))
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            if (string.Equals(entry.Hash, hash, StringComparison.Ordinal))
-            {
-                lineEntries.Add(entry);
-            }
-        }
+        var entries = await _gitRepoCache.CommitFileDiffs
+            .AsQueryable()
+            .Where(entry => entry.RepositoryId == repositoryId && entry.Hash == hash)
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+        var lineEntries = await _gitRepoCache.CommitFileDiffLines
+            .AsQueryable()
+            .Where(entry => entry.RepositoryId == repositoryId && entry.Hash == hash)
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
 
         using (var transaction = _gitRepoCache.BeginTransaction())
         {
@@ -225,19 +212,19 @@ internal sealed class CommitFileDiffCacheRepository
         CommitDiffViewMode viewMode,
         CancellationToken cancellationToken)
     {
-        var lineEntries = new List<CommitFileDiffLineCacheEntry>();
-        await foreach (var entry in GetCommitFileDiffLineEntriesAsync(repositoryId).ConfigureAwait(false))
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            if (string.Equals(entry.Hash, hash, StringComparison.Ordinal)
-                && string.Equals(entry.Path, path, StringComparison.Ordinal)
-                && string.Equals(entry.ViewMode, viewMode.ToString(), StringComparison.Ordinal))
-            {
-                lineEntries.Add(entry);
-            }
-        }
+        var diffId = MakeDiffId(repositoryId, hash, path, viewMode);
+        return await GetLineEntriesAsync(MakeDiffLineLookupId(diffId), cancellationToken).ConfigureAwait(false);
+    }
 
-        return lineEntries;
+    private async Task<List<CommitFileDiffLineCacheEntry>> GetLineEntriesAsync(
+        string diffId,
+        CancellationToken cancellationToken)
+    {
+        return await _gitRepoCache.CommitFileDiffLines
+            .AsQueryable()
+            .Where(entry => entry.DiffId == diffId)
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
     }
 
     private async Task DeleteDiffEntryAsync(
@@ -272,6 +259,11 @@ internal sealed class CommitFileDiffCacheRepository
         int index)
     {
         return $"{MakeDiffId(repositoryId, hash, path, viewMode)}:{index}";
+    }
+
+    private static string MakeDiffLineLookupId(string diffId)
+    {
+        return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(diffId)));
     }
 
     private static CommitFileDiffLine Normalize(CommitFileDiffLine line)

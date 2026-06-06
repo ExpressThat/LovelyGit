@@ -23,78 +23,90 @@ internal sealed class CommitGraphRepositoryCleaner
         _fileDiffCache = fileDiffCache;
     }
 
-    public async Task ClearRepositoryAsync(Guid repositoryId)
+    public async Task ClearRepositoryAsync(Guid repositoryId, CancellationToken cancellationToken)
     {
         using (var transaction = _gitRepoCache.BeginTransaction())
         {
-            await _gitRepoCache.CommitGraphStates.DeleteAsync(repositoryId, transaction).ConfigureAwait(false);
-            await _gitRepoCache.SaveChangesAsync(transaction).ConfigureAwait(false);
+            await _gitRepoCache.CommitGraphStates.DeleteAsync(repositoryId, transaction, cancellationToken)
+                .ConfigureAwait(false);
+            await _gitRepoCache.SaveChangesAsync(transaction, cancellationToken).ConfigureAwait(false);
         }
 
         await DeleteEntriesAsync(
                 _gitRepoCache.CommitGraphFrontier,
-                _traversalCache.GetFrontierAsync(repositoryId))
+                _traversalCache.GetFrontierAsync(repositoryId),
+                cancellationToken)
             .ConfigureAwait(false);
         await DeleteEntriesAsync(
                 _gitRepoCache.CommitGraphSeen,
-                _traversalCache.GetSeenAsync(repositoryId))
+                _traversalCache.GetSeenAsync(repositoryId),
+                cancellationToken)
             .ConfigureAwait(false);
         await DeleteEntriesAsync(
                 _gitRepoCache.CommitGraphCachedCommits,
-                _traversalCache.GetCachedCommitEntriesAsync(repositoryId))
+                _traversalCache.GetCachedCommitEntriesAsync(repositoryId),
+                cancellationToken)
             .ConfigureAwait(false);
         await DeleteEntriesAsync(
                 _gitRepoCache.CommitDetailsCache,
-                _detailsCache.GetCommitDetailsCacheEntriesAsync(repositoryId))
+                _detailsCache.GetCommitDetailsCacheEntriesAsync(repositoryId),
+                cancellationToken)
             .ConfigureAwait(false);
         await DeleteEntriesAsync(
                 _gitRepoCache.CommitDetailsChangedFiles,
-                _detailsCache.GetCommitDetailsChangedFileEntriesAsync(repositoryId))
+                _detailsCache.GetCommitDetailsChangedFileEntriesAsync(repositoryId),
+                cancellationToken)
             .ConfigureAwait(false);
         await DeleteEntriesAsync(
                 _gitRepoCache.CommitFileDiffs,
-                _fileDiffCache.GetCommitFileDiffEntriesAsync(repositoryId))
+                _fileDiffCache.GetCommitFileDiffEntriesAsync(repositoryId),
+                cancellationToken)
             .ConfigureAwait(false);
         await DeleteEntriesAsync(
                 _gitRepoCache.CommitFileDiffLines,
-                _fileDiffCache.GetCommitFileDiffLineEntriesAsync(repositoryId))
+                _fileDiffCache.GetCommitFileDiffLineEntriesAsync(repositoryId),
+                cancellationToken)
             .ConfigureAwait(false);
     }
 
     private async Task DeleteEntriesAsync<T>(
         DocumentCollection<string, T> collection,
-        IAsyncEnumerable<T> entries)
+        IAsyncEnumerable<T> entries,
+        CancellationToken cancellationToken)
         where T : class
     {
         var ids = new List<string>(DeleteBatchSize);
         await foreach (var entry in entries.ConfigureAwait(false))
         {
+            cancellationToken.ThrowIfCancellationRequested();
             ids.Add(GetId(entry));
             if (ids.Count >= DeleteBatchSize)
             {
-                await DeleteBatchAsync(collection, ids).ConfigureAwait(false);
+                await DeleteBatchAsync(collection, ids, cancellationToken).ConfigureAwait(false);
                 ids.Clear();
             }
         }
 
         if (ids.Count > 0)
         {
-            await DeleteBatchAsync(collection, ids).ConfigureAwait(false);
+            await DeleteBatchAsync(collection, ids, cancellationToken).ConfigureAwait(false);
         }
     }
 
     private async Task DeleteBatchAsync<T>(
         DocumentCollection<string, T> collection,
-        IReadOnlyList<string> ids)
+        IReadOnlyList<string> ids,
+        CancellationToken cancellationToken)
         where T : class
     {
         using var transaction = _gitRepoCache.BeginTransaction();
         foreach (var id in ids)
         {
-            await collection.DeleteAsync(id, transaction).ConfigureAwait(false);
+            cancellationToken.ThrowIfCancellationRequested();
+            await collection.DeleteAsync(id, transaction, cancellationToken).ConfigureAwait(false);
         }
 
-        await _gitRepoCache.SaveChangesAsync(transaction).ConfigureAwait(false);
+        await _gitRepoCache.SaveChangesAsync(transaction, cancellationToken).ConfigureAwait(false);
     }
 
     private static string GetId<T>(T entry)

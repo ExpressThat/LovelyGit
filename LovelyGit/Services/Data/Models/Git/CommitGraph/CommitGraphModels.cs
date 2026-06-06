@@ -211,6 +211,9 @@ namespace ExpressThat.LovelyGit.Services.Data.Models.Git.CommitGraph
         [Column("viewmode")]
         public string ViewMode { get; set; } = string.Empty;
 
+        [Column("diffid")]
+        public string DiffId { get; set; } = string.Empty;
+
         [Column("lineindex")]
         public int LineIndex { get; set; }
 

@@ -1,3 +1,4 @@
+using BLite.Core.Query;
 using ExpressThat.LovelyGit.Services.Data.Models.Git.CommitGraph;
 using ExpressThat.LovelyGit.Services.Git.CommitGraph.Models;
 
@@ -14,25 +15,27 @@ internal sealed class CommitDetailsCacheRepository
 
     public async IAsyncEnumerable<CommitDetailsCacheEntry> GetCommitDetailsCacheEntriesAsync(Guid repositoryId)
     {
-        await foreach (var entry in _gitRepoCache.CommitDetailsCache.FindAllAsync()
-            .ConfigureAwait(false))
+        var entries = await _gitRepoCache.CommitDetailsCache
+            .AsQueryable()
+            .Where(entry => entry.RepositoryId == repositoryId)
+            .ToListAsync()
+            .ConfigureAwait(false);
+        foreach (var entry in entries)
         {
-            if (entry.RepositoryId == repositoryId)
-            {
-                yield return entry;
-            }
+            yield return entry;
         }
     }
 
     public async IAsyncEnumerable<CommitChangedFileCacheEntry> GetCommitDetailsChangedFileEntriesAsync(Guid repositoryId)
     {
-        await foreach (var entry in _gitRepoCache.CommitDetailsChangedFiles.FindAllAsync()
-            .ConfigureAwait(false))
+        var entries = await _gitRepoCache.CommitDetailsChangedFiles
+            .AsQueryable()
+            .Where(entry => entry.RepositoryId == repositoryId)
+            .ToListAsync()
+            .ConfigureAwait(false);
+        foreach (var entry in entries)
         {
-            if (entry.RepositoryId == repositoryId)
-            {
-                yield return entry;
-            }
+            yield return entry;
         }
     }
 
@@ -60,15 +63,8 @@ internal sealed class CommitDetailsCacheRepository
             return null;
         }
 
-        var changedFiles = new List<CommitChangedFileCacheEntry>();
-        await foreach (var fileEntry in GetCommitDetailsChangedFileEntriesAsync(repositoryId).ConfigureAwait(false))
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            if (string.Equals(fileEntry.Hash, hash, StringComparison.Ordinal))
-            {
-                changedFiles.Add(fileEntry);
-            }
-        }
+        var changedFiles = await GetCommitDetailsChangedFileEntriesAsync(repositoryId, hash, cancellationToken)
+            .ConfigureAwait(false);
 
         return ToResponse(entry.Details, changedFiles);
     }
@@ -88,15 +84,8 @@ internal sealed class CommitDetailsCacheRepository
             Details = ToCache(response),
         };
 
-        var existingFileEntries = new List<CommitChangedFileCacheEntry>();
-        await foreach (var fileEntry in GetCommitDetailsChangedFileEntriesAsync(repositoryId).ConfigureAwait(false))
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            if (string.Equals(fileEntry.Hash, hash, StringComparison.Ordinal))
-            {
-                existingFileEntries.Add(fileEntry);
-            }
-        }
+        var existingFileEntries = await GetCommitDetailsChangedFileEntriesAsync(repositoryId, hash, cancellationToken)
+            .ConfigureAwait(false);
 
         using var transaction = _gitRepoCache.BeginTransaction();
 
@@ -141,6 +130,18 @@ internal sealed class CommitDetailsCacheRepository
         }
 
         await _gitRepoCache.SaveChangesAsync(transaction, cancellationToken).ConfigureAwait(false);
+    }
+
+    private async Task<List<CommitChangedFileCacheEntry>> GetCommitDetailsChangedFileEntriesAsync(
+        Guid repositoryId,
+        string hash,
+        CancellationToken cancellationToken)
+    {
+        return await _gitRepoCache.CommitDetailsChangedFiles
+            .AsQueryable()
+            .Where(entry => entry.RepositoryId == repositoryId && entry.Hash == hash)
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
     }
 
     private static CommitDetailsCache ToCache(CommitDetailsResponse response)

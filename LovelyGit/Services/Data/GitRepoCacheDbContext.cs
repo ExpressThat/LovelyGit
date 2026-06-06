@@ -97,5 +97,8 @@ public partial class GitRepoCacheDbContext : DocumentDbContext
 
         modelBuilder.Entity<CommitFileDiffLineCacheEntry>()
             .HasIndex(entity => entity.RepositoryId);
+
+        modelBuilder.Entity<CommitFileDiffLineCacheEntry>()
+            .HasIndex(entity => entity.DiffId);
     }
 }

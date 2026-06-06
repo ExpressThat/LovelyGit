@@ -181,14 +181,14 @@ namespace ExpressThat.LovelyGit.Services.Data.Repositorys
                 cancellationToken);
         }
 
-        public Task DeleteTraversalEntriesAsync(Guid repositoryId)
+        public Task DeleteTraversalEntriesAsync(Guid repositoryId, CancellationToken cancellationToken)
         {
-            return _traversalCache.DeleteTraversalEntriesAsync(repositoryId);
+            return _traversalCache.DeleteTraversalEntriesAsync(repositoryId, cancellationToken);
         }
 
-        public Task ClearRepositoryAsync(Guid repositoryId)
+        public Task ClearRepositoryAsync(Guid repositoryId, CancellationToken cancellationToken)
         {
-            return _cleaner.ClearRepositoryAsync(repositoryId);
+            return _cleaner.ClearRepositoryAsync(repositoryId, cancellationToken);
         }
     }
 }
