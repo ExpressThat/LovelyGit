@@ -15,6 +15,7 @@ internal static class CommitGraphServiceCollectionExtensions
         services.AddSingleton<CommitDetailsPreloadService>();
         services.AddSingleton<CommitGraphPageService>();
         services.AddSingleton<ICommandResponder, CommitGraphCommandResolver>();
+        services.AddSingleton<ICommandResponder, CancelCommitDiffPreparationCommandResolver>();
         services.AddSingleton<ICommandResponder, GetCommitDetailsCommandResolver>();
         services.AddSingleton<ICommandResponder, GetCommitFileDiffCommandResolver>();
 

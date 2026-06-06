@@ -20,6 +20,7 @@ const LOADING_DIFF_ROWS = Array.from({ length: 16 }, (_, index) => ({
 	id: `loading-diff-row-${index}`,
 	width: index % 3 === 0 ? 72 : 96,
 }));
+const DIFF_OVERSCAN = 12;
 
 export function CommitFileDiffView({
 	commitHash,
@@ -88,6 +89,11 @@ export function CommitFileDiffView({
 		void setSetting("CommitDiffWrapLines", nextWrapLines);
 	};
 
+	const handleClose = () => {
+		setState({ status: "loading" });
+		onClose();
+	};
+
 	return (
 		<section className="flex h-full min-w-0 flex-1 flex-col overflow-hidden border-l bg-background text-foreground">
 			<header className="shrink-0 border-b bg-popover text-popover-foreground">
@@ -107,7 +113,7 @@ export function CommitFileDiffView({
 					<button
 						aria-label="Close diff"
 						className="inline-flex size-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-						onClick={onClose}
+						onClick={handleClose}
 						type="button"
 					>
 						<X aria-hidden="true" size={16} />
@@ -249,7 +255,7 @@ function SideBySideDiff({
 		estimateSize: () => 18,
 		getScrollElement: () => viewportRef.current,
 		measureElement: (element) => element.getBoundingClientRect().height,
-		overscan: 40,
+		overscan: DIFF_OVERSCAN,
 	});
 	const virtualItems = virtualizer.getVirtualItems();
 
@@ -461,7 +467,7 @@ function CombinedDiff({
 		estimateSize: () => 18,
 		getScrollElement: () => viewportRef.current,
 		measureElement: (element) => element.getBoundingClientRect().height,
-		overscan: 40,
+		overscan: DIFF_OVERSCAN,
 	});
 	const virtualItems = virtualizer.getVirtualItems();
 

@@ -1,6 +1,7 @@
 using ExpressThat.LovelyGit.Services;
 using ExpressThat.LovelyGit.Services.Data;
 using ExpressThat.LovelyGit.Services.Dialogs;
+using ExpressThat.LovelyGit.Services.Git.CommitGraph;
 using ExpressThat.LovelyGit.Services.Hubs;
 using ExpressThat.LovelyGit.Services.Keyring;
 using InfiniFrame;
@@ -56,6 +57,8 @@ public static class Program
 
         application.WebApp.Lifetime.ApplicationStopping.Register(() =>
         {
+            application.WebApp.Services.GetService<CommitFileDiffService>()?.StopAndWait();
+            application.WebApp.Services.GetService<CommitDetailsPreloadService>()?.StopAndWait();
             application.WebApp.Services.GetService<GitRepoCacheDbContext>()?.Dispose();
             GitRepoCacheDbContext.ClearCache(registerKeys: false);
         });

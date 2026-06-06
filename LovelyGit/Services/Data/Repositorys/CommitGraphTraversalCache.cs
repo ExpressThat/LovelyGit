@@ -182,6 +182,8 @@ internal sealed class CommitGraphTraversalCache
 
     public async Task DeleteTraversalEntriesAsync(Guid repositoryId)
     {
+        await _gitRepoCache.CommitGraphStates.DeleteAsync(repositoryId).ConfigureAwait(false);
+
         await foreach (var entry in GetFrontierAsync(repositoryId).ConfigureAwait(false))
         {
             await _gitRepoCache.CommitGraphFrontier.DeleteAsync(entry.Id).ConfigureAwait(false);
@@ -190,6 +192,11 @@ internal sealed class CommitGraphTraversalCache
         await foreach (var entry in GetSeenAsync(repositoryId).ConfigureAwait(false))
         {
             await _gitRepoCache.CommitGraphSeen.DeleteAsync(entry.Id).ConfigureAwait(false);
+        }
+
+        await foreach (var entry in GetCachedCommitEntriesAsync(repositoryId).ConfigureAwait(false))
+        {
+            await _gitRepoCache.CommitGraphCachedCommits.DeleteAsync(entry.Id).ConfigureAwait(false);
         }
 
         await _gitRepoCache.SaveChangesAsync().ConfigureAwait(false);

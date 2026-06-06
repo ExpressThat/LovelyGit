@@ -31,7 +31,7 @@ internal static class GitRepositoryDiscovery
                 throw new InvalidDataException(".git file does not contain a gitdir pointer.");
             }
 
-            var gitDir = text[prefix.Length..].Trim();
+            var gitDir = text.AsSpan(prefix.Length).Trim().ToString();
             return Path.GetFullPath(Path.IsPathRooted(gitDir) ? gitDir : Path.Combine(fullPath, gitDir));
         }
 
@@ -51,7 +51,7 @@ internal static class GitRepositoryDiscovery
         var section = string.Empty;
         foreach (var rawLine in await File.ReadAllLinesAsync(configPath, cancellationToken).ConfigureAwait(false))
         {
-            var line = rawLine.Trim();
+            var line = rawLine.AsSpan().Trim();
             if (line.Length == 0 || line[0] is '#' or ';')
             {
                 continue;
@@ -59,7 +59,7 @@ internal static class GitRepositoryDiscovery
 
             if (line[0] == '[' && line[^1] == ']')
             {
-                section = line[1..^1].Trim().Trim('"').ToLowerInvariant();
+                section = line[1..^1].Trim().Trim('"').ToString().ToLowerInvariant();
                 continue;
             }
 
@@ -70,18 +70,24 @@ internal static class GitRepositoryDiscovery
                 continue;
             }
 
-            return value.ToLowerInvariant() switch
+            var objectFormat = value.AsSpan().Trim();
+            if (objectFormat.Equals("sha1", StringComparison.OrdinalIgnoreCase))
             {
-                "sha1" => GitObjectFormat.Sha1,
-                "sha256" => GitObjectFormat.Sha256,
-                _ => throw new NotSupportedException($"Unsupported Git object format: {value}"),
-            };
+                return GitObjectFormat.Sha1;
+            }
+
+            if (objectFormat.Equals("sha256", StringComparison.OrdinalIgnoreCase))
+            {
+                return GitObjectFormat.Sha256;
+            }
+
+            throw new NotSupportedException($"Unsupported Git object format: {value}");
         }
 
         return GitObjectFormat.Sha1;
     }
 
-    private static bool TryReadConfigKeyValue(string line, out string key, out string value)
+    private static bool TryReadConfigKeyValue(ReadOnlySpan<char> line, out string key, out string value)
     {
         key = string.Empty;
         value = string.Empty;
@@ -92,8 +98,8 @@ internal static class GitRepositoryDiscovery
             return false;
         }
 
-        key = line[..separator].Trim();
-        value = line[(separator + 1)..].Trim().Trim('"');
+        key = line[..separator].Trim().ToString();
+        value = line[(separator + 1)..].Trim().Trim('"').ToString();
         return key.Length > 0;
     }
 }

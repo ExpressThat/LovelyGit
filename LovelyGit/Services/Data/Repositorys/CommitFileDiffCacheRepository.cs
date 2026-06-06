@@ -5,6 +5,7 @@ namespace ExpressThat.LovelyGit.Services.Data.Repositorys;
 
 internal sealed class CommitFileDiffCacheRepository
 {
+    private const int LineTransactionBatchSize = 250;
     private const int MaxCachedLineLength = 12000;
     private readonly GitRepoCacheDbContext _gitRepoCache;
 
@@ -68,6 +69,18 @@ internal sealed class CommitFileDiffCacheRepository
         return ToResponse(entry, lines);
     }
 
+    public async Task<bool> HasCommitFileDiffAsync(
+        Guid repositoryId,
+        string hash,
+        string path,
+        CommitDiffViewMode viewMode,
+        CancellationToken cancellationToken)
+    {
+        return await _gitRepoCache.CommitFileDiffs
+            .FindByIdAsync(MakeDiffId(repositoryId, hash, path, viewMode), cancellationToken)
+            .ConfigureAwait(false) != null;
+    }
+
     public async Task SaveCommitFileDiffAsync(
         Guid repositoryId,
         string hash,
@@ -75,48 +88,77 @@ internal sealed class CommitFileDiffCacheRepository
         CommitFileDiffResponse response,
         CancellationToken cancellationToken)
     {
-        var normalized = Normalize(response);
-        var id = MakeDiffId(repositoryId, hash, path, normalized.ViewMode);
+        var id = MakeDiffId(repositoryId, hash, path, response.ViewMode);
         var entry = new CommitFileDiffCacheEntry
         {
             Id = id,
             RepositoryId = repositoryId,
             Hash = hash,
             Path = path,
-            ViewMode = normalized.ViewMode.ToString(),
-            Status = normalized.Status,
-            IsBinary = normalized.IsBinary,
-            HasDifferences = normalized.HasDifferences,
+            ViewMode = response.ViewMode.ToString(),
+            Status = response.Status,
+            IsBinary = response.IsBinary,
+            HasDifferences = response.HasDifferences,
         };
 
-        await DeleteLineEntriesAsync(repositoryId, hash, path, normalized.ViewMode, cancellationToken)
+        var existingLineEntries = await GetLineEntriesAsync(repositoryId, hash, path, response.ViewMode, cancellationToken)
             .ConfigureAwait(false);
 
-        if (await _gitRepoCache.CommitFileDiffs.FindByIdAsync(entry.Id, cancellationToken).ConfigureAwait(false) == null)
+        using (var metadataDeleteTransaction = _gitRepoCache.BeginTransaction())
         {
-            await _gitRepoCache.CommitFileDiffs.InsertAsync(entry, cancellationToken).ConfigureAwait(false);
-        }
-        else
-        {
-            await _gitRepoCache.CommitFileDiffs.UpdateAsync(entry, cancellationToken).ConfigureAwait(false);
+            await DeleteDiffEntryAsync(repositoryId, hash, path, response.ViewMode, metadataDeleteTransaction, cancellationToken)
+                .ConfigureAwait(false);
+            await _gitRepoCache.SaveChangesAsync(metadataDeleteTransaction, cancellationToken).ConfigureAwait(false);
         }
 
-        for (var index = 0; index < normalized.Lines.Count; index++)
+        await DeleteLineEntriesInBatchesAsync(existingLineEntries, cancellationToken).ConfigureAwait(false);
+
+        var pendingLineEntries = new List<CommitFileDiffLineCacheEntry>(LineTransactionBatchSize);
+        for (var index = 0; index < response.Lines.Count; index++)
         {
-            var lineEntry = new CommitFileDiffLineCacheEntry
+            pendingLineEntries.Add(new CommitFileDiffLineCacheEntry
             {
-                Id = MakeLineId(repositoryId, hash, path, normalized.ViewMode, index),
+                Id = MakeLineId(repositoryId, hash, path, response.ViewMode, index),
                 RepositoryId = repositoryId,
                 Hash = hash,
                 Path = path,
-                ViewMode = normalized.ViewMode.ToString(),
+                ViewMode = response.ViewMode.ToString(),
                 LineIndex = index,
-                Line = ToCache(normalized.Lines[index]),
-            };
-            await _gitRepoCache.CommitFileDiffLines.InsertAsync(lineEntry, cancellationToken).ConfigureAwait(false);
+                Line = ToCache(Normalize(response.Lines[index])),
+            });
+
+            if (pendingLineEntries.Count >= LineTransactionBatchSize)
+            {
+                await InsertLineEntriesBatchAsync(pendingLineEntries, cancellationToken).ConfigureAwait(false);
+                pendingLineEntries.Clear();
+            }
         }
 
-        await _gitRepoCache.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        if (pendingLineEntries.Count > 0)
+        {
+            await InsertLineEntriesBatchAsync(pendingLineEntries, cancellationToken).ConfigureAwait(false);
+        }
+
+        using var metadataInsertTransaction = _gitRepoCache.BeginTransaction();
+        await _gitRepoCache.CommitFileDiffs
+            .InsertAsync(entry, metadataInsertTransaction, cancellationToken)
+            .ConfigureAwait(false);
+        await _gitRepoCache.SaveChangesAsync(metadataInsertTransaction, cancellationToken).ConfigureAwait(false);
+    }
+
+    private async Task InsertLineEntriesBatchAsync(
+        IReadOnlyList<CommitFileDiffLineCacheEntry> lineEntries,
+        CancellationToken cancellationToken)
+    {
+        using var transaction = _gitRepoCache.BeginTransaction();
+        foreach (var lineEntry in lineEntries)
+        {
+            await _gitRepoCache.CommitFileDiffLines
+                .InsertAsync(lineEntry, transaction, cancellationToken)
+                .ConfigureAwait(false);
+        }
+
+        await _gitRepoCache.SaveChangesAsync(transaction, cancellationToken).ConfigureAwait(false);
     }
 
     public async Task ClearCommitFileDiffsAsync(
@@ -144,20 +186,39 @@ internal sealed class CommitFileDiffCacheRepository
             }
         }
 
-        foreach (var entry in entries)
+        using (var transaction = _gitRepoCache.BeginTransaction())
         {
-            await _gitRepoCache.CommitFileDiffs.DeleteAsync(entry.Id, cancellationToken).ConfigureAwait(false);
+            foreach (var entry in entries)
+            {
+                await _gitRepoCache.CommitFileDiffs.DeleteAsync(entry.Id, transaction, cancellationToken).ConfigureAwait(false);
+            }
+
+            await _gitRepoCache.SaveChangesAsync(transaction, cancellationToken).ConfigureAwait(false);
         }
 
-        foreach (var entry in lineEntries)
-        {
-            await _gitRepoCache.CommitFileDiffLines.DeleteAsync(entry.Id, cancellationToken).ConfigureAwait(false);
-        }
-
-        await _gitRepoCache.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        await DeleteLineEntriesInBatchesAsync(lineEntries, cancellationToken).ConfigureAwait(false);
     }
 
-    private async Task DeleteLineEntriesAsync(
+    private async Task DeleteLineEntriesInBatchesAsync(
+        IReadOnlyList<CommitFileDiffLineCacheEntry> lineEntries,
+        CancellationToken cancellationToken)
+    {
+        for (var offset = 0; offset < lineEntries.Count; offset += LineTransactionBatchSize)
+        {
+            using var transaction = _gitRepoCache.BeginTransaction();
+            var end = Math.Min(offset + LineTransactionBatchSize, lineEntries.Count);
+            for (var index = offset; index < end; index++)
+            {
+                await _gitRepoCache.CommitFileDiffLines
+                    .DeleteAsync(lineEntries[index].Id, transaction, cancellationToken)
+                    .ConfigureAwait(false);
+            }
+
+            await _gitRepoCache.SaveChangesAsync(transaction, cancellationToken).ConfigureAwait(false);
+        }
+    }
+
+    private async Task<List<CommitFileDiffLineCacheEntry>> GetLineEntriesAsync(
         Guid repositoryId,
         string hash,
         string path,
@@ -176,9 +237,21 @@ internal sealed class CommitFileDiffCacheRepository
             }
         }
 
-        foreach (var entry in lineEntries)
+        return lineEntries;
+    }
+
+    private async Task DeleteDiffEntryAsync(
+        Guid repositoryId,
+        string hash,
+        string path,
+        CommitDiffViewMode viewMode,
+        BLite.Core.Transactions.ITransaction transaction,
+        CancellationToken cancellationToken)
+    {
+        var id = MakeDiffId(repositoryId, hash, path, viewMode);
+        if (await _gitRepoCache.CommitFileDiffs.FindByIdAsync(id, cancellationToken).ConfigureAwait(false) != null)
         {
-            await _gitRepoCache.CommitFileDiffLines.DeleteAsync(entry.Id, cancellationToken).ConfigureAwait(false);
+            await _gitRepoCache.CommitFileDiffs.DeleteAsync(id, transaction, cancellationToken).ConfigureAwait(false);
         }
     }
 
@@ -199,20 +272,6 @@ internal sealed class CommitFileDiffCacheRepository
         int index)
     {
         return $"{MakeDiffId(repositoryId, hash, path, viewMode)}:{index}";
-    }
-
-    private static CommitFileDiffResponse Normalize(CommitFileDiffResponse response)
-    {
-        return new CommitFileDiffResponse
-        {
-            CommitHash = response.CommitHash,
-            Path = response.Path,
-            Status = response.Status,
-            ViewMode = response.ViewMode,
-            IsBinary = response.IsBinary,
-            HasDifferences = response.HasDifferences,
-            Lines = response.Lines.Select(Normalize).ToList(),
-        };
     }
 
     private static CommitFileDiffLine Normalize(CommitFileDiffLine line)
@@ -251,32 +310,58 @@ internal sealed class CommitFileDiffCacheRepository
         IEnumerable<CommitFileDiffSyntaxSpan> spans,
         int maxLength)
     {
-        return spans
-            .Where(span => span.Start < maxLength)
-            .Select(span => new CommitFileDiffSyntaxSpan
+        var trimmed = new List<CommitFileDiffSyntaxSpan>();
+        foreach (var span in spans)
+        {
+            if (span.Start >= maxLength)
+            {
+                continue;
+            }
+
+            var length = Math.Min(span.Length, maxLength - span.Start);
+            if (length <= 0)
+            {
+                continue;
+            }
+
+            trimmed.Add(new CommitFileDiffSyntaxSpan
             {
                 Start = span.Start,
-                Length = Math.Min(span.Length, maxLength - span.Start),
+                Length = length,
                 Scope = span.Scope,
-            })
-            .Where(span => span.Length > 0)
-            .ToList();
+            });
+        }
+
+        return trimmed;
     }
 
     private static List<CommitFileDiffChangeSpan> TrimSpans(
         IEnumerable<CommitFileDiffChangeSpan> spans,
         int maxLength)
     {
-        return spans
-            .Where(span => span.Start < maxLength)
-            .Select(span => new CommitFileDiffChangeSpan
+        var trimmed = new List<CommitFileDiffChangeSpan>();
+        foreach (var span in spans)
+        {
+            if (span.Start >= maxLength)
+            {
+                continue;
+            }
+
+            var length = Math.Min(span.Length, maxLength - span.Start);
+            if (length <= 0)
+            {
+                continue;
+            }
+
+            trimmed.Add(new CommitFileDiffChangeSpan
             {
                 Start = span.Start,
-                Length = Math.Min(span.Length, maxLength - span.Start),
+                Length = length,
                 ChangeType = span.ChangeType,
-            })
-            .Where(span => span.Length > 0)
-            .ToList();
+            });
+        }
+
+        return trimmed;
     }
 
     private static CommitFileDiffLineCache ToCache(CommitFileDiffLine line)
@@ -300,7 +385,7 @@ internal sealed class CommitFileDiffCacheRepository
 
     private static CommitFileDiffResponse ToResponse(
         CommitFileDiffCacheEntry cache,
-        IEnumerable<CommitFileDiffLineCacheEntry> lines)
+        List<CommitFileDiffLineCacheEntry> lines)
     {
         return new CommitFileDiffResponse
         {
@@ -312,12 +397,20 @@ internal sealed class CommitFileDiffCacheRepository
                 : CommitDiffViewMode.SideBySide,
             IsBinary = cache.IsBinary,
             HasDifferences = cache.HasDifferences,
-            Lines = lines
-                .OrderBy(line => line.LineIndex)
-                .Select(line => line.Line)
-                .Select(ToResponse)
-                .ToList(),
+            Lines = ToResponseLines(lines),
         };
+    }
+
+    private static List<CommitFileDiffLine> ToResponseLines(List<CommitFileDiffLineCacheEntry> lines)
+    {
+        lines.Sort(static (left, right) => left.LineIndex.CompareTo(right.LineIndex));
+        var responseLines = new List<CommitFileDiffLine>(lines.Count);
+        foreach (var line in lines)
+        {
+            responseLines.Add(ToResponse(line.Line));
+        }
+
+        return responseLines;
     }
 
     private static CommitFileDiffLine ToResponse(CommitFileDiffLineCache line)
@@ -341,41 +434,65 @@ internal sealed class CommitFileDiffCacheRepository
 
     private static List<CommitFileDiffSyntaxSpanCache> ToCache(IEnumerable<CommitFileDiffSyntaxSpan> spans)
     {
-        return spans.Select(span => new CommitFileDiffSyntaxSpanCache
+        var cached = new List<CommitFileDiffSyntaxSpanCache>();
+        foreach (var span in spans)
         {
-            Start = span.Start,
-            Length = span.Length,
-            Scope = span.Scope,
-        }).ToList();
+            cached.Add(new CommitFileDiffSyntaxSpanCache
+            {
+                Start = span.Start,
+                Length = span.Length,
+                Scope = span.Scope,
+            });
+        }
+
+        return cached;
     }
 
     private static List<CommitFileDiffSyntaxSpan> ToResponse(IEnumerable<CommitFileDiffSyntaxSpanCache> spans)
     {
-        return spans.Select(span => new CommitFileDiffSyntaxSpan
+        var response = new List<CommitFileDiffSyntaxSpan>();
+        foreach (var span in spans)
         {
-            Start = span.Start,
-            Length = span.Length,
-            Scope = span.Scope,
-        }).ToList();
+            response.Add(new CommitFileDiffSyntaxSpan
+            {
+                Start = span.Start,
+                Length = span.Length,
+                Scope = span.Scope,
+            });
+        }
+
+        return response;
     }
 
     private static List<CommitFileDiffChangeSpanCache> ToCache(IEnumerable<CommitFileDiffChangeSpan> spans)
     {
-        return spans.Select(span => new CommitFileDiffChangeSpanCache
+        var cached = new List<CommitFileDiffChangeSpanCache>();
+        foreach (var span in spans)
         {
-            Start = span.Start,
-            Length = span.Length,
-            ChangeType = span.ChangeType,
-        }).ToList();
+            cached.Add(new CommitFileDiffChangeSpanCache
+            {
+                Start = span.Start,
+                Length = span.Length,
+                ChangeType = span.ChangeType,
+            });
+        }
+
+        return cached;
     }
 
     private static List<CommitFileDiffChangeSpan> ToResponse(IEnumerable<CommitFileDiffChangeSpanCache> spans)
     {
-        return spans.Select(span => new CommitFileDiffChangeSpan
+        var response = new List<CommitFileDiffChangeSpan>();
+        foreach (var span in spans)
         {
-            Start = span.Start,
-            Length = span.Length,
-            ChangeType = span.ChangeType,
-        }).ToList();
+            response.Add(new CommitFileDiffChangeSpan
+            {
+                Start = span.Start,
+                Length = span.Length,
+                ChangeType = span.ChangeType,
+            });
+        }
+
+        return response;
     }
 }

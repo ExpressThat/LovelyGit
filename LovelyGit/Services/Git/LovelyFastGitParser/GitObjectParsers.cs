@@ -8,12 +8,13 @@ internal static class GitObjectParsers
     {
         var text = Encoding.UTF8.GetString(data);
         var separator = text.IndexOf("\n\n", StringComparison.Ordinal);
-        var headerText = separator >= 0 ? text[..separator] : text;
+        var headerText = separator >= 0 ? text.AsSpan(0, separator) : text.AsSpan();
         var body = separator >= 0 ? text[(separator + 2)..] : string.Empty;
         var commit = new GitCommit { Hash = id, Body = body };
 
-        foreach (var line in headerText.Split('\n'))
+        foreach (var rawLine in EnumerateLines(headerText))
         {
+            var line = TrimTrailingCarriageReturn(rawLine);
             if (line.StartsWith("parent ", StringComparison.Ordinal))
             {
                 commit.ParentHashes.Add(GitObjectId.Parse(line["parent ".Length..].Trim(), id.ObjectFormat));
@@ -40,12 +41,14 @@ internal static class GitObjectParsers
     public static GitTag ParseTag(GitObjectId id, GitObjectFormat objectFormat, byte[] data)
     {
         var text = Encoding.UTF8.GetString(data);
+        var tagText = text.AsSpan();
         GitObjectId? target = null;
         var targetType = string.Empty;
         var name = string.Empty;
 
-        foreach (var line in text.Split('\n'))
+        foreach (var rawLine in EnumerateLines(tagText))
         {
+            var line = TrimTrailingCarriageReturn(rawLine);
             if (line.Length == 0)
             {
                 break;
@@ -57,11 +60,11 @@ internal static class GitObjectParsers
             }
             else if (line.StartsWith("type ", StringComparison.Ordinal))
             {
-                targetType = line["type ".Length..].Trim();
+                targetType = line["type ".Length..].Trim().ToString();
             }
             else if (line.StartsWith("tag ", StringComparison.Ordinal))
             {
-                name = line["tag ".Length..].Trim();
+                name = line["tag ".Length..].Trim().ToString();
             }
         }
 
@@ -134,22 +137,67 @@ internal static class GitObjectParsers
         return entries;
     }
 
-    private static (string Name, string Email, long UnixSeconds) ParseSignature(string value)
+    private static (string Name, string Email, long UnixSeconds) ParseSignature(ReadOnlySpan<char> value)
     {
         var emailStart = value.LastIndexOf('<');
         var emailEnd = value.LastIndexOf('>');
         if (emailStart < 0 || emailEnd <= emailStart)
         {
-            return (value, string.Empty, 0);
+            return (value.ToString(), string.Empty, 0);
         }
 
-        var name = value[..emailStart].Trim();
-        var email = value[(emailStart + 1)..emailEnd].Trim();
+        var name = value[..emailStart].Trim().ToString();
+        var email = value[(emailStart + 1)..emailEnd].Trim().ToString();
         var rest = value[(emailEnd + 1)..].Trim();
         var firstSpace = rest.IndexOf(' ');
         var secondsText = firstSpace >= 0 ? rest[..firstSpace] : rest;
         return long.TryParse(secondsText, out var seconds)
             ? (name, email, seconds)
             : (name, email, 0);
+    }
+
+    private static LineEnumerator EnumerateLines(ReadOnlySpan<char> text)
+    {
+        return new LineEnumerator(text);
+    }
+
+    private static ReadOnlySpan<char> TrimTrailingCarriageReturn(ReadOnlySpan<char> value)
+    {
+        return value.Length > 0 && value[^1] == '\r' ? value[..^1] : value;
+    }
+
+    private ref struct LineEnumerator
+    {
+        private ReadOnlySpan<char> _remaining;
+
+        public LineEnumerator(ReadOnlySpan<char> text)
+        {
+            Current = default;
+            _remaining = text;
+        }
+
+        public ReadOnlySpan<char> Current { get; private set; }
+
+        public LineEnumerator GetEnumerator() => this;
+
+        public bool MoveNext()
+        {
+            if (_remaining.Length == 0)
+            {
+                return false;
+            }
+
+            var newlineIndex = _remaining.IndexOf('\n');
+            if (newlineIndex < 0)
+            {
+                Current = _remaining;
+                _remaining = default;
+                return true;
+            }
+
+            Current = _remaining[..newlineIndex];
+            _remaining = _remaining[(newlineIndex + 1)..];
+            return true;
+        }
     }
 }

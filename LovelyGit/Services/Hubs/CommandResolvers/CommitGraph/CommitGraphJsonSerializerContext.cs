@@ -18,6 +18,7 @@ namespace ExpressThat.LovelyGit.Services.Hubs.CommandResolvers.CommitGraph;
 [JsonSerializable(typeof(CommitGraphRow))]
 [JsonSerializable(typeof(CommitGraphResponse))]
 [JsonSerializable(typeof(CommitGraphCommandArguments))]
+[JsonSerializable(typeof(CancelCommitDiffPreparationCommandArguments))]
 [JsonSerializable(typeof(GetCommitDetailsCommandArguments))]
 [JsonSerializable(typeof(GetCommitFileDiffCommandArguments))]
 [JsonSerializable(typeof(CommandResponse<CommitGraphResponse>))]

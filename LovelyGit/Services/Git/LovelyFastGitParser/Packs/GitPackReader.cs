@@ -37,12 +37,12 @@ internal sealed class GitPackReader
         }
 
         var rawKind = (first >> 4) & 0x07;
-        _ = ReadVariableSize(file, first);
+        var objectSize = ReadVariableSize(file, first);
 
         if (rawKind == 6)
         {
             var baseOffset = offset - ReadOffsetDeltaBaseDistance(file);
-            var delta = await InflateRemainingAsync(file, cancellationToken).ConfigureAwait(false);
+            var delta = await InflateRemainingAsync(file, objectSize, cancellationToken).ConfigureAwait(false);
             var baseObject = await ReadObjectAtAsync(packPath, baseOffset, readObjectAsync, cancellationToken)
                 .ConfigureAwait(false);
             return CacheAndReturn(key, new GitObjectData(
@@ -58,7 +58,7 @@ internal sealed class GitPackReader
                     new GitObjectId(Convert.ToHexString(baseHash).ToLowerInvariant(), _objectFormat),
                     cancellationToken)
                 .ConfigureAwait(false);
-            var delta = await InflateRemainingAsync(file, cancellationToken).ConfigureAwait(false);
+            var delta = await InflateRemainingAsync(file, objectSize, cancellationToken).ConfigureAwait(false);
             return CacheAndReturn(key, new GitObjectData(
                 baseObject.Kind,
                 GitDeltaResolver.ApplyDelta(baseObject.Data, delta)));
@@ -75,7 +75,7 @@ internal sealed class GitPackReader
 
         return CacheAndReturn(
             key,
-            new GitObjectData(kind, await InflateRemainingAsync(file, cancellationToken).ConfigureAwait(false)));
+            new GitObjectData(kind, await InflateRemainingAsync(file, objectSize, cancellationToken).ConfigureAwait(false)));
     }
 
     private GitObjectData CacheAndReturn(PackObjectKey key, GitObjectData objectData)
@@ -127,12 +127,21 @@ internal sealed class GitPackReader
         return value;
     }
 
-    private static async Task<byte[]> InflateRemainingAsync(Stream stream, CancellationToken cancellationToken)
+    private static async Task<byte[]> InflateRemainingAsync(
+        Stream stream,
+        ulong expectedSize,
+        CancellationToken cancellationToken)
     {
+        if (expectedSize > int.MaxValue)
+        {
+            throw new InvalidDataException("Packed object is too large.");
+        }
+
         var inflater = new Inflater(noHeader: false);
         var input = ArrayPool<byte>.Shared.Rent(8192);
         var output = ArrayPool<byte>.Shared.Rent(8192);
-        using var inflated = new MemoryStream();
+        var inflated = new byte[(int)expectedSize];
+        var inflatedOffset = 0;
         try
         {
             while (!inflater.IsFinished)
@@ -153,7 +162,13 @@ internal sealed class GitPackReader
                 var written = inflater.Inflate(output, 0, output.Length);
                 if (written > 0)
                 {
-                    inflated.Write(output, 0, written);
+                    if (inflatedOffset + written > inflated.Length)
+                    {
+                        throw new InvalidDataException("Packed object inflated beyond its expected size.");
+                    }
+
+                    output.AsSpan(0, written).CopyTo(inflated.AsSpan(inflatedOffset));
+                    inflatedOffset += written;
                     continue;
                 }
 
@@ -168,7 +183,12 @@ internal sealed class GitPackReader
                 }
             }
 
-            return inflated.ToArray();
+            if (inflatedOffset != inflated.Length)
+            {
+                throw new InvalidDataException("Packed object inflated to an unexpected size.");
+            }
+
+            return inflated;
         }
         finally
         {

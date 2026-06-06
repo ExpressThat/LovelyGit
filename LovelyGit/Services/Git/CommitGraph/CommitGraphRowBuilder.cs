@@ -13,6 +13,7 @@ internal static class CommitGraphRowBuilder
         ref int maxLaneCount)
     {
         var hash = commit.Hash.ToString();
+        var parentList = parents is List<string> list ? list : parents.ToList();
         var incomingLanes = CommitGraphLaneLayout.FindAllLanesByTarget(activeLaneTargets, hash);
         var activeLanesAbove = CommitGraphLaneLayout.GetActiveLanes(activeLaneTargets);
         var currentLane = incomingLanes.Count > 0
@@ -24,10 +25,7 @@ internal static class CommitGraphRowBuilder
             activeLaneTargets[lane] = null;
         }
 
-        var mainParent = parents.Count > 0 ? parents[0] : null;
-        var mergeParents = parents.Count > 1
-            ? parents.Skip(1).ToList()
-            : null;
+        var mainParent = parentList.Count > 0 ? parentList[0] : null;
 
         if (!string.IsNullOrEmpty(mainParent))
         {
@@ -39,10 +37,11 @@ internal static class CommitGraphRowBuilder
         }
 
         List<int>? mergeParentLanes = null;
-        if (mergeParents != null)
+        if (parentList.Count > 1)
         {
-            foreach (var parent in mergeParents)
+            for (var index = 1; index < parentList.Count; index++)
             {
+                var parent = parentList[index];
                 var parentLane = CommitGraphLaneLayout.FindLaneByTarget(activeLaneTargets, parent)
                     ?? CommitGraphLaneLayout.AllocateLane(activeLaneTargets);
                 CommitGraphLaneLayout.SetLaneTarget(activeLaneTargets, parentLane, parent);
@@ -54,7 +53,7 @@ internal static class CommitGraphRowBuilder
         CommitGraphLaneLayout.TrimTrailingEmptyLanes(activeLaneTargets);
         maxLaneCount = Math.Max(maxLaneCount, activeLaneTargets.Count);
 
-        var commitInfo = CommitGraphCommitMapper.BuildInfo(commit, parents.ToList());
+        var commitInfo = CommitGraphCommitMapper.BuildInfo(commit, parentList);
         return new CommitGraphRow
         {
             Commit = commitInfo,
@@ -64,7 +63,7 @@ internal static class CommitGraphRowBuilder
             ActiveLanesBelow = CommitGraphLaneLayout.GetActiveLanes(activeLaneTargets),
             EdgesAbove = BuildEdgesAbove(incomingLanes, currentLane),
             EdgesBelow = BuildEdgesBelow(currentLane, mainParent, mergeParentLanes),
-            IsMergeCommit = parents.Count > 1,
+            IsMergeCommit = parentList.Count > 1,
             IsBranchTip = commitInfo.Branches.Count > 0,
         };
     }

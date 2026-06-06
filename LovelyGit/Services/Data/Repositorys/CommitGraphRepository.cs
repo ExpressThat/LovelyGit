@@ -113,6 +113,16 @@ namespace ExpressThat.LovelyGit.Services.Data.Repositorys
             return _fileDiffCache.GetCommitFileDiffAsync(repositoryId, hash, path, viewMode, cancellationToken);
         }
 
+        public Task<bool> HasCommitFileDiffAsync(
+            Guid repositoryId,
+            string hash,
+            string path,
+            CommitDiffViewMode viewMode,
+            CancellationToken cancellationToken)
+        {
+            return _fileDiffCache.HasCommitFileDiffAsync(repositoryId, hash, path, viewMode, cancellationToken);
+        }
+
         public Task SaveCommitFileDiffAsync(
             Guid repositoryId,
             string hash,

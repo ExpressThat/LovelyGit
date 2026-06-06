@@ -98,6 +98,15 @@ internal sealed class CommitDetailsCacheRepository
             }
         }
 
+        using var transaction = _gitRepoCache.BeginTransaction();
+
+        foreach (var fileEntry in existingFileEntries)
+        {
+            await _gitRepoCache.CommitDetailsChangedFiles
+                .DeleteAsync(fileEntry.Id, transaction, cancellationToken)
+                .ConfigureAwait(false);
+        }
+
         for (var index = 0; index < response.ChangedFiles.Count; index++)
         {
             var file = response.ChangedFiles[index];
@@ -117,40 +126,21 @@ internal sealed class CommitDetailsCacheRepository
                 },
             };
 
-            if (await _gitRepoCache.CommitDetailsChangedFiles.FindByIdAsync(fileEntry.Id, cancellationToken).ConfigureAwait(false) == null)
-            {
-                await _gitRepoCache.CommitDetailsChangedFiles
-                    .InsertAsync(fileEntry, cancellationToken)
-                    .ConfigureAwait(false);
-            }
-            else
-            {
-                await _gitRepoCache.CommitDetailsChangedFiles
-                    .UpdateAsync(fileEntry, cancellationToken)
-                    .ConfigureAwait(false);
-            }
-        }
-
-        foreach (var fileEntry in existingFileEntries)
-        {
-            if (fileEntry.FileIndex >= response.ChangedFiles.Count)
-            {
-                await _gitRepoCache.CommitDetailsChangedFiles
-                    .DeleteAsync(fileEntry.Id, cancellationToken)
-                    .ConfigureAwait(false);
-            }
+            await _gitRepoCache.CommitDetailsChangedFiles
+                .InsertAsync(fileEntry, transaction, cancellationToken)
+                .ConfigureAwait(false);
         }
 
         if (await _gitRepoCache.CommitDetailsCache.FindByIdAsync(id, cancellationToken).ConfigureAwait(false) == null)
         {
-            await _gitRepoCache.CommitDetailsCache.InsertAsync(entry, cancellationToken).ConfigureAwait(false);
+            await _gitRepoCache.CommitDetailsCache.InsertAsync(entry, transaction, cancellationToken).ConfigureAwait(false);
         }
         else
         {
-            await _gitRepoCache.CommitDetailsCache.UpdateAsync(entry, cancellationToken).ConfigureAwait(false);
+            await _gitRepoCache.CommitDetailsCache.UpdateAsync(entry, transaction, cancellationToken).ConfigureAwait(false);
         }
 
-        await _gitRepoCache.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        await _gitRepoCache.SaveChangesAsync(transaction, cancellationToken).ConfigureAwait(false);
     }
 
     private static CommitDetailsCache ToCache(CommitDetailsResponse response)

@@ -86,6 +86,11 @@ internal sealed class CommitDetailsPreloadService : IDisposable
 
     public void Dispose()
     {
+        StopAndWait();
+    }
+
+    public void StopAndWait()
+    {
         if (_disposed)
         {
             return;
@@ -96,12 +101,21 @@ internal sealed class CommitDetailsPreloadService : IDisposable
         lock (_gate)
         {
             cancellationToStop = _activeCancellation;
+            var taskToStop = _activeTask;
             _activeRepositoryId = null;
             _activeCancellation = null;
             _activeTask = null;
+
+            cancellationToStop?.Cancel();
+            try
+            {
+                taskToStop?.Wait(TimeSpan.FromSeconds(5));
+            }
+            catch
+            {
+            }
         }
 
-        cancellationToStop?.Cancel();
         cancellationToStop?.Dispose();
         _switchLock.Dispose();
     }

@@ -57,6 +57,11 @@ internal sealed class GitObjectStore
         await using var zlib = new ZLibStream(file, CompressionMode.Decompress);
         using var inflated = new MemoryStream();
         await zlib.CopyToAsync(inflated, cancellationToken).ConfigureAwait(false);
+        if (inflated.TryGetBuffer(out var buffer))
+        {
+            return ParseLooseObject(buffer.AsSpan(0, checked((int)inflated.Length)));
+        }
+
         return ParseLooseObject(inflated.ToArray());
     }
 
@@ -100,33 +105,48 @@ internal sealed class GitObjectStore
         return indexes;
     }
 
-    private static GitObjectData ParseLooseObject(byte[] inflated)
+    private static GitObjectData ParseLooseObject(ReadOnlySpan<byte> inflated)
     {
-        var zeroIndex = Array.IndexOf(inflated, (byte)0);
+        var zeroIndex = inflated.IndexOf((byte)0);
         if (zeroIndex <= 0)
         {
             throw new InvalidDataException("Loose object has no header terminator.");
         }
 
-        var header = System.Text.Encoding.ASCII.GetString(inflated, 0, zeroIndex);
-        var spaceIndex = header.IndexOf(' ');
+        var header = inflated[..zeroIndex];
+        var spaceIndex = header.IndexOf((byte)' ');
         if (spaceIndex <= 0)
         {
             throw new InvalidDataException("Loose object header is invalid.");
         }
 
         var kind = ParseKind(header[..spaceIndex]);
-        var data = new byte[inflated.Length - zeroIndex - 1];
-        Buffer.BlockCopy(inflated, zeroIndex + 1, data, 0, data.Length);
+        var data = inflated[(zeroIndex + 1)..].ToArray();
         return new GitObjectData(kind, data);
     }
 
-    private static GitObjectKind ParseKind(string value) => value switch
+    private static GitObjectKind ParseKind(ReadOnlySpan<byte> value)
     {
-        "commit" => GitObjectKind.Commit,
-        "tree" => GitObjectKind.Tree,
-        "blob" => GitObjectKind.Blob,
-        "tag" => GitObjectKind.Tag,
-        _ => throw new InvalidDataException($"Unsupported Git object type: {value}"),
-    };
+        if (value.SequenceEqual("commit"u8))
+        {
+            return GitObjectKind.Commit;
+        }
+
+        if (value.SequenceEqual("tree"u8))
+        {
+            return GitObjectKind.Tree;
+        }
+
+        if (value.SequenceEqual("blob"u8))
+        {
+            return GitObjectKind.Blob;
+        }
+
+        if (value.SequenceEqual("tag"u8))
+        {
+            return GitObjectKind.Tag;
+        }
+
+        throw new InvalidDataException($"Unsupported Git object type: {System.Text.Encoding.ASCII.GetString(value)}");
+    }
 }

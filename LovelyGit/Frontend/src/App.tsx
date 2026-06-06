@@ -9,6 +9,7 @@ import { NewTab } from "./components/NewTab/NewTab";
 import { TopNavBar } from "./components/TopNavBar/TopNavBar";
 import { Toaster } from "./components/ui/sonner";
 import type { CommitChangedFile } from "./generated/ExpressThat.LovelyGit.Services.Git.CommitGraph.Models";
+import { sendRequestWithoutResponse } from "./lib/registerSignalR";
 import { RepositoryProvider } from "./lib/repositoryContext";
 import { useSetting } from "./lib/settings/settingsStore";
 
@@ -24,9 +25,27 @@ function App() {
 			return;
 		}
 
+		if (detailsPanel?.kind === "commit" && previousRepositoryIdRef.current) {
+			cancelCommitDiffPreparation(
+				previousRepositoryIdRef.current,
+				detailsPanel.commitHash,
+			);
+		}
+
 		previousRepositoryIdRef.current = currentGitRepositoryId;
 		setDetailsPanel(null);
-	}, [currentGitRepositoryId]);
+	}, [currentGitRepositoryId, detailsPanel]);
+
+	const closeDetailsPanel = () => {
+		if (detailsPanel?.kind === "commit" && currentGitRepositoryId) {
+			cancelCommitDiffPreparation(
+				currentGitRepositoryId,
+				detailsPanel.commitHash,
+			);
+		}
+
+		setDetailsPanel(null);
+	};
 
 	return (
 		<RepositoryProvider>
@@ -122,7 +141,7 @@ function App() {
 					</div>
 					<SlidingDetailsPanel
 						isOpen={Boolean(detailsPanel && currentGitRepositoryId)}
-						onClose={() => setDetailsPanel(null)}
+						onClose={closeDetailsPanel}
 						title={panelTitle(detailsPanel)}
 					>
 						{detailsPanel?.kind === "commit" && currentGitRepositoryId ? (
@@ -151,6 +170,16 @@ type DetailsPanelState = {
 	kind: "commit";
 	selectedFile?: CommitChangedFile;
 };
+
+function cancelCommitDiffPreparation(repositoryId: string, commitHash: string) {
+	void sendRequestWithoutResponse({
+		commandType: "CancelCommitDiffPreparation",
+		arguments: {
+			commitHash,
+			repositoryId,
+		},
+	});
+}
 
 function panelTitle(panel: DetailsPanelState | null) {
 	if (panel?.kind === "commit") {

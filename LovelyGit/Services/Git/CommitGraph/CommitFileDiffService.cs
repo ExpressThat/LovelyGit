@@ -13,6 +13,8 @@ namespace ExpressThat.LovelyGit.Services.Git.CommitGraph;
 
 internal sealed class CommitFileDiffService : IDisposable
 {
+    private const int MaxSyntaxHighlightedCharacters = 750_000;
+    private const int MaxSyntaxHighlightedLineLength = 2_000;
     private readonly CommitGraphRepository _commitGraphRepository;
     private readonly object _preparationLock = new();
     private readonly Dictionary<Guid, ActivePreparation> _activePreparations = new();
@@ -49,14 +51,31 @@ internal sealed class CommitFileDiffService : IDisposable
             if (shouldStart)
             {
                 var cancellationTokenSource = new CancellationTokenSource();
+                var previousPreparation = previous;
                 var task = Task.Run(
-                    () => PrepareCommitDiffsAsync(
-                        repositoryId,
-                        repositoryPath,
-                        commitHash,
-                        changedFiles,
-                        previous?.CommitHash,
-                        cancellationTokenSource.Token),
+                    async () =>
+                    {
+                        if (previousPreparation != null)
+                        {
+                            try
+                            {
+                                await previousPreparation.Task.ConfigureAwait(false);
+                            }
+                            finally
+                            {
+                                previousPreparation.Dispose();
+                            }
+                        }
+
+                        await PrepareCommitDiffsAsync(
+                                repositoryId,
+                                repositoryPath,
+                                commitHash,
+                                changedFiles,
+                                previousPreparation?.CommitHash,
+                                cancellationTokenSource.Token)
+                            .ConfigureAwait(false);
+                    },
                     cancellationTokenSource.Token);
 
                 _activePreparations[repositoryId] = new ActivePreparation(
@@ -70,8 +89,6 @@ internal sealed class CommitFileDiffService : IDisposable
         {
             return;
         }
-
-        previous?.Dispose();
     }
 
     public async Task<CommitFileDiffResponse> GetCommitFileDiffAsync(
@@ -107,7 +124,72 @@ internal sealed class CommitFileDiffService : IDisposable
             .ConfigureAwait(false) ?? response;
     }
 
+    public void CancelPreparingCommitDiffs(Guid repositoryId, string commitHash)
+    {
+        ActivePreparation? active = null;
+        lock (_preparationLock)
+        {
+            if (_activePreparations.TryGetValue(repositoryId, out active)
+                && string.Equals(active.CommitHash, commitHash, StringComparison.Ordinal))
+            {
+                _activePreparations.Remove(repositoryId);
+                active.CancellationTokenSource.Cancel();
+            }
+            else
+            {
+                active = null;
+            }
+        }
+
+        if (active != null)
+        {
+            _ = active.Task.ContinueWith(
+                static (task, state) => ((ActivePreparation)state!).Dispose(),
+                active,
+                CancellationToken.None,
+                TaskContinuationOptions.ExecuteSynchronously,
+                TaskScheduler.Default);
+        }
+    }
+
+    public async Task CancelRepositoryPreparationAsync(Guid repositoryId, CancellationToken cancellationToken)
+    {
+        ActivePreparation? active = null;
+        lock (_preparationLock)
+        {
+            if (_activePreparations.Remove(repositoryId, out active))
+            {
+                active.CancellationTokenSource.Cancel();
+            }
+        }
+
+        if (active == null)
+        {
+            return;
+        }
+
+        try
+        {
+            await active.Task.WaitAsync(cancellationToken).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException)
+        {
+        }
+        catch
+        {
+        }
+        finally
+        {
+            active.Dispose();
+        }
+    }
+
     public void Dispose()
+    {
+        StopAndWait();
+    }
+
+    public void StopAndWait()
     {
         List<ActivePreparation> active;
         lock (_preparationLock)
@@ -125,6 +207,18 @@ internal sealed class CommitFileDiffService : IDisposable
         foreach (var preparation in active)
         {
             preparation.CancellationTokenSource.Cancel();
+        }
+
+        try
+        {
+            Task.WaitAll(active.Select(preparation => preparation.Task).ToArray(), TimeSpan.FromSeconds(5));
+        }
+        catch
+        {
+        }
+
+        foreach (var preparation in active)
+        {
             preparation.Dispose();
         }
     }
@@ -149,41 +243,12 @@ internal sealed class CommitFileDiffService : IDisposable
             foreach (var file in changedFiles)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                if (file.IsBinary)
-                {
-                    await SaveIfMissingAsync(
-                            repositoryId,
-                            repositoryPath,
-                            commitHash,
-                            file.Path,
-                            CommitDiffViewMode.SideBySide,
-                            cancellationToken)
-                        .ConfigureAwait(false);
-                    await SaveIfMissingAsync(
-                            repositoryId,
-                            repositoryPath,
-                            commitHash,
-                            file.Path,
-                            CommitDiffViewMode.Combined,
-                            cancellationToken)
-                        .ConfigureAwait(false);
-                    continue;
-                }
 
-                await SaveIfMissingAsync(
+                await SaveMissingViewModesAsync(
                         repositoryId,
                         repositoryPath,
                         commitHash,
                         file.Path,
-                        CommitDiffViewMode.SideBySide,
-                        cancellationToken)
-                    .ConfigureAwait(false);
-                await SaveIfMissingAsync(
-                        repositoryId,
-                        repositoryPath,
-                        commitHash,
-                        file.Path,
-                        CommitDiffViewMode.Combined,
                         cancellationToken)
                     .ConfigureAwait(false);
             }
@@ -205,30 +270,47 @@ internal sealed class CommitFileDiffService : IDisposable
                     active.Dispose();
                 }
             }
+
         }
     }
 
-    private async Task SaveIfMissingAsync(
+    private async Task SaveMissingViewModesAsync(
         Guid repositoryId,
         string repositoryPath,
         string commitHash,
         string path,
-        CommitDiffViewMode viewMode,
         CancellationToken cancellationToken)
     {
-        var cached = await _commitGraphRepository
-            .GetCommitFileDiffAsync(repositoryId, commitHash, path, viewMode, cancellationToken)
+        var hasSideBySide = await _commitGraphRepository
+            .HasCommitFileDiffAsync(repositoryId, commitHash, path, CommitDiffViewMode.SideBySide, cancellationToken)
             .ConfigureAwait(false);
-        if (cached != null)
+        var hasCombined = await _commitGraphRepository
+            .HasCommitFileDiffAsync(repositoryId, commitHash, path, CommitDiffViewMode.Combined, cancellationToken)
+            .ConfigureAwait(false);
+
+        if (hasSideBySide && hasCombined)
         {
             return;
         }
 
-        var response = await BuildCommitFileDiffAsync(repositoryPath, commitHash, path, viewMode, cancellationToken)
+        var source = await BuildCommitFileDiffSourceAsync(repositoryPath, commitHash, path, cancellationToken)
             .ConfigureAwait(false);
-        await _commitGraphRepository
-            .SaveCommitFileDiffAsync(repositoryId, commitHash, path, response, cancellationToken)
-            .ConfigureAwait(false);
+
+        if (!hasSideBySide)
+        {
+            var sideBySide = BuildResponseFromSource(commitHash, path, CommitDiffViewMode.SideBySide, source);
+            await _commitGraphRepository
+                .SaveCommitFileDiffAsync(repositoryId, commitHash, path, sideBySide, cancellationToken)
+                .ConfigureAwait(false);
+        }
+
+        if (!hasCombined)
+        {
+            var combined = BuildResponseFromSource(commitHash, path, CommitDiffViewMode.Combined, source);
+            await _commitGraphRepository
+                .SaveCommitFileDiffAsync(repositoryId, commitHash, path, combined, cancellationToken)
+                .ConfigureAwait(false);
+        }
     }
 
     private static async Task<CommitFileDiffResponse> BuildCommitFileDiffAsync(
@@ -236,6 +318,17 @@ internal sealed class CommitFileDiffService : IDisposable
         string commitHash,
         string path,
         CommitDiffViewMode viewMode,
+        CancellationToken cancellationToken)
+    {
+        var source = await BuildCommitFileDiffSourceAsync(repositoryPath, commitHash, path, cancellationToken)
+            .ConfigureAwait(false);
+        return BuildResponseFromSource(commitHash, path, viewMode, source);
+    }
+
+    private static async Task<CommitFileDiffSource> BuildCommitFileDiffSourceAsync(
+        string repositoryPath,
+        string commitHash,
+        string path,
         CancellationToken cancellationToken)
     {
         if (!GitObjectId.TryParse(commitHash, out var commitId))
@@ -275,21 +368,49 @@ internal sealed class CommitFileDiffService : IDisposable
 
         if (isBinary)
         {
+            return new CommitFileDiffSource
+            {
+                Status = status,
+                IsBinary = true,
+            };
+        }
+
+        var language = oldBlob.Text.Length + newBlob.Text.Length <= MaxSyntaxHighlightedCharacters
+            ? ResolveLanguage(path)
+            : null;
+
+        return new CommitFileDiffSource
+        {
+            Status = status,
+            IsBinary = false,
+            OldText = oldBlob.Text,
+            NewText = newBlob.Text,
+            Language = language,
+        };
+    }
+
+    private static CommitFileDiffResponse BuildResponseFromSource(
+        string commitHash,
+        string path,
+        CommitDiffViewMode viewMode,
+        CommitFileDiffSource source)
+    {
+        if (source.IsBinary)
+        {
             return new CommitFileDiffResponse
             {
                 CommitHash = commitHash,
                 Path = path,
-                Status = status,
+                Status = source.Status,
                 ViewMode = viewMode,
                 IsBinary = true,
                 HasDifferences = true,
             };
         }
 
-        var language = ResolveLanguage(path);
         return viewMode == CommitDiffViewMode.SideBySide
-            ? BuildSideBySideResponse(commitHash, path, status, oldBlob.Text, newBlob.Text, language)
-            : BuildCombinedResponse(commitHash, path, status, oldBlob.Text, newBlob.Text, language);
+            ? BuildSideBySideResponse(commitHash, path, source.Status, source.OldText, source.NewText, source.Language)
+            : BuildCombinedResponse(commitHash, path, source.Status, source.OldText, source.NewText, source.Language);
     }
 
     private static CommitFileDiffResponse BuildSideBySideResponse(
@@ -508,7 +629,9 @@ internal sealed class CommitFileDiffService : IDisposable
 
     private static List<CommitFileDiffSyntaxSpan> BuildSyntaxSpans(string text, ILanguage? language)
     {
-        if (language == null || string.IsNullOrEmpty(text))
+        if (language == null
+            || string.IsNullOrEmpty(text)
+            || text.Length > MaxSyntaxHighlightedLineLength)
         {
             return new List<CommitFileDiffSyntaxSpan>();
         }
@@ -562,5 +685,14 @@ internal sealed class CommitFileDiffService : IDisposable
         {
             CancellationTokenSource.Dispose();
         }
+    }
+
+    private sealed record CommitFileDiffSource
+    {
+        public string Status { get; init; } = string.Empty;
+        public bool IsBinary { get; init; }
+        public string OldText { get; init; } = string.Empty;
+        public string NewText { get; init; } = string.Empty;
+        public ILanguage? Language { get; init; }
     }
 }

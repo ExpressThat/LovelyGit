@@ -1,7 +1,11 @@
+using BLite.Core.Collections;
+using BLite.Core.Transactions;
+
 namespace ExpressThat.LovelyGit.Services.Data.Repositorys;
 
 internal sealed class CommitGraphRepositoryCleaner
 {
+    private const int DeleteBatchSize = 250;
     private readonly GitRepoCacheDbContext _gitRepoCache;
     private readonly CommitGraphTraversalCache _traversalCache;
     private readonly CommitDetailsCacheRepository _detailsCache;
@@ -21,43 +25,90 @@ internal sealed class CommitGraphRepositoryCleaner
 
     public async Task ClearRepositoryAsync(Guid repositoryId)
     {
-        await _gitRepoCache.CommitGraphStates.DeleteAsync(repositoryId).ConfigureAwait(false);
-
-        await foreach (var entry in _traversalCache.GetFrontierAsync(repositoryId).ConfigureAwait(false))
+        using (var transaction = _gitRepoCache.BeginTransaction())
         {
-            await _gitRepoCache.CommitGraphFrontier.DeleteAsync(entry.Id).ConfigureAwait(false);
+            await _gitRepoCache.CommitGraphStates.DeleteAsync(repositoryId, transaction).ConfigureAwait(false);
+            await _gitRepoCache.SaveChangesAsync(transaction).ConfigureAwait(false);
         }
 
-        await foreach (var entry in _traversalCache.GetSeenAsync(repositoryId).ConfigureAwait(false))
+        await DeleteEntriesAsync(
+                _gitRepoCache.CommitGraphFrontier,
+                _traversalCache.GetFrontierAsync(repositoryId))
+            .ConfigureAwait(false);
+        await DeleteEntriesAsync(
+                _gitRepoCache.CommitGraphSeen,
+                _traversalCache.GetSeenAsync(repositoryId))
+            .ConfigureAwait(false);
+        await DeleteEntriesAsync(
+                _gitRepoCache.CommitGraphCachedCommits,
+                _traversalCache.GetCachedCommitEntriesAsync(repositoryId))
+            .ConfigureAwait(false);
+        await DeleteEntriesAsync(
+                _gitRepoCache.CommitDetailsCache,
+                _detailsCache.GetCommitDetailsCacheEntriesAsync(repositoryId))
+            .ConfigureAwait(false);
+        await DeleteEntriesAsync(
+                _gitRepoCache.CommitDetailsChangedFiles,
+                _detailsCache.GetCommitDetailsChangedFileEntriesAsync(repositoryId))
+            .ConfigureAwait(false);
+        await DeleteEntriesAsync(
+                _gitRepoCache.CommitFileDiffs,
+                _fileDiffCache.GetCommitFileDiffEntriesAsync(repositoryId))
+            .ConfigureAwait(false);
+        await DeleteEntriesAsync(
+                _gitRepoCache.CommitFileDiffLines,
+                _fileDiffCache.GetCommitFileDiffLineEntriesAsync(repositoryId))
+            .ConfigureAwait(false);
+    }
+
+    private async Task DeleteEntriesAsync<T>(
+        DocumentCollection<string, T> collection,
+        IAsyncEnumerable<T> entries)
+        where T : class
+    {
+        var ids = new List<string>(DeleteBatchSize);
+        await foreach (var entry in entries.ConfigureAwait(false))
         {
-            await _gitRepoCache.CommitGraphSeen.DeleteAsync(entry.Id).ConfigureAwait(false);
+            ids.Add(GetId(entry));
+            if (ids.Count >= DeleteBatchSize)
+            {
+                await DeleteBatchAsync(collection, ids).ConfigureAwait(false);
+                ids.Clear();
+            }
         }
 
-        await foreach (var entry in _traversalCache.GetCachedCommitEntriesAsync(repositoryId).ConfigureAwait(false))
+        if (ids.Count > 0)
         {
-            await _gitRepoCache.CommitGraphCachedCommits.DeleteAsync(entry.Id).ConfigureAwait(false);
+            await DeleteBatchAsync(collection, ids).ConfigureAwait(false);
+        }
+    }
+
+    private async Task DeleteBatchAsync<T>(
+        DocumentCollection<string, T> collection,
+        IReadOnlyList<string> ids)
+        where T : class
+    {
+        using var transaction = _gitRepoCache.BeginTransaction();
+        foreach (var id in ids)
+        {
+            await collection.DeleteAsync(id, transaction).ConfigureAwait(false);
         }
 
-        await foreach (var entry in _detailsCache.GetCommitDetailsCacheEntriesAsync(repositoryId).ConfigureAwait(false))
-        {
-            await _gitRepoCache.CommitDetailsCache.DeleteAsync(entry.Id).ConfigureAwait(false);
-        }
+        await _gitRepoCache.SaveChangesAsync(transaction).ConfigureAwait(false);
+    }
 
-        await foreach (var entry in _detailsCache.GetCommitDetailsChangedFileEntriesAsync(repositoryId).ConfigureAwait(false))
+    private static string GetId<T>(T entry)
+    {
+        return entry switch
         {
-            await _gitRepoCache.CommitDetailsChangedFiles.DeleteAsync(entry.Id).ConfigureAwait(false);
-        }
-
-        await foreach (var entry in _fileDiffCache.GetCommitFileDiffEntriesAsync(repositoryId).ConfigureAwait(false))
-        {
-            await _gitRepoCache.CommitFileDiffs.DeleteAsync(entry.Id).ConfigureAwait(false);
-        }
-
-        await foreach (var entry in _fileDiffCache.GetCommitFileDiffLineEntriesAsync(repositoryId).ConfigureAwait(false))
-        {
-            await _gitRepoCache.CommitFileDiffLines.DeleteAsync(entry.Id).ConfigureAwait(false);
-        }
-
-        await _gitRepoCache.SaveChangesAsync().ConfigureAwait(false);
+            Models.Git.CommitGraph.CommitGraphFrontierEntry frontier => frontier.Id,
+            Models.Git.CommitGraph.CommitGraphSeenEntry seen => seen.Id,
+            Models.Git.CommitGraph.CommitGraphCachedCommitEntry cachedCommit => cachedCommit.Id,
+            Models.Git.CommitGraph.CommitDetailsCacheEntry details => details.Id,
+            Models.Git.CommitGraph.CommitChangedFileCacheEntry changedFile => changedFile.Id,
+            Models.Git.CommitGraph.CommitFileDiffCacheEntry diff => diff.Id,
+            Models.Git.CommitGraph.CommitFileDiffLineCacheEntry diffLine => diffLine.Id,
+            _ => throw new InvalidOperationException($"Unsupported cache entry type: {typeof(T).Name}."),
+        };
     }
 }

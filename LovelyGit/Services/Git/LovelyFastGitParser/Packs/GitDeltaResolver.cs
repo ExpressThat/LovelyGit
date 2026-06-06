@@ -12,9 +12,13 @@ internal static class GitDeltaResolver
         }
 
         var resultLength = ReadDeltaVarInt(delta, ref index);
-        using var result = resultLength <= int.MaxValue
-            ? new MemoryStream((int)resultLength)
-            : new MemoryStream();
+        if (resultLength > int.MaxValue)
+        {
+            throw new InvalidDataException("Delta result is too large.");
+        }
+
+        var result = new byte[(int)resultLength];
+        var resultIndex = 0;
 
         while (index < delta.Length)
         {
@@ -33,12 +37,16 @@ internal static class GitDeltaResolver
                 if ((opcode & 0x40) != 0) copyLength |= delta[index++] << 16;
                 if (copyLength == 0) copyLength = 0x10000;
 
-                result.Write(baseData, copyOffset, copyLength);
+                baseData.AsSpan(copyOffset, copyLength)
+                    .CopyTo(result.AsSpan(resultIndex));
+                resultIndex += copyLength;
             }
             else if (opcode != 0)
             {
-                result.Write(delta, index, opcode);
+                delta.AsSpan(index, opcode)
+                    .CopyTo(result.AsSpan(resultIndex));
                 index += opcode;
+                resultIndex += opcode;
             }
             else
             {
@@ -46,13 +54,12 @@ internal static class GitDeltaResolver
             }
         }
 
-        var bytes = result.ToArray();
-        if ((ulong)bytes.Length != resultLength)
+        if ((ulong)resultIndex != resultLength)
         {
             throw new InvalidDataException("Delta result length does not match expected length.");
         }
 
-        return bytes;
+        return result;
     }
 
     private static ulong ReadDeltaVarInt(byte[] data, ref int index)

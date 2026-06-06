@@ -11,13 +11,16 @@ internal static class CommitGraphCursor
             return new CommitGraphCursorState(null, 0);
         }
 
-        var parts = cursor.Split(':', 2);
-        if (parts.Length == 2 && Guid.TryParse(parts[0], out var repositoryId) && int.TryParse(parts[1], out var offset))
+        var cursorSpan = cursor.AsSpan().Trim();
+        var separator = cursorSpan.IndexOf(':');
+        if (separator > 0
+            && Guid.TryParse(cursorSpan[..separator], out var repositoryId)
+            && int.TryParse(cursorSpan[(separator + 1)..], out var offset))
         {
             return new CommitGraphCursorState(repositoryId, offset);
         }
 
-        return Guid.TryParse(cursor, out repositoryId)
+        return Guid.TryParse(cursorSpan, out repositoryId)
             ? new CommitGraphCursorState(repositoryId, 0)
             : new CommitGraphCursorState(null, 0);
     }

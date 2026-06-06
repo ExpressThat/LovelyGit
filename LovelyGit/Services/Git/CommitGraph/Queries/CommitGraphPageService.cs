@@ -8,16 +8,19 @@ internal sealed class CommitGraphPageService : IDisposable
     private readonly KnownGitRepositorysRepository _knownGitRepositorysRepository;
     private readonly CommitGraphRepository _commitGraphRepository;
     private readonly CommitDetailsPreloadService _commitDetailsPreloadService;
+    private readonly CommitFileDiffService _commitFileDiffService;
     private readonly Dictionary<Guid, CommitGraphManager> _activeGraphs = new();
 
     public CommitGraphPageService(
         KnownGitRepositorysRepository knownGitRepositorysRepository,
         CommitGraphRepository commitGraphRepository,
-        CommitDetailsPreloadService commitDetailsPreloadService)
+        CommitDetailsPreloadService commitDetailsPreloadService,
+        CommitFileDiffService commitFileDiffService)
     {
         _knownGitRepositorysRepository = knownGitRepositorysRepository;
         _commitGraphRepository = commitGraphRepository;
         _commitDetailsPreloadService = commitDetailsPreloadService;
+        _commitFileDiffService = commitFileDiffService;
     }
 
     public async Task<CommitGraphPageQueryResult> GetPageAsync(
@@ -38,8 +41,6 @@ internal sealed class CommitGraphPageService : IDisposable
         {
             limit = 0;
         }
-
-        await _commitDetailsPreloadService.CancelActiveAsync(cancellationToken).ConfigureAwait(false);
 
         var isFreshGraphLoad = string.IsNullOrWhiteSpace(cursorText);
         if (isFreshGraphLoad)
@@ -63,10 +64,7 @@ internal sealed class CommitGraphPageService : IDisposable
             var response = page.Response;
             response.NextCursor = response.HasMore ? CommitGraphManager.EncodeCursorState(page.NextCursor) : null;
 
-            await TrySaveCachedCommitsAsync(foundRepo.Id, response, cancellationToken).ConfigureAwait(false);
-            await _commitDetailsPreloadService
-                .StartOrSwitchAsync(foundRepo.Id, foundRepo.Path, cancellationToken)
-                .ConfigureAwait(false);
+            _ = CacheAndPreloadDetailsAsync(foundRepo.Id, foundRepo.Path, response, CancellationToken.None);
 
             if (!response.HasMore)
             {
@@ -93,8 +91,28 @@ internal sealed class CommitGraphPageService : IDisposable
 
     private async Task ResetRepositoryGraphAsync(Guid repositoryId, CancellationToken cancellationToken)
     {
+        await _commitDetailsPreloadService.CancelActiveAsync(cancellationToken).ConfigureAwait(false);
+        await _commitFileDiffService.CancelRepositoryPreparationAsync(repositoryId, cancellationToken).ConfigureAwait(false);
         await _commitGraphRepository.ClearRepositoryAsync(repositoryId).ConfigureAwait(false);
         CloseGraph(repositoryId);
+    }
+
+    private async Task CacheAndPreloadDetailsAsync(
+        Guid repositoryId,
+        string repositoryPath,
+        Models.CommitGraphResponse response,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            await TrySaveCachedCommitsAsync(repositoryId, response, cancellationToken).ConfigureAwait(false);
+            await _commitDetailsPreloadService
+                .StartOrSwitchAsync(repositoryId, repositoryPath, cancellationToken)
+                .ConfigureAwait(false);
+        }
+        catch
+        {
+        }
     }
 
     private async Task<CommitGraphOpenResult> GetOrOpenGraphAsync(

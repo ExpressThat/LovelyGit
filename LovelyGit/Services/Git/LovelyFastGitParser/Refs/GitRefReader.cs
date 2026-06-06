@@ -28,7 +28,7 @@ internal static class GitRefReader
             string? lastRefName = null;
             foreach (var rawLine in await File.ReadAllLinesAsync(packedRefsPath, cancellationToken).ConfigureAwait(false))
             {
-                var line = rawLine.Trim();
+                var line = rawLine.AsSpan().Trim();
                 if (line.Length == 0 || line[0] == '#')
                 {
                     continue;
@@ -53,7 +53,7 @@ internal static class GitRefReader
                 }
 
                 var hashText = line[..spaceIndex];
-                var name = line[(spaceIndex + 1)..];
+                var name = line[(spaceIndex + 1)..].ToString();
                 if (GitObjectId.TryParse(hashText, objectFormat, out var id))
                 {
                     refs.TryAdd(name, new GitRawRef(id, null));
@@ -85,7 +85,7 @@ internal static class GitRefReader
         const string refPrefix = "ref:";
         if (text.StartsWith(refPrefix, StringComparison.OrdinalIgnoreCase))
         {
-            var refName = text[refPrefix.Length..].Trim();
+            var refName = text.AsSpan(refPrefix.Length).Trim().ToString();
             return refs.TryGetValue(refName, out var rawRef) ? rawRef.Target : null;
         }
 

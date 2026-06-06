@@ -26,6 +26,16 @@ internal readonly record struct GitObjectId(string Value, GitObjectFormat Object
         return id;
     }
 
+    public static GitObjectId Parse(ReadOnlySpan<char> value, GitObjectFormat objectFormat)
+    {
+        if (!TryParse(value, objectFormat, out var id))
+        {
+            throw new FormatException($"Invalid {objectFormat} Git object id.");
+        }
+
+        return id;
+    }
+
     public static bool TryParse(string? value, out GitObjectId id)
     {
         id = default;
@@ -59,6 +69,26 @@ internal readonly record struct GitObjectId(string Value, GitObjectFormat Object
         }
 
         id = new GitObjectId(value.ToLowerInvariant(), objectFormat);
+        return true;
+    }
+
+    public static bool TryParse(ReadOnlySpan<char> value, GitObjectFormat objectFormat, out GitObjectId id)
+    {
+        id = default;
+        if (value.Length != GetTextLength(objectFormat))
+        {
+            return false;
+        }
+
+        for (var i = 0; i < value.Length; i++)
+        {
+            if (!Uri.IsHexDigit(value[i]))
+            {
+                return false;
+            }
+        }
+
+        id = new GitObjectId(value.ToString().ToLowerInvariant(), objectFormat);
         return true;
     }
 
