@@ -8,7 +8,9 @@ namespace ExpressThat.LovelyGit.Services.Settings
     public enum Setting
     {
         CurrentGitRepositoryId,
-        Theme
+        Theme,
+        CommitDiffViewMode,
+        CommitDiffWrapLines
     }
 
     [TranspilationSource]

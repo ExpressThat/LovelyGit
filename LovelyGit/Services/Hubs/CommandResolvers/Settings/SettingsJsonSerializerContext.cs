@@ -1,4 +1,5 @@
 using ExpressThat.LovelyGit.Services.Hubs.Commands;
+using ExpressThat.LovelyGit.Services.Git.CommitGraph.Models;
 using ExpressThat.LovelyGit.Services.Settings;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -11,6 +12,8 @@ namespace ExpressThat.LovelyGit.Services.Hubs.CommandResolvers.Settings;
 [JsonSerializable(typeof(SetMultipleSettingsCommandArguments))]
 [JsonSerializable(typeof(Guid?))]
 [JsonSerializable(typeof(AppTheme))]
+[JsonSerializable(typeof(CommitDiffViewMode))]
+[JsonSerializable(typeof(bool))]
 [JsonSerializable(typeof(CommandResponse<Dictionary<Setting, JsonElement>>))]
 internal partial class SettingsJsonSerializerContext : JsonSerializerContext
 {

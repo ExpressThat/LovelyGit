@@ -4,6 +4,8 @@ export type Settings = SettingValueMap;
 export type SettingsKey = keyof Settings;
 
 export const DEFAULT_SETTINGS: Settings = {
+	CommitDiffViewMode: "SideBySide",
+	CommitDiffWrapLines: false,
 	CurrentGitRepositoryId: null,
 	Theme: "System",
 };

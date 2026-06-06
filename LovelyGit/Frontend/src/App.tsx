@@ -1,11 +1,14 @@
 import "./App.css";
+import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import { CommitDetails } from "./components/CommitDetails/CommitDetails";
+import { CommitFileDiffView } from "./components/CommitFileDiff/CommitFileDiffView";
 import { CommitGraphView } from "./components/CommitGraph/CommitGraphView";
 import { SlidingDetailsPanel } from "./components/DetailsPanel/SlidingDetailsPanel";
 import { NewTab } from "./components/NewTab/NewTab";
 import { TopNavBar } from "./components/TopNavBar/TopNavBar";
 import { Toaster } from "./components/ui/sonner";
+import type { CommitChangedFile } from "./generated/ExpressThat.LovelyGit.Services.Git.CommitGraph.Models";
 import { RepositoryProvider } from "./lib/repositoryContext";
 import { useSetting } from "./lib/settings/settingsStore";
 
@@ -30,23 +33,92 @@ function App() {
 			<main className="app-shell">
 				<TopNavBar />
 				<div className="flex min-h-0 flex-1 overflow-hidden">
-					<div className="min-w-0 flex-1 overflow-hidden">
+					<div className="relative min-w-0 flex-1 overflow-hidden">
 						{currentGitRepositoryId && (
-							<CommitGraphView
-								onSelectCommit={(row) =>
-									setDetailsPanel({
-										commitHash: row.commit.hash,
-										kind: "commit",
-									})
-								}
-								selectedCommitHash={
-									detailsPanel?.kind === "commit"
-										? detailsPanel.commitHash
-										: null
-								}
-							/>
+							<>
+								<motion.div
+									animate={{
+										opacity:
+											detailsPanel?.kind === "commit" && detailsPanel.selectedFile
+												? 0.92
+												: 1,
+										scale:
+											detailsPanel?.kind === "commit" && detailsPanel.selectedFile
+												? 0.998
+												: 1,
+									}}
+									className="absolute inset-0 min-w-0 overflow-hidden"
+									initial={false}
+									transition={{
+										duration: 0.18,
+										ease: [0.22, 1, 0.36, 1],
+									}}
+								>
+									<CommitGraphView
+										onSelectCommit={(row) =>
+											setDetailsPanel((currentPanel) => {
+												if (
+													currentPanel?.kind === "commit" &&
+													currentPanel.commitHash === row.commit.hash
+												) {
+													return {
+														commitHash: row.commit.hash,
+														kind: "commit",
+													};
+												}
+
+												return {
+													commitHash: row.commit.hash,
+													kind: "commit",
+												};
+											})
+										}
+										selectedCommitHash={
+											detailsPanel?.kind === "commit"
+												? detailsPanel.commitHash
+												: null
+										}
+									/>
+								</motion.div>
+								<AnimatePresence initial={false}>
+									{detailsPanel?.kind === "commit" && detailsPanel.selectedFile ? (
+									<motion.div
+										animate={{ opacity: 1, x: 0, scale: 1 }}
+										className="absolute inset-0 z-10 min-w-0 overflow-hidden"
+										exit={{ opacity: 0, x: 56, scale: 0.995 }}
+										initial={{ opacity: 0, x: 56, scale: 0.995 }}
+										key={`diff:${detailsPanel.commitHash}:${detailsPanel.selectedFile.path}`}
+										transition={{
+											duration: 0.24,
+											ease: [0.22, 1, 0.36, 1],
+										}}
+									>
+										<CommitFileDiffView
+											commitHash={detailsPanel.commitHash}
+											file={detailsPanel.selectedFile}
+											onClose={() =>
+												setDetailsPanel({
+													commitHash: detailsPanel.commitHash,
+													kind: "commit",
+												})
+											}
+											repositoryId={currentGitRepositoryId}
+										/>
+									</motion.div>
+									) : null}
+								</AnimatePresence>
+							</>
 						)}
-						{!currentGitRepositoryId && <NewTab />}
+						{!currentGitRepositoryId && (
+							<motion.div
+								animate={{ opacity: 1 }}
+								className="absolute inset-0 min-w-0 overflow-hidden"
+								initial={{ opacity: 0 }}
+								transition={{ duration: 0.18 }}
+							>
+								<NewTab />
+							</motion.div>
+						)}
 					</div>
 					<SlidingDetailsPanel
 						isOpen={Boolean(detailsPanel && currentGitRepositoryId)}
@@ -56,6 +128,13 @@ function App() {
 						{detailsPanel?.kind === "commit" && currentGitRepositoryId ? (
 							<CommitDetails
 								commitHash={detailsPanel.commitHash}
+								onSelectFile={(file) =>
+									setDetailsPanel({
+										commitHash: detailsPanel.commitHash,
+										kind: "commit",
+										selectedFile: file,
+									})
+								}
 								repositoryId={currentGitRepositoryId}
 							/>
 						) : null}
@@ -70,6 +149,7 @@ function App() {
 type DetailsPanelState = {
 	commitHash: string;
 	kind: "commit";
+	selectedFile?: CommitChangedFile;
 };
 
 function panelTitle(panel: DetailsPanelState | null) {

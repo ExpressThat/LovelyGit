@@ -12,6 +12,7 @@ namespace ExpressThat.LovelyGit.Services.Hubs.Commands
         RemoveKnownGitRepositorys,
         CommitGraph,
         GetCommitDetails,
+        GetCommitFileDiff,
         GetSetting,
         SetSetting,
         GetAllSettings,

@@ -5,15 +5,18 @@ internal sealed class CommitGraphRepositoryCleaner
     private readonly GitRepoCacheDbContext _gitRepoCache;
     private readonly CommitGraphTraversalCache _traversalCache;
     private readonly CommitDetailsCacheRepository _detailsCache;
+    private readonly CommitFileDiffCacheRepository _fileDiffCache;
 
     public CommitGraphRepositoryCleaner(
         GitRepoCacheDbContext gitRepoCache,
         CommitGraphTraversalCache traversalCache,
-        CommitDetailsCacheRepository detailsCache)
+        CommitDetailsCacheRepository detailsCache,
+        CommitFileDiffCacheRepository fileDiffCache)
     {
         _gitRepoCache = gitRepoCache;
         _traversalCache = traversalCache;
         _detailsCache = detailsCache;
+        _fileDiffCache = fileDiffCache;
     }
 
     public async Task ClearRepositoryAsync(Guid repositoryId)
@@ -43,6 +46,16 @@ internal sealed class CommitGraphRepositoryCleaner
         await foreach (var entry in _detailsCache.GetCommitDetailsChangedFileEntriesAsync(repositoryId).ConfigureAwait(false))
         {
             await _gitRepoCache.CommitDetailsChangedFiles.DeleteAsync(entry.Id).ConfigureAwait(false);
+        }
+
+        await foreach (var entry in _fileDiffCache.GetCommitFileDiffEntriesAsync(repositoryId).ConfigureAwait(false))
+        {
+            await _gitRepoCache.CommitFileDiffs.DeleteAsync(entry.Id).ConfigureAwait(false);
+        }
+
+        await foreach (var entry in _fileDiffCache.GetCommitFileDiffLineEntriesAsync(repositoryId).ConfigureAwait(false))
+        {
+            await _gitRepoCache.CommitFileDiffLines.DeleteAsync(entry.Id).ConfigureAwait(false);
         }
 
         await _gitRepoCache.SaveChangesAsync().ConfigureAwait(false);

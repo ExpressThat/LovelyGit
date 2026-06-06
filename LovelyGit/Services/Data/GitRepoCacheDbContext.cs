@@ -12,6 +12,8 @@ public partial class GitRepoCacheDbContext : DocumentDbContext
     public DocumentCollection<string, CommitGraphCachedCommitEntry> CommitGraphCachedCommits { get; set; } = null!;
     public DocumentCollection<string, CommitDetailsCacheEntry> CommitDetailsCache { get; set; } = null!;
     public DocumentCollection<string, CommitChangedFileCacheEntry> CommitDetailsChangedFiles { get; set; } = null!;
+    public DocumentCollection<string, CommitFileDiffCacheEntry> CommitFileDiffs { get; set; } = null!;
+    public DocumentCollection<string, CommitFileDiffLineCacheEntry> CommitFileDiffLines { get; set; } = null!;
 
     public GitRepoCacheDbContext() : base(GetBasePath())
     {
@@ -88,6 +90,12 @@ public partial class GitRepoCacheDbContext : DocumentDbContext
             .HasIndex(entity => entity.RepositoryId);
 
         modelBuilder.Entity<CommitChangedFileCacheEntry>()
+            .HasIndex(entity => entity.RepositoryId);
+
+        modelBuilder.Entity<CommitFileDiffCacheEntry>()
+            .HasIndex(entity => entity.RepositoryId);
+
+        modelBuilder.Entity<CommitFileDiffLineCacheEntry>()
             .HasIndex(entity => entity.RepositoryId);
     }
 }

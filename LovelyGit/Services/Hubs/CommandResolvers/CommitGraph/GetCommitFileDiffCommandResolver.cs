@@ -9,40 +9,42 @@ using System.Text.Json.Serialization.Metadata;
 
 namespace ExpressThat.LovelyGit.Services.Hubs.CommandResolvers.CommitGraph;
 
-internal class GetCommitDetailsCommandResolver : CommandResponder<GetCommitDetailsCommandArguments>
+internal class GetCommitFileDiffCommandResolver : CommandResponder<GetCommitFileDiffCommandArguments>
 {
     private readonly KnownGitRepositorysRepository _knownGitRepositorysRepository;
-    private readonly CommitDetailsService _commitDetailsService;
     private readonly CommitFileDiffService _commitFileDiffService;
 
-    protected override JsonTypeInfo<GetCommitDetailsCommandArguments> ArgumentsJsonTypeInfo =>
-        CommitGraphJsonSerializerContext.Default.GetCommitDetailsCommandArguments;
+    protected override JsonTypeInfo<GetCommitFileDiffCommandArguments> ArgumentsJsonTypeInfo =>
+        CommitGraphJsonSerializerContext.Default.GetCommitFileDiffCommandArguments;
 
-    public GetCommitDetailsCommandResolver(
+    public GetCommitFileDiffCommandResolver(
         KnownGitRepositorysRepository knownGitRepositorysRepository,
-        CommitDetailsService commitDetailsService,
         CommitFileDiffService commitFileDiffService)
     {
         _knownGitRepositorysRepository = knownGitRepositorysRepository;
-        _commitDetailsService = commitDetailsService;
         _commitFileDiffService = commitFileDiffService;
     }
 
     public override bool CanRespondTo(CommsHubCommand<JsonElement> command)
     {
-        return command.CommandType == CommsHubCommandType.GetCommitDetails;
+        return command.CommandType == CommsHubCommandType.GetCommitFileDiff;
     }
 
-    public override async Task<CommandResponseBase> Resolve(CommsHubCommand<GetCommitDetailsCommandArguments> command)
+    public override async Task<CommandResponseBase> Resolve(CommsHubCommand<GetCommitFileDiffCommandArguments> command)
     {
         if (command.Arguments == null || command.Arguments.RepositoryId == Guid.Empty)
         {
             return Failure(command, "RepositoryId is required.");
         }
 
-        if (!GitObjectId.TryParse(command.Arguments.CommitHash, out var commitId))
+        if (!GitObjectId.TryParse(command.Arguments.CommitHash, out _))
         {
             return Failure(command, "CommitHash is invalid.");
+        }
+
+        if (string.IsNullOrWhiteSpace(command.Arguments.Path))
+        {
+            return Failure(command, "Path is required.");
         }
 
         KnownGitRepository foundRepo = await _knownGitRepositorysRepository.FindByIdAsync(command.Arguments.RepositoryId);
@@ -53,14 +55,15 @@ internal class GetCommitDetailsCommandResolver : CommandResponder<GetCommitDetai
 
         try
         {
-            var response = await _commitDetailsService
-                .GetCommitDetailsAsync(foundRepo.Id, foundRepo.Path, commitId, CancellationToken.None)
+            var response = await _commitFileDiffService
+                .GetCommitFileDiffAsync(
+                    foundRepo.Id,
+                    foundRepo.Path,
+                    command.Arguments.CommitHash,
+                    command.Arguments.Path,
+                    command.Arguments.ViewMode,
+                    CancellationToken.None)
                 .ConfigureAwait(false);
-            _commitFileDiffService.StartPreparingCommitDiffs(
-                foundRepo.Id,
-                foundRepo.Path,
-                response.Hash,
-                response.ChangedFiles);
 
             return Success(command, response);
         }
@@ -70,21 +73,21 @@ internal class GetCommitDetailsCommandResolver : CommandResponder<GetCommitDetai
         }
     }
 
-    private static CommandResponse<CommitDetailsResponse> Success(
-        CommsHubCommand<GetCommitDetailsCommandArguments> command,
-        CommitDetailsResponse response)
+    private static CommandResponse<CommitFileDiffResponse> Success(
+        CommsHubCommand<GetCommitFileDiffCommandArguments> command,
+        CommitFileDiffResponse response)
     {
-        return new CommandResponse<CommitDetailsResponse>
+        return new CommandResponse<CommitFileDiffResponse>
         {
             CommandUniqueId = command.CommandUniqueId,
             CommandType = command.CommandType,
             IsSuccess = true,
-            Result = response
+            Result = response,
         };
     }
 
     private static CommandResponseBase Failure(
-        CommsHubCommand<GetCommitDetailsCommandArguments> command,
+        CommsHubCommand<GetCommitFileDiffCommandArguments> command,
         string errorMessage)
     {
         return new CommandResponseBase
@@ -92,7 +95,7 @@ internal class GetCommitDetailsCommandResolver : CommandResponder<GetCommitDetai
             CommandUniqueId = command.CommandUniqueId,
             CommandType = command.CommandType,
             IsSuccess = false,
-            ErrorMessage = errorMessage
+            ErrorMessage = errorMessage,
         };
     }
 }

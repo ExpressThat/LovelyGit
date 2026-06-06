@@ -17,15 +17,31 @@ internal sealed class BlobLineAnalyzer
     {
         try
         {
-            var bytes = await _repository.ReadBlobAsync(file.ObjectId, cancellationToken).ConfigureAwait(false);
-            var isBinary = IsBinary(bytes);
-            return isBinary
-                ? new BlobAnalysis(isBinary, Array.Empty<LineFingerprint>())
-                : new BlobAnalysis(isBinary, BuildLineFingerprints(bytes));
+            var blob = await ReadBlobBytesAsync(file, cancellationToken).ConfigureAwait(false);
+            return blob.IsBinary
+                ? new BlobAnalysis(blob.IsBinary, Array.Empty<LineFingerprint>())
+                : new BlobAnalysis(blob.IsBinary, BuildLineFingerprints(blob.Bytes));
         }
         catch when (!cancellationToken.IsCancellationRequested)
         {
             return new BlobAnalysis(IsBinary: true, Array.Empty<LineFingerprint>());
+        }
+    }
+
+    public async Task<BlobText> ReadTextAsync(
+        GitTreeFile file,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var blob = await ReadBlobBytesAsync(file, cancellationToken).ConfigureAwait(false);
+            return blob.IsBinary
+                ? new BlobText(true, string.Empty)
+                : new BlobText(false, DecodeText(blob.Bytes));
+        }
+        catch when (!cancellationToken.IsCancellationRequested)
+        {
+            return new BlobText(IsBinary: true, Text: string.Empty);
         }
     }
 
@@ -120,6 +136,19 @@ internal sealed class BlobLineAnalyzer
         return lines.ToArray();
     }
 
+    private async Task<(byte[] Bytes, bool IsBinary)> ReadBlobBytesAsync(
+        GitTreeFile file,
+        CancellationToken cancellationToken)
+    {
+        var bytes = await _repository.ReadBlobAsync(file.ObjectId, cancellationToken).ConfigureAwait(false);
+        return (bytes, IsBinary(bytes));
+    }
+
+    private static string DecodeText(byte[] bytes)
+    {
+        return System.Text.Encoding.UTF8.GetString(bytes);
+    }
+
     private static void AddLineFingerprint(ReadOnlySpan<byte> line, List<LineFingerprint> lines)
     {
         if (line.Length > 0 && line[^1] == (byte)'\r')
@@ -149,3 +178,5 @@ internal sealed class BlobLineAnalyzer
 internal readonly record struct LineFingerprint(ulong Hash, int Length);
 
 internal sealed record BlobAnalysis(bool IsBinary, LineFingerprint[] Lines);
+
+internal sealed record BlobText(bool IsBinary, string Text);

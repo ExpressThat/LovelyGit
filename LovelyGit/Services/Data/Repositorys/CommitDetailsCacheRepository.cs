@@ -157,20 +157,20 @@ internal sealed class CommitDetailsCacheRepository
     {
         return new CommitDetailsCache
         {
-            Hash = response.Hash,
-            Parents = response.Parents.ToList(),
-            Author = response.Author,
-            Email = response.Email,
+            Hash = response.Hash ?? string.Empty,
+            Parents = response.Parents?.ToList() ?? [],
+            Author = response.Author ?? string.Empty,
+            Email = response.Email ?? string.Empty,
             Date = response.Date,
-            Subject = response.Subject,
-            Body = response.Body,
-            Message = response.Message,
-            Branches = response.Branches.ToList(),
-            Tags = response.Tags.ToList(),
+            Subject = response.Subject ?? string.Empty,
+            Body = response.Body ?? string.Empty,
+            Message = response.Message ?? string.Empty,
+            Branches = response.Branches?.ToList() ?? [],
+            Tags = response.Tags?.ToList() ?? [],
             Stats = new CommitStatsCache
             {
-                Additions = response.Stats.Additions,
-                Deletions = response.Stats.Deletions,
+                Additions = response.Stats?.Additions ?? 0,
+                Deletions = response.Stats?.Deletions ?? 0,
             },
         };
     }
@@ -181,28 +181,29 @@ internal sealed class CommitDetailsCacheRepository
     {
         return new CommitDetailsResponse
         {
-            Hash = cache.Hash,
-            Parents = cache.Parents.ToList(),
-            Author = cache.Author,
-            Email = cache.Email,
+            Hash = cache.Hash ?? string.Empty,
+            Parents = cache.Parents?.ToList() ?? [],
+            Author = cache.Author ?? string.Empty,
+            Email = cache.Email ?? string.Empty,
             Date = cache.Date,
-            Subject = cache.Subject,
-            Body = cache.Body,
-            Message = cache.Message,
-            Branches = cache.Branches.ToList(),
-            Tags = cache.Tags.ToList(),
+            Subject = cache.Subject ?? string.Empty,
+            Body = cache.Body ?? string.Empty,
+            Message = cache.Message ?? string.Empty,
+            Branches = cache.Branches?.ToList() ?? [],
+            Tags = cache.Tags?.ToList() ?? [],
             Stats = new CommitStats
             {
-                Additions = ToUInt32(cache.Stats.Additions),
-                Deletions = ToUInt32(cache.Stats.Deletions),
+                Additions = ToUInt32(cache.Stats?.Additions ?? 0),
+                Deletions = ToUInt32(cache.Stats?.Deletions ?? 0),
             },
             ChangedFiles = changedFiles
                 .OrderBy(entry => entry.FileIndex)
                 .Select(entry => entry.File)
+                .Where(file => file != null)
                 .Select(file => new CommitChangedFile
                 {
-                    Path = file.Path,
-                    Status = file.Status,
+                    Path = file.Path ?? string.Empty,
+                    Status = file.Status ?? string.Empty,
                     Additions = ToUInt32(file.Additions),
                     Deletions = ToUInt32(file.Deletions),
                     IsBinary = file.IsBinary,

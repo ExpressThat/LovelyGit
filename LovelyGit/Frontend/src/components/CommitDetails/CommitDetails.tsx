@@ -14,9 +14,11 @@ type CommitDetailsState =
 
 export function CommitDetails({
 	commitHash,
+	onSelectFile,
 	repositoryId,
 }: {
 	commitHash: string;
+	onSelectFile: (file: CommitChangedFile) => void;
 	repositoryId: string;
 }) {
 	const [state, setState] = useState<CommitDetailsState>({ status: "loading" });
@@ -134,7 +136,11 @@ export function CommitDetails({
 
 			<section className="space-y-1">
 				{details.changedFiles.map((file) => (
-					<ChangedFileRow file={file} key={`${file.status}:${file.path}`} />
+					<ChangedFileRow
+						file={file}
+						key={`${file.status}:${file.path}`}
+						onSelect={() => onSelectFile(file)}
+					/>
 				))}
 			</section>
 		</div>
@@ -152,11 +158,21 @@ function Stat({ label, value }: { label: string; value: number | string }) {
 	);
 }
 
-function ChangedFileRow({ file }: { file: CommitChangedFile }) {
+function ChangedFileRow({
+	file,
+	onSelect,
+}: {
+	file: CommitChangedFile;
+	onSelect: () => void;
+}) {
 	const Icon = statusIcon(file.status);
 
 	return (
-		<div className="flex min-h-9 items-center gap-2 border-b py-1.5 last:border-b-0">
+		<button
+			className="flex min-h-9 w-full items-center gap-2 border-b py-1.5 text-left hover:bg-accent/60 last:border-b-0"
+			onClick={onSelect}
+			type="button"
+		>
 			<Icon aria-hidden="true" className={statusColor(file.status)} size={15} />
 			<div className="min-w-0 flex-1">
 				<div
@@ -178,7 +194,7 @@ function ChangedFileRow({ file }: { file: CommitChangedFile }) {
 					-{file.deletions}
 				</span>
 			</div>
-		</div>
+		</button>
 	);
 }
 

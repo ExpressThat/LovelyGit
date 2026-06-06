@@ -1,4 +1,5 @@
 using ExpressThat.LovelyGit.Services.Hubs.CommandResolvers.Settings;
+using ExpressThat.LovelyGit.Services.Git.CommitGraph.Models;
 using System.Text.Json.Serialization.Metadata;
 
 namespace ExpressThat.LovelyGit.Services.Settings
@@ -31,11 +32,23 @@ namespace ExpressThat.LovelyGit.Services.Settings
             AppTheme.System,
             GetJsonTypeInfo<AppTheme>());
 
+        public static readonly SettingDefinition<CommitDiffViewMode> CommitDiffViewMode = new(
+            nameof(Setting.CommitDiffViewMode),
+            ExpressThat.LovelyGit.Services.Git.CommitGraph.Models.CommitDiffViewMode.SideBySide,
+            GetJsonTypeInfo<CommitDiffViewMode>());
+
+        public static readonly SettingDefinition<bool> CommitDiffWrapLines = new(
+            nameof(Setting.CommitDiffWrapLines),
+            false,
+            GetJsonTypeInfo<bool>());
+
         private static readonly IReadOnlyDictionary<Setting, ISettingDefinition> Definitions =
             new Dictionary<Setting, ISettingDefinition>
             {
                 [Setting.CurrentGitRepositoryId] = CurrentGitRepositoryId,
                 [Setting.Theme] = Theme,
+                [Setting.CommitDiffViewMode] = CommitDiffViewMode,
+                [Setting.CommitDiffWrapLines] = CommitDiffWrapLines,
             };
 
         public static Dictionary<Setting, ISettingDefinition> GetAllDefinitions()
