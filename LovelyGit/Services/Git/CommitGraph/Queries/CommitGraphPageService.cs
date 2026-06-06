@@ -39,6 +39,8 @@ internal sealed class CommitGraphPageService : IDisposable
             limit = 0;
         }
 
+        await _commitDetailsPreloadService.CancelActiveAsync(cancellationToken).ConfigureAwait(false);
+
         var isFreshGraphLoad = string.IsNullOrWhiteSpace(cursorText);
         if (isFreshGraphLoad)
         {
@@ -91,7 +93,6 @@ internal sealed class CommitGraphPageService : IDisposable
 
     private async Task ResetRepositoryGraphAsync(Guid repositoryId, CancellationToken cancellationToken)
     {
-        await _commitDetailsPreloadService.CancelActiveAsync(cancellationToken).ConfigureAwait(false);
         await _commitGraphRepository.ClearRepositoryAsync(repositoryId).ConfigureAwait(false);
         CloseGraph(repositoryId);
     }
