@@ -129,100 +129,23 @@ public sealed class CommitGraphManager : IDisposable
                 }
             }
 
-            var incomingLanes = CommitGraphLaneLayout.FindAllLanesByTarget(activeLaneTargets, hash);
-            var activeLanesAbove = collectRows
-                ? CommitGraphLaneLayout.GetActiveLanes(activeLaneTargets)
-                : null;
-            var currentLane = incomingLanes.Count > 0
-                ? incomingLanes[0]
-                : CommitGraphLaneLayout.AllocateLane(activeLaneTargets);
-
-            foreach (var lane in incomingLanes)
-            {
-                activeLaneTargets[lane] = null;
-            }
-
-            var mainParent = parents.Count > 0 ? parents[0] : null;
-            List<string>? mergeParents = null;
-            if (parents.Count > 1)
-            {
-                mergeParents = parents.GetRange(1, parents.Count - 1);
-            }
-
-            if (!string.IsNullOrEmpty(mainParent))
-            {
-                CommitGraphLaneLayout.SetLaneTarget(activeLaneTargets, currentLane, mainParent);
-            }
-            else if (currentLane < activeLaneTargets.Count)
-            {
-                activeLaneTargets[currentLane] = null;
-            }
-
-            List<int>? mergeParentLanes = null;
-            if (mergeParents != null)
-            {
-                foreach (var parent in mergeParents)
-                {
-                    var parentLane = CommitGraphLaneLayout.FindLaneByTarget(activeLaneTargets, parent)
-                        ?? CommitGraphLaneLayout.AllocateLane(activeLaneTargets);
-                    CommitGraphLaneLayout.SetLaneTarget(activeLaneTargets, parentLane, parent);
-                    mergeParentLanes ??= new List<int>();
-                    mergeParentLanes.Add(parentLane);
-                }
-            }
-
-            CommitGraphLaneLayout.TrimTrailingEmptyLanes(activeLaneTargets);
-            maxLaneCount = Math.Max(maxLaneCount, activeLaneTargets.Count);
-
             if (collectRows)
             {
-                var activeLanesBelow = CommitGraphLaneLayout.GetActiveLanes(activeLaneTargets);
-                var edgesAbove = incomingLanes
-                    .Select(lane => new CommitLaneEdge
-                    {
-                        FromLane = lane,
-                        ToLane = currentLane,
-                        Kind = lane == currentLane ? "straight" : "merge_in",
-                    })
-                    .ToList();
-
-                var edgesBelow = new List<CommitLaneEdge>();
-                if (!string.IsNullOrEmpty(mainParent))
-                {
-                    edgesBelow.Add(new CommitLaneEdge
-                    {
-                        FromLane = currentLane,
-                        ToLane = currentLane,
-                        Kind = "straight",
-                    });
-                }
-
-                if (mergeParentLanes != null)
-                {
-                    foreach (var parentLane in mergeParentLanes)
-                    {
-                        edgesBelow.Add(new CommitLaneEdge
-                        {
-                            FromLane = currentLane,
-                            ToLane = parentLane,
-                            Kind = "merge_in",
-                        });
-                    }
-                }
-
-                var commitInfo = CommitGraphCommitMapper.BuildInfo(commit, parents);
-                rows.Add(new CommitGraphRow
-                {
-                    Commit = commitInfo,
-                    RowIndex = rowIndex,
-                    Lane = currentLane,
-                    ActiveLanesAbove = activeLanesAbove!,
-                    ActiveLanesBelow = activeLanesBelow,
-                    EdgesAbove = edgesAbove,
-                    EdgesBelow = edgesBelow,
-                    IsMergeCommit = parents.Count > 1,
-                    IsBranchTip = commitInfo.Branches.Count > 0,
-                });
+                rows.Add(CommitGraphRowBuilder.Build(
+                    commit,
+                    parents,
+                    rowIndex,
+                    activeLaneTargets,
+                    ref maxLaneCount));
+            }
+            else
+            {
+                _ = CommitGraphRowBuilder.Build(
+                    commit,
+                    parents,
+                    rowIndex,
+                    activeLaneTargets,
+                    ref maxLaneCount);
             }
 
             rowCount++;

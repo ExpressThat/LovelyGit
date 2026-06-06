@@ -1,0 +1,99 @@
+namespace ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser;
+
+internal static class GitRepositoryDiscovery
+{
+    public static async Task<string> ResolveGitDirectoryAsync(string path, CancellationToken cancellationToken)
+    {
+        var fullPath = Path.GetFullPath(path);
+        var attributes = File.GetAttributes(fullPath);
+        if ((attributes & FileAttributes.Directory) == 0)
+        {
+            throw new DirectoryNotFoundException($"Path is not a directory: {path}");
+        }
+
+        if (Path.GetFileName(fullPath).Equals(".git", StringComparison.OrdinalIgnoreCase))
+        {
+            return fullPath;
+        }
+
+        var dotGitPath = Path.Combine(fullPath, ".git");
+        if (Directory.Exists(dotGitPath))
+        {
+            return dotGitPath;
+        }
+
+        if (File.Exists(dotGitPath))
+        {
+            var text = (await File.ReadAllTextAsync(dotGitPath, cancellationToken).ConfigureAwait(false)).Trim();
+            const string prefix = "gitdir:";
+            if (!text.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidDataException(".git file does not contain a gitdir pointer.");
+            }
+
+            var gitDir = text[prefix.Length..].Trim();
+            return Path.GetFullPath(Path.IsPathRooted(gitDir) ? gitDir : Path.Combine(fullPath, gitDir));
+        }
+
+        throw new DirectoryNotFoundException($"Could not find .git directory for: {path}");
+    }
+
+    public static async Task<GitObjectFormat> ReadObjectFormatAsync(
+        string gitDirectory,
+        CancellationToken cancellationToken)
+    {
+        var configPath = Path.Combine(gitDirectory, "config");
+        if (!File.Exists(configPath))
+        {
+            return GitObjectFormat.Sha1;
+        }
+
+        var section = string.Empty;
+        foreach (var rawLine in await File.ReadAllLinesAsync(configPath, cancellationToken).ConfigureAwait(false))
+        {
+            var line = rawLine.Trim();
+            if (line.Length == 0 || line[0] is '#' or ';')
+            {
+                continue;
+            }
+
+            if (line[0] == '[' && line[^1] == ']')
+            {
+                section = line[1..^1].Trim().Trim('"').ToLowerInvariant();
+                continue;
+            }
+
+            if (!section.Equals("extensions", StringComparison.Ordinal) ||
+                !TryReadConfigKeyValue(line, out var key, out var value) ||
+                !key.Equals("objectformat", StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            return value.ToLowerInvariant() switch
+            {
+                "sha1" => GitObjectFormat.Sha1,
+                "sha256" => GitObjectFormat.Sha256,
+                _ => throw new NotSupportedException($"Unsupported Git object format: {value}"),
+            };
+        }
+
+        return GitObjectFormat.Sha1;
+    }
+
+    private static bool TryReadConfigKeyValue(string line, out string key, out string value)
+    {
+        key = string.Empty;
+        value = string.Empty;
+
+        var separator = line.IndexOf('=');
+        if (separator <= 0)
+        {
+            return false;
+        }
+
+        key = line[..separator].Trim();
+        value = line[(separator + 1)..].Trim().Trim('"');
+        return key.Length > 0;
+    }
+}

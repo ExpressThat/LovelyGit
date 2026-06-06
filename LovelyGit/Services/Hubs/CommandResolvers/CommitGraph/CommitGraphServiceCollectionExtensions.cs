@@ -1,4 +1,5 @@
 using ExpressThat.LovelyGit.Services.Git.CommitGraph;
+using ExpressThat.LovelyGit.Services.Git.CommitGraph.Queries;
 using ExpressThat.LovelyGit.Services.Hubs.Commands;
 using ExpressThat.LovelyGit.Services.Json;
 
@@ -11,6 +12,7 @@ internal static class CommitGraphServiceCollectionExtensions
         services.AddLovelyGitJsonTypeInfoResolver(CommitGraphJsonSerializerContext.Default);
         services.AddSingleton<CommitDetailsService>();
         services.AddSingleton<CommitDetailsPreloadService>();
+        services.AddSingleton<CommitGraphPageService>();
         services.AddSingleton<ICommandResponder, CommitGraphCommandResolver>();
         services.AddSingleton<ICommandResponder, GetCommitDetailsCommandResolver>();
 
