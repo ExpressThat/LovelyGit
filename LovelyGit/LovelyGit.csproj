@@ -40,6 +40,10 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <ProjectReference Include="..\LovelyGit.BLiteGenerators\LovelyGit.BLiteGenerators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+	</ItemGroup>
+
+	<ItemGroup>
 	  <Folder Include="Frontend\" />
 	  <Folder Include="wwwroot\" />
 	</ItemGroup>

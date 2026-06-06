@@ -6,35 +6,6 @@ namespace ExpressThat.LovelyGit.Services.Data;
 
 public partial class GitRepoCacheDbContext : DocumentDbContext
 {
-    private static readonly string[] BsonKeys =
-    [
-        "id",
-        "_id",
-        "repositoryid",
-        "offset",
-        "maxlanecount",
-        "lanes",
-        "hash",
-        "seconds",
-        "details",
-        "parents",
-        "author",
-        "email",
-        "date",
-        "subject",
-        "body",
-        "message",
-        "branches",
-        "tags",
-        "stats",
-        "changedfiles",
-        "path",
-        "status",
-        "additions",
-        "deletions",
-        "isbinary",
-    ];
-
     public DocumentCollection<Guid, CommitGraphRepositoryState> CommitGraphStates { get; set; } = null!;
     public DocumentCollection<string, CommitGraphFrontierEntry> CommitGraphFrontier { get; set; } = null!;
     public DocumentCollection<string, CommitGraphSeenEntry> CommitGraphSeen { get; set; } = null!;
