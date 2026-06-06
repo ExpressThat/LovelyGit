@@ -9,16 +9,20 @@ using System.Text.Json.Serialization.Metadata;
 
 namespace ExpressThat.LovelyGit.Services.Hubs.CommandResolvers.CommitGraph;
 
-public class GetCommitDetailsCommandResolver : CommandResponder<GetCommitDetailsCommandArguments>
+internal class GetCommitDetailsCommandResolver : CommandResponder<GetCommitDetailsCommandArguments>
 {
     private readonly KnownGitRepositorysRepository _knownGitRepositorysRepository;
+    private readonly CommitDetailsService _commitDetailsService;
 
     protected override JsonTypeInfo<GetCommitDetailsCommandArguments> ArgumentsJsonTypeInfo =>
         CommitGraphJsonSerializerContext.Default.GetCommitDetailsCommandArguments;
 
-    public GetCommitDetailsCommandResolver(KnownGitRepositorysRepository knownGitRepositorysRepository)
+    public GetCommitDetailsCommandResolver(
+        KnownGitRepositorysRepository knownGitRepositorysRepository,
+        CommitDetailsService commitDetailsService)
     {
         _knownGitRepositorysRepository = knownGitRepositorysRepository;
+        _commitDetailsService = commitDetailsService;
     }
 
     public override bool CanRespondTo(CommsHubCommand<JsonElement> command)
@@ -46,32 +50,29 @@ public class GetCommitDetailsCommandResolver : CommandResponder<GetCommitDetails
 
         try
         {
-            using var repository = await LovelyGitRepository.OpenAsync(foundRepo.Path, CancellationToken.None)
-                .ConfigureAwait(false);
-            var commit = await repository.GetCommitAsync(commitId, CancellationToken.None).ConfigureAwait(false);
-            GitCommit? firstParent = null;
-            if (commit.ParentHashes.Count > 0)
-            {
-                firstParent = await repository.GetCommitAsync(commit.ParentHashes[0], CancellationToken.None)
-                    .ConfigureAwait(false);
-            }
-
-            var response = await new CommitDetailsBuilder(repository)
-                .BuildAsync(commit, firstParent, CancellationToken.None)
+            var response = await _commitDetailsService
+                .GetCommitDetailsAsync(foundRepo.Id, foundRepo.Path, commitId, CancellationToken.None)
                 .ConfigureAwait(false);
 
-            return new CommandResponse<CommitDetailsResponse>
-            {
-                CommandUniqueId = command.CommandUniqueId,
-                CommandType = command.CommandType,
-                IsSuccess = true,
-                Result = response
-            };
+            return Success(command, response);
         }
         catch (Exception ex)
         {
             return Failure(command, ex.Message);
         }
+    }
+
+    private static CommandResponse<CommitDetailsResponse> Success(
+        CommsHubCommand<GetCommitDetailsCommandArguments> command,
+        CommitDetailsResponse response)
+    {
+        return new CommandResponse<CommitDetailsResponse>
+        {
+            CommandUniqueId = command.CommandUniqueId,
+            CommandType = command.CommandType,
+            IsSuccess = true,
+            Result = response
+        };
     }
 
     private static CommandResponseBase Failure(

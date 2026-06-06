@@ -16,11 +16,29 @@ public partial class GitRepoCacheDbContext : DocumentDbContext
         "lanes",
         "hash",
         "seconds",
+        "details",
+        "parents",
+        "author",
+        "email",
+        "date",
+        "subject",
+        "body",
+        "message",
+        "branches",
+        "tags",
+        "stats",
+        "changedfiles",
+        "path",
+        "status",
+        "additions",
+        "deletions",
+        "isbinary",
     ];
 
     public DocumentCollection<Guid, CommitGraphRepositoryState> CommitGraphStates { get; set; } = null!;
     public DocumentCollection<string, CommitGraphFrontierEntry> CommitGraphFrontier { get; set; } = null!;
     public DocumentCollection<string, CommitGraphSeenEntry> CommitGraphSeen { get; set; } = null!;
+    public DocumentCollection<string, CommitDetailsCacheEntry> CommitDetailsCache { get; set; } = null!;
 
     public GitRepoCacheDbContext() : base(GetBasePath())
     {
@@ -88,6 +106,9 @@ public partial class GitRepoCacheDbContext : DocumentDbContext
             .HasIndex(entity => entity.RepositoryId);
 
         modelBuilder.Entity<CommitGraphSeenEntry>()
+            .HasIndex(entity => entity.RepositoryId);
+
+        modelBuilder.Entity<CommitDetailsCacheEntry>()
             .HasIndex(entity => entity.RepositoryId);
     }
 }
