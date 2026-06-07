@@ -238,6 +238,7 @@ jobs:
           --mainExe ${{ matrix.mainExe }}
           --runtime ${{ matrix.rid }}
           --channel ${{ matrix.rid }}
+          --instLicense LovelyGit/InstallerLicense.md
           --icon LovelyGit/Assets/LovelyGit.png
           --outputDir artifacts/velopack/${{ matrix.rid }}
 
@@ -254,6 +255,7 @@ jobs:
           --channel ${{ matrix.rid }}
           --framework webview2
           --azureTrustedSignFile "${{ env.AZURE_TRUSTED_SIGNING_METADATA }}"
+          --instLicense LovelyGit/InstallerLicense.md
           --icon LovelyGit/Assets/LovelyGit.ico
           --outputDir artifacts/velopack/${{ matrix.rid }}
 
@@ -269,6 +271,7 @@ jobs:
           --runtime ${{ matrix.rid }}
           --channel ${{ matrix.rid }}
           --icon LovelyGit/Assets/LovelyGit.icns
+          --instLicense LovelyGit/InstallerLicense.md
           --signAppIdentity "Developer ID Application: ExpressThat LTD"
           --signInstallIdentity "Developer ID Installer: ExpressThat LTD"
           --notaryProfile velopack-profile

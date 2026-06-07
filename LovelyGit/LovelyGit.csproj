@@ -71,6 +71,7 @@
 	  <Content Include="Assets\LovelyGit.icns" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="Always" />
 	  <Content Include="Assets\LovelyGit.logo.png" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="Always" />
 	  <Content Include="ThirdPartyNotices\**" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="Always" />
+	  <Content Include="..\LICENSE" Link="LICENSE" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="Always" />
 	</ItemGroup>
 
 	<ItemGroup>
