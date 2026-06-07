@@ -58,13 +58,13 @@ internal sealed class CommitGraphRepositoryCleaner
                 cancellationToken)
             .ConfigureAwait(false);
         await DeleteEntriesAsync(
-                _gitRepoCache.CommitFileDiffs,
-                _fileDiffCache.GetCommitFileDiffEntriesAsync(repositoryId),
+                _gitRepoCache.CommitFileDiffLines,
+                _fileDiffCache.GetCommitFileDiffLineEntriesAsync(repositoryId),
                 cancellationToken)
             .ConfigureAwait(false);
         await DeleteEntriesAsync(
-                _gitRepoCache.CommitFileDiffLines,
-                _fileDiffCache.GetCommitFileDiffLineEntriesAsync(repositoryId),
+                _gitRepoCache.CommitFileDiffs,
+                _fileDiffCache.GetCommitFileDiffEntriesAsync(repositoryId),
                 cancellationToken)
             .ConfigureAwait(false);
     }

@@ -93,6 +93,7 @@ jobs:
           --framework net10.0
           --runtime ${{ matrix.rid }}
           --self-contained true
+          -p:LovelyGitPublishAsWinExe=true
           --output artifacts/publish/${{ matrix.rid }}
 
       - name: Remove macOS-incompatible static asset folder

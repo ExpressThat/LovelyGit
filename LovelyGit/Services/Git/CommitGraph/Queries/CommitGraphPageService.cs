@@ -9,6 +9,7 @@ internal sealed class CommitGraphPageService : IDisposable
     private readonly CommitGraphRepository _commitGraphRepository;
     private readonly CommitDetailsPreloadService _commitDetailsPreloadService;
     private readonly CommitFileDiffService _commitFileDiffService;
+    private readonly CommitGraphBackgroundWorkerOptions _backgroundWorkerOptions;
     private readonly object _cacheWorkLock = new();
     private readonly Dictionary<Guid, CommitGraphManager> _activeGraphs = new();
     private readonly Dictionary<Guid, ActiveGraphCacheWork> _activeCacheWork = new();
@@ -19,12 +20,14 @@ internal sealed class CommitGraphPageService : IDisposable
         KnownGitRepositorysRepository knownGitRepositorysRepository,
         CommitGraphRepository commitGraphRepository,
         CommitDetailsPreloadService commitDetailsPreloadService,
-        CommitFileDiffService commitFileDiffService)
+        CommitFileDiffService commitFileDiffService,
+        CommitGraphBackgroundWorkerOptions backgroundWorkerOptions)
     {
         _knownGitRepositorysRepository = knownGitRepositorysRepository;
         _commitGraphRepository = commitGraphRepository;
         _commitDetailsPreloadService = commitDetailsPreloadService;
         _commitFileDiffService = commitFileDiffService;
+        _backgroundWorkerOptions = backgroundWorkerOptions;
     }
 
     public async Task<CommitGraphPageQueryResult> GetPageAsync(
@@ -148,6 +151,12 @@ internal sealed class CommitGraphPageService : IDisposable
         Models.CommitGraphResponse response,
         int cacheGeneration)
     {
+        if (!_backgroundWorkerOptions.EnableCommitGraphCacheWorker
+            && !_backgroundWorkerOptions.EnableCommitDetailsPreloadWorker)
+        {
+            return;
+        }
+
         lock (_cacheWorkLock)
         {
             if (!IsCacheGenerationCurrentCore(repositoryId, cacheGeneration))
@@ -287,10 +296,17 @@ internal sealed class CommitGraphPageService : IDisposable
     {
         try
         {
-            await TrySaveCachedCommitsAsync(repositoryId, response, cancellationToken).ConfigureAwait(false);
-            await _commitDetailsPreloadService
-                .StartOrSwitchAsync(repositoryId, repositoryPath, cancellationToken)
-                .ConfigureAwait(false);
+            if (_backgroundWorkerOptions.EnableCommitGraphCacheWorker)
+            {
+                await TrySaveCachedCommitsAsync(repositoryId, response, cancellationToken).ConfigureAwait(false);
+            }
+
+            if (_backgroundWorkerOptions.EnableCommitDetailsPreloadWorker)
+            {
+                await _commitDetailsPreloadService
+                    .StartOrSwitchAsync(repositoryId, repositoryPath, cancellationToken)
+                    .ConfigureAwait(false);
+            }
         }
         catch
         {

@@ -28,14 +28,27 @@ internal static class GitDeltaResolver
                 var copyOffset = 0;
                 var copyLength = 0;
 
-                if ((opcode & 0x01) != 0) copyOffset |= delta[index++];
-                if ((opcode & 0x02) != 0) copyOffset |= delta[index++] << 8;
-                if ((opcode & 0x04) != 0) copyOffset |= delta[index++] << 16;
-                if ((opcode & 0x08) != 0) copyOffset |= delta[index++] << 24;
-                if ((opcode & 0x10) != 0) copyLength |= delta[index++];
-                if ((opcode & 0x20) != 0) copyLength |= delta[index++] << 8;
-                if ((opcode & 0x40) != 0) copyLength |= delta[index++] << 16;
+                if ((opcode & 0x01) != 0) copyOffset |= ReadDeltaInstructionByte(delta, ref index);
+                if ((opcode & 0x02) != 0) copyOffset |= ReadDeltaInstructionByte(delta, ref index) << 8;
+                if ((opcode & 0x04) != 0) copyOffset |= ReadDeltaInstructionByte(delta, ref index) << 16;
+                if ((opcode & 0x08) != 0) copyOffset |= ReadDeltaInstructionByte(delta, ref index) << 24;
+                if ((opcode & 0x10) != 0) copyLength |= ReadDeltaInstructionByte(delta, ref index);
+                if ((opcode & 0x20) != 0) copyLength |= ReadDeltaInstructionByte(delta, ref index) << 8;
+                if ((opcode & 0x40) != 0) copyLength |= ReadDeltaInstructionByte(delta, ref index) << 16;
                 if (copyLength == 0) copyLength = 0x10000;
+
+                if (copyOffset < 0
+                    || copyLength < 0
+                    || copyOffset > baseData.Length
+                    || copyLength > baseData.Length - copyOffset)
+                {
+                    throw new InvalidDataException("Delta copy instruction is outside the base object.");
+                }
+
+                if (resultIndex > result.Length || copyLength > result.Length - resultIndex)
+                {
+                    throw new InvalidDataException("Delta copy instruction is outside the result object.");
+                }
 
                 baseData.AsSpan(copyOffset, copyLength)
                     .CopyTo(result.AsSpan(resultIndex));
@@ -43,6 +56,16 @@ internal static class GitDeltaResolver
             }
             else if (opcode != 0)
             {
+                if (opcode > delta.Length - index)
+                {
+                    throw new InvalidDataException("Delta insert instruction overruns the delta buffer.");
+                }
+
+                if (resultIndex > result.Length || opcode > result.Length - resultIndex)
+                {
+                    throw new InvalidDataException("Delta insert instruction is outside the result object.");
+                }
+
                 delta.AsSpan(index, opcode)
                     .CopyTo(result.AsSpan(resultIndex));
                 index += opcode;
@@ -60,6 +83,16 @@ internal static class GitDeltaResolver
         }
 
         return result;
+    }
+
+    private static int ReadDeltaInstructionByte(byte[] data, ref int index)
+    {
+        if (index >= data.Length)
+        {
+            throw new InvalidDataException("Delta instruction overran buffer.");
+        }
+
+        return data[index++];
     }
 
     private static ulong ReadDeltaVarInt(byte[] data, ref int index)

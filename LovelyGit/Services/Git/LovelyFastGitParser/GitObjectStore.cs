@@ -11,6 +11,7 @@ internal sealed class GitObjectStore
     private readonly GitObjectFormat _objectFormat;
     private readonly GitPackReader _packReader;
     private readonly LruCache<GitObjectId, GitObjectData> _objectCache = new(ObjectCacheSize);
+    private readonly SemaphoreSlim _packIndexesLock = new(1, 1);
     private List<GitPackIndex>? _packIndexes;
 
     public GitObjectStore(string gitDirectory, GitObjectFormat objectFormat)
@@ -85,24 +86,39 @@ internal sealed class GitObjectStore
 
     private async Task<IReadOnlyList<GitPackIndex>> GetPackIndexesAsync(CancellationToken cancellationToken)
     {
-        if (_packIndexes != null)
+        var cachedIndexes = Volatile.Read(ref _packIndexes);
+        if (cachedIndexes != null)
         {
-            return _packIndexes;
+            return cachedIndexes;
         }
 
-        var packDirectory = Path.Combine(_gitDirectory, "objects", "pack");
-        var indexes = new List<GitPackIndex>();
-        if (Directory.Exists(packDirectory))
+        await _packIndexesLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
         {
-            foreach (var indexPath in Directory.EnumerateFiles(packDirectory, "pack-*.idx"))
+            cachedIndexes = Volatile.Read(ref _packIndexes);
+            if (cachedIndexes != null)
             {
-                cancellationToken.ThrowIfCancellationRequested();
-                indexes.Add(await GitPackIndex.OpenAsync(indexPath, _objectFormat, cancellationToken).ConfigureAwait(false));
+                return cachedIndexes;
             }
-        }
 
-        _packIndexes = indexes;
-        return indexes;
+            var packDirectory = Path.Combine(_gitDirectory, "objects", "pack");
+            var indexes = new List<GitPackIndex>();
+            if (Directory.Exists(packDirectory))
+            {
+                foreach (var indexPath in Directory.EnumerateFiles(packDirectory, "pack-*.idx"))
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    indexes.Add(await GitPackIndex.OpenAsync(indexPath, _objectFormat, cancellationToken).ConfigureAwait(false));
+                }
+            }
+
+            Volatile.Write(ref _packIndexes, indexes);
+            return indexes;
+        }
+        finally
+        {
+            _packIndexesLock.Release();
+        }
     }
 
     private static GitObjectData ParseLooseObject(ReadOnlySpan<byte> inflated)

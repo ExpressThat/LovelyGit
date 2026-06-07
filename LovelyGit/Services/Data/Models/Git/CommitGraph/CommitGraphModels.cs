@@ -191,6 +191,9 @@ namespace ExpressThat.LovelyGit.Services.Data.Models.Git.CommitGraph
 
         [Column("hasdifferences")]
         public bool HasDifferences { get; set; }
+
+        [Column("linecount")]
+        public int LineCount { get; set; }
     }
 
     [Table("commit_file_diff_line_cache")]

@@ -102,7 +102,7 @@ export function CommitDetails({
 			</section>
 
 			{details.message ? (
-				<pre className="max-h-56 overflow-auto whitespace-pre-wrap rounded-md border bg-card p-3 font-mono text-xs leading-5 text-card-foreground">
+				<pre className="custom-scrollbar max-h-56 overflow-auto whitespace-pre-wrap rounded-md border bg-card p-3 font-mono text-xs leading-5 text-card-foreground">
 					{details.message}
 				</pre>
 			) : null}

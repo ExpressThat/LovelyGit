@@ -18,6 +18,9 @@ public static class Program
 {
     private const string GitHubRepositoryUrl = "https://github.com/ExpressThat/LovelyGit";
     private const bool IncludePrereleases = true;
+    private const bool EnableCommitGraphCacheWorker = false;
+    private const bool EnableCommitDetailsPreloadWorker = false;
+    private const bool EnableCommitFileDiffPreparationWorker = false;
 
     [STAThread]
     public static void Main(string[] args)
@@ -31,6 +34,10 @@ public static class Program
 
         InfiniFrameWebApplicationBuilder appBuilder = InfiniFrameWebApplication.CreateBuilder(args);
 
+        appBuilder.Services.AddSingleton(new CommitGraphBackgroundWorkerOptions(
+            EnableCommitGraphCacheWorker,
+            EnableCommitDetailsPreloadWorker,
+            EnableCommitFileDiffPreparationWorker));
         appBuilder.Services.AddLovelyGitServices();
 
 

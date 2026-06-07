@@ -2,6 +2,7 @@ using ColorCode;
 using ColorCode.Common;
 using ColorCode.Compilation;
 using ColorCode.Parsing;
+using DiffPlex;
 using DiffPlex.DiffBuilder;
 using DiffPlex.DiffBuilder.Model;
 using ExpressThat.LovelyGit.Services.Data.Repositorys;
@@ -17,7 +18,9 @@ internal sealed class CommitFileDiffService : IDisposable
     private const int MaxSyntaxHighlightedLineLength = 2_000;
     private readonly CommitGraphRepository _commitGraphRepository;
     private readonly object _preparationLock = new();
+    private readonly object _diffBuildGateLock = new();
     private readonly Dictionary<Guid, ActivePreparation> _activePreparations = new();
+    private readonly Dictionary<string, BuildGate> _diffBuildGates = new(StringComparer.Ordinal);
     private bool _disposed;
 
     public CommitFileDiffService(CommitGraphRepository commitGraphRepository)
@@ -99,29 +102,21 @@ internal sealed class CommitFileDiffService : IDisposable
         CommitDiffViewMode viewMode,
         CancellationToken cancellationToken)
     {
-        var cached = await _commitGraphRepository
-            .GetCommitFileDiffAsync(repositoryId, commitHash, path, viewMode, cancellationToken)
+        var cached = await TryGetCachedDiffAsync(repositoryId, commitHash, path, viewMode, cancellationToken)
             .ConfigureAwait(false);
         if (cached != null)
         {
             return cached;
         }
 
-        var response = await BuildCommitFileDiffAsync(
+        return await BuildAndCacheMissingDiffAsync(
+                repositoryId,
                 repositoryPath,
                 commitHash,
                 path,
                 viewMode,
                 cancellationToken)
             .ConfigureAwait(false);
-
-        await _commitGraphRepository
-            .SaveCommitFileDiffAsync(repositoryId, commitHash, path, response, cancellationToken)
-            .ConfigureAwait(false);
-
-        return await _commitGraphRepository
-            .GetCommitFileDiffAsync(repositoryId, commitHash, path, viewMode, cancellationToken)
-            .ConfigureAwait(false) ?? response;
     }
 
     public void CancelPreparingCommitDiffs(Guid repositoryId, string commitHash)
@@ -240,18 +235,18 @@ internal sealed class CommitFileDiffService : IDisposable
                     .ConfigureAwait(false);
             }
 
-            foreach (var file in changedFiles)
+            await Parallel.ForEachAsync(changedFiles, cancellationToken, async (file, fileCancellationToken) =>
             {
-                cancellationToken.ThrowIfCancellationRequested();
+                fileCancellationToken.ThrowIfCancellationRequested();
 
                 await SaveMissingViewModesAsync(
                         repositoryId,
                         repositoryPath,
                         commitHash,
                         file.Path,
-                        cancellationToken)
+                        fileCancellationToken)
                     .ConfigureAwait(false);
-            }
+            }).ConfigureAwait(false);
         }
         catch (OperationCanceledException)
         {
@@ -298,18 +293,120 @@ internal sealed class CommitFileDiffService : IDisposable
 
         if (!hasSideBySide)
         {
-            var sideBySide = BuildResponseFromSource(commitHash, path, CommitDiffViewMode.SideBySide, source);
-            await _commitGraphRepository
-                .SaveCommitFileDiffAsync(repositoryId, commitHash, path, sideBySide, cancellationToken)
+            await BuildAndCacheMissingDiffAsync(
+                    repositoryId,
+                    repositoryPath,
+                    commitHash,
+                    path,
+                    CommitDiffViewMode.SideBySide,
+                    source,
+                    cancellationToken)
                 .ConfigureAwait(false);
         }
 
         if (!hasCombined)
         {
-            var combined = BuildResponseFromSource(commitHash, path, CommitDiffViewMode.Combined, source);
-            await _commitGraphRepository
-                .SaveCommitFileDiffAsync(repositoryId, commitHash, path, combined, cancellationToken)
+            await BuildAndCacheMissingDiffAsync(
+                    repositoryId,
+                    repositoryPath,
+                    commitHash,
+                    path,
+                    CommitDiffViewMode.Combined,
+                    source,
+                    cancellationToken)
                 .ConfigureAwait(false);
+        }
+    }
+
+    private async Task<CommitFileDiffResponse> BuildAndCacheMissingDiffAsync(
+        Guid repositoryId,
+        string repositoryPath,
+        string commitHash,
+        string path,
+        CommitDiffViewMode viewMode,
+        CancellationToken cancellationToken)
+    {
+        var gateKey = MakeDiffGateKey(repositoryId, commitHash, path, viewMode);
+        var gate = GetBuildGate(gateKey);
+        var enteredGate = false;
+        try
+        {
+            await gate.Semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
+            enteredGate = true;
+
+            var cached = await TryGetCachedDiffAsync(repositoryId, commitHash, path, viewMode, cancellationToken)
+                .ConfigureAwait(false);
+            if (cached != null)
+            {
+                return cached;
+            }
+
+            var response = await BuildCommitFileDiffAsync(
+                    repositoryPath,
+                    commitHash,
+                    path,
+                    viewMode,
+                    cancellationToken)
+                .ConfigureAwait(false);
+
+            await _commitGraphRepository
+                .SaveCommitFileDiffAsync(repositoryId, commitHash, path, response, cancellationToken)
+                .ConfigureAwait(false);
+
+            return await TryGetCachedDiffAsync(repositoryId, commitHash, path, viewMode, cancellationToken)
+                .ConfigureAwait(false) ?? response;
+        }
+        finally
+        {
+            if (enteredGate)
+            {
+                gate.Semaphore.Release();
+            }
+
+            ReleaseBuildGate(gateKey, gate);
+        }
+    }
+
+    private async Task<CommitFileDiffResponse> BuildAndCacheMissingDiffAsync(
+        Guid repositoryId,
+        string repositoryPath,
+        string commitHash,
+        string path,
+        CommitDiffViewMode viewMode,
+        CommitFileDiffSource source,
+        CancellationToken cancellationToken)
+    {
+        var gateKey = MakeDiffGateKey(repositoryId, commitHash, path, viewMode);
+        var gate = GetBuildGate(gateKey);
+        var enteredGate = false;
+        try
+        {
+            await gate.Semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
+            enteredGate = true;
+
+            var cached = await TryGetCachedDiffAsync(repositoryId, commitHash, path, viewMode, cancellationToken)
+                .ConfigureAwait(false);
+            if (cached != null)
+            {
+                return cached;
+            }
+
+            var response = BuildResponseFromSource(commitHash, path, viewMode, source);
+            await _commitGraphRepository
+                .SaveCommitFileDiffAsync(repositoryId, commitHash, path, response, cancellationToken)
+                .ConfigureAwait(false);
+
+            return await TryGetCachedDiffAsync(repositoryId, commitHash, path, viewMode, cancellationToken)
+                .ConfigureAwait(false) ?? response;
+        }
+        finally
+        {
+            if (enteredGate)
+            {
+                gate.Semaphore.Release();
+            }
+
+            ReleaseBuildGate(gateKey, gate);
         }
     }
 
@@ -323,6 +420,35 @@ internal sealed class CommitFileDiffService : IDisposable
         var source = await BuildCommitFileDiffSourceAsync(repositoryPath, commitHash, path, cancellationToken)
             .ConfigureAwait(false);
         return BuildResponseFromSource(commitHash, path, viewMode, source);
+    }
+
+    private async Task<CommitFileDiffResponse?> TryGetCachedDiffAsync(
+        Guid repositoryId,
+        string commitHash,
+        string path,
+        CommitDiffViewMode viewMode,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await _commitGraphRepository
+                .GetCommitFileDiffAsync(repositoryId, commitHash, path, viewMode, cancellationToken)
+                .ConfigureAwait(false);
+        }
+        catch when (!cancellationToken.IsCancellationRequested)
+        {
+            try
+            {
+                await _commitGraphRepository
+                    .ClearCommitFileDiffsAsync(repositoryId, commitHash, CancellationToken.None)
+                    .ConfigureAwait(false);
+            }
+            catch
+            {
+            }
+
+            return null;
+        }
     }
 
     private static async Task<CommitFileDiffSource> BuildCommitFileDiffSourceAsync(
@@ -421,7 +547,7 @@ internal sealed class CommitFileDiffService : IDisposable
         string newText,
         ILanguage? language)
     {
-        var model = SideBySideDiffBuilder.Instance.BuildDiffModel(oldText, newText);
+        var model = new SideBySideDiffBuilder(new Differ()).BuildDiffModel(oldText, newText);
         var lineCount = Math.Max(model.OldText.Lines.Count, model.NewText.Lines.Count);
         var lines = new List<CommitFileDiffLine>(lineCount);
         for (var index = 0; index < lineCount; index++)
@@ -465,7 +591,7 @@ internal sealed class CommitFileDiffService : IDisposable
         string newText,
         ILanguage? language)
     {
-        var model = InlineDiffBuilder.Instance.BuildDiffModel(oldText, newText);
+        var model = new InlineDiffBuilder(new Differ()).BuildDiffModel(oldText, newText);
         var oldLineNumber = 1;
         var newLineNumber = 1;
         var lines = new List<CommitFileDiffLine>(model.Lines.Count);
@@ -577,6 +703,52 @@ internal sealed class CommitFileDiffService : IDisposable
         };
     }
 
+    private static string MakeDiffGateKey(
+        Guid repositoryId,
+        string commitHash,
+        string path,
+        CommitDiffViewMode viewMode)
+    {
+        return string.Concat(
+            repositoryId.ToString("N"),
+            ':',
+            commitHash,
+            ':',
+            viewMode.ToString(),
+            ':',
+            path);
+    }
+
+    private BuildGate GetBuildGate(string key)
+    {
+        lock (_diffBuildGateLock)
+        {
+            if (!_diffBuildGates.TryGetValue(key, out var gate))
+            {
+                gate = new BuildGate();
+                _diffBuildGates[key] = gate;
+            }
+
+            gate.ReferenceCount++;
+            return gate;
+        }
+    }
+
+    private void ReleaseBuildGate(string key, BuildGate gate)
+    {
+        lock (_diffBuildGateLock)
+        {
+            gate.ReferenceCount--;
+            if (gate.ReferenceCount == 0
+                && _diffBuildGates.TryGetValue(key, out var activeGate)
+                && ReferenceEquals(activeGate, gate))
+            {
+                _diffBuildGates.Remove(key);
+                gate.Semaphore.Dispose();
+            }
+        }
+    }
+
     private static List<CommitFileDiffChangeSpan> BuildChangeSpans(DiffPiece? line)
     {
         if (line?.SubPieces == null || line.SubPieces.Count == 0)
@@ -685,6 +857,13 @@ internal sealed class CommitFileDiffService : IDisposable
         {
             CancellationTokenSource.Dispose();
         }
+    }
+
+    private sealed class BuildGate
+    {
+        public SemaphoreSlim Semaphore { get; } = new(1, 1);
+
+        public int ReferenceCount { get; set; }
     }
 
     private sealed record CommitFileDiffSource

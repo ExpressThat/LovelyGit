@@ -17,7 +17,7 @@ internal sealed class CommitChangeDetector
         IReadOnlyDictionary<string, GitTreeFile> currentFiles,
         CancellationToken cancellationToken)
     {
-        var changedFiles = new List<CommitChangedFile>();
+        var changedFiles = new List<ChangedFileWorkItem>();
         var deleted = new Dictionary<string, GitTreeFile>(StringComparer.Ordinal);
         var added = new Dictionary<string, GitTreeFile>(StringComparer.Ordinal);
 
@@ -37,13 +37,11 @@ internal sealed class CommitChangeDetector
             }
 
             var status = IsSameFileKind(parentFile, currentFile) ? "Modified" : "TypeChanged";
-            changedFiles.Add(await BuildComparedFileAsync(
+            changedFiles.Add(ChangedFileWorkItem.Compared(
                     status,
                     currentFile.Path,
                     parentFile,
-                    currentFile,
-                    cancellationToken)
-                .ConfigureAwait(false));
+                    currentFile));
         }
 
         foreach (var (path, currentFile) in currentFiles)
@@ -56,15 +54,42 @@ internal sealed class CommitChangeDetector
 
         foreach (var file in deleted.Values)
         {
-            changedFiles.Add(await BuildDeletedFileAsync(file, cancellationToken).ConfigureAwait(false));
+            changedFiles.Add(ChangedFileWorkItem.Deleted(file));
         }
 
         foreach (var file in added.Values)
         {
-            changedFiles.Add(await BuildAddedFileAsync(file, cancellationToken).ConfigureAwait(false));
+            changedFiles.Add(ChangedFileWorkItem.Added(file));
         }
 
-        return changedFiles
+        var results = new CommitChangedFile?[changedFiles.Count];
+        await Parallel.ForEachAsync(
+                Enumerable.Range(0, changedFiles.Count),
+                cancellationToken,
+                async (index, itemCancellationToken) =>
+                {
+                    var item = changedFiles[index];
+                    results[index] = item.Kind switch
+                    {
+                        ChangedFileKind.Compared => await BuildComparedFileAsync(
+                                item.Status,
+                                item.Path,
+                                item.OldFile,
+                                item.NewFile,
+                                itemCancellationToken)
+                            .ConfigureAwait(false),
+                        ChangedFileKind.Added => await BuildAddedFileAsync(item.NewFile, itemCancellationToken)
+                            .ConfigureAwait(false),
+                        ChangedFileKind.Deleted => await BuildDeletedFileAsync(item.OldFile, itemCancellationToken)
+                            .ConfigureAwait(false),
+                        _ => throw new InvalidOperationException("Unknown changed file work item kind."),
+                    };
+                })
+            .ConfigureAwait(false);
+
+        return results
+            .Where(file => file != null)
+            .Cast<CommitChangedFile>()
             .OrderBy(file => file.Path, StringComparer.Ordinal)
             .ToList();
     }
@@ -127,4 +152,38 @@ internal sealed class CommitChangeDetector
     private static bool IsSymlink(GitTreeFile file) => file.Mode == "120000";
 
     private static bool IsSubmodule(GitTreeFile file) => file.Mode == "160000";
+
+    private enum ChangedFileKind
+    {
+        Compared,
+        Added,
+        Deleted,
+    }
+
+    private readonly record struct ChangedFileWorkItem(
+        ChangedFileKind Kind,
+        string Status,
+        string Path,
+        GitTreeFile OldFile,
+        GitTreeFile NewFile)
+    {
+        public static ChangedFileWorkItem Compared(
+            string status,
+            string path,
+            GitTreeFile oldFile,
+            GitTreeFile newFile)
+        {
+            return new ChangedFileWorkItem(ChangedFileKind.Compared, status, path, oldFile, newFile);
+        }
+
+        public static ChangedFileWorkItem Added(GitTreeFile file)
+        {
+            return new ChangedFileWorkItem(ChangedFileKind.Added, "Added", file.Path, file, file);
+        }
+
+        public static ChangedFileWorkItem Deleted(GitTreeFile file)
+        {
+            return new ChangedFileWorkItem(ChangedFileKind.Deleted, "Deleted", file.Path, file, file);
+        }
+    }
 }

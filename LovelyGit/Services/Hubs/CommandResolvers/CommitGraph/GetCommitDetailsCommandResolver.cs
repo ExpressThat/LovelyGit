@@ -14,6 +14,7 @@ internal class GetCommitDetailsCommandResolver : CommandResponder<GetCommitDetai
     private readonly KnownGitRepositorysRepository _knownGitRepositorysRepository;
     private readonly CommitDetailsService _commitDetailsService;
     private readonly CommitFileDiffService _commitFileDiffService;
+    private readonly CommitGraphBackgroundWorkerOptions _backgroundWorkerOptions;
 
     protected override JsonTypeInfo<GetCommitDetailsCommandArguments> ArgumentsJsonTypeInfo =>
         CommitGraphJsonSerializerContext.Default.GetCommitDetailsCommandArguments;
@@ -21,11 +22,13 @@ internal class GetCommitDetailsCommandResolver : CommandResponder<GetCommitDetai
     public GetCommitDetailsCommandResolver(
         KnownGitRepositorysRepository knownGitRepositorysRepository,
         CommitDetailsService commitDetailsService,
-        CommitFileDiffService commitFileDiffService)
+        CommitFileDiffService commitFileDiffService,
+        CommitGraphBackgroundWorkerOptions backgroundWorkerOptions)
     {
         _knownGitRepositorysRepository = knownGitRepositorysRepository;
         _commitDetailsService = commitDetailsService;
         _commitFileDiffService = commitFileDiffService;
+        _backgroundWorkerOptions = backgroundWorkerOptions;
     }
 
     public override bool CanRespondTo(CommsHubCommand<JsonElement> command)
@@ -56,11 +59,14 @@ internal class GetCommitDetailsCommandResolver : CommandResponder<GetCommitDetai
             var response = await _commitDetailsService
                 .GetCommitDetailsAsync(foundRepo.Id, foundRepo.Path, commitId, CancellationToken.None)
                 .ConfigureAwait(false);
-            _commitFileDiffService.StartPreparingCommitDiffs(
-                foundRepo.Id,
-                foundRepo.Path,
-                response.Hash,
-                response.ChangedFiles);
+            if (_backgroundWorkerOptions.EnableCommitFileDiffPreparationWorker)
+            {
+                _commitFileDiffService.StartPreparingCommitDiffs(
+                    foundRepo.Id,
+                    foundRepo.Path,
+                    response.Hash,
+                    response.ChangedFiles);
+            }
 
             return Success(command, response);
         }

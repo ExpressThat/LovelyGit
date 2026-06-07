@@ -136,7 +136,7 @@ internal sealed class CommitDetailsPreloadService : IDisposable
                     .GetCachedCommitsAsync(repositoryId, cancellationToken)
                     .ConfigureAwait(false);
 
-                var foundNewRow = false;
+                var rowsToPreload = new List<(string Hash, GitObjectId CommitId)>();
                 foreach (var row in rows)
                 {
                     cancellationToken.ThrowIfCancellationRequested();
@@ -146,33 +146,39 @@ internal sealed class CommitDetailsPreloadService : IDisposable
                         continue;
                     }
 
-                    foundNewRow = true;
                     if (!GitObjectId.TryParse(row.Hash, out var commitId))
                     {
                         continue;
                     }
 
-                    if (await _commitGraphRepository.HasCommitDetailsAsync(repositoryId, row.Hash, cancellationToken)
+                    rowsToPreload.Add((row.Hash, commitId));
+                }
+
+                if (rowsToPreload.Count == 0)
+                {
+                    return;
+                }
+
+                await Parallel.ForEachAsync(rowsToPreload, cancellationToken, async (row, rowCancellationToken) =>
+                {
+                    rowCancellationToken.ThrowIfCancellationRequested();
+
+                    if (await _commitGraphRepository.HasCommitDetailsAsync(repositoryId, row.Hash, rowCancellationToken)
                             .ConfigureAwait(false))
                     {
-                        continue;
+                        return;
                     }
 
                     try
                     {
                         await _commitDetailsService
-                            .GetCommitDetailsAsync(repositoryId, repositoryPath, commitId, cancellationToken)
+                            .GetCommitDetailsAsync(repositoryId, repositoryPath, row.CommitId, rowCancellationToken)
                             .ConfigureAwait(false);
                     }
-                    catch when (!cancellationToken.IsCancellationRequested)
+                    catch when (!rowCancellationToken.IsCancellationRequested)
                     {
                     }
-                }
-
-                if (!foundNewRow)
-                {
-                    return;
-                }
+                }).ConfigureAwait(false);
             }
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)

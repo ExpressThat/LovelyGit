@@ -7,6 +7,8 @@ namespace ExpressThat.LovelyGit.Services.Data.Repositorys;
 internal sealed class CommitDetailsCacheRepository
 {
     private readonly GitRepoCacheDbContext _gitRepoCache;
+    private readonly object _saveGateLock = new();
+    private readonly Dictionary<string, SaveGate> _saveGates = new(StringComparer.Ordinal);
 
     public CommitDetailsCacheRepository(GitRepoCacheDbContext gitRepoCache)
     {
@@ -76,60 +78,77 @@ internal sealed class CommitDetailsCacheRepository
         CancellationToken cancellationToken)
     {
         var id = CommitGraphCacheKeys.MakeRepositoryHashId(repositoryId, hash);
-        var entry = new CommitDetailsCacheEntry
+        var gate = GetSaveGate(id);
+        var enteredGate = false;
+        try
         {
-            Id = id,
-            RepositoryId = repositoryId,
-            Hash = hash,
-            Details = ToCache(response),
-        };
+            await gate.Semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
+            enteredGate = true;
 
-        var existingFileEntries = await GetCommitDetailsChangedFileEntriesAsync(repositoryId, hash, cancellationToken)
-            .ConfigureAwait(false);
-
-        using var transaction = _gitRepoCache.BeginTransaction();
-
-        foreach (var fileEntry in existingFileEntries)
-        {
-            await _gitRepoCache.CommitDetailsChangedFiles
-                .DeleteAsync(fileEntry.Id, transaction, cancellationToken)
-                .ConfigureAwait(false);
-        }
-
-        for (var index = 0; index < response.ChangedFiles.Count; index++)
-        {
-            var file = response.ChangedFiles[index];
-            var fileEntry = new CommitChangedFileCacheEntry
+            var entry = new CommitDetailsCacheEntry
             {
-                Id = CommitGraphCacheKeys.MakeRepositoryCommitFileId(repositoryId, hash, index),
+                Id = id,
                 RepositoryId = repositoryId,
                 Hash = hash,
-                FileIndex = index,
-                File = new CommitChangedFileCache
-                {
-                    Path = file.Path,
-                    Status = file.Status,
-                    Additions = file.Additions,
-                    Deletions = file.Deletions,
-                    IsBinary = file.IsBinary,
-                },
+                Details = ToCache(response),
             };
 
-            await _gitRepoCache.CommitDetailsChangedFiles
-                .InsertAsync(fileEntry, transaction, cancellationToken)
+            var existingFileEntries = await GetCommitDetailsChangedFileEntriesAsync(repositoryId, hash, cancellationToken)
                 .ConfigureAwait(false);
-        }
 
-        if (await _gitRepoCache.CommitDetailsCache.FindByIdAsync(id, cancellationToken).ConfigureAwait(false) == null)
-        {
-            await _gitRepoCache.CommitDetailsCache.InsertAsync(entry, transaction, cancellationToken).ConfigureAwait(false);
-        }
-        else
-        {
-            await _gitRepoCache.CommitDetailsCache.UpdateAsync(entry, transaction, cancellationToken).ConfigureAwait(false);
-        }
+            using var transaction = _gitRepoCache.BeginTransaction();
 
-        await _gitRepoCache.SaveChangesAsync(transaction, cancellationToken).ConfigureAwait(false);
+            foreach (var fileEntry in existingFileEntries)
+            {
+                await _gitRepoCache.CommitDetailsChangedFiles
+                    .DeleteAsync(fileEntry.Id, transaction, cancellationToken)
+                    .ConfigureAwait(false);
+            }
+
+            for (var index = 0; index < response.ChangedFiles.Count; index++)
+            {
+                var file = response.ChangedFiles[index];
+                var fileEntry = new CommitChangedFileCacheEntry
+                {
+                    Id = CommitGraphCacheKeys.MakeRepositoryCommitFileId(repositoryId, hash, index),
+                    RepositoryId = repositoryId,
+                    Hash = hash,
+                    FileIndex = index,
+                    File = new CommitChangedFileCache
+                    {
+                        Path = file.Path,
+                        Status = file.Status,
+                        Additions = file.Additions,
+                        Deletions = file.Deletions,
+                        IsBinary = file.IsBinary,
+                    },
+                };
+
+                await _gitRepoCache.CommitDetailsChangedFiles
+                    .InsertAsync(fileEntry, transaction, cancellationToken)
+                    .ConfigureAwait(false);
+            }
+
+            if (await _gitRepoCache.CommitDetailsCache.FindByIdAsync(id, cancellationToken).ConfigureAwait(false) == null)
+            {
+                await _gitRepoCache.CommitDetailsCache.InsertAsync(entry, transaction, cancellationToken).ConfigureAwait(false);
+            }
+            else
+            {
+                await _gitRepoCache.CommitDetailsCache.UpdateAsync(entry, transaction, cancellationToken).ConfigureAwait(false);
+            }
+
+            await _gitRepoCache.SaveChangesAsync(transaction, cancellationToken).ConfigureAwait(false);
+        }
+        finally
+        {
+            if (enteredGate)
+            {
+                gate.Semaphore.Release();
+            }
+
+            ReleaseSaveGate(id, gate);
+        }
     }
 
     private async Task<List<CommitChangedFileCacheEntry>> GetCommitDetailsChangedFileEntriesAsync(
@@ -211,5 +230,42 @@ internal sealed class CommitDetailsCacheRepository
         }
 
         return value > uint.MaxValue ? uint.MaxValue : (uint)value;
+    }
+
+    private SaveGate GetSaveGate(string key)
+    {
+        lock (_saveGateLock)
+        {
+            if (!_saveGates.TryGetValue(key, out var gate))
+            {
+                gate = new SaveGate();
+                _saveGates[key] = gate;
+            }
+
+            gate.ReferenceCount++;
+            return gate;
+        }
+    }
+
+    private void ReleaseSaveGate(string key, SaveGate gate)
+    {
+        lock (_saveGateLock)
+        {
+            gate.ReferenceCount--;
+            if (gate.ReferenceCount == 0
+                && _saveGates.TryGetValue(key, out var activeGate)
+                && ReferenceEquals(activeGate, gate))
+            {
+                _saveGates.Remove(key);
+                gate.Semaphore.Dispose();
+            }
+        }
+    }
+
+    private sealed class SaveGate
+    {
+        public SemaphoreSlim Semaphore { get; } = new(1, 1);
+
+        public int ReferenceCount { get; set; }
     }
 }

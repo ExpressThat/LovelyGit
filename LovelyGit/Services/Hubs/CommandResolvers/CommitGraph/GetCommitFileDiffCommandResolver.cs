@@ -4,6 +4,7 @@ using ExpressThat.LovelyGit.Services.Git.CommitGraph;
 using ExpressThat.LovelyGit.Services.Git.CommitGraph.Models;
 using ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser;
 using ExpressThat.LovelyGit.Services.Hubs.Commands;
+using System.Diagnostics;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 
@@ -69,6 +70,8 @@ internal class GetCommitFileDiffCommandResolver : CommandResponder<GetCommitFile
         }
         catch (Exception ex)
         {
+            Trace.TraceError("GetCommitFileDiff failed: {0}", ex);
+            Console.Error.WriteLine("GetCommitFileDiff failed: {0}", ex);
             return Failure(command, ex.Message);
         }
     }

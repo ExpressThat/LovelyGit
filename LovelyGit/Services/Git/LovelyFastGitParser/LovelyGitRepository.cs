@@ -122,21 +122,36 @@ internal sealed class LovelyGitRepository : IDisposable
             ids.Add(HeadTarget.Value);
         }
 
-        var commits = new List<GitCommit>(ids.Count);
-        foreach (var id in ids)
+        var orderedIds = ids.ToArray();
+        var commits = new GitCommit?[orderedIds.Length];
+        await Parallel.ForEachAsync(
+                Enumerable.Range(0, orderedIds.Length),
+                cancellationToken,
+                async (index, itemCancellationToken) =>
+                {
+                    itemCancellationToken.ThrowIfCancellationRequested();
+                    try
+                    {
+                        commits[index] = await GetCommitAsync(orderedIds[index], itemCancellationToken)
+                            .ConfigureAwait(false);
+                    }
+                    catch when (!itemCancellationToken.IsCancellationRequested)
+                    {
+                        // Ignore refs that do not resolve to commits, matching the graph's previous behavior.
+                    }
+                })
+            .ConfigureAwait(false);
+
+        var resolvedCommits = new List<GitCommit>(commits.Length);
+        foreach (var commit in commits)
         {
-            cancellationToken.ThrowIfCancellationRequested();
-            try
+            if (commit != null)
             {
-                commits.Add(await GetCommitAsync(id, cancellationToken).ConfigureAwait(false));
-            }
-            catch when (!cancellationToken.IsCancellationRequested)
-            {
-                // Ignore refs that do not resolve to commits, matching the graph's previous behavior.
+                resolvedCommits.Add(commit);
             }
         }
 
-        return commits;
+        return resolvedCommits;
     }
 
     public async Task<GitTreeComparison> GetChangedTreeFilesAsync(

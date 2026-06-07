@@ -4,6 +4,7 @@ internal sealed class LruCache<TKey, TValue>
     where TKey : notnull
 {
     private readonly int _capacity;
+    private readonly object _gate = new();
     private readonly Dictionary<TKey, LinkedListNode<Entry>> _map = new();
     private readonly LinkedList<Entry> _order = new();
 
@@ -14,12 +15,15 @@ internal sealed class LruCache<TKey, TValue>
 
     public bool TryGet(TKey key, out TValue value)
     {
-        if (_map.TryGetValue(key, out var node))
+        lock (_gate)
         {
-            _order.Remove(node);
-            _order.AddFirst(node);
-            value = node.Value.Value;
-            return true;
+            if (_map.TryGetValue(key, out var node))
+            {
+                _order.Remove(node);
+                _order.AddFirst(node);
+                value = node.Value.Value;
+                return true;
+            }
         }
 
         value = default!;
@@ -28,22 +32,25 @@ internal sealed class LruCache<TKey, TValue>
 
     public void Set(TKey key, TValue value)
     {
-        if (_map.TryGetValue(key, out var existing))
+        lock (_gate)
         {
-            existing.Value = new Entry(key, value);
-            _order.Remove(existing);
-            _order.AddFirst(existing);
-            return;
-        }
+            if (_map.TryGetValue(key, out var existing))
+            {
+                existing.Value = new Entry(key, value);
+                _order.Remove(existing);
+                _order.AddFirst(existing);
+                return;
+            }
 
-        var node = new LinkedListNode<Entry>(new Entry(key, value));
-        _map.Add(key, node);
-        _order.AddFirst(node);
+            var node = new LinkedListNode<Entry>(new Entry(key, value));
+            _map.Add(key, node);
+            _order.AddFirst(node);
 
-        while (_map.Count > _capacity && _order.Last is { } last)
-        {
-            _map.Remove(last.Value.Key);
-            _order.RemoveLast();
+            while (_map.Count > _capacity && _order.Last is { } last)
+            {
+                _map.Remove(last.Value.Key);
+                _order.RemoveLast();
+            }
         }
     }
 
