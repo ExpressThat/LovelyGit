@@ -259,7 +259,7 @@ jobs:
           --framework webview2
           --azureTrustedSignFile "${{ env.AZURE_TRUSTED_SIGNING_METADATA }}"
           --instLicense LovelyGit/InstallerLicense.md
-          --signExclude "^Git[\\/].*"
+          --signExclude "[\\/]Git[\\/].*"
           --icon LovelyGit/Assets/LovelyGit.ico
           --outputDir artifacts/velopack/${{ matrix.rid }}
 
