@@ -34,7 +34,7 @@ public partial class GitRepoCacheDbContext : DocumentDbContext
     public static void RegisterBsonKeys()
     {
         using var engine = new BLiteEngine(GetBasePath());
-        engine.RegisterKeys(BsonKeys);
+        engine.RegisterKeys(CacheBsonKeys);
     }
 
     private static void DeleteIfExists(string path)

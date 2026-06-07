@@ -45,7 +45,7 @@ public sealed class BsonKeysGenerator : IIncrementalGenerator
     private static INamedTypeSymbol? GetDocumentDbContext(GeneratorSyntaxContext context)
     {
         var type = (INamedTypeSymbol?)context.SemanticModel.GetDeclaredSymbol(context.Node);
-        if (type == null || !IsDocumentDbContext(type) || !HasRegisterBsonKeysMethod(type))
+        if (type == null || !IsDocumentDbContext(type))
         {
             return null;
         }
@@ -150,6 +150,10 @@ public sealed class BsonKeysGenerator : IIncrementalGenerator
                     keys.Add(columnName);
                 }
             }
+            else if (!HasAttribute(property, keyAttributeType))
+            {
+                keys.Add(GetDefaultBsonPropertyName(property));
+            }
 
             foreach (var nestedType in GetNestedModelTypes(property.Type))
             {
@@ -208,6 +212,11 @@ public sealed class BsonKeysGenerator : IIncrementalGenerator
         return null;
     }
 
+    private static string GetDefaultBsonPropertyName(IPropertySymbol property)
+    {
+        return property.Name.ToLowerInvariant();
+    }
+
     private static bool HasAttribute(ISymbol symbol, INamedTypeSymbol attributeType)
     {
         return symbol.GetAttributes()
@@ -225,13 +234,6 @@ public sealed class BsonKeysGenerator : IIncrementalGenerator
         }
 
         return false;
-    }
-
-    private static bool HasRegisterBsonKeysMethod(INamedTypeSymbol type)
-    {
-        return type.GetMembers("RegisterBsonKeys")
-            .OfType<IMethodSymbol>()
-            .Any(static method => method.Parameters.Length == 0);
     }
 
     private static bool IsPrimitiveLike(INamedTypeSymbol type)
@@ -299,7 +301,7 @@ public sealed class BsonKeysGenerator : IIncrementalGenerator
 
         builder.Append("partial ").Append(GetTypeKind(dbContext)).Append(' ').Append(dbContext.Name).AppendLine();
         builder.AppendLine("{");
-        builder.AppendLine("    private static readonly string[] BsonKeys =");
+        builder.Append("    private static readonly string[] ").Append(GetBsonKeysFieldName(dbContext)).AppendLine(" =");
         builder.AppendLine("    [");
 
         foreach (var key in keys.Keys)
@@ -337,6 +339,13 @@ public sealed class BsonKeysGenerator : IIncrementalGenerator
     private static string GetSymbolKey(INamedTypeSymbol type)
     {
         return type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+    }
+
+    private static string GetBsonKeysFieldName(INamedTypeSymbol dbContext)
+    {
+        return dbContext.Name == "GitRepoCacheDbContext"
+            ? "CacheBsonKeys"
+            : "AppBsonKeys";
     }
 
     private static string GetHintName(INamedTypeSymbol type)

@@ -20,7 +20,7 @@ public partial class AppDbContext : DocumentDbContext
     public static void RegisterBsonKeys()
     {
         using var engine = new BLiteEngine(GetBasePath());
-        engine.RegisterKeys(BsonKeys);
+        engine.RegisterKeys(AppBsonKeys);
     }
 
     public static string GetBasePath()
