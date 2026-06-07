@@ -28,6 +28,7 @@ public static class Program
 #if !DEBUG
         Directory.SetCurrentDirectory(AppContext.BaseDirectory);
 #endif
+        AppDbContext.RegisterBsonKeys();
         GitRepoCacheDbContext.ClearCache();
         VelopackApp.Build().Run();
         CheckForUpdatesAtStartup(args);

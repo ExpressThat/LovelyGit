@@ -19,6 +19,9 @@ jobs:
           - rid: linux-x64
             runner: ubuntu-latest
             mainExe: LovelyGit
+          - rid: linux-arm64
+            runner: ubuntu-24.04-arm
+            mainExe: LovelyGit
           - rid: win-x64
             runner: windows-latest
             mainExe: LovelyGit.exe
@@ -113,6 +116,10 @@ jobs:
             linux-x64)
               artifact="dugite-native-v2.53.0-f49d009-ubuntu-x64.tar.gz"
               expected_sha="b3a85433c8dfde76d21b90938ad2f971653deff4340b1b4d347258c63250eafc"
+              ;;
+            linux-arm64)
+              artifact="dugite-native-v2.53.0-f49d009-ubuntu-arm64.tar.gz"
+              expected_sha="d562ad433ed0dc1907f44a92fc701597bc577c48d07fe69ee7adddfee836ef4c"
               ;;
             win-x64)
               artifact="dugite-native-v2.53.0-f49d009-windows-x64.tar.gz"
@@ -258,7 +265,6 @@ jobs:
           --channel ${{ matrix.rid }}
           --framework webview2
           --azureTrustedSignFile "${{ env.AZURE_TRUSTED_SIGNING_METADATA }}"
-          --instLicense LovelyGit/InstallerLicense.md
           --signExclude "[\\/]Git[\\/].*"
           --icon LovelyGit/Assets/LovelyGit.ico
           --outputDir artifacts/velopack/${{ matrix.rid }}
@@ -275,7 +281,6 @@ jobs:
           --runtime ${{ matrix.rid }}
           --channel ${{ matrix.rid }}
           --icon LovelyGit/Assets/LovelyGit.icns
-          --instLicense LovelyGit/InstallerLicense.md
           --signAppIdentity "Developer ID Application: ExpressThat LTD"
           --signInstallIdentity "Developer ID Installer: ExpressThat LTD"
           --notaryProfile velopack-profile

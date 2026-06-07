@@ -17,6 +17,12 @@ public partial class AppDbContext : DocumentDbContext
         InitializeCollections();
     }
 
+    public static void RegisterBsonKeys()
+    {
+        using var engine = new BLiteEngine(GetBasePath());
+        engine.RegisterKeys(BsonKeys);
+    }
+
     public static string GetBasePath()
     {
         var dataDirectory = Path.Combine(
