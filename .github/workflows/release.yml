@@ -150,6 +150,10 @@ jobs:
           fi
 
           tar -xzf "artifacts/downloads/${artifact}" -C "artifacts/publish/${{ matrix.rid }}/Git"
+          if ! find "artifacts/publish/${{ matrix.rid }}/Git" -type f -name "git-lfs*" | grep -q .; then
+            echo "Bundled Git payload does not include Git LFS." >&2
+            exit 1
+          fi
 
       - name: Remove macOS-incompatible static asset folder
         if: runner.os == 'macOS'
@@ -238,7 +242,6 @@ jobs:
           --mainExe ${{ matrix.mainExe }}
           --runtime ${{ matrix.rid }}
           --channel ${{ matrix.rid }}
-          --instLicense LovelyGit/InstallerLicense.md
           --icon LovelyGit/Assets/LovelyGit.png
           --outputDir artifacts/velopack/${{ matrix.rid }}
 
@@ -256,6 +259,7 @@ jobs:
           --framework webview2
           --azureTrustedSignFile "${{ env.AZURE_TRUSTED_SIGNING_METADATA }}"
           --instLicense LovelyGit/InstallerLicense.md
+          --signExclude "^Git[\\/].*"
           --icon LovelyGit/Assets/LovelyGit.ico
           --outputDir artifacts/velopack/${{ matrix.rid }}
 
