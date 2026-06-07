@@ -19,8 +19,21 @@
 		<SelfContained>true</SelfContained>
 	</PropertyGroup>
 
+	<PropertyGroup Condition="'$(LovelyGitReleaseOptimized)' == 'true'">
+		<EventSourceSupport>false</EventSourceSupport>
+		<MetricsSupport>false</MetricsSupport>
+		<Http3Support>false</Http3Support>
+		<HttpActivityPropagationSupport>false</HttpActivityPropagationSupport>
+		<MetadataUpdaterSupport>false</MetadataUpdaterSupport>
+		<StackTraceSupport>false</StackTraceSupport>
+		<EnableUnsafeBinaryFormatterSerialization>false</EnableUnsafeBinaryFormatterSerialization>
+		<EnableUnsafeUTF7Encoding>false</EnableUnsafeUTF7Encoding>
+	</PropertyGroup>
+
 	<ItemGroup>
 	  <Content Remove="dotnet-tools.json" />
+	  <Content Remove="Frontend\**" />
+	  <None Remove="Frontend\**" />
 	</ItemGroup>
 
 	<ItemGroup>

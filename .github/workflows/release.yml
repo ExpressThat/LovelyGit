@@ -94,7 +94,12 @@ jobs:
           --runtime ${{ matrix.rid }}
           --self-contained true
           -p:LovelyGitPublishAsWinExe=true
+          -p:LovelyGitReleaseOptimized=true
           --output artifacts/publish/${{ matrix.rid }}
+
+      - name: Remove source-only frontend folder
+        shell: bash
+        run: rm -rf "artifacts/publish/${{ matrix.rid }}/Frontend"
 
       - name: Remove macOS-incompatible static asset folder
         if: runner.os == 'macOS'
