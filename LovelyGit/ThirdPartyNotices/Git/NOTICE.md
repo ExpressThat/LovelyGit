@@ -44,11 +44,12 @@ Git Credential Manager: v2.7.3
 The release artifacts used by LovelyGit are selected by runtime identifier:
 
 ```text
-linux-x64:   dugite-native-v2.53.0-f49d009-ubuntu-x64.tar.gz
-win-x64:     dugite-native-v2.53.0-f49d009-windows-x64.tar.gz
-win-arm64:   dugite-native-v2.53.0-f49d009-windows-arm64.tar.gz
-osx-x64:     dugite-native-v2.53.0-f49d009-macOS-x64.tar.gz
-osx-arm64:   dugite-native-v2.53.0-f49d009-macOS-arm64.tar.gz
+linux-x64    dugite-native-v2.53.0-f49d009-ubuntu-x64.tar.gz
+linux-arm64  dugite-native-v2.53.0-f49d009-ubuntu-arm64.tar.gz
+win-x64      dugite-native-v2.53.0-f49d009-windows-x64.tar.gz
+win-arm64    dugite-native-v2.53.0-f49d009-windows-arm64.tar.gz
+osx-x64      dugite-native-v2.53.0-f49d009-macOS-x64.tar.gz
+osx-arm64    dugite-native-v2.53.0-f49d009-macOS-arm64.tar.gz
 ```
 
 ## Source Code

@@ -7,6 +7,27 @@ Do not commit downloaded Git binary payloads to the repository. Release builds
 should download or unpack the selected `desktop/dugite-native` artifact into the
 publish output instead.
 
+The selected upstream version, release artifacts, and SHA-256 hashes are stored
+in:
+
+```text
+dugite-native.json
+```
+
+For local development, hydrate this ignored folder with the archive for your
+current OS and CPU from `LovelyGit/Frontend`:
+
+```text
+pnpm git-binaries:download
+```
+
+To bump the upstream dugite-native release and recompute all release artifact
+hashes:
+
+```text
+pnpm git-binaries:bump v2.53.0-3
+```
+
 Expected publish layout:
 
 ```text

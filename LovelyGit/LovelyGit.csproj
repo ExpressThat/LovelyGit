@@ -17,6 +17,7 @@
 		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
 		<NoWarn>$(NoWarn);IL2026;IL3050;IL2104</NoWarn>
 		<SelfContained>true</SelfContained>
+		<LovelyGitPublishLocalBundledGit Condition="'$(LovelyGitPublishLocalBundledGit)' == ''">Always</LovelyGitPublishLocalBundledGit>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(LovelyGitReleaseOptimized)' == 'true'">
@@ -70,6 +71,7 @@
 	  <Content Include="Assets\LovelyGit.ico" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="Always" />
 	  <Content Include="Assets\LovelyGit.icns" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="Always" />
 	  <Content Include="Assets\LovelyGit.logo.png" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="Always" />
+	  <Content Include="BundledTools\Git\**\*" Exclude="BundledTools\Git\.gitignore;BundledTools\Git\dugite-native.json;BundledTools\Git\README.md" TargetPath="Git\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="$(LovelyGitPublishLocalBundledGit)" />
 	  <Content Include="ThirdPartyNotices\**" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="Always" />
 	  <Content Include="..\LICENSE" Link="LICENSE" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="Always" />
 	</ItemGroup>

@@ -58,11 +58,13 @@ function App() {
 								<motion.div
 									animate={{
 										opacity:
-											detailsPanel?.kind === "commit" && detailsPanel.selectedFile
+											detailsPanel?.kind === "commit" &&
+											detailsPanel.selectedFile
 												? 0.92
 												: 1,
 										scale:
-											detailsPanel?.kind === "commit" && detailsPanel.selectedFile
+											detailsPanel?.kind === "commit" &&
+											detailsPanel.selectedFile
 												? 0.998
 												: 1,
 									}}
@@ -100,30 +102,31 @@ function App() {
 									/>
 								</motion.div>
 								<AnimatePresence initial={false}>
-									{detailsPanel?.kind === "commit" && detailsPanel.selectedFile ? (
-									<motion.div
-										animate={{ opacity: 1, x: 0, scale: 1 }}
-										className="absolute inset-0 z-10 min-w-0 overflow-hidden"
-										exit={{ opacity: 0, x: 56, scale: 0.995 }}
-										initial={{ opacity: 0, x: 56, scale: 0.995 }}
-										key={`diff:${detailsPanel.commitHash}:${detailsPanel.selectedFile.path}`}
-										transition={{
-											duration: 0.24,
-											ease: [0.22, 1, 0.36, 1],
-										}}
-									>
-										<CommitFileDiffView
-											commitHash={detailsPanel.commitHash}
-											file={detailsPanel.selectedFile}
-											onClose={() =>
-												setDetailsPanel({
-													commitHash: detailsPanel.commitHash,
-													kind: "commit",
-												})
-											}
-											repositoryId={currentGitRepositoryId}
-										/>
-									</motion.div>
+									{detailsPanel?.kind === "commit" &&
+									detailsPanel.selectedFile ? (
+										<motion.div
+											animate={{ opacity: 1, x: 0, scale: 1 }}
+											className="absolute inset-0 z-10 min-w-0 overflow-hidden"
+											exit={{ opacity: 0, x: 56, scale: 0.995 }}
+											initial={{ opacity: 0, x: 56, scale: 0.995 }}
+											key={`diff:${detailsPanel.commitHash}:${detailsPanel.selectedFile.path}`}
+											transition={{
+												duration: 0.24,
+												ease: [0.22, 1, 0.36, 1],
+											}}
+										>
+											<CommitFileDiffView
+												commitHash={detailsPanel.commitHash}
+												file={detailsPanel.selectedFile}
+												onClose={() =>
+													setDetailsPanel({
+														commitHash: detailsPanel.commitHash,
+														kind: "commit",
+													})
+												}
+												repositoryId={currentGitRepositoryId}
+											/>
+										</motion.div>
 									) : null}
 								</AnimatePresence>
 							</>
