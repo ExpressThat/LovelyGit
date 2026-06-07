@@ -101,6 +101,56 @@ jobs:
         shell: bash
         run: rm -rf "artifacts/publish/${{ matrix.rid }}/Frontend"
 
+      - name: Bundle Git command-line tools
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          dugite_release="v2.53.0-3"
+          dugite_base_url="https://github.com/desktop/dugite-native/releases/download/${dugite_release}"
+
+          case "${{ matrix.rid }}" in
+            linux-x64)
+              artifact="dugite-native-v2.53.0-f49d009-ubuntu-x64.tar.gz"
+              expected_sha="b3a85433c8dfde76d21b90938ad2f971653deff4340b1b4d347258c63250eafc"
+              ;;
+            win-x64)
+              artifact="dugite-native-v2.53.0-f49d009-windows-x64.tar.gz"
+              expected_sha="f843a87a693bfdabed83b8492bca59db6f64d1168c74d23e2c8dfb7388a97142"
+              ;;
+            win-arm64)
+              artifact="dugite-native-v2.53.0-f49d009-windows-arm64.tar.gz"
+              expected_sha="e16e7023942499c093c8520a145bf20287a08d38d8d69197355df154a8598b06"
+              ;;
+            osx-x64)
+              artifact="dugite-native-v2.53.0-f49d009-macOS-x64.tar.gz"
+              expected_sha="caf27c36b8834969550535bcd5e58186f970e080d1e175e76d9c1de3aac409ed"
+              ;;
+            osx-arm64)
+              artifact="dugite-native-v2.53.0-f49d009-macOS-arm64.tar.gz"
+              expected_sha="e561cfc80c755e6f3e938653e81efcd025c9827a5b76dd42778b1159b3fab437"
+              ;;
+            *)
+              echo "No bundled Git artifact configured for RID '${{ matrix.rid }}'." >&2
+              exit 1
+              ;;
+          esac
+
+          mkdir -p artifacts/downloads "artifacts/publish/${{ matrix.rid }}/Git"
+          curl --fail --location --show-error \
+            --output "artifacts/downloads/${artifact}" \
+            "${dugite_base_url}/${artifact}"
+
+          actual_sha="$(sha256sum "artifacts/downloads/${artifact}" | awk '{ print $1 }')"
+          if [[ "$actual_sha" != "$expected_sha" ]]; then
+            echo "SHA-256 mismatch for ${artifact}" >&2
+            echo "Expected: ${expected_sha}" >&2
+            echo "Actual:   ${actual_sha}" >&2
+            exit 1
+          fi
+
+          tar -xzf "artifacts/downloads/${artifact}" -C "artifacts/publish/${{ matrix.rid }}/Git"
+
       - name: Remove macOS-incompatible static asset folder
         if: runner.os == 'macOS'
         shell: bash

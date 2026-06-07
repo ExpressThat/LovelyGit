@@ -34,6 +34,8 @@
 	  <Content Remove="dotnet-tools.json" />
 	  <Content Remove="Frontend\**" />
 	  <None Remove="Frontend\**" />
+	  <Content Remove="BundledTools\Git\**" />
+	  <None Remove="BundledTools\Git\**" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -68,6 +70,7 @@
 	  <Content Include="Assets\LovelyGit.ico" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="Always" />
 	  <Content Include="Assets\LovelyGit.icns" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="Always" />
 	  <Content Include="Assets\LovelyGit.logo.png" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="Always" />
+	  <Content Include="ThirdPartyNotices\**" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="Always" />
 	</ItemGroup>
 
 	<ItemGroup>
