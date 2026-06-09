@@ -206,7 +206,7 @@ function App() {
 								}
 								isLoading={workingTreeChanges.status === "loading"}
 								onRefresh={() => {
-									void workingTreeChanges.reload();
+									return workingTreeChanges.reload();
 								}}
 								onSelectFile={(file) =>
 									setDetailsPanel({
@@ -214,6 +214,7 @@ function App() {
 										selectedFile: file,
 									})
 								}
+								repositoryId={currentGitRepositoryId}
 							/>
 						) : null}
 					</SlidingDetailsPanel>

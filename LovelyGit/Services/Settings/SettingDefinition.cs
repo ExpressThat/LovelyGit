@@ -37,6 +37,16 @@ namespace ExpressThat.LovelyGit.Services.Settings
             ExpressThat.LovelyGit.Services.Git.CommitGraph.Models.CommitDiffViewMode.SideBySide,
             GetJsonTypeInfo<CommitDiffViewMode>());
 
+        public static readonly SettingDefinition<CommitDiffLineDisplayMode> CommitDiffLineDisplayMode = new(
+            nameof(Setting.CommitDiffLineDisplayMode),
+            Settings.CommitDiffLineDisplayMode.Changes,
+            GetJsonTypeInfo<CommitDiffLineDisplayMode>());
+
+        public static readonly SettingDefinition<int> CommitDiffContextLines = new(
+            nameof(Setting.CommitDiffContextLines),
+            8,
+            GetJsonTypeInfo<int>());
+
         public static readonly SettingDefinition<bool> CommitDiffWrapLines = new(
             nameof(Setting.CommitDiffWrapLines),
             false,
@@ -48,6 +58,8 @@ namespace ExpressThat.LovelyGit.Services.Settings
                 [Setting.CurrentGitRepositoryId] = CurrentGitRepositoryId,
                 [Setting.Theme] = Theme,
                 [Setting.CommitDiffViewMode] = CommitDiffViewMode,
+                [Setting.CommitDiffLineDisplayMode] = CommitDiffLineDisplayMode,
+                [Setting.CommitDiffContextLines] = CommitDiffContextLines,
                 [Setting.CommitDiffWrapLines] = CommitDiffWrapLines,
             };
 

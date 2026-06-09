@@ -11,6 +11,8 @@ namespace ExpressThat.LovelyGit.Services.Hubs.CommandResolvers.WorkingTree;
 [JsonSerializable(typeof(WorkingTreeChangesResponse))]
 [JsonSerializable(typeof(WorkingTreeChangedNotification))]
 [JsonSerializable(typeof(GetWorkingTreeChangesCommandArguments))]
+[JsonSerializable(typeof(UpdateWorkingTreeIndexCommandArguments))]
+[JsonSerializable(typeof(StageWorkingTreeLineCommandArguments))]
 [JsonSerializable(typeof(GetWorkingTreeFileDiffArguments))]
 [JsonSerializable(typeof(CommitDiffViewMode))]
 [JsonSerializable(typeof(CommitFileDiffSyntaxSpan))]

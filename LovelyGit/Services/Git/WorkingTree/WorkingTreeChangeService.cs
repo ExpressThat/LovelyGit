@@ -107,6 +107,16 @@ internal sealed class WorkingTreeChangeService
         else if (group == WorkingTreeChangeGroup.Untracked)
         {
             var worktreePath = Path.Combine(repository.WorkTreeDirectory, FromGitPath(path));
+            if (indexByPath.TryGetValue(path, out var indexEntry))
+            {
+                oldBytes = await TryReadBlobBytesAsync(repository, indexEntry.ObjectId, indexEntry.Mode, cancellationToken).ConfigureAwait(false) ?? Array.Empty<byte>();
+                newBytes = File.Exists(worktreePath)
+                    ? await File.ReadAllBytesAsync(worktreePath, cancellationToken).ConfigureAwait(false)
+                    : Array.Empty<byte>();
+                status = File.Exists(worktreePath) ? "Modified" : "Deleted";
+                return BuildDiffResponse("WORKTREE", path, status, viewMode, oldBytes, newBytes);
+            }
+
             newBytes = await File.ReadAllBytesAsync(worktreePath, cancellationToken).ConfigureAwait(false);
             status = "Added";
         }

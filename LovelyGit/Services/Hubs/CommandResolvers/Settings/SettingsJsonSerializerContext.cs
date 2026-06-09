@@ -13,6 +13,8 @@ namespace ExpressThat.LovelyGit.Services.Hubs.CommandResolvers.Settings;
 [JsonSerializable(typeof(Guid?))]
 [JsonSerializable(typeof(AppTheme))]
 [JsonSerializable(typeof(CommitDiffViewMode))]
+[JsonSerializable(typeof(CommitDiffLineDisplayMode))]
+[JsonSerializable(typeof(int))]
 [JsonSerializable(typeof(bool))]
 [JsonSerializable(typeof(CommandResponse<Dictionary<Setting, JsonElement>>))]
 internal partial class SettingsJsonSerializerContext : JsonSerializerContext

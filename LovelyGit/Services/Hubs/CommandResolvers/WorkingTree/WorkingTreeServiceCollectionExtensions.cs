@@ -10,10 +10,15 @@ internal static class WorkingTreeServiceCollectionExtensions
     {
         services.AddLovelyGitJsonTypeInfoResolver(WorkingTreeJsonSerializerContext.Default);
         services.AddSingleton<WorkingTreeChangeService>();
+        services.AddSingleton<WorkingTreeIndexService>();
         services.AddSingleton<WorkingTreeWatcherService>();
         services.AddHostedService<ActiveRepositorySettingsWatcher>();
         services.AddSingleton<ICommandResponder, GetWorkingTreeChangesCommandResolver>();
         services.AddSingleton<ICommandResponder, GetWorkingTreeFileDiffCommandResolver>();
+        services.AddSingleton<ICommandResponder, StageWorkingTreeFilesCommandResolver>();
+        services.AddSingleton<ICommandResponder, UnstageWorkingTreeFilesCommandResolver>();
+        services.AddSingleton<ICommandResponder, StageWorkingTreeLineCommandResolver>();
+        services.AddSingleton<ICommandResponder, UnstageWorkingTreeLineCommandResolver>();
 
         return services;
     }

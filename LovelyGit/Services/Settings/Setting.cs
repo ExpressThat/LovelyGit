@@ -10,6 +10,8 @@ namespace ExpressThat.LovelyGit.Services.Settings
         CurrentGitRepositoryId,
         Theme,
         CommitDiffViewMode,
+        CommitDiffLineDisplayMode,
+        CommitDiffContextLines,
         CommitDiffWrapLines
     }
 
@@ -20,5 +22,13 @@ namespace ExpressThat.LovelyGit.Services.Settings
         System,
         Light,
         Dark
+    }
+
+    [TranspilationSource]
+    [JsonConverter(typeof(JsonStringEnumConverter<CommitDiffLineDisplayMode>))]
+    public enum CommitDiffLineDisplayMode
+    {
+        Changes,
+        FullFile
     }
 }

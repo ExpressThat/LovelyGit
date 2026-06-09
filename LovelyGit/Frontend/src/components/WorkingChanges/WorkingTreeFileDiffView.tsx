@@ -1,10 +1,10 @@
-import { Columns2, Rows3, WrapText, X } from "lucide-react";
+import { Columns2, FileText, ListCollapse, Rows3, WrapText, X } from "lucide-react";
 import { useEffect, useState } from "react";
-import type { CommitFileDiffResponse } from "@/generated/ExpressThat.LovelyGit.Services.Git.CommitGraph.Models";
+import type { CommitFileDiffLine, CommitFileDiffResponse } from "@/generated/ExpressThat.LovelyGit.Services.Git.CommitGraph.Models";
 import type { WorkingTreeChangedFile } from "@/generated/ExpressThat.LovelyGit.Services.Git.WorkingTree.Models";
 import { sendRequestWithResponse } from "@/lib/registerSignalR";
 import { setSetting, useSetting } from "@/lib/settings/settingsStore";
-import { DiffContent } from "../CommitFileDiff/CommitFileDiffView";
+import { ContextLinesControl, DiffContent } from "../CommitFileDiff/CommitFileDiffView";
 
 type DiffState =
 	| { status: "loading" }
@@ -21,13 +21,13 @@ export function WorkingTreeFileDiffView({
 	repositoryId: string;
 }) {
 	const viewMode = useSetting("CommitDiffViewMode");
+	const contextLines = useSetting("CommitDiffContextLines");
+	const lineDisplayMode = useSetting("CommitDiffLineDisplayMode");
 	const wrapLines = useSetting("CommitDiffWrapLines");
 	const [state, setState] = useState<DiffState>({ status: "loading" });
+	const [isLineActionBusy, setIsLineActionBusy] = useState(false);
 
-	useEffect(() => {
-		let isActive = true;
-		setState({ status: "loading" });
-
+	const fetchDiff = () =>
 		sendRequestWithResponse({
 			commandType: "GetWorkingTreeFileDiff",
 			arguments: {
@@ -36,7 +36,35 @@ export function WorkingTreeFileDiffView({
 				repositoryId,
 				viewMode,
 			},
-		})
+		});
+
+	const refreshDiffInPlace = async () => {
+		try {
+			const diff = await fetchDiff();
+			if (!diff) {
+				setState({ status: "error", message: "File diff was empty." });
+				return;
+			}
+
+			setState({ status: "loaded", diff });
+		} catch (error: unknown) {
+			setState({
+				status: "error",
+				message:
+					error instanceof Error
+						? error.message
+						: "Failed to load working file diff.",
+			});
+		}
+	};
+
+	const loadDiff = (showLoading = true) => {
+		let isActive = true;
+		if (showLoading) {
+			setState({ status: "loading" });
+		}
+
+		fetchDiff()
 			.then((diff) => {
 				if (!isActive) {
 					return;
@@ -66,7 +94,92 @@ export function WorkingTreeFileDiffView({
 		return () => {
 			isActive = false;
 		};
-	}, [file.group, file.path, repositoryId, viewMode]);
+	};
+
+	useEffect(loadDiff, [file.group, file.path, repositoryId, viewMode]);
+
+	const stageLine = async (line: CommitFileDiffLine) => {
+		setIsLineActionBusy(true);
+		try {
+			await sendRequestWithResponse({
+				commandType: "StageWorkingTreeLine",
+				arguments: {
+					changeType: line.changeType,
+					group: file.group,
+					newLineNumber: line.newLineNumber,
+					newText: workingNewText(line),
+					oldLineNumber: line.oldLineNumber,
+					oldText: workingOldText(line),
+					path: file.path,
+					repositoryId,
+				},
+			});
+			removeLineFromCurrentDiff(line);
+			await refreshDiffInPlace();
+		} catch (error) {
+			setState({
+				status: "error",
+				message:
+					error instanceof Error
+						? error.message
+						: "Failed to stage line.",
+			});
+		} finally {
+			setIsLineActionBusy(false);
+		}
+	};
+
+	const unstageLine = async (line: CommitFileDiffLine) => {
+		setIsLineActionBusy(true);
+		try {
+			await sendRequestWithResponse({
+				commandType: "UnstageWorkingTreeLine",
+				arguments: {
+					changeType: line.changeType,
+					group: file.group,
+					newLineNumber: line.newLineNumber,
+					newText: workingNewText(line),
+					oldLineNumber: line.oldLineNumber,
+					oldText: workingOldText(line),
+					path: file.path,
+					repositoryId,
+				},
+			});
+			removeLineFromCurrentDiff(line);
+			await refreshDiffInPlace();
+		} catch (error) {
+			setState({
+				status: "error",
+				message:
+					error instanceof Error
+						? error.message
+						: "Failed to unstage line.",
+			});
+		} finally {
+			setIsLineActionBusy(false);
+		}
+	};
+
+	const removeLineFromCurrentDiff = (line: CommitFileDiffLine) => {
+		setState((current) => {
+			if (current.status !== "loaded") {
+				return current;
+			}
+
+			const nextLines = current.diff.lines.filter(
+				(currentLine) => !isSameDiffLine(currentLine, line),
+			);
+
+			return {
+				status: "loaded",
+				diff: {
+					...current.diff,
+					hasDifferences: nextLines.some(isChangedLine),
+					lines: nextLines,
+				},
+			};
+		});
+	};
 
 	return (
 		<section className="flex h-full min-w-0 flex-1 flex-col overflow-hidden border-l bg-background text-foreground">
@@ -95,6 +208,13 @@ export function WorkingTreeFileDiffView({
 						<ModeButton icon={<Rows3 aria-hidden="true" size={14} />} isActive={viewMode === "Combined"} label="Combined" onClick={() => void setSetting("CommitDiffViewMode", "Combined")} />
 					</div>
 					<div className="ml-2 inline-flex rounded-md border bg-background p-0.5">
+						<ModeButton icon={<ListCollapse aria-hidden="true" size={14} />} isActive={lineDisplayMode === "Changes"} label="Changes" onClick={() => void setSetting("CommitDiffLineDisplayMode", "Changes")} />
+						<ModeButton icon={<FileText aria-hidden="true" size={14} />} isActive={lineDisplayMode === "FullFile"} label="Full file" onClick={() => void setSetting("CommitDiffLineDisplayMode", "FullFile")} />
+					</div>
+					{lineDisplayMode === "Changes" ? (
+						<ContextLinesControl contextLines={contextLines} />
+					) : null}
+					<div className="ml-2 inline-flex rounded-md border bg-background p-0.5">
 						<ModeButton icon={<WrapText aria-hidden="true" size={14} />} isActive={wrapLines} label="Wrap lines" onClick={() => void setSetting("CommitDiffWrapLines", !wrapLines)} />
 					</div>
 				</div>
@@ -106,9 +226,62 @@ export function WorkingTreeFileDiffView({
 						{state.message}
 					</div>
 				) : null}
-				{state.status === "loaded" ? <DiffContent diff={state.diff} wrapLines={wrapLines} /> : null}
+				{state.status === "loaded" ? (
+					<DiffContent
+						contextLines={contextLines}
+						diff={state.diff}
+						isLineActionBusy={isLineActionBusy}
+						lineDisplayMode={lineDisplayMode}
+						onStageLine={canStageLines(file.group) ? stageLine : undefined}
+						onUnstageLine={canUnstageLines(file.group) ? unstageLine : undefined}
+						wrapLines={wrapLines}
+					/>
+				) : null}
 			</div>
 		</section>
+	);
+}
+
+function canStageLines(group: string) {
+	return group === "Unstaged" || group === "Untracked";
+}
+
+function canUnstageLines(group: string) {
+	return group === "Staged";
+}
+
+function workingOldText(line: CommitFileDiffLine) {
+	if (line.oldText) {
+		return line.oldText;
+	}
+
+	return line.changeType === "Deleted" ? line.text : "";
+}
+
+function workingNewText(line: CommitFileDiffLine) {
+	if (line.newText) {
+		return line.newText;
+	}
+
+	return line.changeType === "Inserted" ? line.text : "";
+}
+
+function isSameDiffLine(left: CommitFileDiffLine, right: CommitFileDiffLine) {
+	return (
+		left.changeType === right.changeType &&
+		left.oldLineNumber === right.oldLineNumber &&
+		left.newLineNumber === right.newLineNumber &&
+		left.oldText === right.oldText &&
+		left.newText === right.newText &&
+		left.text === right.text
+	);
+}
+
+function isChangedLine(line: CommitFileDiffLine) {
+	return (
+		line.changeType === "Inserted" ||
+		line.changeType === "Deleted" ||
+		line.changeType === "Modified"
 	);
 }
 
