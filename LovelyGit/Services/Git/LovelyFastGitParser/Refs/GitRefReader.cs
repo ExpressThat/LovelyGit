@@ -92,6 +92,23 @@ internal static class GitRefReader
         return GitObjectId.TryParse(text, objectFormat, out var detachedId) ? detachedId : null;
     }
 
+    public static async Task<string?> ResolveHeadBranchNameAsync(
+        string gitDirectory,
+        CancellationToken cancellationToken)
+    {
+        var headPath = Path.Combine(gitDirectory, "HEAD");
+        if (!File.Exists(headPath))
+        {
+            return null;
+        }
+
+        var text = (await File.ReadAllTextAsync(headPath, cancellationToken).ConfigureAwait(false)).Trim();
+        const string headPrefix = "ref: refs/heads/";
+        return text.StartsWith(headPrefix, StringComparison.Ordinal)
+            ? text[headPrefix.Length..]
+            : null;
+    }
+
     public static GitRefKind GetRefKind(string fullName)
     {
         if (fullName.StartsWith("refs/heads/", StringComparison.Ordinal))

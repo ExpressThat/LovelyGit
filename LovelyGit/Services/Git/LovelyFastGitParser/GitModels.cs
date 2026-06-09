@@ -10,6 +10,8 @@ internal enum GitRefKind
     Other,
 }
 
+internal sealed record GitCommitRef(string Name, GitRefKind Kind);
+
 internal sealed record GitTag(GitObjectId Hash, GitObjectId Target, string Name, string TargetType);
 
 internal sealed class GitCommit
@@ -24,6 +26,7 @@ internal sealed class GitCommit
     public string Body { get; set; } = string.Empty;
     public List<string> Branches { get; } = new();
     public List<string> Tags { get; } = new();
+    public List<GitCommitRef> Refs { get; } = new();
 }
 
 internal sealed record GitTreeFile(string Path, GitObjectId ObjectId, string Mode);

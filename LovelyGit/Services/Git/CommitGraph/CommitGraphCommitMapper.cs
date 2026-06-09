@@ -25,6 +25,18 @@ internal static class CommitGraphCommitMapper
             Message = TruncateMessage(message),
             Branches = commit.Branches.ToList(),
             Tags = commit.Tags.ToList(),
+            Refs = commit.Refs
+                .Select(reference => new CommitRefInfo
+                {
+                    Name = reference.Name,
+                    Kind = reference.Kind switch
+                    {
+                        GitRefKind.Remote => CommitRefKind.Remote,
+                        GitRefKind.Tag => CommitRefKind.Tag,
+                        _ => CommitRefKind.Local,
+                    },
+                })
+                .ToList(),
             Stats = null,
         };
     }

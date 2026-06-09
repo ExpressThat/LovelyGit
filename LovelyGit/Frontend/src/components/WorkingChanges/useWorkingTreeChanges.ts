@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { WorkingTreeChangesResponse } from "@/generated/ExpressThat.LovelyGit.Services.Git.WorkingTree.Models";
 import {
 	sendRequestWithResponse,
@@ -18,6 +18,7 @@ export function useWorkingTreeChanges(repositoryId: string | null, enabled: bool
 	});
 	const [isDirty, setIsDirty] = useState(false);
 	const [summaryCount, setSummaryCount] = useState(0);
+	const summaryReloadTimerRef = useRef<number | null>(null);
 
 	useEffect(() => {
 		if (!repositoryId) {
@@ -33,7 +34,15 @@ export function useWorkingTreeChanges(repositoryId: string | null, enabled: bool
 		}
 
 		let isActive = true;
+		let isLoading = false;
+		let reloadAgain = false;
 		const load = async () => {
+			if (isLoading) {
+				reloadAgain = true;
+				return;
+			}
+
+			isLoading = true;
 			setState((current) => ({
 				status: current.changes ? "loading" : "loading",
 				changes: current.changes,
@@ -65,8 +74,14 @@ export function useWorkingTreeChanges(repositoryId: string | null, enabled: bool
 						message:
 							error instanceof Error
 								? error.message
-								: "Failed to load working changes.",
+						: "Failed to load working changes.",
 					}));
+				}
+			} finally {
+				isLoading = false;
+				if (isActive && reloadAgain) {
+					reloadAgain = false;
+					void load();
 				}
 			}
 		};
@@ -89,7 +104,15 @@ export function useWorkingTreeChanges(repositoryId: string | null, enabled: bool
 		}
 
 		let isActive = true;
+		let isLoading = false;
+		let reloadAgain = false;
 		const loadSummary = async () => {
+			if (isLoading) {
+				reloadAgain = true;
+				return;
+			}
+
+			isLoading = true;
 			try {
 				const summary = await sendRequestWithResponse({
 					commandType: "GetWorkingTreeChangeSummary",
@@ -103,17 +126,38 @@ export function useWorkingTreeChanges(repositoryId: string | null, enabled: bool
 				if (isActive) {
 					setIsDirty(true);
 				}
+			} finally {
+				isLoading = false;
+				if (isActive && reloadAgain) {
+					reloadAgain = false;
+					scheduleSummaryLoad();
+				}
 			}
+		};
+
+		const scheduleSummaryLoad = () => {
+			if (summaryReloadTimerRef.current != null) {
+				window.clearTimeout(summaryReloadTimerRef.current);
+			}
+
+			summaryReloadTimerRef.current = window.setTimeout(() => {
+				summaryReloadTimerRef.current = null;
+				void loadSummary();
+			}, 150);
 		};
 
 		void loadSummary();
 		const unsubscribe = subscribeToServerEvent("WorkingTreeChanged", () => {
 			setIsDirty(true);
-			void loadSummary();
+			scheduleSummaryLoad();
 		});
 
 		return () => {
 			isActive = false;
+			if (summaryReloadTimerRef.current != null) {
+				window.clearTimeout(summaryReloadTimerRef.current);
+				summaryReloadTimerRef.current = null;
+			}
 			unsubscribe();
 		};
 	}, [repositoryId, enabled]);

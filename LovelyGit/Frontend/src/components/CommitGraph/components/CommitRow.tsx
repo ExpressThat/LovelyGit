@@ -9,19 +9,23 @@ import { RefCell } from "./RefCell";
 import { SkeletonShimmer } from "./SkeletonShimmer";
 
 export function CommitRow({
+	currentBranchName,
 	graph,
 	isSelected,
 	onSelect,
+	remotePrefixes,
 	row,
 	rowIndex,
 	templateColumns,
 }: {
+	currentBranchName: string | null;
 	graph: {
 		contentWidth: number;
 		scrollLeft: number;
 	};
 	isSelected: boolean;
 	onSelect: (row: CommitGraphRow) => void;
+	remotePrefixes: string[];
 	row: CommitGraphRow | null;
 	rowIndex: number;
 	templateColumns: string;
@@ -65,7 +69,11 @@ export function CommitRow({
 			type="button"
 		>
 			<Column className="px-[6px] py-[2px]">
-				<RefCell row={row} />
+				<RefCell
+					currentBranchName={currentBranchName}
+					remotePrefixes={remotePrefixes}
+					row={row}
+				/>
 			</Column>
 			<Column className="bg-card/60">
 				<GraphCell

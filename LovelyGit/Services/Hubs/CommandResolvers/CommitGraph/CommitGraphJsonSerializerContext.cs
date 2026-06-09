@@ -7,6 +7,8 @@ namespace ExpressThat.LovelyGit.Services.Hubs.CommandResolvers.CommitGraph;
 [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
 [JsonSerializable(typeof(CommitStats))]
 [JsonSerializable(typeof(CommitInfo))]
+[JsonSerializable(typeof(CommitRefInfo))]
+[JsonSerializable(typeof(CommitRefKind))]
 [JsonSerializable(typeof(CommitChangedFile))]
 [JsonSerializable(typeof(CommitDetailsResponse))]
 [JsonSerializable(typeof(CommitDiffViewMode))]

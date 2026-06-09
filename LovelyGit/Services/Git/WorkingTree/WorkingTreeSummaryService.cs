@@ -22,7 +22,7 @@ internal sealed class WorkingTreeSummaryService
             .ConfigureAwait(false);
         var result = await _gitCliService
             .ExecuteBufferedAsync(
-                ["status", "--porcelain=v1", "-z"],
+                ["--no-optional-locks", "status", "--porcelain=v1", "-z"],
                 repositoryPaths.WorkTreeDirectory,
                 validateExitCode: false,
                 cancellationToken)

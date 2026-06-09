@@ -34,7 +34,7 @@ export const COL_ORDER: ColKey[] = [
 
 export const COL_MIN: Record<ColKey, number> = {
 	author: 170,
-	branch: 100,
+	branch: 140,
 	graph: 220,
 	hash: 88,
 	message: 260,
@@ -42,7 +42,7 @@ export const COL_MIN: Record<ColKey, number> = {
 
 export const COL_DEFAULT: Record<ColKey, number> = {
 	author: 240,
-	branch: 120,
+	branch: 280,
 	graph: 380,
 	hash: 110,
 	message: 520,

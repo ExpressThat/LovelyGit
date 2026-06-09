@@ -10,6 +10,8 @@ internal sealed class LovelyGitRepository : IDisposable
     private readonly Dictionary<string, GitRef> _refsByFullName;
     private readonly Dictionary<GitObjectId, List<string>> _branchNamesByCommit;
     private readonly Dictionary<GitObjectId, List<string>> _tagNamesByCommit;
+    private readonly Dictionary<GitObjectId, List<GitCommitRef>> _refsByCommit;
+    private readonly IReadOnlyList<string> _remotePrefixes;
 
     private LovelyGitRepository(
         string gitDirectory,
@@ -17,24 +19,32 @@ internal sealed class LovelyGitRepository : IDisposable
         GitObjectFormat objectFormat,
         GitObjectStore objectStore,
         GitObjectId? headTarget,
+        string? currentBranchName,
         Dictionary<string, GitRef> refsByFullName,
         Dictionary<GitObjectId, List<string>> branchNamesByCommit,
-        Dictionary<GitObjectId, List<string>> tagNamesByCommit)
+        Dictionary<GitObjectId, List<string>> tagNamesByCommit,
+        Dictionary<GitObjectId, List<GitCommitRef>> refsByCommit,
+        IReadOnlyList<string> remotePrefixes)
     {
         GitDirectory = gitDirectory;
         WorkTreeDirectory = workTreeDirectory;
         ObjectFormat = objectFormat;
         _objectStore = objectStore;
         HeadTarget = headTarget;
+        CurrentBranchName = currentBranchName;
         _refsByFullName = refsByFullName;
         _branchNamesByCommit = branchNamesByCommit;
         _tagNamesByCommit = tagNamesByCommit;
+        _refsByCommit = refsByCommit;
+        _remotePrefixes = remotePrefixes;
     }
 
     public string GitDirectory { get; }
     public string WorkTreeDirectory { get; }
     public GitObjectFormat ObjectFormat { get; }
     public GitObjectId? HeadTarget { get; }
+    public string? CurrentBranchName { get; }
+    public IReadOnlyList<string> RemotePrefixes => _remotePrefixes;
 
     public static async Task<LovelyGitRepository> OpenAsync(string path, CancellationToken cancellationToken)
     {
@@ -48,10 +58,14 @@ internal sealed class LovelyGitRepository : IDisposable
             .ConfigureAwait(false);
         var headTarget = await GitRefReader.ResolveHeadAsync(gitDirectory, objectFormat, rawRefs, cancellationToken)
             .ConfigureAwait(false);
+        var currentBranchName = await GitRefReader.ResolveHeadBranchNameAsync(gitDirectory, cancellationToken)
+            .ConfigureAwait(false);
 
         var refsByFullName = new Dictionary<string, GitRef>(StringComparer.Ordinal);
         var branchNamesByCommit = new Dictionary<GitObjectId, List<string>>();
         var tagNamesByCommit = new Dictionary<GitObjectId, List<string>>();
+        var refsByCommit = new Dictionary<GitObjectId, List<GitCommitRef>>();
+        var remotePrefixes = new HashSet<string>(StringComparer.Ordinal);
 
         foreach (var (fullName, rawRef) in rawRefs)
         {
@@ -63,12 +77,18 @@ internal sealed class LovelyGitRepository : IDisposable
             {
                 refsByFullName[fullName] = new GitRef(displayName, rawRef.Target, kind);
                 AddName(branchNamesByCommit, rawRef.Target, displayName);
+                AddRef(refsByCommit, rawRef.Target, displayName, kind);
+                if (kind == GitRefKind.Remote)
+                {
+                    AddRemotePrefix(remotePrefixes, displayName);
+                }
             }
             else if (kind == GitRefKind.Tag)
             {
                 var commitTarget = rawRef.PeeledTarget ?? rawRef.Target;
                 refsByFullName[fullName] = new GitRef(displayName, commitTarget, kind);
                 AddName(tagNamesByCommit, commitTarget, displayName);
+                AddRef(refsByCommit, commitTarget, displayName, kind);
             }
         }
 
@@ -78,9 +98,12 @@ internal sealed class LovelyGitRepository : IDisposable
             objectFormat,
             objectStore,
             headTarget,
+            currentBranchName,
             refsByFullName,
             branchNamesByCommit,
-            tagNamesByCommit);
+            tagNamesByCommit,
+            refsByCommit,
+            remotePrefixes.Order(StringComparer.Ordinal).ToArray());
     }
 
     public async Task<GitCommit> GetCommitAsync(GitObjectId id, CancellationToken cancellationToken)
@@ -105,6 +128,11 @@ internal sealed class LovelyGitRepository : IDisposable
         if (_tagNamesByCommit.TryGetValue(id, out var tags))
         {
             commit.Tags.AddRange(tags);
+        }
+
+        if (_refsByCommit.TryGetValue(id, out var refs))
+        {
+            commit.Refs.AddRange(refs);
         }
 
         _commitCache.Set(id, commit);
@@ -319,6 +347,36 @@ internal sealed class LovelyGitRepository : IDisposable
         if (!names.Contains(name, StringComparer.Ordinal))
         {
             names.Add(name);
+        }
+    }
+
+    private static void AddRef(Dictionary<GitObjectId, List<GitCommitRef>> map, GitObjectId id, string name, GitRefKind kind)
+    {
+        if (!map.TryGetValue(id, out var refs))
+        {
+            refs = new List<GitCommitRef>();
+            map[id] = refs;
+        }
+
+        var reference = new GitCommitRef(name, kind);
+        if (!refs.Contains(reference))
+        {
+            refs.Add(reference);
+        }
+    }
+
+    private static void AddRemotePrefix(HashSet<string> remotePrefixes, string displayName)
+    {
+        var slashIndex = displayName.IndexOf('/');
+        if (slashIndex <= 0)
+        {
+            return;
+        }
+
+        var remoteName = displayName[..slashIndex];
+        if (!remoteName.Equals("HEAD", StringComparison.Ordinal))
+        {
+            remotePrefixes.Add(remoteName);
         }
     }
 }

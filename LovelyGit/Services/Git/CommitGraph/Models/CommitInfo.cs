@@ -1,7 +1,24 @@
 using Tapper;
+using System.Text.Json.Serialization;
 
 namespace ExpressThat.LovelyGit.Services.Git.CommitGraph.Models
 {
+    [TranspilationSource]
+    [JsonConverter(typeof(JsonStringEnumConverter<CommitRefKind>))]
+    public enum CommitRefKind
+    {
+        Local,
+        Remote,
+        Tag,
+    }
+
+    [TranspilationSource]
+    public record CommitRefInfo
+    {
+        public string Name { get; set; } = string.Empty;
+        public CommitRefKind Kind { get; set; }
+    }
+
     [TranspilationSource]
     public record CommitInfo
     {
@@ -13,6 +30,7 @@ namespace ExpressThat.LovelyGit.Services.Git.CommitGraph.Models
         public string Message { get; set; } = string.Empty;
         public List<string> Branches { get; set; } = new();
         public List<string> Tags { get; set; } = new();
+        public List<CommitRefInfo> Refs { get; set; } = new();
         public CommitStats? Stats { get; set; }
     }
 }

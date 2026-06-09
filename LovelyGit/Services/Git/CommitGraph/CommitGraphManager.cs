@@ -160,6 +160,8 @@ public sealed class CommitGraphManager : IDisposable
             TotalRows = hasMore ? nextOffset + limit : nextOffset,
             LaneCount = maxLaneCount,
             Rows = rows,
+            RemotePrefixes = _repository.RemotePrefixes.ToList(),
+            CurrentBranchName = _repository.CurrentBranchName,
             HasMore = hasMore,
         };
 

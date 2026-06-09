@@ -42,10 +42,12 @@ export function CommitGraphView({
 	const graphScrollerRef = useRef<HTMLDivElement | null>(null);
 
 	const {
+		currentBranchName,
 		ensureRangeLoaded,
 		error,
 		isInitialLoading,
 		laneCount,
+		remotePrefixes,
 		rows,
 		totalRows,
 	} = useCommitGraphData(refreshToken);
@@ -206,6 +208,8 @@ export function CommitGraphView({
 										rows[item.index]?.commit.hash === selectedCommitHash
 									}
 									onSelect={onSelectCommit}
+									currentBranchName={currentBranchName}
+									remotePrefixes={remotePrefixes}
 									row={rows[item.index] ?? null}
 									rowIndex={item.index}
 									templateColumns={templateColumns}
