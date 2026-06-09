@@ -101,23 +101,6 @@ jobs:
           -p:LovelyGitPublishLocalBundledGit=Never
           --output artifacts/publish/${{ matrix.rid }}
 
-      - name: Remove non-target runtime assets
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          runtimes_dir="artifacts/publish/${{ matrix.rid }}/runtimes"
-          if [[ ! -d "$runtimes_dir" ]]; then
-            exit 0
-          fi
-
-          find "$runtimes_dir" -mindepth 1 -maxdepth 1 -type d | while IFS= read -r runtime_dir; do
-            runtime_name="$(basename "$runtime_dir")"
-            if [[ "$runtime_name" != "${{ matrix.rid }}" ]]; then
-              rm -rf "$runtime_dir"
-            fi
-          done
-
       - name: Remove source-only frontend folder
         shell: bash
         run: rm -rf "artifacts/publish/${{ matrix.rid }}/Frontend"
