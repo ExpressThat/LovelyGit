@@ -27,6 +27,8 @@ namespace ExpressThat.LovelyGit.Services.Hubs.Commands
         GetSetting,
         SetSetting,
         GetAllSettings,
-        SetMultipleSettings
+        SetMultipleSettings,
+        GenerateCommitMessage,
+        GetAiModelLicenses
     }
 }

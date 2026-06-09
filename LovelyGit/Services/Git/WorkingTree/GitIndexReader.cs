@@ -17,7 +17,7 @@ internal sealed class GitIndexReader
             return Array.Empty<GitIndexEntry>();
         }
 
-        var bytes = await File.ReadAllBytesAsync(indexPath, cancellationToken).ConfigureAwait(false);
+        var bytes = await ReadIndexBytesAsync(indexPath, cancellationToken).ConfigureAwait(false);
         if (bytes.Length < 12 || !bytes.AsSpan(0, 4).SequenceEqual("DIRC"u8))
         {
             throw new InvalidDataException("Git index header is invalid.");
@@ -133,6 +133,35 @@ internal sealed class GitIndexReader
         }
 
         return entries;
+    }
+
+    private static async Task<byte[]> ReadIndexBytesAsync(
+        string indexPath,
+        CancellationToken cancellationToken)
+    {
+        const int attempts = 3;
+        for (var attempt = 0; attempt < attempts; attempt++)
+        {
+            try
+            {
+                await using var file = File.Open(indexPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+                using var output = new MemoryStream(file.Length <= int.MaxValue ? (int)file.Length : 0);
+                await file.CopyToAsync(output, cancellationToken).ConfigureAwait(false);
+                return output.ToArray();
+            }
+            catch (Exception exception) when (
+                attempt < attempts - 1
+                && !cancellationToken.IsCancellationRequested
+                && exception is IOException or UnauthorizedAccessException)
+            {
+                await Task.Delay(50, cancellationToken).ConfigureAwait(false);
+            }
+        }
+
+        await using var fallback = File.Open(indexPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+        using var fallbackOutput = new MemoryStream(fallback.Length <= int.MaxValue ? (int)fallback.Length : 0);
+        await fallback.CopyToAsync(fallbackOutput, cancellationToken).ConfigureAwait(false);
+        return fallbackOutput.ToArray();
     }
 
     private static int ReadIndexVarInt(byte[] bytes, ref int offset)

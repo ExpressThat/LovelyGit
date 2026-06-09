@@ -490,7 +490,7 @@ function findGeneratedModule(exportNames: string[]): string {
 
 		const path = join(generatedRoot, entry);
 		const source = readFileSync(path, "utf8");
-		if (exportNames.every((name) => source.includes(`export type ${name}`))) {
+		if (exportNames.every((name) => hasExportedType(source, name))) {
 			return `./${entry.slice(0, -extname(entry).length)}`;
 		}
 	}
@@ -498,6 +498,10 @@ function findGeneratedModule(exportNames: string[]): string {
 	throw new Error(
 		`Could not find generated module exporting: ${exportNames.join(", ")}`,
 	);
+}
+
+function hasExportedType(source: string, typeName: string): boolean {
+	return new RegExp(`\\bexport\\s+type\\s+${typeName}\\b`).test(source);
 }
 
 function toTypeScriptType(type: string): string {

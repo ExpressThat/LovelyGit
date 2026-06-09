@@ -15,7 +15,7 @@
 		<Authors>ExpressThat LTD</Authors>
 		<RootNamespace>ExpressThat.LovelyGit</RootNamespace>
 		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-		<NoWarn>$(NoWarn);IL2026;IL3050;IL2104</NoWarn>
+		<NoWarn>$(NoWarn);IL2026;IL3050;IL2104;IL3000</NoWarn>
 		<SelfContained>true</SelfContained>
 		<LovelyGitPublishLocalBundledGit Condition="'$(LovelyGitPublishLocalBundledGit)' == ''">Always</LovelyGitPublishLocalBundledGit>
 	</PropertyGroup>
@@ -48,6 +48,10 @@
 	  <PackageReference Include="InfiniLore.InfiniFrame.WebServer" Version="0.13.1" />
 	  <PackageReference Include="KeySharp" Version="1.0.5" Condition="!$([System.String]::Copy('$(RuntimeIdentifier)').StartsWith('win'))" />
 	  <PackageReference Include="KeySharp" Version="1.0.5" ExcludeAssets="native" Condition="$([System.String]::Copy('$(RuntimeIdentifier)').StartsWith('win'))" />
+	  <PackageReference Include="LLamaSharp" Version="0.27.0" />
+	  <PackageReference Include="LLamaSharp.Backend.Cpu" Version="0.27.0" />
+	  <PackageReference Include="LLamaSharp.Backend.Cuda12" Version="0.27.0" />
+	  <PackageReference Include="LLamaSharp.Backend.Vulkan" Version="0.27.0" />
 	  <PackageReference Include="Microsoft.Extensions.DependencyInjection.AutoActivation" Version="10.6.0" />
 	  <PackageReference Include="SharpZipLib" Version="1.4.2" />
 	  <PackageReference Include="Tapper.Analyzer" Version="1.14.0">

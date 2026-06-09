@@ -99,9 +99,15 @@ internal sealed class WorkingTreeChangeService
 
             oldBytes = await TryReadBlobBytesAsync(repository, indexEntry.ObjectId, indexEntry.Mode, cancellationToken).ConfigureAwait(false) ?? Array.Empty<byte>();
             var worktreePath = Path.Combine(repository.WorkTreeDirectory, FromGitPath(path));
-            newBytes = File.Exists(worktreePath)
-                ? await File.ReadAllBytesAsync(worktreePath, cancellationToken).ConfigureAwait(false)
-                : Array.Empty<byte>();
+            var readBytes = File.Exists(worktreePath)
+                ? await TryReadWorktreeFileBytesAsync(worktreePath, cancellationToken).ConfigureAwait(false)
+                : null;
+            if (File.Exists(worktreePath) && readBytes == null)
+            {
+                return BuildUnreadableFileDiff("WORKTREE", path, "Modified", viewMode);
+            }
+
+            newBytes = readBytes ?? Array.Empty<byte>();
             status = File.Exists(worktreePath) ? "Modified" : "Deleted";
         }
         else if (group == WorkingTreeChangeGroup.Untracked)
@@ -110,14 +116,26 @@ internal sealed class WorkingTreeChangeService
             if (indexByPath.TryGetValue(path, out var indexEntry))
             {
                 oldBytes = await TryReadBlobBytesAsync(repository, indexEntry.ObjectId, indexEntry.Mode, cancellationToken).ConfigureAwait(false) ?? Array.Empty<byte>();
-                newBytes = File.Exists(worktreePath)
-                    ? await File.ReadAllBytesAsync(worktreePath, cancellationToken).ConfigureAwait(false)
-                    : Array.Empty<byte>();
+                var readBytes = File.Exists(worktreePath)
+                    ? await TryReadWorktreeFileBytesAsync(worktreePath, cancellationToken).ConfigureAwait(false)
+                    : null;
+                if (File.Exists(worktreePath) && readBytes == null)
+                {
+                    return BuildUnreadableFileDiff("WORKTREE", path, "Modified", viewMode);
+                }
+
+                newBytes = readBytes ?? Array.Empty<byte>();
                 status = File.Exists(worktreePath) ? "Modified" : "Deleted";
                 return BuildDiffResponse("WORKTREE", path, status, viewMode, oldBytes, newBytes);
             }
 
-            newBytes = await File.ReadAllBytesAsync(worktreePath, cancellationToken).ConfigureAwait(false);
+            var untrackedBytes = await TryReadWorktreeFileBytesAsync(worktreePath, cancellationToken).ConfigureAwait(false);
+            if (untrackedBytes == null)
+            {
+                return BuildUnreadableFileDiff("WORKTREE", path, "Added", viewMode);
+            }
+
+            newBytes = untrackedBytes;
             status = "Added";
         }
         else
@@ -216,7 +234,21 @@ internal sealed class WorkingTreeChangeService
                 continue;
             }
 
-            var newBytes = await File.ReadAllBytesAsync(path, cancellationToken).ConfigureAwait(false);
+            var newBytes = await TryReadWorktreeFileBytesAsync(path, cancellationToken).ConfigureAwait(false);
+            if (newBytes == null)
+            {
+                changes.Add(new WorkingTreeChangedFile
+                {
+                    Path = entry.Path,
+                    Status = "Modified",
+                    Group = WorkingTreeChangeGroup.Unstaged,
+                    Additions = 0,
+                    Deletions = 0,
+                    IsBinary = true,
+                });
+                continue;
+            }
+
             var newObjectId = ComputeBlobObjectId(newBytes, repository.ObjectFormat);
             if (newObjectId == entry.ObjectId)
             {
@@ -237,6 +269,24 @@ internal sealed class WorkingTreeChangeService
         }
 
         return changes.OrderBy(file => file.Path, StringComparer.Ordinal).ToList();
+    }
+
+    private static async Task<byte[]?> TryReadWorktreeFileBytesAsync(
+        string path,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            await using var file = File.Open(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+            var length = file.Length <= int.MaxValue ? (int)file.Length : 0;
+            using var output = length > 0 ? new MemoryStream(length) : new MemoryStream();
+            await file.CopyToAsync(output, cancellationToken).ConfigureAwait(false);
+            return output.ToArray();
+        }
+        catch (Exception exception) when (!cancellationToken.IsCancellationRequested && exception is IOException or UnauthorizedAccessException)
+        {
+            return null;
+        }
     }
 
     private async Task<List<WorkingTreeChangedFile>> BuildUntrackedChangesAsync(
@@ -488,6 +538,23 @@ internal sealed class WorkingTreeChangeService
             IsBinary = false,
             HasDifferences = model.OldText.HasDifferences || model.NewText.HasDifferences,
             Lines = lines,
+        };
+    }
+
+    private static CommitFileDiffResponse BuildUnreadableFileDiff(
+        string commitHash,
+        string path,
+        string status,
+        CommitDiffViewMode viewMode)
+    {
+        return new CommitFileDiffResponse
+        {
+            CommitHash = commitHash,
+            Path = path,
+            Status = status,
+            ViewMode = viewMode,
+            IsBinary = true,
+            HasDifferences = true,
         };
     }
 

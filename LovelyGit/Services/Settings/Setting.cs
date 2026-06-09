@@ -12,7 +12,14 @@ namespace ExpressThat.LovelyGit.Services.Settings
         CommitDiffViewMode,
         CommitDiffLineDisplayMode,
         CommitDiffContextLines,
-        CommitDiffWrapLines
+        CommitDiffWrapLines,
+        AiFeaturesEnabled,
+        AiComputeDevice,
+        AiModel,
+        AiContextSize,
+        AiLlamaRawDiffContextPercent,
+        AiGemmaRawDiffContextPercent,
+        AiSummaryContextPercent
     }
 
     [TranspilationSource]
@@ -30,5 +37,23 @@ namespace ExpressThat.LovelyGit.Services.Settings
     {
         Changes,
         FullFile
+    }
+
+    [TranspilationSource]
+    [JsonConverter(typeof(JsonStringEnumConverter<AiComputeDevice>))]
+    public enum AiComputeDevice
+    {
+        Cpu,
+        Gpu
+    }
+
+    [TranspilationSource]
+    [JsonConverter(typeof(JsonStringEnumConverter<AiModel>))]
+    public enum AiModel
+    {
+        Llama32_1B,
+        Llama32_3B,
+        Gemma4_E2B,
+        Gemma4_E4B
     }
 }

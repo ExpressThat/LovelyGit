@@ -3,6 +3,8 @@ import { useState } from "react";
 import type { ReactNode } from "react";
 import { toast } from "sonner";
 import { sendRequestWithResponse } from "@/lib/registerSignalR";
+import { Button } from "../ui/button";
+import { SettingsDialog } from "./components/SettingsDialog";
 import { Tabs } from "./components/Tabs";
 import { ThemeSelector } from "./components/ThemeSelector";
 
@@ -88,6 +90,7 @@ export function TopNavBar({
 						) : null}
 					</button>
 					<ThemeSelector />
+					<SettingsDialog />
 				</div>
 			</div>
 		</header>
@@ -106,15 +109,16 @@ function ToolbarButton({
 	onClick: () => void;
 }) {
 	return (
-		<button
-			className="inline-flex h-7 items-center gap-1.5 rounded-md border bg-background px-2 text-xs font-medium text-foreground hover:bg-accent hover:text-accent-foreground disabled:pointer-events-none disabled:opacity-40"
+		<Button
 			disabled={disabled}
 			onClick={onClick}
+			size="sm"
 			title={label}
 			type="button"
+			variant="outline"
 		>
 			{icon}
 			<span>{label}</span>
-		</button>
+		</Button>
 	);
 }
