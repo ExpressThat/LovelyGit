@@ -13,6 +13,7 @@ internal sealed class LovelyGitRepository : IDisposable
 
     private LovelyGitRepository(
         string gitDirectory,
+        string workTreeDirectory,
         GitObjectFormat objectFormat,
         GitObjectStore objectStore,
         GitObjectId? headTarget,
@@ -21,6 +22,7 @@ internal sealed class LovelyGitRepository : IDisposable
         Dictionary<GitObjectId, List<string>> tagNamesByCommit)
     {
         GitDirectory = gitDirectory;
+        WorkTreeDirectory = workTreeDirectory;
         ObjectFormat = objectFormat;
         _objectStore = objectStore;
         HeadTarget = headTarget;
@@ -30,13 +32,15 @@ internal sealed class LovelyGitRepository : IDisposable
     }
 
     public string GitDirectory { get; }
+    public string WorkTreeDirectory { get; }
     public GitObjectFormat ObjectFormat { get; }
     public GitObjectId? HeadTarget { get; }
 
     public static async Task<LovelyGitRepository> OpenAsync(string path, CancellationToken cancellationToken)
     {
-        var gitDirectory = await GitRepositoryDiscovery.ResolveGitDirectoryAsync(path, cancellationToken)
+        var paths = await GitRepositoryDiscovery.ResolveRepositoryPathsAsync(path, cancellationToken)
             .ConfigureAwait(false);
+        var gitDirectory = paths.GitDirectory;
         var objectFormat = await GitRepositoryDiscovery.ReadObjectFormatAsync(gitDirectory, cancellationToken)
             .ConfigureAwait(false);
         var objectStore = new GitObjectStore(gitDirectory, objectFormat);
@@ -70,6 +74,7 @@ internal sealed class LovelyGitRepository : IDisposable
 
         return new LovelyGitRepository(
             gitDirectory,
+            paths.WorkTreeDirectory,
             objectFormat,
             objectStore,
             headTarget,

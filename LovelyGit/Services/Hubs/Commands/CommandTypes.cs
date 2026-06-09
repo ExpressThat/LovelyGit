@@ -13,6 +13,8 @@ namespace ExpressThat.LovelyGit.Services.Hubs.Commands
         CommitGraph,
         GetCommitDetails,
         GetCommitFileDiff,
+        GetWorkingTreeChanges,
+        GetWorkingTreeFileDiff,
         CancelCommitDiffPreparation,
         GetSetting,
         SetSetting,

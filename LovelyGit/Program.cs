@@ -50,9 +50,7 @@ public static class Program
                     .SetTitle("LovelyGit")
                     .SetIconFile(GetWindowIconPath())
                     .SetSize(new Size(800, 600))
-#if !DEBUG
                     .SetStartUrl("http://localhost:5000")
-#endif
                     ;
 
 

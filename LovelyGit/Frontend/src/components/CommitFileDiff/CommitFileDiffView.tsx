@@ -200,7 +200,7 @@ function LoadingDiff() {
 	);
 }
 
-function DiffContent({
+export function DiffContent({
 	diff,
 	wrapLines,
 }: {

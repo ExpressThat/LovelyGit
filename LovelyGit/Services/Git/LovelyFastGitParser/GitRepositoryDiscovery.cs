@@ -2,7 +2,9 @@ namespace ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser;
 
 internal static class GitRepositoryDiscovery
 {
-    public static async Task<string> ResolveGitDirectoryAsync(string path, CancellationToken cancellationToken)
+    public static async Task<GitRepositoryPaths> ResolveRepositoryPathsAsync(
+        string path,
+        CancellationToken cancellationToken)
     {
         var fullPath = Path.GetFullPath(path);
         var attributes = File.GetAttributes(fullPath);
@@ -13,13 +15,13 @@ internal static class GitRepositoryDiscovery
 
         if (Path.GetFileName(fullPath).Equals(".git", StringComparison.OrdinalIgnoreCase))
         {
-            return fullPath;
+            return new GitRepositoryPaths(fullPath, Directory.GetParent(fullPath)?.FullName ?? fullPath);
         }
 
         var dotGitPath = Path.Combine(fullPath, ".git");
         if (Directory.Exists(dotGitPath))
         {
-            return dotGitPath;
+            return new GitRepositoryPaths(dotGitPath, fullPath);
         }
 
         if (File.Exists(dotGitPath))
@@ -32,10 +34,17 @@ internal static class GitRepositoryDiscovery
             }
 
             var gitDir = text.AsSpan(prefix.Length).Trim().ToString();
-            return Path.GetFullPath(Path.IsPathRooted(gitDir) ? gitDir : Path.Combine(fullPath, gitDir));
+            return new GitRepositoryPaths(
+                Path.GetFullPath(Path.IsPathRooted(gitDir) ? gitDir : Path.Combine(fullPath, gitDir)),
+                fullPath);
         }
 
         throw new DirectoryNotFoundException($"Could not find .git directory for: {path}");
+    }
+
+    public static async Task<string> ResolveGitDirectoryAsync(string path, CancellationToken cancellationToken)
+    {
+        return (await ResolveRepositoryPathsAsync(path, cancellationToken).ConfigureAwait(false)).GitDirectory;
     }
 
     public static async Task<GitObjectFormat> ReadObjectFormatAsync(
@@ -103,3 +112,5 @@ internal static class GitRepositoryDiscovery
         return key.Length > 0;
     }
 }
+
+internal sealed record GitRepositoryPaths(string GitDirectory, string WorkTreeDirectory);

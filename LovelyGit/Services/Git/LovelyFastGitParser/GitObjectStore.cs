@@ -105,7 +105,7 @@ internal sealed class GitObjectStore
             var indexes = new List<GitPackIndex>();
             if (Directory.Exists(packDirectory))
             {
-                foreach (var indexPath in Directory.EnumerateFiles(packDirectory, "pack-*.idx"))
+                foreach (var indexPath in Directory.EnumerateFiles(packDirectory, "*.idx"))
                 {
                     cancellationToken.ThrowIfCancellationRequested();
                     indexes.Add(await GitPackIndex.OpenAsync(indexPath, _objectFormat, cancellationToken).ConfigureAwait(false));

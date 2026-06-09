@@ -10,6 +10,7 @@ import type {
 	TypedSetMultipleSettingsCommandInput,
 	TypedSetSettingsCommandInput,
 } from "@/generated/LovelyGit.CommandContracts";
+import type { WorkingTreeChangedNotification } from "@/generated/ExpressThat.LovelyGit.Services.Git.WorkingTree.Models";
 
 export function getSignalR() {
 	return (
@@ -79,6 +80,16 @@ export async function sendRequestWithoutResponse<
 	TCommand extends TypedCommsHubCommandInput,
 >(commandInput: TCommand) {
 	await invokeCommand(toWireCommand(commandInput));
+}
+
+export function subscribeToWorkingTreeChanged(
+	listener: (notification: WorkingTreeChangedNotification) => void,
+) {
+	const sr = getSignalR();
+	sr.on("WorkingTreeChanged", listener);
+	return () => {
+		sr.off("WorkingTreeChanged", listener);
+	};
 }
 
 async function invokeCommand(commandInput: CommsHubCommand<unknown>) {
