@@ -148,6 +148,45 @@ internal sealed class WorkingTreeIndexService
             .ConfigureAwait(false);
     }
 
+    public async Task CommitStagedChangesAsync(
+        string repositoryPath,
+        string title,
+        string body,
+        CancellationToken cancellationToken)
+    {
+        var trimmedTitle = title.Trim();
+        if (trimmedTitle.Length == 0)
+        {
+            throw new InvalidOperationException("Commit title is required.");
+        }
+
+        var repositoryPaths = await GitRepositoryDiscovery
+            .ResolveRepositoryPathsAsync(repositoryPath, cancellationToken)
+            .ConfigureAwait(false);
+
+        var trimmedBody = body.Trim();
+        var arguments = trimmedBody.Length == 0
+            ? new[] { "commit", "-m", trimmedTitle }
+            : new[] { "commit", "-m", trimmedTitle, "-m", trimmedBody };
+        var result = await _gitCliService
+            .ExecuteBufferedAsync(
+                arguments,
+                repositoryPaths.WorkTreeDirectory,
+                validateExitCode: false,
+                cancellationToken)
+            .ConfigureAwait(false);
+
+        if (result.ExitCode == 0)
+        {
+            return;
+        }
+
+        var message = FirstNonEmptyLine(result.StandardError)
+            ?? FirstNonEmptyLine(result.StandardOutput)
+            ?? "Git could not create the commit.";
+        throw new InvalidOperationException(message);
+    }
+
     private static List<string> NormalizeSelectedPaths(IReadOnlyList<string> paths)
     {
         if (paths.Count == 0)
@@ -308,5 +347,19 @@ internal sealed class WorkingTreeIndexService
         }
 
         return builder.ToString();
+    }
+
+    private static string? FirstNonEmptyLine(string text)
+    {
+        foreach (var line in text.AsSpan().EnumerateLines())
+        {
+            var trimmed = line.Trim();
+            if (!trimmed.IsEmpty)
+            {
+                return trimmed.ToString();
+            }
+        }
+
+        return null;
     }
 }

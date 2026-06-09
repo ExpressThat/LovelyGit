@@ -16,12 +16,14 @@ internal sealed class WorkingTreeWatcherService : IDisposable
     private readonly object _lock = new();
     private readonly List<FileSystemWatcher> _watchers = new();
     private CancellationTokenSource? _debounceCancellation;
+    private CancellationTokenSource? _graphDebounceCancellation;
     private Guid? _activeRepositoryId;
     private string? _activeRepositoryPath;
     private string? _activeGitDirectory;
     private string? _activeWorkTreeDirectory;
     private GitIgnoreMatcher? _ignoreMatcher;
     private int _generation;
+    private int _graphGeneration;
     private bool _disposed;
 
     public WorkingTreeWatcherService(
@@ -159,6 +161,11 @@ internal sealed class WorkingTreeWatcherService : IDisposable
         if (IsRelevantGitMetadataPath(eventArgs.FullPath))
         {
             QueueInvalidation();
+            if (IsCommitGraphMetadataPath(eventArgs.FullPath))
+            {
+                QueueGraphInvalidation();
+            }
+
             return;
         }
 
@@ -199,6 +206,25 @@ internal sealed class WorkingTreeWatcherService : IDisposable
         return relativePath.Equals("index", StringComparison.Ordinal)
             || relativePath.Equals("index.lock", StringComparison.Ordinal)
             || relativePath.Equals("HEAD", StringComparison.Ordinal)
+            || relativePath.Equals("packed-refs", StringComparison.Ordinal)
+            || relativePath.StartsWith("refs/", StringComparison.Ordinal);
+    }
+
+    private bool IsCommitGraphMetadataPath(string path)
+    {
+        string? gitDirectory;
+        lock (_lock)
+        {
+            gitDirectory = _activeGitDirectory;
+        }
+
+        if (string.IsNullOrEmpty(gitDirectory))
+        {
+            return false;
+        }
+
+        var relativePath = Path.GetRelativePath(gitDirectory, path).Replace('\\', '/');
+        return relativePath.Equals("HEAD", StringComparison.Ordinal)
             || relativePath.Equals("packed-refs", StringComparison.Ordinal)
             || relativePath.StartsWith("refs/", StringComparison.Ordinal);
     }
@@ -334,6 +360,56 @@ internal sealed class WorkingTreeWatcherService : IDisposable
             .ConfigureAwait(false);
     }
 
+    private void QueueGraphInvalidation()
+    {
+        CancellationTokenSource cancellation;
+        lock (_lock)
+        {
+            if (_disposed || _activeRepositoryId == null)
+            {
+                return;
+            }
+
+            _graphDebounceCancellation?.Cancel();
+            _graphDebounceCancellation?.Dispose();
+            _graphDebounceCancellation = new CancellationTokenSource();
+            cancellation = _graphDebounceCancellation;
+        }
+
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await Task.Delay(DebounceDelay, cancellation.Token).ConfigureAwait(false);
+                await SendGraphInvalidationAsync(cancellation).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+            }
+        }, CancellationToken.None);
+    }
+
+    private async Task SendGraphInvalidationAsync(CancellationTokenSource cancellation)
+    {
+        CommitGraphChangedNotification notification;
+        lock (_lock)
+        {
+            if (_disposed || _activeRepositoryId == null || !ReferenceEquals(_graphDebounceCancellation, cancellation))
+            {
+                return;
+            }
+
+            notification = new CommitGraphChangedNotification
+            {
+                Generation = unchecked(++_graphGeneration),
+            };
+        }
+
+        await _hubContext.Clients.All
+            .SendAsync("CommitGraphChanged", notification, cancellation.Token)
+            .ConfigureAwait(false);
+    }
+
     private void StopActiveWatchers()
     {
         lock (_lock)
@@ -347,6 +423,9 @@ internal sealed class WorkingTreeWatcherService : IDisposable
         _debounceCancellation?.Cancel();
         _debounceCancellation?.Dispose();
         _debounceCancellation = null;
+        _graphDebounceCancellation?.Cancel();
+        _graphDebounceCancellation?.Dispose();
+        _graphDebounceCancellation = null;
         foreach (var watcher in _watchers)
         {
             watcher.EnableRaisingEvents = false;

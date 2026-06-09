@@ -28,3 +28,11 @@ public record StageWorkingTreeLineCommandArguments
     public string OldText { get; set; } = string.Empty;
     public string NewText { get; set; } = string.Empty;
 }
+
+[TranspilationSource]
+public record CommitStagedChangesCommandArguments
+{
+    public Guid RepositoryId { get; set; }
+    public string Title { get; set; } = string.Empty;
+    public string Body { get; set; } = string.Empty;
+}

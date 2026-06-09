@@ -1,4 +1,4 @@
-import { Check, File, FilePlus2, FileQuestion, FileX2, GitPullRequestArrow, MinusSquare, RefreshCw, SquareCheckBig } from "lucide-react";
+import { Check, File, FilePlus2, FileQuestion, FileX2, GitCommitHorizontal, GitPullRequestArrow, MinusSquare, RefreshCw, SquareCheckBig } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import type {
@@ -7,17 +7,21 @@ import type {
 } from "@/generated/ExpressThat.LovelyGit.Services.Git.WorkingTree.Models";
 import { sendRequestWithResponse } from "@/lib/registerSignalR";
 
+const COMMIT_TITLE_LIMIT = 72;
+
 export function WorkingChangesPanel({
 	changes,
 	error,
 	isLoading,
 	onRefresh,
+	onCommitSuccess,
 	onSelectFile,
 	repositoryId,
 }: {
 	changes: WorkingTreeChangesResponse | null;
 	error: string | null;
 	isLoading: boolean;
+	onCommitSuccess: () => Promise<void> | void;
 	onRefresh: () => Promise<void> | void;
 	onSelectFile: (file: WorkingTreeChangedFile) => void;
 	repositoryId: string;
@@ -26,6 +30,9 @@ export function WorkingChangesPanel({
 	const [selectedKeys, setSelectedKeys] = useState<Set<string>>(() => new Set());
 	const [actionError, setActionError] = useState<string | null>(null);
 	const [isMutating, setIsMutating] = useState(false);
+	const [commitTitle, setCommitTitle] = useState("");
+	const [commitBody, setCommitBody] = useState("");
+	const [isCommitting, setIsCommitting] = useState(false);
 	const fileKeys = useMemo(
 		() =>
 			new Set(
@@ -40,6 +47,7 @@ export function WorkingChangesPanel({
 	);
 	const selectedStagedFiles = selectedFiles(changes?.staged ?? [], selectedKeys);
 	const selectedWorkingFiles = selectedFiles(workingFiles, selectedKeys);
+	const isBusy = isMutating || isCommitting;
 
 	useEffect(() => {
 		setSelectedKeys((current) => {
@@ -57,8 +65,8 @@ export function WorkingChangesPanel({
 			return;
 		}
 
-		setIsMutating(true);
-		setActionError(null);
+			setIsMutating(true);
+			setActionError(null);
 		try {
 			await sendRequestWithResponse({
 				commandType,
@@ -78,6 +86,37 @@ export function WorkingChangesPanel({
 			);
 		} finally {
 			setIsMutating(false);
+		}
+	};
+
+	const commitStagedChanges = async () => {
+		if (!changes || changes.staged.length === 0 || commitTitle.trim().length === 0) {
+			return;
+		}
+
+		setIsCommitting(true);
+		setActionError(null);
+		try {
+			await sendRequestWithResponse({
+				commandType: "CommitStagedChanges",
+				arguments: {
+					body: commitBody,
+					repositoryId,
+					title: commitTitle,
+				},
+			});
+			setCommitTitle("");
+			setCommitBody("");
+			setSelectedKeys(new Set());
+			await onCommitSuccess();
+		} catch (commitError) {
+			setActionError(
+				commitError instanceof Error
+					? commitError.message
+					: "Failed to commit staged changes.",
+			);
+		} finally {
+			setIsCommitting(false);
 		}
 	};
 
@@ -129,13 +168,13 @@ export function WorkingChangesPanel({
 			{changes && changes.totalCount > 0 ? (
 				<div className="flex flex-wrap gap-2">
 					<ActionButton
-						disabled={isMutating || workingFiles.length === 0}
+						disabled={isBusy || workingFiles.length === 0}
 						icon={<SquareCheckBig aria-hidden="true" size={14} />}
 						label="Stage all"
 						onClick={() => void runIndexCommand("StageWorkingTreeFiles", [], true)}
 					/>
 					<ActionButton
-						disabled={isMutating || changes.staged.length === 0}
+						disabled={isBusy || changes.staged.length === 0}
 						icon={<MinusSquare aria-hidden="true" size={14} />}
 						label="Unstage all"
 						onClick={() => void runIndexCommand("UnstageWorkingTreeFiles", [], true)}
@@ -155,6 +194,61 @@ export function WorkingChangesPanel({
 				</div>
 			) : null}
 
+			{changes && changes.staged.length > 0 ? (
+				<section className="space-y-2 rounded-md border bg-card p-3">
+					<div className="flex items-center gap-2 text-xs font-semibold text-foreground">
+						<GitCommitHorizontal aria-hidden="true" size={15} />
+						<span>Commit staged changes</span>
+					</div>
+					<div className="relative min-h-36 rounded-md border bg-background px-3 py-2 focus-within:border-sky-500">
+						<div
+							className={`absolute right-3 top-2 font-mono text-xs ${
+								commitTitle.length > COMMIT_TITLE_LIMIT
+									? "text-destructive"
+									: "text-muted-foreground"
+							}`}
+						>
+							{COMMIT_TITLE_LIMIT - commitTitle.length}
+						</div>
+						<label className="block pr-12">
+							<span className="sr-only">Commit title</span>
+							<input
+								className="h-8 w-full border-0 bg-transparent p-0 text-lg text-foreground outline-none placeholder:text-muted-foreground"
+								disabled={isBusy}
+								onChange={(event) => setCommitTitle(event.target.value)}
+								placeholder="Title"
+								type="text"
+								value={commitTitle}
+							/>
+						</label>
+						<label className="block">
+							<span className="sr-only">Commit body</span>
+							<textarea
+								className="min-h-24 w-full resize-none border-0 bg-transparent p-0 text-sm text-muted-foreground outline-none placeholder:text-muted-foreground"
+								disabled={isBusy}
+								onChange={(event) => setCommitBody(event.target.value)}
+								placeholder="Body"
+								value={commitBody}
+							/>
+						</label>
+					</div>
+					<div className="flex justify-end">
+						<ActionButton
+							disabled={isBusy || commitTitle.trim().length === 0}
+							icon={
+								<GitCommitHorizontal
+									aria-hidden="true"
+									className={isCommitting ? "animate-pulse" : undefined}
+									size={14}
+								/>
+							}
+							label={isCommitting ? "Committing" : "Commit"}
+							onClick={() => void commitStagedChanges()}
+						/>
+					</div>
+				</section>
+			) : null}
+
 			{changes ? (
 				<>
 					<ChangeGroup
@@ -164,7 +258,7 @@ export function WorkingChangesPanel({
 								: "Unstage selected"
 						}
 						files={changes.staged}
-						isActionDisabled={isMutating || selectedStagedFiles.length === 0}
+						isActionDisabled={isBusy || selectedStagedFiles.length === 0}
 						onAction={() =>
 							void runIndexCommand(
 								"UnstageWorkingTreeFiles",
@@ -188,7 +282,7 @@ export function WorkingChangesPanel({
 						}
 						hideGroupLabel
 						files={workingFiles}
-						isActionDisabled={isMutating || selectedWorkingFiles.length === 0}
+						isActionDisabled={isBusy || selectedWorkingFiles.length === 0}
 						onAction={() =>
 							void runIndexCommand(
 								"StageWorkingTreeFiles",

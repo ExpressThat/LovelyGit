@@ -44,6 +44,12 @@ public record WorkingTreeChangedNotification
 }
 
 [TranspilationSource]
+public record CommitGraphChangedNotification
+{
+    public int Generation { get; set; }
+}
+
+[TranspilationSource]
 public record GetWorkingTreeFileDiffArguments
 {
     public Guid RepositoryId { get; set; }

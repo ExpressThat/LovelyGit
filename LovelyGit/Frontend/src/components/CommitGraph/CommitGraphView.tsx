@@ -26,9 +26,11 @@ const HEADER_LABELS: Record<ColKey, string> = {
 
 export function CommitGraphView({
 	onSelectCommit,
+	refreshToken = 0,
 	selectedCommitHash,
 }: {
 	onSelectCommit: (row: CommitGraphRowModel) => void;
+	refreshToken?: number;
 	selectedCommitHash: string | null;
 }) {
 	const viewportRef = useRef<HTMLDivElement | null>(null);
@@ -46,7 +48,7 @@ export function CommitGraphView({
 		laneCount,
 		rows,
 		totalRows,
-	} = useCommitGraphData();
+	} = useCommitGraphData(refreshToken);
 
 	useEffect(() => {
 		const node = viewportRef.current;

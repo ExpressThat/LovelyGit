@@ -3,7 +3,10 @@ import type {
 	CommitGraphResponse,
 	CommitGraphRow,
 } from "@/generated/ExpressThat.LovelyGit.Services.Git.CommitGraph.Models";
-import { sendRequestWithResponse } from "@/lib/registerSignalR";
+import {
+	sendRequestWithResponse,
+	subscribeToCommitGraphChanged,
+} from "@/lib/registerSignalR";
 import { useSetting } from "@/lib/settings/settingsStore";
 
 const PAGE_SIZE = 400;
@@ -41,7 +44,8 @@ const session: GraphSession = {
 	totalRows: 0,
 };
 
-export function useCommitGraphData() {
+export function useCommitGraphData(externalRefreshToken = 0) {
+	const [graphInvalidation, setGraphInvalidation] = useState(0);
 	const [state, setState] = useState<CommitGraphState>(() => ({
 		error: null,
 		isInitialLoading: session.rows.length === 0,
@@ -51,6 +55,12 @@ export function useCommitGraphData() {
 	}));
 
 	const currentGitRepositoryId = useSetting("CurrentGitRepositoryId");
+
+	useEffect(() => {
+		return subscribeToCommitGraphChanged(() => {
+			setGraphInvalidation((generation) => generation + 1);
+		});
+	}, []);
 
 	const runLoader = useEffectEvent(async () => {
 		if (session.loading) {
@@ -151,7 +161,7 @@ export function useCommitGraphData() {
 
 		session.requestedEnd = PAGE_SIZE;
 		void runLoader();
-	}, [currentGitRepositoryId]);
+	}, [currentGitRepositoryId, externalRefreshToken, graphInvalidation]);
 
 	return {
 		...state,

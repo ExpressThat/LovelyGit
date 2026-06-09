@@ -22,6 +22,7 @@ function App() {
 	const [detailsPanel, setDetailsPanel] = useState<DetailsPanelState | null>(
 		null,
 	);
+	const [commitGraphRefreshToken, setCommitGraphRefreshToken] = useState(0);
 	const workingTreeChanges = useWorkingTreeChanges(currentGitRepositoryId);
 	const previousRepositoryIdRef = useRef<string | null>(currentGitRepositoryId);
 
@@ -109,6 +110,7 @@ function App() {
 												? detailsPanel.commitHash
 												: null
 										}
+										refreshToken={commitGraphRefreshToken}
 									/>
 								</motion.div>
 								<AnimatePresence initial={false}>
@@ -206,6 +208,10 @@ function App() {
 								}
 								isLoading={workingTreeChanges.status === "loading"}
 								onRefresh={() => {
+									return workingTreeChanges.reload();
+								}}
+								onCommitSuccess={() => {
+									setCommitGraphRefreshToken((token) => token + 1);
 									return workingTreeChanges.reload();
 								}}
 								onSelectFile={(file) =>

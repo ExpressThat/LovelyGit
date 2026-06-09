@@ -10,7 +10,10 @@ import type {
 	TypedSetMultipleSettingsCommandInput,
 	TypedSetSettingsCommandInput,
 } from "@/generated/LovelyGit.CommandContracts";
-import type { WorkingTreeChangedNotification } from "@/generated/ExpressThat.LovelyGit.Services.Git.WorkingTree.Models";
+import type {
+	CommitGraphChangedNotification,
+	WorkingTreeChangedNotification,
+} from "@/generated/ExpressThat.LovelyGit.Services.Git.WorkingTree.Models";
 
 export function getSignalR() {
 	return (
@@ -89,6 +92,16 @@ export function subscribeToWorkingTreeChanged(
 	sr.on("WorkingTreeChanged", listener);
 	return () => {
 		sr.off("WorkingTreeChanged", listener);
+	};
+}
+
+export function subscribeToCommitGraphChanged(
+	listener: (notification: CommitGraphChangedNotification) => void,
+) {
+	const sr = getSignalR();
+	sr.on("CommitGraphChanged", listener);
+	return () => {
+		sr.off("CommitGraphChanged", listener);
 	};
 }
 

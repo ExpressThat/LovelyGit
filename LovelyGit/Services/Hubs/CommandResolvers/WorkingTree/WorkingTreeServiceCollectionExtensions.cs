@@ -19,6 +19,7 @@ internal static class WorkingTreeServiceCollectionExtensions
         services.AddSingleton<ICommandResponder, UnstageWorkingTreeFilesCommandResolver>();
         services.AddSingleton<ICommandResponder, StageWorkingTreeLineCommandResolver>();
         services.AddSingleton<ICommandResponder, UnstageWorkingTreeLineCommandResolver>();
+        services.AddSingleton<ICommandResponder, CommitStagedChangesCommandResolver>();
 
         return services;
     }

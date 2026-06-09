@@ -19,6 +19,7 @@ namespace ExpressThat.LovelyGit.Services.Hubs.Commands
         UnstageWorkingTreeFiles,
         StageWorkingTreeLine,
         UnstageWorkingTreeLine,
+        CommitStagedChanges,
         CancelCommitDiffPreparation,
         GetSetting,
         SetSetting,
