@@ -17,11 +17,18 @@ export function useWorkingTreeChanges(repositoryId: string | null, enabled: bool
 		changes: null,
 	});
 	const [isDirty, setIsDirty] = useState(false);
+	const [summaryCount, setSummaryCount] = useState(0);
 
 	useEffect(() => {
-		if (!repositoryId || !enabled) {
+		if (!repositoryId) {
 			setState({ status: "idle", changes: null });
 			setIsDirty(false);
+			setSummaryCount(0);
+			return;
+		}
+
+		if (!enabled) {
+			setState({ status: "idle", changes: null });
 			return;
 		}
 
@@ -48,6 +55,7 @@ export function useWorkingTreeChanges(repositoryId: string | null, enabled: bool
 								totalCount: 0,
 							},
 					});
+					setSummaryCount(changes?.totalCount ?? 0);
 				}
 			} catch (error) {
 				if (isActive) {
@@ -80,16 +88,40 @@ export function useWorkingTreeChanges(repositoryId: string | null, enabled: bool
 			return;
 		}
 
+		let isActive = true;
+		const loadSummary = async () => {
+			try {
+				const summary = await sendRequestWithResponse({
+					commandType: "GetWorkingTreeChangeSummary",
+					arguments: { repositoryId },
+				});
+				if (isActive) {
+					setSummaryCount(summary?.totalCount ?? 0);
+					setIsDirty(false);
+				}
+			} catch {
+				if (isActive) {
+					setIsDirty(true);
+				}
+			}
+		};
+
+		void loadSummary();
 		const unsubscribe = subscribeToServerEvent("WorkingTreeChanged", () => {
 			setIsDirty(true);
+			void loadSummary();
 		});
 
-		return unsubscribe;
+		return () => {
+			isActive = false;
+			unsubscribe();
+		};
 	}, [repositoryId, enabled]);
 
 	return {
 		...state,
 		isDirty,
+		totalCount: state.changes?.totalCount ?? summaryCount,
 		reload: async () => {
 			if (!repositoryId) {
 				return;
@@ -110,6 +142,7 @@ export function useWorkingTreeChanges(repositoryId: string | null, enabled: bool
 						totalCount: 0,
 					},
 			});
+			setSummaryCount(changes?.totalCount ?? 0);
 			setIsDirty(false);
 		},
 	};

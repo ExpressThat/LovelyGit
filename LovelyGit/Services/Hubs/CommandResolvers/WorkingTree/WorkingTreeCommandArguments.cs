@@ -36,3 +36,9 @@ public record CommitStagedChangesCommandArguments
     public string Title { get; set; } = string.Empty;
     public string Body { get; set; } = string.Empty;
 }
+
+[TranspilationSource]
+public record GitRemoteCommandArguments
+{
+    public Guid RepositoryId { get; set; }
+}

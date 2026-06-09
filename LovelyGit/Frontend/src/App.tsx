@@ -64,7 +64,8 @@ function App() {
 						onOpenWorkingChanges={() =>
 							setDetailsPanel({ kind: "workingChanges" })
 						}
-						workingChangesCount={workingTreeChanges.changes?.totalCount ?? 0}
+						repositoryId={currentGitRepositoryId}
+						workingChangesCount={workingTreeChanges.totalCount}
 					/>
 				<div className="flex min-h-0 flex-1 overflow-hidden">
 					<div className="relative min-w-0 flex-1 overflow-hidden">

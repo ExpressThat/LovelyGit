@@ -38,6 +38,13 @@ public record WorkingTreeChangesResponse
 }
 
 [TranspilationSource]
+public record WorkingTreeChangeSummaryResponse
+{
+    public int TotalCount { get; set; }
+    public bool HasChanges => TotalCount > 0;
+}
+
+[TranspilationSource]
 public record WorkingTreeChangedNotification
 {
     public int Generation { get; set; }

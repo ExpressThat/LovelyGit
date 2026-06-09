@@ -8,6 +8,7 @@ namespace ExpressThat.LovelyGit.Services.Hubs.CommandResolvers.WorkingTree;
 [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
 [JsonSerializable(typeof(WorkingTreeChangeGroup))]
 [JsonSerializable(typeof(WorkingTreeChangedFile))]
+[JsonSerializable(typeof(WorkingTreeChangeSummaryResponse))]
 [JsonSerializable(typeof(WorkingTreeChangesResponse))]
 [JsonSerializable(typeof(WorkingTreeChangedNotification))]
 [JsonSerializable(typeof(CommitGraphChangedNotification))]
@@ -15,6 +16,7 @@ namespace ExpressThat.LovelyGit.Services.Hubs.CommandResolvers.WorkingTree;
 [JsonSerializable(typeof(UpdateWorkingTreeIndexCommandArguments))]
 [JsonSerializable(typeof(StageWorkingTreeLineCommandArguments))]
 [JsonSerializable(typeof(CommitStagedChangesCommandArguments))]
+[JsonSerializable(typeof(GitRemoteCommandArguments))]
 [JsonSerializable(typeof(GetWorkingTreeFileDiffArguments))]
 [JsonSerializable(typeof(CommitDiffViewMode))]
 [JsonSerializable(typeof(CommitFileDiffSyntaxSpan))]
@@ -22,6 +24,7 @@ namespace ExpressThat.LovelyGit.Services.Hubs.CommandResolvers.WorkingTree;
 [JsonSerializable(typeof(CommitFileDiffLine))]
 [JsonSerializable(typeof(CommitFileDiffResponse))]
 [JsonSerializable(typeof(CommandResponse<WorkingTreeChangesResponse>))]
+[JsonSerializable(typeof(CommandResponse<WorkingTreeChangeSummaryResponse>))]
 [JsonSerializable(typeof(CommandResponse<CommitFileDiffResponse>))]
 internal partial class WorkingTreeJsonSerializerContext : JsonSerializerContext
 {
