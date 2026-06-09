@@ -23,7 +23,11 @@ function App() {
 		null,
 	);
 	const [commitGraphRefreshToken, setCommitGraphRefreshToken] = useState(0);
-	const workingTreeChanges = useWorkingTreeChanges(currentGitRepositoryId);
+	const isWorkingChangesPanelOpen = detailsPanel?.kind === "workingChanges";
+	const workingTreeChanges = useWorkingTreeChanges(
+		currentGitRepositoryId,
+		isWorkingChangesPanelOpen,
+	);
 	const previousRepositoryIdRef = useRef<string | null>(currentGitRepositoryId);
 
 	useEffect(() => {

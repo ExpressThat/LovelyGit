@@ -6,14 +6,12 @@ import type {
 } from "@/generated/ExpressThat.LovelyGit.Services.Hubs.Commands";
 import type {
 	ResponseForCommand,
+	ServerEventMap,
 	TypedCommsHubCommandInput,
+	TypedServerEvent,
 	TypedSetMultipleSettingsCommandInput,
 	TypedSetSettingsCommandInput,
 } from "@/generated/LovelyGit.CommandContracts";
-import type {
-	CommitGraphChangedNotification,
-	WorkingTreeChangedNotification,
-} from "@/generated/ExpressThat.LovelyGit.Services.Git.WorkingTree.Models";
 
 export function getSignalR() {
 	return (
@@ -85,23 +83,18 @@ export async function sendRequestWithoutResponse<
 	await invokeCommand(toWireCommand(commandInput));
 }
 
-export function subscribeToWorkingTreeChanged(
-	listener: (notification: WorkingTreeChangedNotification) => void,
+export function subscribeToServerEvent<TEvent extends TypedServerEvent>(
+	eventName: TEvent,
+	listener: (notification: ServerEventMap[TEvent]) => void,
 ) {
 	const sr = getSignalR();
-	sr.on("WorkingTreeChanged", listener);
-	return () => {
-		sr.off("WorkingTreeChanged", listener);
+	const handler = (notification: ServerEventMap[TEvent]) => {
+		listener(notification);
 	};
-}
 
-export function subscribeToCommitGraphChanged(
-	listener: (notification: CommitGraphChangedNotification) => void,
-) {
-	const sr = getSignalR();
-	sr.on("CommitGraphChanged", listener);
+	sr.on(eventName, handler);
 	return () => {
-		sr.off("CommitGraphChanged", listener);
+		sr.off(eventName, handler);
 	};
 }
 

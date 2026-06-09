@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import type { WorkingTreeChangesResponse } from "@/generated/ExpressThat.LovelyGit.Services.Git.WorkingTree.Models";
 import {
 	sendRequestWithResponse,
-	subscribeToWorkingTreeChanged,
+	subscribeToServerEvent,
 } from "@/lib/registerSignalR";
 
 type WorkingTreeChangesState =
@@ -11,15 +11,17 @@ type WorkingTreeChangesState =
 	| { status: "error"; changes: WorkingTreeChangesResponse | null; message: string }
 	| { status: "loaded"; changes: WorkingTreeChangesResponse };
 
-export function useWorkingTreeChanges(repositoryId: string | null) {
+export function useWorkingTreeChanges(repositoryId: string | null, enabled: boolean) {
 	const [state, setState] = useState<WorkingTreeChangesState>({
 		status: "idle",
 		changes: null,
 	});
+	const [isDirty, setIsDirty] = useState(false);
 
 	useEffect(() => {
-		if (!repositoryId) {
+		if (!repositoryId || !enabled) {
 			setState({ status: "idle", changes: null });
+			setIsDirty(false);
 			return;
 		}
 
@@ -62,7 +64,8 @@ export function useWorkingTreeChanges(repositoryId: string | null) {
 		};
 
 		void load();
-		const unsubscribe = subscribeToWorkingTreeChanged(() => {
+		const unsubscribe = subscribeToServerEvent("WorkingTreeChanged", () => {
+			setIsDirty(true);
 			void load();
 		});
 
@@ -70,10 +73,23 @@ export function useWorkingTreeChanges(repositoryId: string | null) {
 			isActive = false;
 			unsubscribe();
 		};
-	}, [repositoryId]);
+	}, [repositoryId, enabled]);
+
+	useEffect(() => {
+		if (!repositoryId || enabled) {
+			return;
+		}
+
+		const unsubscribe = subscribeToServerEvent("WorkingTreeChanged", () => {
+			setIsDirty(true);
+		});
+
+		return unsubscribe;
+	}, [repositoryId, enabled]);
 
 	return {
 		...state,
+		isDirty,
 		reload: async () => {
 			if (!repositoryId) {
 				return;
@@ -94,6 +110,7 @@ export function useWorkingTreeChanges(repositoryId: string | null) {
 						totalCount: 0,
 					},
 			});
+			setIsDirty(false);
 		},
 	};
 }

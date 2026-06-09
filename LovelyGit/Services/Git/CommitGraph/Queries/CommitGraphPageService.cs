@@ -15,6 +15,7 @@ internal sealed class CommitGraphPageService : IDisposable
     private readonly Dictionary<Guid, ActiveGraphCacheWork> _activeCacheWork = new();
     private readonly Dictionary<Guid, int> _cacheGenerations = new();
     private readonly HashSet<Guid> _repositoriesLoadedThisProcess = new();
+    private Guid? _activeRepositoryId;
 
     public CommitGraphPageService(
         KnownGitRepositorysRepository knownGitRepositorysRepository,
@@ -53,6 +54,7 @@ internal sealed class CommitGraphPageService : IDisposable
         var cacheGeneration = GetCacheGeneration(foundRepo.Id);
         if (isFreshGraphLoad)
         {
+            await SwitchActiveRepositoryAsync(foundRepo.Id, cancellationToken).ConfigureAwait(false);
             await ResetRepositoryGraphAsync(foundRepo.Id, cancellationToken).ConfigureAwait(false);
             cacheGeneration = GetCacheGeneration(foundRepo.Id);
         }
@@ -135,6 +137,43 @@ internal sealed class CommitGraphPageService : IDisposable
         }
 
         CloseGraph(repositoryId);
+    }
+
+    private async Task SwitchActiveRepositoryAsync(Guid repositoryId, CancellationToken cancellationToken)
+    {
+        List<Guid> staleRepositoryIds;
+        lock (_cacheWorkLock)
+        {
+            if (_activeRepositoryId == repositoryId)
+            {
+                return;
+            }
+
+            staleRepositoryIds = _activeGraphs.Keys
+                .Concat(_activeCacheWork.Keys)
+                .Where(activeRepositoryId => activeRepositoryId != repositoryId)
+                .Distinct()
+                .ToList();
+            _activeRepositoryId = repositoryId;
+        }
+
+        if (staleRepositoryIds.Count == 0)
+        {
+            await _commitDetailsPreloadService.CancelActiveAsync(cancellationToken).ConfigureAwait(false);
+            return;
+        }
+
+        foreach (var staleRepositoryId in staleRepositoryIds)
+        {
+            AdvanceCacheGeneration(staleRepositoryId);
+            await CancelCacheAndPreloadDetailsAsync(staleRepositoryId, cancellationToken).ConfigureAwait(false);
+            await _commitFileDiffService
+                .CancelRepositoryPreparationAsync(staleRepositoryId, cancellationToken)
+                .ConfigureAwait(false);
+            CloseGraph(staleRepositoryId);
+        }
+
+        await _commitDetailsPreloadService.CancelActiveAsync(cancellationToken).ConfigureAwait(false);
     }
 
     private bool MarkRepositoryLoaded(Guid repositoryId)

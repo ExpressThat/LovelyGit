@@ -5,7 +5,7 @@ import type {
 } from "@/generated/ExpressThat.LovelyGit.Services.Git.CommitGraph.Models";
 import {
 	sendRequestWithResponse,
-	subscribeToCommitGraphChanged,
+	subscribeToServerEvent,
 } from "@/lib/registerSignalR";
 import { useSetting } from "@/lib/settings/settingsStore";
 
@@ -57,7 +57,7 @@ export function useCommitGraphData(externalRefreshToken = 0) {
 	const currentGitRepositoryId = useSetting("CurrentGitRepositoryId");
 
 	useEffect(() => {
-		return subscribeToCommitGraphChanged(() => {
+		return subscribeToServerEvent("CommitGraphChanged", () => {
 			setGraphInvalidation((generation) => generation + 1);
 		});
 	}, []);
