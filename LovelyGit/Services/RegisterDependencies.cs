@@ -1,7 +1,6 @@
 using ExpressThat.LovelyGit.Services.Data;
 using ExpressThat.LovelyGit.Services.Dialogs;
 using ExpressThat.LovelyGit.Services.Git.Cli;
-using ExpressThat.LovelyGit.Services.Hubs.CommandResolvers.Ai;
 using ExpressThat.LovelyGit.Services.Hubs.CommandResolvers.CommitGraph;
 using ExpressThat.LovelyGit.Services.Hubs.CommandResolvers.KnownRepository;
 using ExpressThat.LovelyGit.Services.Hubs.CommandResolvers.Settings;
@@ -30,7 +29,6 @@ namespace ExpressThat.LovelyGit.Services
                 .AddLovelyGitCommands()
                 .AddKnownRepositoryCommands()
                 .AddCommitGraphCommands()
-                .AddAiCommands()
                 .AddWorkingTreeCommands()
                 .AddSettingsCommands();
 

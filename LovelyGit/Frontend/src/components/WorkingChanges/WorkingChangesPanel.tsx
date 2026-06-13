@@ -8,7 +8,6 @@ import {
 	GitPullRequestArrow,
 	MinusSquare,
 	RefreshCw,
-	Sparkles,
 	SquareCheckBig,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -17,13 +16,7 @@ import type {
 	WorkingTreeChangedFile,
 	WorkingTreeChangesResponse,
 } from "@/generated/ExpressThat.LovelyGit.Services.Git.WorkingTree.Models";
-import type { AiModelDownloadProgressNotification } from "@/generated/ExpressThat.LovelyGit.Services.Ai.Models";
-import { Progress } from "@/components/ui/progress";
-import {
-	sendRequestWithResponse,
-	subscribeToServerEvent,
-} from "@/lib/registerSignalR";
-import { useSetting } from "@/lib/settings/settingsStore";
+import { sendRequestWithResponse } from "@/lib/registerSignalR";
 
 const COMMIT_TITLE_LIMIT = 72;
 
@@ -51,11 +44,6 @@ export function WorkingChangesPanel({
 	const [commitTitle, setCommitTitle] = useState("");
 	const [commitBody, setCommitBody] = useState("");
 	const [isCommitting, setIsCommitting] = useState(false);
-	const [isGeneratingCommitMessage, setIsGeneratingCommitMessage] = useState(false);
-	const [aiDownloadProgress, setAiDownloadProgress] =
-		useState<AiModelDownloadProgressNotification | null>(null);
-	const [aiRuntimeMessage, setAiRuntimeMessage] = useState<string | null>(null);
-	const aiFeaturesEnabled = useSetting("AiFeaturesEnabled");
 	const fileKeys = useMemo(
 		() =>
 			new Set(
@@ -70,7 +58,7 @@ export function WorkingChangesPanel({
 	);
 	const selectedStagedFiles = selectedFiles(changes?.staged ?? [], selectedKeys);
 	const selectedWorkingFiles = selectedFiles(workingFiles, selectedKeys);
-	const isBusy = isMutating || isCommitting || isGeneratingCommitMessage;
+	const isBusy = isMutating || isCommitting;
 
 	useEffect(() => {
 		setSelectedKeys((current) => {
@@ -78,12 +66,6 @@ export function WorkingChangesPanel({
 			return next.size === current.size ? current : next;
 		});
 	}, [fileKeys]);
-
-	useEffect(() => {
-		return subscribeToServerEvent("AiModelDownloadProgress", (notification) => {
-			setAiDownloadProgress(notification);
-		});
-	}, []);
 
 	const runIndexCommand = async (
 		commandType: "StageWorkingTreeFiles" | "UnstageWorkingTreeFiles",
@@ -94,8 +76,8 @@ export function WorkingChangesPanel({
 			return;
 		}
 
-			setIsMutating(true);
-			setActionError(null);
+		setIsMutating(true);
+		setActionError(null);
 		try {
 			await sendRequestWithResponse({
 				commandType,
@@ -146,39 +128,6 @@ export function WorkingChangesPanel({
 			);
 		} finally {
 			setIsCommitting(false);
-		}
-	};
-
-	const generateCommitMessage = async () => {
-		if (!changes || changes.staged.length === 0 || !aiFeaturesEnabled) {
-			return;
-		}
-
-		setIsGeneratingCommitMessage(true);
-		setAiDownloadProgress(null);
-		setAiRuntimeMessage(null);
-		setActionError(null);
-		try {
-			const response = await sendRequestWithResponse({
-				commandType: "GenerateCommitMessage",
-				arguments: {
-					repositoryId,
-				},
-			});
-
-			if (response) {
-				setCommitTitle(response.title);
-				setCommitBody(response.body);
-				setAiRuntimeMessage(formatAiRuntime(response.computeDevice, response.contextSize));
-			}
-		} catch (generationError) {
-			setActionError(
-				generationError instanceof Error
-					? generationError.message
-					: "Failed to generate a commit message.",
-			);
-		} finally {
-			setIsGeneratingCommitMessage(false);
 		}
 	};
 
@@ -294,39 +243,7 @@ export function WorkingChangesPanel({
 							/>
 						</label>
 					</div>
-					{isGeneratingCommitMessage && aiDownloadProgress && !aiDownloadProgress.isComplete ? (
-						<div className="space-y-1 rounded-md border bg-background p-2">
-							<div className="flex items-center justify-between gap-2 text-[10px] uppercase text-muted-foreground">
-								<span>Downloading {formatModelName(aiDownloadProgress.model)}</span>
-								<span>{formatProgress(aiDownloadProgress)}</span>
-							</div>
-							<Progress value={aiDownloadProgress.percent ?? 0} />
-						</div>
-					) : null}
-					{aiRuntimeMessage ? (
-						<div className="text-[10px] uppercase text-muted-foreground">
-							{aiRuntimeMessage}
-						</div>
-					) : null}
 					<div className="flex justify-end gap-2">
-						{aiFeaturesEnabled ? (
-							<ActionButton
-								disabled={isBusy || changes.staged.length === 0}
-								icon={
-									<Sparkles
-										aria-hidden="true"
-										className={
-											isGeneratingCommitMessage ? "animate-pulse" : undefined
-										}
-										size={14}
-									/>
-								}
-								label={
-									isGeneratingCommitMessage ? "Generating" : "Generate"
-								}
-								onClick={() => void generateCommitMessage()}
-							/>
-						) : null}
 						<ActionButton
 							disabled={isBusy || commitTitle.trim().length === 0}
 							icon={
@@ -594,42 +511,6 @@ function singleFileActionLabel(groupTitle: string) {
 	}
 
 	return undefined;
-}
-
-function formatModelName(model: string) {
-	switch (model) {
-		case "Llama32_1B":
-			return "llama3.2 (1B)";
-		case "Llama32_3B":
-			return "llama3.2 (3B)";
-		case "Gemma4_E2B":
-			return "Gemma 4 E2B IT (Q8)";
-		case "Gemma4_E4B":
-			return "Gemma 4 E4B IT (Q4_K_M)";
-		default:
-			return model;
-	}
-}
-
-function formatProgress(progress: AiModelDownloadProgressNotification) {
-	if (typeof progress.percent === "number") {
-		return `${Math.max(0, Math.min(100, Math.round(progress.percent)))}%`;
-	}
-
-	return formatBytes(progress.bytesReceived);
-}
-
-function formatBytes(bytes: number) {
-	if (bytes < 1024 * 1024) {
-		return `${Math.round(bytes / 1024)} KB`;
-	}
-
-	return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
-
-function formatAiRuntime(computeDevice: string, contextSize: number) {
-	const deviceLabel = computeDevice === "Gpu" ? "GPU requested" : "CPU requested";
-	return `${deviceLabel} · ${contextSize.toLocaleString()} context tokens`;
 }
 
 function statusIcon(status: string, group: string) {
