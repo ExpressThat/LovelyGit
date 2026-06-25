@@ -2,6 +2,8 @@ using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 using ExpressThat.LovelyGit.Services.NativeMessaging.Commands;
 using InfiniFrame;
+using Microsoft.AspNetCore.Http.Json;
+using Microsoft.Extensions.Options;
 
 namespace ExpressThat.LovelyGit.Services.NativeMessaging;
 
@@ -11,12 +13,16 @@ internal sealed class NativeMessaging : INativeMessaging
     private const int EnvelopeVersion = 2;
 
     private readonly CommandResolver commandResolver;
+    private readonly JsonSerializerOptions serializerOptions;
     private readonly object syncRoot = new();
     private IInfiniFrameWindow? window;
 
-    public NativeMessaging(CommandResolver commandResolver)
+    public NativeMessaging(
+        CommandResolver commandResolver,
+        IOptions<JsonOptions> jsonOptions)
     {
         this.commandResolver = commandResolver;
+        serializerOptions = jsonOptions.Value.SerializerOptions;
     }
 
     public bool HasWindow
@@ -50,7 +56,9 @@ internal sealed class NativeMessaging : INativeMessaging
         });
     }
 
-    private async Task<JsonElement?> HandleCommand(NativeMessageType messageType, string? payload)
+    private async Task<JsonElement?> HandleCommand(
+        NativeMessageType messageType,
+        string? payload)
     {
         var request = DeserializeRequest(payload);
         if (request is null)
@@ -67,23 +75,35 @@ internal sealed class NativeMessaging : INativeMessaging
                 "Native message payload was empty or invalid.");
         }
 
-        var commandResponse = await commandResolver.ResolveCommand(new NativeCommand<JsonElement>
+        try
         {
-            CommandUniqueId = request.MessageId,
-            CommandType = messageType,
-            Arguments = request.Body,
-        });
+            var commandResponse = await commandResolver.ResolveCommand(new NativeCommand<JsonElement>
+            {
+                CommandUniqueId = request.MessageId,
+                CommandType = messageType,
+                Arguments = request.Body,
+            });
 
-        if (!messageType.HasResponse())
-        {
-            return null;
+            if (!messageType.HasResponse())
+            {
+                return null;
+            }
+
+            return CreateResponse(
+                request.MessageId,
+                commandResponse.IsSuccess,
+                ExtractResult(commandResponse),
+                commandResponse.ErrorMessage);
         }
+        catch (Exception exception)
+        {
+            if (!messageType.HasResponse())
+            {
+                return null;
+            }
 
-        return CreateResponse(
-            request.MessageId,
-            commandResponse.IsSuccess,
-            ExtractResult(commandResponse),
-            commandResponse.ErrorMessage);
+            return CreateResponse(request.MessageId, false, null, exception.Message);
+        }
     }
 
     private static NativeMessageRequest<JsonElement>? DeserializeRequest(string? payload)
@@ -116,7 +136,7 @@ internal sealed class NativeMessaging : INativeMessaging
             NativeMessagingJsonContext.Default.NativeMessageResponseJsonElement);
     }
 
-    private static JsonElement? ExtractResult(CommandResponseBase response)
+    private JsonElement? ExtractResult(CommandResponseBase response)
     {
         if (response is not ICommandResponseWithResult responseWithResult)
         {
@@ -126,7 +146,7 @@ internal sealed class NativeMessaging : INativeMessaging
         var result = responseWithResult.ResultObject;
         return result is null
             ? null
-            : JsonSerializer.SerializeToElement(result);
+            : JsonSerializer.SerializeToElement(result, result.GetType(), serializerOptions);
     }
 
     public void Send<TBody>(

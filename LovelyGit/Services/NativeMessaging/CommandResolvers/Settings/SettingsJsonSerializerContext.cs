@@ -16,6 +16,7 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Settin
 [JsonSerializable(typeof(CommitDiffLineDisplayMode))]
 [JsonSerializable(typeof(int))]
 [JsonSerializable(typeof(bool))]
+[JsonSerializable(typeof(Dictionary<Setting, JsonElement>))]
 [JsonSerializable(typeof(CommandResponse<Dictionary<Setting, JsonElement>>))]
 internal partial class SettingsJsonSerializerContext : JsonSerializerContext
 {
