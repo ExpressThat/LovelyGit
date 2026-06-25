@@ -7,8 +7,8 @@ import type {
 	CommitFileDiffLine,
 	CommitFileDiffResponse,
 	CommitFileDiffSyntaxSpan,
-} from "@/generated/ExpressThat.LovelyGit.Services.Git.CommitGraph.Models";
-import { sendRequestWithResponse } from "@/lib/registerSignalR";
+} from "@/generated/types";
+import { sendRequestWithResponse } from "@/lib/commands";
 import { setSetting, useSetting } from "@/lib/settings/settingsStore";
 
 type DiffState =

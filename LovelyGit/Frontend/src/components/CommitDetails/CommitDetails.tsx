@@ -3,8 +3,8 @@ import { useEffect, useState } from "react";
 import type {
 	CommitChangedFile,
 	CommitDetailsResponse,
-} from "@/generated/ExpressThat.LovelyGit.Services.Git.CommitGraph.Models";
-import { sendRequestWithResponse } from "@/lib/registerSignalR";
+} from "@/generated/types";
+import { sendRequestWithResponse } from "@/lib/commands";
 import { formatDate, shortHash } from "../CommitGraph/utils/format";
 
 type CommitDetailsState =

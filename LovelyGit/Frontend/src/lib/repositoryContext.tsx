@@ -7,8 +7,8 @@ import {
 	useMemo,
 	useState,
 } from "react";
-import type { KnownGitRepository } from "@/generated/ExpressThat.LovelyGit.Services.Data.Models";
-import { sendRequestWithResponse } from "@/lib/registerSignalR";
+import type { KnownGitRepository } from "@/generated/types";
+import { sendRequestWithResponse } from "@/lib/commands";
 import {
 	initSettingsStore,
 	setSetting,

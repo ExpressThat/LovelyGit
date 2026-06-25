@@ -4,6 +4,7 @@ using ExpressThat.LovelyGit.Services.TypeGeneration;
 namespace ExpressThat.LovelyGit.Services.Git.CommitGraph.Models;
 
 [TypeSharp]
+[Union]
 [JsonConverter(typeof(JsonStringEnumConverter<CommitDiffViewMode>))]
 public enum CommitDiffViewMode
 {

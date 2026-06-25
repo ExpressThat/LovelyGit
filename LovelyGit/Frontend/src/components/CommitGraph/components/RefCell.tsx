@@ -8,7 +8,7 @@ import type {
 	CommitGraphRow,
 	CommitRefInfo,
 	CommitRefKind,
-} from "@/generated/ExpressThat.LovelyGit.Services.Git.CommitGraph.Models";
+} from "@/generated/types";
 import { refLabel } from "../utils/format";
 
 export function RefCell({

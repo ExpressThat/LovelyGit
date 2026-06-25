@@ -2,7 +2,7 @@ import { Download, GitCompareArrows, Upload } from "lucide-react";
 import { useState } from "react";
 import type { ReactNode } from "react";
 import { toast } from "sonner";
-import { sendRequestWithResponse } from "@/lib/registerSignalR";
+import { sendRequestWithResponse } from "@/lib/commands";
 import { Button } from "../ui/button";
 import { SettingsDialog } from "./components/SettingsDialog";
 import { Tabs } from "./components/Tabs";

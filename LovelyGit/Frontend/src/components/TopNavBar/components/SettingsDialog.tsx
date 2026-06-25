@@ -18,8 +18,8 @@ import {
 	DialogTitle,
 	DialogTrigger,
 } from "@/components/ui/dialog";
-import type { CommitDiffViewMode } from "@/generated/ExpressThat.LovelyGit.Services.Git.CommitGraph.Models";
-import type { CommitDiffLineDisplayMode } from "@/generated/ExpressThat.LovelyGit.Services.Settings";
+import type { CommitDiffViewMode } from "@/generated/types";
+import type { CommitDiffLineDisplayMode } from "@/generated/types";
 import { setSetting, useSetting } from "@/lib/settings/settingsStore";
 
 type SettingsCategory = "fileDiffView";

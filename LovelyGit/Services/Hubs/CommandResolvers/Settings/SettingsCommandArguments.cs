@@ -20,6 +20,7 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Settin
     [TypeSharp]
     public record SetMultipleSettingsCommandArguments
     {
+        [TypeAs("Record<Setting, string>")]
         public Dictionary<Setting, string> SettingValueJsons { get; set; } = new();
     }
 }

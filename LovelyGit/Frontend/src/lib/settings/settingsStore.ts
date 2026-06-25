@@ -1,6 +1,5 @@
 import { useRef, useSyncExternalStore } from "react";
-import type { TypedSetSettingsCommandArguments } from "@/generated/LovelyGit.CommandContracts";
-import { sendRequestWithResponse } from "@/lib/registerSignalR";
+import { sendRequestWithResponse, sendRequestWithoutResponse } from "@/lib/commands";
 import { DEFAULT_SETTINGS, type Settings, type SettingsKey } from "./Settings";
 
 type Listener = () => void;
@@ -50,7 +49,9 @@ export async function initSettingsStore(): Promise<void> {
 
 	initPromise = (async () => {
 		const remoteSettings =
-			(await sendRequestWithResponse({ commandType: "GetAllSettings" })) ?? {};
+			((await sendRequestWithResponse({ commandType: "GetAllSettings" })) as
+				| Partial<Settings>
+				| undefined) ?? {};
 		settings = {
 			...DEFAULT_SETTINGS,
 			...remoteSettings,
@@ -108,12 +109,12 @@ export async function setSetting<K extends SettingsKey>(
 	notify([key]);
 
 	try {
-		await sendRequestWithResponse({
+		sendRequestWithoutResponse({
 			commandType: "SetSetting",
 			arguments: {
 				setting: key,
 				value,
-			} as TypedSetSettingsCommandArguments,
+			},
 		});
 	} catch (error) {
 		console.error(`Failed to persist setting "${String(key)}".`, error);
@@ -141,7 +142,7 @@ export async function setSettings(patch: Partial<Settings>): Promise<void> {
 	notify(changedEntries.map(([key]) => key));
 
 	try {
-		await sendRequestWithResponse({
+		sendRequestWithoutResponse({
 			commandType: "SetMultipleSettings",
 			arguments: {
 				settingValues: updates,

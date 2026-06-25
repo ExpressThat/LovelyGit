@@ -1,8 +1,8 @@
 import { Columns2, FileText, ListCollapse, Rows3, WrapText, X } from "lucide-react";
 import { useEffect, useState } from "react";
-import type { CommitFileDiffLine, CommitFileDiffResponse } from "@/generated/ExpressThat.LovelyGit.Services.Git.CommitGraph.Models";
-import type { WorkingTreeChangedFile } from "@/generated/ExpressThat.LovelyGit.Services.Git.WorkingTree.Models";
-import { sendRequestWithResponse } from "@/lib/registerSignalR";
+import type { CommitFileDiffLine, CommitFileDiffResponse } from "@/generated/types";
+import type { WorkingTreeChangedFile } from "@/generated/types";
+import { sendRequestWithResponse } from "@/lib/commands";
 import { setSetting, useSetting } from "@/lib/settings/settingsStore";
 import { ContextLinesControl, DiffContent } from "../CommitFileDiff/CommitFileDiffView";
 

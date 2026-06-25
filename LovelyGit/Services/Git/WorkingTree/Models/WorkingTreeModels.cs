@@ -5,6 +5,7 @@ using ExpressThat.LovelyGit.Services.TypeGeneration;
 namespace ExpressThat.LovelyGit.Services.Git.WorkingTree.Models;
 
 [TypeSharp]
+[Union]
 [JsonConverter(typeof(JsonStringEnumConverter<WorkingTreeChangeGroup>))]
 public enum WorkingTreeChangeGroup
 {
@@ -21,7 +22,9 @@ public record WorkingTreeChangedFile
     public string? OldPath { get; set; }
     public string Status { get; set; } = string.Empty;
     public WorkingTreeChangeGroup Group { get; set; }
+    [TypeAs("number")]
     public uint Additions { get; set; }
+    [TypeAs("number")]
     public uint Deletions { get; set; }
     public bool IsBinary { get; set; }
 }

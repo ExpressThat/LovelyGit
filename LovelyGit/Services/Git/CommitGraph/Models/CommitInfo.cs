@@ -4,6 +4,7 @@ using System.Text.Json.Serialization;
 namespace ExpressThat.LovelyGit.Services.Git.CommitGraph.Models
 {
     [TypeSharp]
+    [Union]
     [JsonConverter(typeof(JsonStringEnumConverter<CommitRefKind>))]
     public enum CommitRefKind
     {

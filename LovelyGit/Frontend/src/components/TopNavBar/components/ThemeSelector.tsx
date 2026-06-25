@@ -10,7 +10,7 @@ import {
 	DropdownMenuRadioItem,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import type { AppTheme } from "@/generated/ExpressThat.LovelyGit.Services.Settings";
+import type { AppTheme } from "@/generated/types";
 import { setSetting, useSetting } from "@/lib/settings/settingsStore";
 import { calculateTheme } from "@/lib/settings/theme/themeUtils";
 

@@ -1,4 +1,4 @@
-import { sendRequestWithResponse } from "@/lib/registerSignalR";
+import { sendRequestWithResponse } from "@/lib/commands";
 import { useRepositoryContext } from "@/lib/repositoryContext";
 import { setSetting } from "@/lib/settings/settingsStore";
 

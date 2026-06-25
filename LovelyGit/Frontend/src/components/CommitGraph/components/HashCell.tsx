@@ -1,4 +1,4 @@
-import type { CommitGraphRow } from "@/generated/ExpressThat.LovelyGit.Services.Git.CommitGraph.Models";
+import type { CommitGraphRow } from "@/generated/types";
 import { shortHash } from "../utils/format";
 
 export function HashCell({ row }: { row: CommitGraphRow }) {

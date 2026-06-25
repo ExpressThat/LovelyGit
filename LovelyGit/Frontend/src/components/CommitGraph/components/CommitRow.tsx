@@ -1,6 +1,6 @@
 /** biome-ignore-all lint/suspicious/noArrayIndexKey: shimmer has no id */
 import type { ReactNode } from "react";
-import type { CommitGraphRow } from "@/generated/ExpressThat.LovelyGit.Services.Git.CommitGraph.Models";
+import type { CommitGraphRow } from "@/generated/types";
 import { AuthorCell } from "./AuthorCell";
 import { CommitMessage } from "./CommitMessage";
 import { GraphCell } from "./GraphCell";

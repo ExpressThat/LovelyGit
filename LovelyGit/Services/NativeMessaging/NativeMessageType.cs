@@ -8,12 +8,10 @@ using ExpressThat.LovelyGit.Services.Data.Models;
 using ExpressThat.LovelyGit.Services.Git.CommitGraph.Models;
 using ExpressThat.LovelyGit.Services.Git.WorkingTree.Models;
 using ExpressThat.LovelyGit.Services.Settings;
-using ExpressThat.LovelyGit.Services.TypeGeneration;
 using System.Text.Json;
 
 namespace ExpressThat.LovelyGit.Services.NativeMessaging
 {
-    [TypeSharp]
     [JsonConverter(typeof(JsonStringEnumConverter<NativeMessageType>))]
     public enum NativeMessageType
     {

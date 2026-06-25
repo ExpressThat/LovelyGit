@@ -5,10 +5,13 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build && copyfiles -u 1 \"dist/**/*\" ../wwwroot",
-    "generate:csharp-types": "node -e \"require('node:fs').rmSync('src/generated', { recursive: true, force: true })\" && dotnet tapper --project ../LovelyGit.csproj --output src/generated --serializer Json --naming-style CamelCase --enum Union && node scripts/generate-command-contracts.ts",
+    "build": "tsc -b && vite build",
+    "generate:csharp-types": "typesharp generate --config ./typesharp.config.json --no-incremental && node ./scripts/generate-native-message-contracts.mjs",
+    "generate:types": "pnpm generate:csharp-types",
+    "check:types": "pnpm generate:csharp-types && git diff --exit-code -- src/generated/types.ts src/generated/native-message-contracts.ts",
+    "prebuild": "pnpm generate:csharp-types",
     "preview": "vite preview",
-    "watch": "npm-watch",
+    "watch": "pnpm generate:csharp-types && node ./scripts/watch.mjs",
     "format": "pnpm exec biome check src --write",
     "lint": "pnpm format",
     "lint:fix": "pnpm exec biome check src --write",
@@ -16,40 +19,14 @@
     "git-binaries:download": "node scripts/download-local-dugite-binaries.ts",
     "prod": "pnpm generate:csharp-types && pnpm build"
   },
-  "watch": {
-    "generate:csharp-types": {
-      "patterns": [
-        "../**/*"
-      ],
-      "extensions": "cs",
-      "ignore": [
-        "Frontend",
-        "bin",
-        "obj",
-        "Properties",
-        "wwwroot"
-      ]
-    },
-    "build": {
-      "patterns": [
-        "src/**/*"
-      ],
-      "extensions": "ts,tsx,css,svg,png,jpg",
-      "ignore": [
-        "node_modules"
-      ]
-    }
-  },
   "dependencies": {
     "@base-ui/react": "^1.5.0",
     "@fontsource-variable/inter": "^5.2.8",
-    "@microsoft/signalr": "^10.0.0",
     "@tanstack/react-virtual": "^3.13.25",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^1.16.0",
     "motion": "^12.40.0",
-    "nanoid": "^5.1.11",
     "next-themes": "^0.4.6",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
@@ -70,12 +47,11 @@
     "@vitejs/plugin-react": "^6.0.1",
     "autoprefixer": "^10.5.0",
     "babel-plugin-react-compiler": "^1.0.0",
-    "copyfiles": "^2.4.1",
     "eslint": "^10.3.0",
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.2",
     "globals": "^17.6.0",
-    "npm-watch": "^0.13.0",
+    "@siyavuyachagi/typesharp": "^0.2.3",
     "postcss": "^8.5.15",
     "tailwindcss": "^4.3.0",
     "typescript": "~6.0.3",

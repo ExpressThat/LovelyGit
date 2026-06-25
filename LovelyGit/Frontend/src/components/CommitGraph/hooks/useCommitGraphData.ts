@@ -8,11 +8,11 @@ import {
 import type {
 	CommitGraphResponse,
 	CommitGraphRow,
-} from "@/generated/ExpressThat.LovelyGit.Services.Git.CommitGraph.Models";
+} from "@/generated/types";
 import {
 	sendRequestWithResponse,
 	subscribeToServerEvent,
-} from "@/lib/registerSignalR";
+} from "@/lib/commands";
 import { useSetting } from "@/lib/settings/settingsStore";
 
 const PAGE_SIZE = 400;
@@ -35,7 +35,7 @@ type GraphSession = {
 	laneCount: number;
 	loadedRowCount: number;
 	loading: boolean;
-	nextCursor?: string;
+	nextCursor: string | null;
 	remotePrefixes: string[];
 	repositoryId: string | null;
 	requestedEnd: number;
@@ -50,7 +50,7 @@ const session: GraphSession = {
 	laneCount: 0,
 	loadedRowCount: 0,
 	loading: false,
-	nextCursor: undefined,
+	nextCursor: null,
 	remotePrefixes: [],
 	repositoryId: null,
 	requestedEnd: 0,
@@ -109,7 +109,7 @@ export function useCommitGraphData(externalRefreshToken = 0) {
 					commandType: "CommitGraph",
 					arguments: {
 						knownRepositoryId: loadingRepositoryId,
-						cursor: session.nextCursor || undefined,
+						cursor: session.nextCursor,
 						limit: PAGE_SIZE,
 					},
 				});
@@ -228,7 +228,7 @@ function resetSession(
 	session.laneCount = previousLaneCount;
 	session.loadedRowCount = 0;
 	session.loading = false;
-	session.nextCursor = undefined;
+	session.nextCursor = null;
 	session.remotePrefixes = previousRemotePrefixes;
 	session.repositoryId = repositoryId;
 	session.requestedEnd = 0;

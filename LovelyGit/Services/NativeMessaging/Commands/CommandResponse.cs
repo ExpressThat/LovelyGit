@@ -1,4 +1,3 @@
-using ExpressThat.LovelyGit.Services.TypeGeneration;
 using ExpressThat.LovelyGit.Services.NativeMessaging;
 
 namespace ExpressThat.LovelyGit.Services.NativeMessaging.Commands
@@ -8,7 +7,6 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging.Commands
         object? ResultObject { get; }
     }
 
-    [TypeSharp]
     public class CommandResponseBase
     {
         public string? CommandUniqueId { get; set; }
@@ -18,7 +16,6 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging.Commands
     }
 
 
-    [TypeSharp]
     public class CommandResponse<T> : CommandResponseBase, ICommandResponseWithResult
     {
         public T? Result { get; set; }

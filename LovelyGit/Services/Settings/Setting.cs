@@ -4,6 +4,7 @@ using ExpressThat.LovelyGit.Services.TypeGeneration;
 namespace ExpressThat.LovelyGit.Services.Settings
 {
     [TypeSharp]
+    [Union]
     [JsonConverter(typeof(JsonStringEnumConverter<Setting>))]
     public enum Setting
     {
@@ -16,6 +17,7 @@ namespace ExpressThat.LovelyGit.Services.Settings
     }
 
     [TypeSharp]
+    [Union]
     [JsonConverter(typeof(JsonStringEnumConverter<AppTheme>))]
     public enum AppTheme
     {
@@ -25,6 +27,7 @@ namespace ExpressThat.LovelyGit.Services.Settings
     }
 
     [TypeSharp]
+    [Union]
     [JsonConverter(typeof(JsonStringEnumConverter<CommitDiffLineDisplayMode>))]
     public enum CommitDiffLineDisplayMode
     {

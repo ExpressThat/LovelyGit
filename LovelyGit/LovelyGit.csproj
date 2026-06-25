@@ -50,11 +50,6 @@
 	  <PackageReference Include="KeySharp" Version="1.0.5" ExcludeAssets="native" Condition="$([System.String]::Copy('$(RuntimeIdentifier)').StartsWith('win'))" />
 	  <PackageReference Include="Microsoft.Extensions.DependencyInjection.AutoActivation" Version="10.6.0" />
 	  <PackageReference Include="SharpZipLib" Version="1.4.2" />
-	  <PackageReference Include="Tapper.Analyzer" Version="1.14.0">
-	    <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-	    <PrivateAssets>all</PrivateAssets>
-	  </PackageReference>
-	  <PackageReference Include="Tapper.Attributes" Version="1.14.0" />
 	  <PackageReference Include="Velopack" Version="1.0.1" />
 	</ItemGroup>
 

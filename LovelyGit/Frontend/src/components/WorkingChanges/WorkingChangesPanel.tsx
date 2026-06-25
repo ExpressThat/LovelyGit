@@ -15,8 +15,8 @@ import type { ReactNode } from "react";
 import type {
 	WorkingTreeChangedFile,
 	WorkingTreeChangesResponse,
-} from "@/generated/ExpressThat.LovelyGit.Services.Git.WorkingTree.Models";
-import { sendRequestWithResponse } from "@/lib/registerSignalR";
+} from "@/generated/types";
+import { sendRequestWithResponse } from "@/lib/commands";
 
 const COMMIT_TITLE_LIMIT = 72;
 

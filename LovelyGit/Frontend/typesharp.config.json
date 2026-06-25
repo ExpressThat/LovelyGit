@@ -1,0 +1,6 @@
+{
+  "source": "../LovelyGit.csproj",
+  "outputPath": "./src/generated",
+  "singleOutputFile": true,
+  "namingConvention": "camel"
+}

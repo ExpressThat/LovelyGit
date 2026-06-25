@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from "react";
-import type { WorkingTreeChangesResponse } from "@/generated/ExpressThat.LovelyGit.Services.Git.WorkingTree.Models";
+import type { WorkingTreeChangesResponse } from "@/generated/types";
 import {
 	sendRequestWithResponse,
 	subscribeToServerEvent,
-} from "@/lib/registerSignalR";
+} from "@/lib/commands";
 
 type WorkingTreeChangesState =
 	| { status: "idle"; changes: null }

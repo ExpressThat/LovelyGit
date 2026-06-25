@@ -1,6 +1,17 @@
-import type { SettingValueMap } from "@/generated/LovelyGit.CommandContracts";
+import type {
+	AppTheme,
+	CommitDiffLineDisplayMode,
+	CommitDiffViewMode,
+} from "@/generated/types";
 
-export type Settings = SettingValueMap;
+export type Settings = {
+	CommitDiffContextLines: number;
+	CommitDiffLineDisplayMode: CommitDiffLineDisplayMode;
+	CommitDiffViewMode: CommitDiffViewMode;
+	CommitDiffWrapLines: boolean;
+	CurrentGitRepositoryId: string | null;
+	Theme: AppTheme;
+};
 export type SettingsKey = keyof Settings;
 
 export const DEFAULT_SETTINGS: Settings = {

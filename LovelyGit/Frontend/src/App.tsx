@@ -11,9 +11,9 @@ import { useWorkingTreeChanges } from "./components/WorkingChanges/useWorkingTre
 import { WorkingChangesPanel } from "./components/WorkingChanges/WorkingChangesPanel";
 import { WorkingTreeFileDiffView } from "./components/WorkingChanges/WorkingTreeFileDiffView";
 import { Toaster } from "./components/ui/sonner";
-import type { CommitChangedFile } from "./generated/ExpressThat.LovelyGit.Services.Git.CommitGraph.Models";
-import type { WorkingTreeChangedFile } from "./generated/ExpressThat.LovelyGit.Services.Git.WorkingTree.Models";
-import { sendRequestWithoutResponse } from "./lib/registerSignalR";
+import type { CommitChangedFile } from "./generated/types";
+import type { WorkingTreeChangedFile } from "./generated/types";
+import { sendRequestWithoutResponse } from "./lib/commands";
 import { RepositoryProvider } from "./lib/repositoryContext";
 import { useSetting } from "./lib/settings/settingsStore";
 

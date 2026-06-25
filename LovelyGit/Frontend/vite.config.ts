@@ -6,6 +6,10 @@ import path from "node:path";
 
 // https://vite.dev/config/
 export default defineConfig({
+  build: {
+    emptyOutDir: true,
+    outDir: "../wwwroot",
+  },
   plugins: [react(), babel({
     presets: [reactCompilerPreset()]
   }),

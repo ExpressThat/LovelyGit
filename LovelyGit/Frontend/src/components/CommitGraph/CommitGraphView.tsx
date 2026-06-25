@@ -1,6 +1,6 @@
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { CommitGraphRow as CommitGraphRowModel } from "@/generated/ExpressThat.LovelyGit.Services.Git.CommitGraph.Models";
+import type { CommitGraphRow as CommitGraphRowModel } from "@/generated/types";
 import { CommitRow } from "./components/CommitRow";
 import { HeaderCell } from "./components/HeaderCell";
 import type { ColKey } from "./constants";

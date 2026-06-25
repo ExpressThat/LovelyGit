@@ -8,13 +8,6 @@
         "dotnet-ef"
       ],
       "rollForward": false
-    },
-    "tapper.generator": {
-      "version": "1.14.0",
-      "commands": [
-        "tapper"
-      ],
-      "rollForward": false
     }
   }
 }
