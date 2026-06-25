@@ -11,12 +11,13 @@ import { useWorkingTreeChanges } from "./components/WorkingChanges/useWorkingTre
 import { WorkingChangesPanel } from "./components/WorkingChanges/WorkingChangesPanel";
 import { WorkingTreeFileDiffView } from "./components/WorkingChanges/WorkingTreeFileDiffView";
 import { Toaster } from "./components/ui/sonner";
-import type { CommitChangedFile } from "./generated/types";
-import type { WorkingTreeChangedFile } from "./generated/types";
-import { sendRequestWithoutResponse } from "./lib/commands";
+import {
+	cancelCommitDiffPreparation,
+	type DetailsPanelState,
+	panelTitle,
+} from "./AppPanelState";
 import { RepositoryProvider } from "./lib/repositoryContext";
 import { useSetting } from "./lib/settings/settingsStore";
-
 function App() {
 	const currentGitRepositoryId = useSetting("CurrentGitRepositoryId");
 	const [detailsPanel, setDetailsPanel] = useState<DetailsPanelState | null>(
@@ -29,23 +30,19 @@ function App() {
 		isWorkingChangesPanelOpen,
 	);
 	const previousRepositoryIdRef = useRef<string | null>(currentGitRepositoryId);
-
 	useEffect(() => {
 		if (previousRepositoryIdRef.current === currentGitRepositoryId) {
 			return;
 		}
-
 		if (detailsPanel?.kind === "commit" && previousRepositoryIdRef.current) {
 			cancelCommitDiffPreparation(
 				previousRepositoryIdRef.current,
 				detailsPanel.commitHash,
 			);
 		}
-
 		previousRepositoryIdRef.current = currentGitRepositoryId;
 		setDetailsPanel(null);
 	}, [currentGitRepositoryId, detailsPanel]);
-
 	const closeDetailsPanel = () => {
 		if (detailsPanel?.kind === "commit" && currentGitRepositoryId) {
 			cancelCommitDiffPreparation(
@@ -53,20 +50,16 @@ function App() {
 				detailsPanel.commitHash,
 			);
 		}
-
 		setDetailsPanel(null);
 	};
-
 	return (
 		<RepositoryProvider>
 			<main className="app-shell">
-					<TopNavBar
-						onOpenWorkingChanges={() =>
-							setDetailsPanel({ kind: "workingChanges" })
-						}
-						repositoryId={currentGitRepositoryId}
-						workingChangesCount={workingTreeChanges.totalCount}
-					/>
+				<TopNavBar
+					onOpenWorkingChanges={() => setDetailsPanel({ kind: "workingChanges" })}
+					repositoryId={currentGitRepositoryId}
+					workingChangesCount={workingTreeChanges.totalCount}
+				/>
 				<div className="flex min-h-0 flex-1 overflow-hidden">
 					<div className="relative min-w-0 flex-1 overflow-hidden">
 						{currentGitRepositoryId && (
@@ -103,7 +96,6 @@ function App() {
 														kind: "commit",
 													};
 												}
-
 												return {
 													commitHash: row.commit.hash,
 													kind: "commit",
@@ -235,38 +227,4 @@ function App() {
 		</RepositoryProvider>
 	);
 }
-
-type DetailsPanelState =
-	| {
-			commitHash: string;
-			kind: "commit";
-			selectedFile?: CommitChangedFile;
-	  }
-	| {
-			kind: "workingChanges";
-			selectedFile?: WorkingTreeChangedFile;
-	  };
-
-function cancelCommitDiffPreparation(repositoryId: string, commitHash: string) {
-	void sendRequestWithoutResponse({
-		commandType: "CancelCommitDiffPreparation",
-		arguments: {
-			commitHash,
-			repositoryId,
-		},
-	});
-}
-
-function panelTitle(panel: DetailsPanelState | null) {
-	if (panel?.kind === "commit") {
-		return "Commit Details";
-	}
-
-	if (panel?.kind === "workingChanges") {
-		return "Working Changes";
-	}
-
-	return "Details";
-}
-
 export default App;

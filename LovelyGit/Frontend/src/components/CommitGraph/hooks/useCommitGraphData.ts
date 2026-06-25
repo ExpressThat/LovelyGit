@@ -1,23 +1,9 @@
-import {
-	startTransition,
-	useEffect,
-	useEffectEvent,
-	useRef,
-	useState,
-} from "react";
-import type {
-	CommitGraphResponse,
-	CommitGraphRow,
-} from "@/generated/types";
-import {
-	sendRequestWithResponse,
-	subscribeToServerEvent,
-} from "@/lib/commands";
+import { startTransition, useEffect, useEffectEvent, useRef, useState } from "react";
+import type { CommitGraphResponse, CommitGraphRow } from "@/generated/types";
+import { sendRequestWithResponse, subscribeToServerEvent } from "@/lib/commands";
 import { useSetting } from "@/lib/settings/settingsStore";
-
 const PAGE_SIZE = 400;
 const PREFETCH_PAGES = 1;
-
 type CommitGraphState = {
 	currentBranchName: string | null;
 	error: string | null;
@@ -27,7 +13,6 @@ type CommitGraphState = {
 	rows: Array<CommitGraphRow | null>;
 	totalRows: number;
 };
-
 type GraphSession = {
 	currentBranchName: string | null;
 	generation: number;
@@ -42,7 +27,6 @@ type GraphSession = {
 	rows: Array<CommitGraphRow | null>;
 	totalRows: number;
 };
-
 const session: GraphSession = {
 	currentBranchName: null,
 	generation: 0,
@@ -57,7 +41,6 @@ const session: GraphSession = {
 	rows: [],
 	totalRows: 0,
 };
-
 export function useCommitGraphData(externalRefreshToken = 0) {
 	const [graphInvalidation, setGraphInvalidation] = useState(0);
 	const lifecycleRef = useRef({
@@ -74,34 +57,27 @@ export function useCommitGraphData(externalRefreshToken = 0) {
 		rows: session.rows,
 		totalRows: visibleTotal(),
 	}));
-
 	const currentGitRepositoryId = useSetting("CurrentGitRepositoryId");
-
 	useEffect(() => {
 		return subscribeToServerEvent("CommitGraphChanged", () => {
 			setGraphInvalidation((generation) => generation + 1);
 		});
 	}, []);
-
 	const runLoader = useEffectEvent(async () => {
 		if (session.loading) {
 			return;
 		}
-
 		if (!currentGitRepositoryId) {
 			return;
 		}
-
 		const loadingRepositoryId = currentGitRepositoryId;
 		const loadingGeneration = session.generation;
 		const requiredLength = session.requestedEnd + PAGE_SIZE * PREFETCH_PAGES;
 		if (!session.hasMore || session.loadedRowCount >= requiredLength) {
 			return;
 		}
-
 		session.loading = true;
 		setState((current) => ({ ...current, error: null }));
-
 		try {
 			let loadedLength = session.loadedRowCount;
 			while (session.hasMore && loadedLength < requiredLength) {
@@ -113,25 +89,20 @@ export function useCommitGraphData(externalRefreshToken = 0) {
 						limit: PAGE_SIZE,
 					},
 				});
-
 				if (
 					session.repositoryId !== loadingRepositoryId ||
 					session.generation !== loadingGeneration
 				) {
 					return;
 				}
-
 				if (!response) {
 					continue;
 				}
-
 				applyResponse(response, requiredLength);
 				loadedLength = session.rows.length;
-
 				startTransition(() => {
 					setState(readSessionState);
 				});
-
 				if (response.rows.length === 0) {
 					session.hasMore = false;
 					break;
@@ -154,18 +125,15 @@ export function useCommitGraphData(externalRefreshToken = 0) {
 			}
 		}
 	});
-
 	const ensureRangeLoaded = useEffectEvent(
 		(startIndex: number, endIndex: number) => {
 			if (endIndex < startIndex) {
 				return;
 			}
-
 			session.requestedEnd = Math.max(session.requestedEnd, endIndex);
 			void runLoader();
 		},
 	);
-
 	useEffect(() => {
 		const previous = lifecycleRef.current;
 		const repositoryChanged = previous.repositoryId !== currentGitRepositoryId;
@@ -174,7 +142,6 @@ export function useCommitGraphData(externalRefreshToken = 0) {
 			graphInvalidation,
 			repositoryId: currentGitRepositoryId,
 		};
-
 		if (repositoryChanged) {
 			resetSession(currentGitRepositoryId, { keepRows: false });
 			setState({
@@ -197,21 +164,17 @@ export function useCommitGraphData(externalRefreshToken = 0) {
 				isInitialLoading: false,
 			}));
 		}
-
 		if (!currentGitRepositoryId) {
 			return;
 		}
-
 		session.requestedEnd = PAGE_SIZE;
 		void runLoader();
 	}, [currentGitRepositoryId, externalRefreshToken, graphInvalidation]);
-
 	return {
 		...state,
 		ensureRangeLoaded,
 	};
 }
-
 function resetSession(
 	repositoryId: string | null,
 	{ keepRows }: { keepRows: boolean },
@@ -221,7 +184,6 @@ function resetSession(
 	const previousLaneCount = keepRows ? session.laneCount : 0;
 	const previousRemotePrefixes = keepRows ? session.remotePrefixes : [];
 	const previousCurrentBranchName = keepRows ? session.currentBranchName : null;
-
 	session.generation++;
 	session.currentBranchName = previousCurrentBranchName;
 	session.hasMore = true;
@@ -235,17 +197,14 @@ function resetSession(
 	session.rows = previousRows;
 	session.totalRows = previousTotalRows;
 }
-
 function applyResponse(response: CommitGraphResponse, requiredLength: number) {
 	const nextRows = session.rows.slice();
 	for (const row of response.rows) {
 		nextRows[row.rowIndex] = row;
 	}
-
 	if (!response.hasMore) {
 		nextRows.length = response.totalRows;
 	}
-
 	session.nextCursor = response.nextCursor;
 	session.hasMore = response.hasMore;
 	session.currentBranchName = response.currentBranchName ?? null;
@@ -260,7 +219,6 @@ function applyResponse(response: CommitGraphResponse, requiredLength: number) {
 		? Math.max(session.totalRows, nextRows.length + PAGE_SIZE, requiredLength)
 		: response.totalRows;
 }
-
 function readSessionState(): CommitGraphState {
 	return {
 		currentBranchName: session.currentBranchName,
@@ -272,13 +230,11 @@ function readSessionState(): CommitGraphState {
 		totalRows: visibleTotal(),
 	};
 }
-
 function visibleTotal() {
 	return session.hasMore
 		? Math.min(session.totalRows, session.rows.length + PAGE_SIZE)
 		: session.totalRows;
 }
-
 function currentSessionRepositoryId() {
 	return session.repositoryId;
 }

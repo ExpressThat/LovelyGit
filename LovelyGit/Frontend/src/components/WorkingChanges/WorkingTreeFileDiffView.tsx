@@ -4,7 +4,20 @@ import type { CommitFileDiffLine, CommitFileDiffResponse } from "@/generated/typ
 import type { WorkingTreeChangedFile } from "@/generated/types";
 import { sendRequestWithResponse } from "@/lib/commands";
 import { setSetting, useSetting } from "@/lib/settings/settingsStore";
-import { ContextLinesControl, DiffContent } from "../CommitFileDiff/CommitFileDiffView";
+import { DiffContent } from "../CommitFileDiff/DiffContent";
+import { ContextLinesControl } from "../CommitFileDiff/CommitFileDiffView";
+import {
+	canStageLines,
+	canUnstageLines,
+	fileName,
+	folderPrefix,
+	isChangedLine,
+	isSameDiffLine,
+	LoadingDiff,
+	ModeButton,
+	workingNewText,
+	workingOldText,
+} from "./WorkingTreeFileDiffHelpers";
 
 type DiffState =
 	| { status: "loading" }
@@ -240,98 +253,4 @@ export function WorkingTreeFileDiffView({
 			</div>
 		</section>
 	);
-}
-
-function canStageLines(group: string) {
-	return group === "Unstaged" || group === "Untracked";
-}
-
-function canUnstageLines(group: string) {
-	return group === "Staged";
-}
-
-function workingOldText(line: CommitFileDiffLine) {
-	if (line.oldText) {
-		return line.oldText;
-	}
-
-	return line.changeType === "Deleted" ? line.text : "";
-}
-
-function workingNewText(line: CommitFileDiffLine) {
-	if (line.newText) {
-		return line.newText;
-	}
-
-	return line.changeType === "Inserted" ? line.text : "";
-}
-
-function isSameDiffLine(left: CommitFileDiffLine, right: CommitFileDiffLine) {
-	return (
-		left.changeType === right.changeType &&
-		left.oldLineNumber === right.oldLineNumber &&
-		left.newLineNumber === right.newLineNumber &&
-		left.oldText === right.oldText &&
-		left.newText === right.newText &&
-		left.text === right.text
-	);
-}
-
-function isChangedLine(line: CommitFileDiffLine) {
-	return (
-		line.changeType === "Inserted" ||
-		line.changeType === "Deleted" ||
-		line.changeType === "Modified"
-	);
-}
-
-function ModeButton({
-	icon,
-	isActive,
-	label,
-	onClick,
-}: {
-	icon: React.ReactNode;
-	isActive: boolean;
-	label: string;
-	onClick: () => void;
-}) {
-	return (
-		<button
-			aria-label={label}
-			className={`inline-flex h-7 items-center gap-1 rounded px-2 text-xs text-muted-foreground hover:bg-accent hover:text-accent-foreground ${
-				isActive ? "bg-accent font-semibold text-accent-foreground" : ""
-			}`}
-			onClick={onClick}
-			title={label}
-			type="button"
-		>
-			{icon}
-			<span>{label}</span>
-		</button>
-	);
-}
-
-function LoadingDiff() {
-	return (
-		<div className="space-y-2 p-4">
-			{Array.from({ length: 16 }, (_, index) => (
-				<div
-					className="h-5 animate-pulse rounded bg-muted"
-					key={`working-loading-diff-row-${index}`}
-					style={{ width: `${index % 3 === 0 ? 72 : 96}%` }}
-				/>
-			))}
-		</div>
-	);
-}
-
-function folderPrefix(path: string) {
-	const lastSlash = Math.max(path.lastIndexOf("/"), path.lastIndexOf("\\"));
-	return lastSlash >= 0 ? path.slice(0, lastSlash + 1) : "";
-}
-
-function fileName(path: string) {
-	const lastSlash = Math.max(path.lastIndexOf("/"), path.lastIndexOf("\\"));
-	return lastSlash >= 0 ? path.slice(lastSlash + 1) : path;
 }

@@ -17,7 +17,7 @@
     "lint:fix": "pnpm exec biome check src --write",
     "git-binaries:bump": "node scripts/bump-dugite-binaries.ts",
     "git-binaries:download": "node scripts/download-local-dugite-binaries.ts",
-    "prod": "pnpm generate:csharp-types && pnpm build"
+    "prod": "pnpm build"
   },
   "dependencies": {
     "@base-ui/react": "^1.5.0",

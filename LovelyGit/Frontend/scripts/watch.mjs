@@ -22,7 +22,7 @@ let generationTimeout = null;
 let pendingGenerationFile = null;
 let watcherSyncTimeout = null;
 
-const vite = spawn("bunx", ["vite", "build", "--watch"], {
+const vite = spawn("pnpm", ["exec", "vite", "build", "--watch"], {
 	cwd: frontendRoot,
 	shell: process.platform === "win32",
 	stdio: "inherit",
@@ -136,7 +136,7 @@ function runTypeGeneration(changedFile) {
 		`[watch] C# change detected: ${path.relative(csharpRoot, changedFile)}`,
 	);
 
-	generationProcess = spawn("bun", ["run", "generate:types"], {
+	generationProcess = spawn("pnpm", ["generate:types"], {
 		cwd: frontendRoot,
 		shell: process.platform === "win32",
 		stdio: "inherit",

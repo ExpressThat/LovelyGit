@@ -21,9 +21,12 @@ import {
 import type { CommitDiffViewMode } from "@/generated/types";
 import type { CommitDiffLineDisplayMode } from "@/generated/types";
 import { setSetting, useSetting } from "@/lib/settings/settingsStore";
-
+import {
+	SegmentedButton,
+	SegmentedControl,
+	SettingGroup,
+} from "./SettingsControls";
 type SettingsCategory = "fileDiffView";
-
 const categories: Array<{
 	description: string;
 	icon: typeof FileText;
@@ -37,13 +40,11 @@ const categories: Array<{
 		label: "File Diff View",
 	},
 ];
-
 export function SettingsDialog() {
 	const [open, setOpen] = useState(false);
 	const [activeCategory, setActiveCategory] =
 		useState<SettingsCategory>("fileDiffView");
 	const active = categories.find((category) => category.id === activeCategory);
-
 	return (
 		<Dialog open={open} onOpenChange={setOpen}>
 			<DialogTrigger
@@ -84,7 +85,6 @@ export function SettingsDialog() {
 		</Dialog>
 	);
 }
-
 function CategoryButton({
 	category,
 	isActive,
@@ -112,13 +112,11 @@ function CategoryButton({
 		</Button>
 	);
 }
-
 function FileDiffViewSettings() {
 	const viewMode = useSetting("CommitDiffViewMode");
 	const lineDisplayMode = useSetting("CommitDiffLineDisplayMode");
 	const contextLines = useSetting("CommitDiffContextLines");
 	const wrapLines = useSetting("CommitDiffWrapLines");
-
 	return (
 		<div className="space-y-5">
 			<SettingGroup
@@ -150,7 +148,6 @@ function FileDiffViewSettings() {
 					/>
 				</SegmentedControl>
 			</SettingGroup>
-
 			<SettingGroup
 				description="Switch between changed hunks and the whole file."
 				title="Line Display"
@@ -180,7 +177,6 @@ function FileDiffViewSettings() {
 					/>
 				</SegmentedControl>
 			</SettingGroup>
-
 			<SettingGroup
 				description="Set how many unchanged lines surround each change."
 				title="Context Lines"
@@ -211,7 +207,6 @@ function FileDiffViewSettings() {
 					</Button>
 				</div>
 			</SettingGroup>
-
 			<SettingGroup
 				description="Wrap long diff lines inside the viewport."
 				title="Line Wrapping"
@@ -227,58 +222,6 @@ function FileDiffViewSettings() {
 		</div>
 	);
 }
-
-function SettingGroup({
-	children,
-	description,
-	title,
-}: {
-	children: React.ReactNode;
-	description: string;
-	title: string;
-}) {
-	return (
-		<section className="grid gap-3 border-b pb-5 last:border-b-0 last:pb-0">
-			<div>
-				<h3 className="text-sm font-semibold">{title}</h3>
-				<p className="text-xs text-muted-foreground">{description}</p>
-			</div>
-			{children}
-		</section>
-	);
-}
-
-function SegmentedControl({ children }: { children: React.ReactNode }) {
-	return (
-		<div className="inline-flex rounded-lg border bg-background p-0.5">
-			{children}
-		</div>
-	);
-}
-
-function SegmentedButton({
-	icon,
-	isActive,
-	label,
-	onClick,
-}: {
-	icon: React.ReactNode;
-	isActive: boolean;
-	label: string;
-	onClick: () => void;
-}) {
-	return (
-		<Button
-			className="rounded-md"
-			onClick={onClick}
-			variant={isActive ? "secondary" : "ghost"}
-		>
-			{icon}
-			{label}
-		</Button>
-	);
-}
-
 function updateContextLines(value: number) {
 	const nextValue = Math.max(0, Math.min(99, Math.trunc(value)));
 	void setSetting("CommitDiffContextLines", nextValue);
