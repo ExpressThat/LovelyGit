@@ -1,12 +1,13 @@
 using System.Text.Json;
+using ExpressThat.LovelyGit.Services.NativeMessaging;
 using System.Text.Json.Serialization.Metadata;
 using ExpressThat.LovelyGit.Services.Data.Models;
 using ExpressThat.LovelyGit.Services.Data.Repositorys;
 using ExpressThat.LovelyGit.Services.Git.WorkingTree;
 using ExpressThat.LovelyGit.Services.Git.WorkingTree.Models;
-using ExpressThat.LovelyGit.Services.Hubs.Commands;
+using ExpressThat.LovelyGit.Services.NativeMessaging.Commands;
 
-namespace ExpressThat.LovelyGit.Services.Hubs.CommandResolvers.WorkingTree;
+namespace ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.WorkingTree;
 
 internal sealed class GetWorkingTreeChangesCommandResolver : CommandResponder<GetWorkingTreeChangesCommandArguments>
 {
@@ -24,12 +25,12 @@ internal sealed class GetWorkingTreeChangesCommandResolver : CommandResponder<Ge
         _workingTreeChangeService = workingTreeChangeService;
     }
 
-    public override bool CanRespondTo(CommsHubCommand<JsonElement> command)
+    public override bool CanRespondTo(NativeCommand<JsonElement> command)
     {
-        return command.CommandType == CommsHubCommandType.GetWorkingTreeChanges;
+        return command.CommandType == NativeMessageType.GetWorkingTreeChanges;
     }
 
-    public override async Task<CommandResponseBase> Resolve(CommsHubCommand<GetWorkingTreeChangesCommandArguments> command)
+    public override async Task<CommandResponseBase> Resolve(NativeCommand<GetWorkingTreeChangesCommandArguments> command)
     {
         if (command.Arguments == null || command.Arguments.RepositoryId == Guid.Empty)
         {
@@ -62,7 +63,7 @@ internal sealed class GetWorkingTreeChangesCommandResolver : CommandResponder<Ge
     }
 
     private static CommandResponseBase Failure(
-        CommsHubCommand<GetWorkingTreeChangesCommandArguments> command,
+        NativeCommand<GetWorkingTreeChangesCommandArguments> command,
         string errorMessage)
     {
         return new CommandResponseBase

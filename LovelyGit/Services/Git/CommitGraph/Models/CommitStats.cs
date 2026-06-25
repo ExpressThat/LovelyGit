@@ -1,8 +1,8 @@
-using Tapper;
+using ExpressThat.LovelyGit.Services.TypeGeneration;
 
 namespace ExpressThat.LovelyGit.Services.Git.CommitGraph.Models
 {
-    [TranspilationSource]
+    [TypeSharp]
     public record CommitStats
     {
         public uint Additions { get; set; }

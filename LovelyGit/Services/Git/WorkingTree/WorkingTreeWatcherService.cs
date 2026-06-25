@@ -2,8 +2,7 @@ using ExpressThat.LovelyGit.Services.Data.Models;
 using ExpressThat.LovelyGit.Services.Data.Repositorys;
 using ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser;
 using ExpressThat.LovelyGit.Services.Git.WorkingTree.Models;
-using ExpressThat.LovelyGit.Services.Hubs;
-using Microsoft.AspNetCore.SignalR;
+using ExpressThat.LovelyGit.Services.NativeMessaging;
 using System.Buffers;
 using System.Diagnostics;
 
@@ -14,7 +13,7 @@ internal sealed class WorkingTreeWatcherService : IDisposable
     private static readonly TimeSpan DebounceDelay = TimeSpan.FromMilliseconds(200);
     private const ulong FnvOffsetBasis = 14695981039346656037;
     private const ulong FnvPrime = 1099511628211;
-    private readonly IHubContext<CommsHub> _hubContext;
+    private readonly INativeMessaging _nativeMessaging;
     private readonly KnownGitRepositorysRepository _knownGitRepositorysRepository;
     private readonly object _lock = new();
     private readonly List<FileSystemWatcher> _watchers = new();
@@ -31,10 +30,10 @@ internal sealed class WorkingTreeWatcherService : IDisposable
     private bool _disposed;
 
     public WorkingTreeWatcherService(
-        IHubContext<CommsHub> hubContext,
+        INativeMessaging nativeMessaging,
         KnownGitRepositorysRepository knownGitRepositorysRepository)
     {
-        _hubContext = hubContext;
+        _nativeMessaging = nativeMessaging;
         _knownGitRepositorysRepository = knownGitRepositorysRepository;
     }
 
@@ -362,9 +361,12 @@ internal sealed class WorkingTreeWatcherService : IDisposable
             };
         }
 
-        await _hubContext.Clients.All
-            .SendAsync("WorkingTreeChanged", notification, cancellation.Token)
-            .ConfigureAwait(false);
+        _nativeMessaging.Send(
+            NativeMessageType.WorkingTreeChanged,
+            notification,
+            NativeMessagingJsonContext.Default.NativeMessageResponseWorkingTreeChangedNotification);
+
+        await Task.CompletedTask.ConfigureAwait(false);
     }
 
     private void QueueGraphInvalidation()
@@ -435,9 +437,12 @@ internal sealed class WorkingTreeWatcherService : IDisposable
             };
         }
 
-        await _hubContext.Clients.All
-            .SendAsync("CommitGraphChanged", notification, cancellation.Token)
-            .ConfigureAwait(false);
+        _nativeMessaging.Send(
+            NativeMessageType.CommitGraphChanged,
+            notification,
+            NativeMessagingJsonContext.Default.NativeMessageResponseCommitGraphChangedNotification);
+
+        await Task.CompletedTask.ConfigureAwait(false);
     }
 
     private void StopActiveWatchers()

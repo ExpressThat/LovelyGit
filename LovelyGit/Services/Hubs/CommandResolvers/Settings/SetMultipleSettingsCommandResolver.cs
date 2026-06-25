@@ -1,9 +1,10 @@
-using ExpressThat.LovelyGit.Services.Hubs.Commands;
+using ExpressThat.LovelyGit.Services.NativeMessaging.Commands;
+using ExpressThat.LovelyGit.Services.NativeMessaging;
 using ExpressThat.LovelyGit.Services.Settings;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 
-namespace ExpressThat.LovelyGit.Services.Hubs.CommandResolvers.Settings
+namespace ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Settings
 {
     public class SetMultipleSettingsCommandResolver : CommandResponder<SetMultipleSettingsCommandArguments>
     {
@@ -17,12 +18,12 @@ namespace ExpressThat.LovelyGit.Services.Hubs.CommandResolvers.Settings
         protected override JsonTypeInfo<SetMultipleSettingsCommandArguments> ArgumentsJsonTypeInfo =>
             SettingsJsonSerializerContext.Default.SetMultipleSettingsCommandArguments;
 
-        public override bool CanRespondTo(CommsHubCommand<JsonElement> command)
+        public override bool CanRespondTo(NativeCommand<JsonElement> command)
         {
-            return command.CommandType == CommsHubCommandType.SetMultipleSettings;
+            return command.CommandType == NativeMessageType.SetMultipleSettings;
         }
 
-        public override async Task<CommandResponseBase> Resolve(CommsHubCommand<SetMultipleSettingsCommandArguments> command)
+        public override async Task<CommandResponseBase> Resolve(NativeCommand<SetMultipleSettingsCommandArguments> command)
         {
             if (command.Arguments == null)
             {

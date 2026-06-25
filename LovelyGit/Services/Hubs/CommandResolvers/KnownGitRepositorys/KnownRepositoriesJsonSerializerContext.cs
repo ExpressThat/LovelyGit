@@ -1,8 +1,8 @@
 using ExpressThat.LovelyGit.Services.Data.Models;
-using ExpressThat.LovelyGit.Services.Hubs.Commands;
+using ExpressThat.LovelyGit.Services.NativeMessaging.Commands;
 using System.Text.Json.Serialization;
 
-namespace ExpressThat.LovelyGit.Services.Hubs.CommandResolvers.KnownRepository;
+namespace ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.KnownRepository;
 
 [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
 [JsonSerializable(typeof(RemoveKnownGitRepositorysCommandArguments))]

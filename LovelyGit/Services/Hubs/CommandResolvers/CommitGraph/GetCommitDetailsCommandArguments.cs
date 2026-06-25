@@ -1,8 +1,8 @@
-using Tapper;
+using ExpressThat.LovelyGit.Services.TypeGeneration;
 
-namespace ExpressThat.LovelyGit.Services.Hubs.CommandResolvers.CommitGraph;
+namespace ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.CommitGraph;
 
-[TranspilationSource]
+[TypeSharp]
 public record GetCommitDetailsCommandArguments
 {
     public Guid RepositoryId { get; set; }

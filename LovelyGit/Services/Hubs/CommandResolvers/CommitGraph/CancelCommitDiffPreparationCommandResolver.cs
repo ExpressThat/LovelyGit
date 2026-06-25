@@ -1,10 +1,11 @@
 using ExpressThat.LovelyGit.Services.Git.CommitGraph;
+using ExpressThat.LovelyGit.Services.NativeMessaging;
 using ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser;
-using ExpressThat.LovelyGit.Services.Hubs.Commands;
+using ExpressThat.LovelyGit.Services.NativeMessaging.Commands;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 
-namespace ExpressThat.LovelyGit.Services.Hubs.CommandResolvers.CommitGraph;
+namespace ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.CommitGraph;
 
 internal sealed class CancelCommitDiffPreparationCommandResolver : CommandResponder<CancelCommitDiffPreparationCommandArguments>
 {
@@ -18,12 +19,12 @@ internal sealed class CancelCommitDiffPreparationCommandResolver : CommandRespon
         _commitFileDiffService = commitFileDiffService;
     }
 
-    public override bool CanRespondTo(CommsHubCommand<JsonElement> command)
+    public override bool CanRespondTo(NativeCommand<JsonElement> command)
     {
-        return command.CommandType == CommsHubCommandType.CancelCommitDiffPreparation;
+        return command.CommandType == NativeMessageType.CancelCommitDiffPreparation;
     }
 
-    public override Task<CommandResponseBase> Resolve(CommsHubCommand<CancelCommitDiffPreparationCommandArguments> command)
+    public override Task<CommandResponseBase> Resolve(NativeCommand<CancelCommitDiffPreparationCommandArguments> command)
     {
         if (command.Arguments == null || command.Arguments.RepositoryId == Guid.Empty)
         {
@@ -43,7 +44,7 @@ internal sealed class CancelCommitDiffPreparationCommandResolver : CommandRespon
     }
 
     private static CommandResponseBase Success(
-        CommsHubCommand<CancelCommitDiffPreparationCommandArguments> command)
+        NativeCommand<CancelCommitDiffPreparationCommandArguments> command)
     {
         return new CommandResponseBase
         {
@@ -54,7 +55,7 @@ internal sealed class CancelCommitDiffPreparationCommandResolver : CommandRespon
     }
 
     private static CommandResponseBase Failure(
-        CommsHubCommand<CancelCommitDiffPreparationCommandArguments> command,
+        NativeCommand<CancelCommitDiffPreparationCommandArguments> command,
         string errorMessage)
     {
         return new CommandResponseBase

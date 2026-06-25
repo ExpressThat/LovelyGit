@@ -1,6 +1,7 @@
 using System.Text.Json;
+using ExpressThat.LovelyGit.Services.NativeMessaging;
 
-namespace ExpressThat.LovelyGit.Services.Hubs.Commands
+namespace ExpressThat.LovelyGit.Services.NativeMessaging.Commands
 {
     public class CommandResolver
     {
@@ -11,7 +12,7 @@ namespace ExpressThat.LovelyGit.Services.Hubs.Commands
             _commandResponders = commandResolvers;
         }
 
-        public async Task<CommandResponseBase> ResolveCommand(CommsHubCommand<JsonElement> command)
+        public async Task<CommandResponseBase> ResolveCommand(NativeCommand<JsonElement> command)
         {
             var responder = _commandResponders.FirstOrDefault(r => r.CanRespondTo(command));
             if (responder == null)

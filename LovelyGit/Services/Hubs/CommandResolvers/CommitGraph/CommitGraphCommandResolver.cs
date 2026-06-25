@@ -1,10 +1,11 @@
 using ExpressThat.LovelyGit.Services.Git.CommitGraph.Models;
+using ExpressThat.LovelyGit.Services.NativeMessaging;
 using ExpressThat.LovelyGit.Services.Git.CommitGraph.Queries;
-using ExpressThat.LovelyGit.Services.Hubs.Commands;
+using ExpressThat.LovelyGit.Services.NativeMessaging.Commands;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 
-namespace ExpressThat.LovelyGit.Services.Hubs.CommandResolvers.CommitGraph
+namespace ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.CommitGraph
 {
     internal class CommitGraphCommandResolver : CommandResponder<CommitGraphCommandArguments>
     {
@@ -18,12 +19,12 @@ namespace ExpressThat.LovelyGit.Services.Hubs.CommandResolvers.CommitGraph
             _commitGraphPageService = commitGraphPageService;
         }
 
-        public override bool CanRespondTo(CommsHubCommand<JsonElement> command)
+        public override bool CanRespondTo(NativeCommand<JsonElement> command)
         {
-            return command.CommandType == CommsHubCommandType.CommitGraph;
+            return command.CommandType == NativeMessageType.CommitGraph;
         }
 
-        public override async Task<CommandResponseBase> Resolve(CommsHubCommand<CommitGraphCommandArguments> command)
+        public override async Task<CommandResponseBase> Resolve(NativeCommand<CommitGraphCommandArguments> command)
         {
             if (command.Arguments == null)
             {
@@ -52,7 +53,7 @@ namespace ExpressThat.LovelyGit.Services.Hubs.CommandResolvers.CommitGraph
         }
 
         private static CommandResponseBase CreateFailureResponse(
-            CommsHubCommand<CommitGraphCommandArguments> command,
+            NativeCommand<CommitGraphCommandArguments> command,
             string errorMessage)
         {
             return new CommandResponseBase

@@ -1,8 +1,8 @@
-using ExpressThat.LovelyGit.Services.Hubs.Commands;
+using ExpressThat.LovelyGit.Services.NativeMessaging.Commands;
 using ExpressThat.LovelyGit.Services.Json;
 using ExpressThat.LovelyGit.Services.Settings;
 
-namespace ExpressThat.LovelyGit.Services.Hubs.CommandResolvers.Settings;
+namespace ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Settings;
 
 internal static class SettingsServiceCollectionExtensions
 {

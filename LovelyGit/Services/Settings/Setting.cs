@@ -1,9 +1,9 @@
 using System.Text.Json.Serialization;
-using Tapper;
+using ExpressThat.LovelyGit.Services.TypeGeneration;
 
 namespace ExpressThat.LovelyGit.Services.Settings
 {
-    [TranspilationSource]
+    [TypeSharp]
     [JsonConverter(typeof(JsonStringEnumConverter<Setting>))]
     public enum Setting
     {
@@ -15,7 +15,7 @@ namespace ExpressThat.LovelyGit.Services.Settings
         CommitDiffWrapLines
     }
 
-    [TranspilationSource]
+    [TypeSharp]
     [JsonConverter(typeof(JsonStringEnumConverter<AppTheme>))]
     public enum AppTheme
     {
@@ -24,7 +24,7 @@ namespace ExpressThat.LovelyGit.Services.Settings
         Dark
     }
 
-    [TranspilationSource]
+    [TypeSharp]
     [JsonConverter(typeof(JsonStringEnumConverter<CommitDiffLineDisplayMode>))]
     public enum CommitDiffLineDisplayMode
     {

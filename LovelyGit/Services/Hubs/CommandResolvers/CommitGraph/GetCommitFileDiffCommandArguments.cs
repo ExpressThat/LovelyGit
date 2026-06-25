@@ -1,9 +1,9 @@
 using ExpressThat.LovelyGit.Services.Git.CommitGraph.Models;
-using Tapper;
+using ExpressThat.LovelyGit.Services.TypeGeneration;
 
-namespace ExpressThat.LovelyGit.Services.Hubs.CommandResolvers.CommitGraph;
+namespace ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.CommitGraph;
 
-[TranspilationSource]
+[TypeSharp]
 public record GetCommitFileDiffCommandArguments
 {
     public Guid RepositoryId { get; set; }

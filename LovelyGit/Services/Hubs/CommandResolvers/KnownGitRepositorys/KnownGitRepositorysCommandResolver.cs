@@ -1,11 +1,12 @@
-﻿using ExpressThat.LovelyGit.Services.Data;
+using ExpressThat.LovelyGit.Services.Data;
+using ExpressThat.LovelyGit.Services.NativeMessaging;
 using ExpressThat.LovelyGit.Services.Data.Models;
 using ExpressThat.LovelyGit.Services.Data.Repositorys;
-using ExpressThat.LovelyGit.Services.Hubs.Commands;
+using ExpressThat.LovelyGit.Services.NativeMessaging.Commands;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 
-namespace ExpressThat.LovelyGit.Services.Hubs.CommandResolvers.KnownRepository
+namespace ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.KnownRepository
 {
     public class KnownGitRepositorysCommandResolver : CommandResponder<EmptyCommandArguments>
     {
@@ -19,12 +20,12 @@ namespace ExpressThat.LovelyGit.Services.Hubs.CommandResolvers.KnownRepository
             _knownGitRepositorysRepository = knownGitRepositorysRepository;
         }
 
-        public override bool CanRespondTo(CommsHubCommand<JsonElement> command)
+        public override bool CanRespondTo(NativeCommand<JsonElement> command)
         {
-            return command.CommandType == CommsHubCommandType.KnownGitRepositorys;
+            return command.CommandType == NativeMessageType.KnownGitRepositorys;
         }
 
-        public override async Task<CommandResponseBase> Resolve(CommsHubCommand<EmptyCommandArguments> command)
+        public override async Task<CommandResponseBase> Resolve(NativeCommand<EmptyCommandArguments> command)
         {
             var knownGitRepositorys = await _knownGitRepositorysRepository.GetAllAsync();
 

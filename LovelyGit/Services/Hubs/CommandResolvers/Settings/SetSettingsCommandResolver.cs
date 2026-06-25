@@ -1,9 +1,10 @@
-using ExpressThat.LovelyGit.Services.Hubs.Commands;
+using ExpressThat.LovelyGit.Services.NativeMessaging.Commands;
+using ExpressThat.LovelyGit.Services.NativeMessaging;
 using ExpressThat.LovelyGit.Services.Settings;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 
-namespace ExpressThat.LovelyGit.Services.Hubs.CommandResolvers.Settings
+namespace ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Settings
 {
     public class SetSettingsCommandResolver : CommandResponder<SetSettingsCommandArguments>
     {
@@ -17,12 +18,12 @@ namespace ExpressThat.LovelyGit.Services.Hubs.CommandResolvers.Settings
         protected override JsonTypeInfo<SetSettingsCommandArguments> ArgumentsJsonTypeInfo =>
             SettingsJsonSerializerContext.Default.SetSettingsCommandArguments;
 
-        public override bool CanRespondTo(CommsHubCommand<JsonElement> command)
+        public override bool CanRespondTo(NativeCommand<JsonElement> command)
         {
-            return command.CommandType == CommsHubCommandType.SetSetting;
+            return command.CommandType == NativeMessageType.SetSetting;
         }
 
-        public override async Task<CommandResponseBase> Resolve(CommsHubCommand<SetSettingsCommandArguments> command)
+        public override async Task<CommandResponseBase> Resolve(NativeCommand<SetSettingsCommandArguments> command)
         {
             if (command.Arguments?.Setting == null)
             {

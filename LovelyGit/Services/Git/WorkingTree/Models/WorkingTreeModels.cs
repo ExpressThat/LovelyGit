@@ -1,10 +1,10 @@
 using System.Text.Json.Serialization;
 using ExpressThat.LovelyGit.Services.Git.CommitGraph.Models;
-using Tapper;
+using ExpressThat.LovelyGit.Services.TypeGeneration;
 
 namespace ExpressThat.LovelyGit.Services.Git.WorkingTree.Models;
 
-[TranspilationSource]
+[TypeSharp]
 [JsonConverter(typeof(JsonStringEnumConverter<WorkingTreeChangeGroup>))]
 public enum WorkingTreeChangeGroup
 {
@@ -14,7 +14,7 @@ public enum WorkingTreeChangeGroup
     Unmerged,
 }
 
-[TranspilationSource]
+[TypeSharp]
 public record WorkingTreeChangedFile
 {
     public string Path { get; set; } = string.Empty;
@@ -26,7 +26,7 @@ public record WorkingTreeChangedFile
     public bool IsBinary { get; set; }
 }
 
-[TranspilationSource]
+[TypeSharp]
 public record WorkingTreeChangesResponse
 {
     public List<WorkingTreeChangedFile> Staged { get; set; } = new();
@@ -37,26 +37,26 @@ public record WorkingTreeChangesResponse
     public int TotalCount => Staged.Count + Unstaged.Count + Untracked.Count + Unmerged.Count;
 }
 
-[TranspilationSource]
+[TypeSharp]
 public record WorkingTreeChangeSummaryResponse
 {
     public int TotalCount { get; set; }
     public bool HasChanges => TotalCount > 0;
 }
 
-[TranspilationSource]
+[TypeSharp]
 public record WorkingTreeChangedNotification
 {
     public int Generation { get; set; }
 }
 
-[TranspilationSource]
+[TypeSharp]
 public record CommitGraphChangedNotification
 {
     public int Generation { get; set; }
 }
 
-[TranspilationSource]
+[TypeSharp]
 public record GetWorkingTreeFileDiffArguments
 {
     public Guid RepositoryId { get; set; }

@@ -1,9 +1,9 @@
-using Tapper;
+using ExpressThat.LovelyGit.Services.TypeGeneration;
 using System.Text.Json.Serialization;
 
 namespace ExpressThat.LovelyGit.Services.Git.CommitGraph.Models
 {
-    [TranspilationSource]
+    [TypeSharp]
     [JsonConverter(typeof(JsonStringEnumConverter<CommitRefKind>))]
     public enum CommitRefKind
     {
@@ -12,14 +12,14 @@ namespace ExpressThat.LovelyGit.Services.Git.CommitGraph.Models
         Tag,
     }
 
-    [TranspilationSource]
+    [TypeSharp]
     public record CommitRefInfo
     {
         public string Name { get; set; } = string.Empty;
         public CommitRefKind Kind { get; set; }
     }
 
-    [TranspilationSource]
+    [TypeSharp]
     public record CommitInfo
     {
         public string Hash { get; set; } = string.Empty;

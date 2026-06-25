@@ -1,8 +1,8 @@
 using ExpressThat.LovelyGit.Services.Git.WorkingTree;
-using ExpressThat.LovelyGit.Services.Hubs.Commands;
+using ExpressThat.LovelyGit.Services.NativeMessaging.Commands;
 using ExpressThat.LovelyGit.Services.Json;
 
-namespace ExpressThat.LovelyGit.Services.Hubs.CommandResolvers.WorkingTree;
+namespace ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.WorkingTree;
 
 internal static class WorkingTreeServiceCollectionExtensions
 {

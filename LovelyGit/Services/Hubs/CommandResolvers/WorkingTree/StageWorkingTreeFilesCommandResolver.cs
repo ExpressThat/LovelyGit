@@ -1,11 +1,12 @@
 using System.Text.Json;
+using ExpressThat.LovelyGit.Services.NativeMessaging;
 using System.Text.Json.Serialization.Metadata;
 using ExpressThat.LovelyGit.Services.Data.Models;
 using ExpressThat.LovelyGit.Services.Data.Repositorys;
 using ExpressThat.LovelyGit.Services.Git.WorkingTree;
-using ExpressThat.LovelyGit.Services.Hubs.Commands;
+using ExpressThat.LovelyGit.Services.NativeMessaging.Commands;
 
-namespace ExpressThat.LovelyGit.Services.Hubs.CommandResolvers.WorkingTree;
+namespace ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.WorkingTree;
 
 internal sealed class StageWorkingTreeFilesCommandResolver : CommandResponder<UpdateWorkingTreeIndexCommandArguments>
 {
@@ -23,12 +24,12 @@ internal sealed class StageWorkingTreeFilesCommandResolver : CommandResponder<Up
         _workingTreeIndexService = workingTreeIndexService;
     }
 
-    public override bool CanRespondTo(CommsHubCommand<JsonElement> command)
+    public override bool CanRespondTo(NativeCommand<JsonElement> command)
     {
-        return command.CommandType == CommsHubCommandType.StageWorkingTreeFiles;
+        return command.CommandType == NativeMessageType.StageWorkingTreeFiles;
     }
 
-    public override async Task<CommandResponseBase> Resolve(CommsHubCommand<UpdateWorkingTreeIndexCommandArguments> command)
+    public override async Task<CommandResponseBase> Resolve(NativeCommand<UpdateWorkingTreeIndexCommandArguments> command)
     {
         if (command.Arguments == null || command.Arguments.RepositoryId == Guid.Empty)
         {
@@ -54,7 +55,7 @@ internal sealed class StageWorkingTreeFilesCommandResolver : CommandResponder<Up
         }
     }
 
-    private static CommandResponseBase Success(CommsHubCommand<UpdateWorkingTreeIndexCommandArguments> command)
+    private static CommandResponseBase Success(NativeCommand<UpdateWorkingTreeIndexCommandArguments> command)
     {
         return new CommandResponseBase
         {
@@ -65,7 +66,7 @@ internal sealed class StageWorkingTreeFilesCommandResolver : CommandResponder<Up
     }
 
     private static CommandResponseBase Failure(
-        CommsHubCommand<UpdateWorkingTreeIndexCommandArguments> command,
+        NativeCommand<UpdateWorkingTreeIndexCommandArguments> command,
         string errorMessage)
     {
         return new CommandResponseBase

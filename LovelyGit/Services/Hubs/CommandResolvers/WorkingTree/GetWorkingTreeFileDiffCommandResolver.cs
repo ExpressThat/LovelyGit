@@ -1,13 +1,14 @@
 using System.Text.Json;
+using ExpressThat.LovelyGit.Services.NativeMessaging;
 using System.Text.Json.Serialization.Metadata;
 using ExpressThat.LovelyGit.Services.Data.Models;
 using ExpressThat.LovelyGit.Services.Data.Repositorys;
 using ExpressThat.LovelyGit.Services.Git.CommitGraph.Models;
 using ExpressThat.LovelyGit.Services.Git.WorkingTree;
 using ExpressThat.LovelyGit.Services.Git.WorkingTree.Models;
-using ExpressThat.LovelyGit.Services.Hubs.Commands;
+using ExpressThat.LovelyGit.Services.NativeMessaging.Commands;
 
-namespace ExpressThat.LovelyGit.Services.Hubs.CommandResolvers.WorkingTree;
+namespace ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.WorkingTree;
 
 internal sealed class GetWorkingTreeFileDiffCommandResolver : CommandResponder<GetWorkingTreeFileDiffArguments>
 {
@@ -25,12 +26,12 @@ internal sealed class GetWorkingTreeFileDiffCommandResolver : CommandResponder<G
         _workingTreeChangeService = workingTreeChangeService;
     }
 
-    public override bool CanRespondTo(CommsHubCommand<JsonElement> command)
+    public override bool CanRespondTo(NativeCommand<JsonElement> command)
     {
-        return command.CommandType == CommsHubCommandType.GetWorkingTreeFileDiff;
+        return command.CommandType == NativeMessageType.GetWorkingTreeFileDiff;
     }
 
-    public override async Task<CommandResponseBase> Resolve(CommsHubCommand<GetWorkingTreeFileDiffArguments> command)
+    public override async Task<CommandResponseBase> Resolve(NativeCommand<GetWorkingTreeFileDiffArguments> command)
     {
         if (command.Arguments == null || command.Arguments.RepositoryId == Guid.Empty)
         {
@@ -73,7 +74,7 @@ internal sealed class GetWorkingTreeFileDiffCommandResolver : CommandResponder<G
     }
 
     private static CommandResponseBase Failure(
-        CommsHubCommand<GetWorkingTreeFileDiffArguments> command,
+        NativeCommand<GetWorkingTreeFileDiffArguments> command,
         string errorMessage)
     {
         return new CommandResponseBase

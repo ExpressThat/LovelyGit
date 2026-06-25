@@ -1,13 +1,14 @@
 using ExpressThat.LovelyGit.Services.Data.Models;
+using ExpressThat.LovelyGit.Services.NativeMessaging;
 using ExpressThat.LovelyGit.Services.Data.Repositorys;
 using ExpressThat.LovelyGit.Services.Git.CommitGraph;
 using ExpressThat.LovelyGit.Services.Git.CommitGraph.Models;
 using ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser;
-using ExpressThat.LovelyGit.Services.Hubs.Commands;
+using ExpressThat.LovelyGit.Services.NativeMessaging.Commands;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 
-namespace ExpressThat.LovelyGit.Services.Hubs.CommandResolvers.CommitGraph;
+namespace ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.CommitGraph;
 
 internal class GetCommitDetailsCommandResolver : CommandResponder<GetCommitDetailsCommandArguments>
 {
@@ -31,12 +32,12 @@ internal class GetCommitDetailsCommandResolver : CommandResponder<GetCommitDetai
         _backgroundWorkerOptions = backgroundWorkerOptions;
     }
 
-    public override bool CanRespondTo(CommsHubCommand<JsonElement> command)
+    public override bool CanRespondTo(NativeCommand<JsonElement> command)
     {
-        return command.CommandType == CommsHubCommandType.GetCommitDetails;
+        return command.CommandType == NativeMessageType.GetCommitDetails;
     }
 
-    public override async Task<CommandResponseBase> Resolve(CommsHubCommand<GetCommitDetailsCommandArguments> command)
+    public override async Task<CommandResponseBase> Resolve(NativeCommand<GetCommitDetailsCommandArguments> command)
     {
         if (command.Arguments == null || command.Arguments.RepositoryId == Guid.Empty)
         {
@@ -77,7 +78,7 @@ internal class GetCommitDetailsCommandResolver : CommandResponder<GetCommitDetai
     }
 
     private static CommandResponse<CommitDetailsResponse> Success(
-        CommsHubCommand<GetCommitDetailsCommandArguments> command,
+        NativeCommand<GetCommitDetailsCommandArguments> command,
         CommitDetailsResponse response)
     {
         return new CommandResponse<CommitDetailsResponse>
@@ -90,7 +91,7 @@ internal class GetCommitDetailsCommandResolver : CommandResponder<GetCommitDetai
     }
 
     private static CommandResponseBase Failure(
-        CommsHubCommand<GetCommitDetailsCommandArguments> command,
+        NativeCommand<GetCommitDetailsCommandArguments> command,
         string errorMessage)
     {
         return new CommandResponseBase

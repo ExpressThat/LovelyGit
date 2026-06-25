@@ -1,10 +1,10 @@
-using ExpressThat.LovelyGit.Services.Hubs.Commands;
+using ExpressThat.LovelyGit.Services.NativeMessaging.Commands;
 using ExpressThat.LovelyGit.Services.Git.CommitGraph.Models;
 using ExpressThat.LovelyGit.Services.Settings;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace ExpressThat.LovelyGit.Services.Hubs.CommandResolvers.Settings;
+namespace ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Settings;
 
 [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
 [JsonSerializable(typeof(GetSettingsCommandArguments))]

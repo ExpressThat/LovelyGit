@@ -1,15 +1,15 @@
 using ExpressThat.LovelyGit.Services.Settings;
-using Tapper;
+using ExpressThat.LovelyGit.Services.TypeGeneration;
 
-namespace ExpressThat.LovelyGit.Services.Hubs.CommandResolvers.Settings
+namespace ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Settings
 {
-    [TranspilationSource]
+    [TypeSharp]
     public record GetSettingsCommandArguments
     {
         public Setting? Setting { get; set; } = null;
     }
 
-    [TranspilationSource]
+    [TypeSharp]
     public record SetSettingsCommandArguments
     {
         public Setting? Setting { get; set; } = null;
@@ -17,7 +17,7 @@ namespace ExpressThat.LovelyGit.Services.Hubs.CommandResolvers.Settings
         public string? ValueJson { get; set; } = null;
     }
 
-    [TranspilationSource]
+    [TypeSharp]
     public record SetMultipleSettingsCommandArguments
     {
         public Dictionary<Setting, string> SettingValueJsons { get; set; } = new();

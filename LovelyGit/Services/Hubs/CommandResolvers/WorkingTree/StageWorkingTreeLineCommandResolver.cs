@@ -1,11 +1,12 @@
 using System.Text.Json;
+using ExpressThat.LovelyGit.Services.NativeMessaging;
 using System.Text.Json.Serialization.Metadata;
 using ExpressThat.LovelyGit.Services.Data.Models;
 using ExpressThat.LovelyGit.Services.Data.Repositorys;
 using ExpressThat.LovelyGit.Services.Git.WorkingTree;
-using ExpressThat.LovelyGit.Services.Hubs.Commands;
+using ExpressThat.LovelyGit.Services.NativeMessaging.Commands;
 
-namespace ExpressThat.LovelyGit.Services.Hubs.CommandResolvers.WorkingTree;
+namespace ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.WorkingTree;
 
 internal sealed class StageWorkingTreeLineCommandResolver : CommandResponder<StageWorkingTreeLineCommandArguments>
 {
@@ -23,12 +24,12 @@ internal sealed class StageWorkingTreeLineCommandResolver : CommandResponder<Sta
         _workingTreeIndexService = workingTreeIndexService;
     }
 
-    public override bool CanRespondTo(CommsHubCommand<JsonElement> command)
+    public override bool CanRespondTo(NativeCommand<JsonElement> command)
     {
-        return command.CommandType == CommsHubCommandType.StageWorkingTreeLine;
+        return command.CommandType == NativeMessageType.StageWorkingTreeLine;
     }
 
-    public override async Task<CommandResponseBase> Resolve(CommsHubCommand<StageWorkingTreeLineCommandArguments> command)
+    public override async Task<CommandResponseBase> Resolve(NativeCommand<StageWorkingTreeLineCommandArguments> command)
     {
         if (command.Arguments == null || command.Arguments.RepositoryId == Guid.Empty)
         {
@@ -63,7 +64,7 @@ internal sealed class StageWorkingTreeLineCommandResolver : CommandResponder<Sta
         }
     }
 
-    private static CommandResponseBase Success(CommsHubCommand<StageWorkingTreeLineCommandArguments> command)
+    private static CommandResponseBase Success(NativeCommand<StageWorkingTreeLineCommandArguments> command)
     {
         return new CommandResponseBase
         {
@@ -74,7 +75,7 @@ internal sealed class StageWorkingTreeLineCommandResolver : CommandResponder<Sta
     }
 
     private static CommandResponseBase Failure(
-        CommsHubCommand<StageWorkingTreeLineCommandArguments> command,
+        NativeCommand<StageWorkingTreeLineCommandArguments> command,
         string errorMessage)
     {
         return new CommandResponseBase

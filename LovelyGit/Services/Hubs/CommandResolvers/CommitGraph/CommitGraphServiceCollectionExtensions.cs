@@ -1,9 +1,9 @@
 using ExpressThat.LovelyGit.Services.Git.CommitGraph;
 using ExpressThat.LovelyGit.Services.Git.CommitGraph.Queries;
-using ExpressThat.LovelyGit.Services.Hubs.Commands;
+using ExpressThat.LovelyGit.Services.NativeMessaging.Commands;
 using ExpressThat.LovelyGit.Services.Json;
 
-namespace ExpressThat.LovelyGit.Services.Hubs.CommandResolvers.CommitGraph;
+namespace ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.CommitGraph;
 
 internal static class CommitGraphServiceCollectionExtensions
 {

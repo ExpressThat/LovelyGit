@@ -1,10 +1,10 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using Tapper;
+using ExpressThat.LovelyGit.Services.TypeGeneration;
 
 namespace ExpressThat.LovelyGit.Services.Data.Models
 {
-    [TranspilationSource]
+    [TypeSharp]
     [Table("known_git_repositorys")]
     public sealed record KnownGitRepository
     {

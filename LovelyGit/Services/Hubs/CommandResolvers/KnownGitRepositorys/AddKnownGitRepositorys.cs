@@ -1,11 +1,12 @@
 using ExpressThat.LovelyGit.Services.Data.Models;
+using ExpressThat.LovelyGit.Services.NativeMessaging;
 using ExpressThat.LovelyGit.Services.Data.Repositorys;
 using ExpressThat.LovelyGit.Services.Dialogs;
-using ExpressThat.LovelyGit.Services.Hubs.Commands;
+using ExpressThat.LovelyGit.Services.NativeMessaging.Commands;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 
-namespace ExpressThat.LovelyGit.Services.Hubs.CommandResolvers.KnownRepository
+namespace ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.KnownRepository
 {
     public class AddKnownGitRepositorysCommandResolver : CommandResponder<EmptyCommandArguments>
     {
@@ -23,12 +24,12 @@ namespace ExpressThat.LovelyGit.Services.Hubs.CommandResolvers.KnownRepository
             _knownGitRepositorysRepository = knownGitRepositorysRepository;
         }
 
-        public override bool CanRespondTo(CommsHubCommand<JsonElement> command)
+        public override bool CanRespondTo(NativeCommand<JsonElement> command)
         {
-            return command.CommandType == CommsHubCommandType.AddKnownGitRepositorys;
+            return command.CommandType == NativeMessageType.AddKnownGitRepositorys;
         }
 
-        public override async Task<CommandResponseBase> Resolve(CommsHubCommand<EmptyCommandArguments> command)
+        public override async Task<CommandResponseBase> Resolve(NativeCommand<EmptyCommandArguments> command)
         {
             var selectedFolder = await _folderPicker.PickFolderAsync(CancellationToken.None);
             if (string.IsNullOrWhiteSpace(selectedFolder))
@@ -71,7 +72,7 @@ namespace ExpressThat.LovelyGit.Services.Hubs.CommandResolvers.KnownRepository
         }
 
         private static CommandResponse<KnownGitRepository?> CreateSuccessResponse(
-            CommsHubCommand<EmptyCommandArguments> command,
+            NativeCommand<EmptyCommandArguments> command,
             KnownGitRepository? repository)
         {
             return new CommandResponse<KnownGitRepository?>

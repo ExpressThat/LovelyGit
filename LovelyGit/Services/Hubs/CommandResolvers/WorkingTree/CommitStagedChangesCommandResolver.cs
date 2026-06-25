@@ -1,11 +1,12 @@
 using System.Text.Json;
+using ExpressThat.LovelyGit.Services.NativeMessaging;
 using System.Text.Json.Serialization.Metadata;
 using ExpressThat.LovelyGit.Services.Data.Models;
 using ExpressThat.LovelyGit.Services.Data.Repositorys;
 using ExpressThat.LovelyGit.Services.Git.WorkingTree;
-using ExpressThat.LovelyGit.Services.Hubs.Commands;
+using ExpressThat.LovelyGit.Services.NativeMessaging.Commands;
 
-namespace ExpressThat.LovelyGit.Services.Hubs.CommandResolvers.WorkingTree;
+namespace ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.WorkingTree;
 
 internal sealed class CommitStagedChangesCommandResolver : CommandResponder<CommitStagedChangesCommandArguments>
 {
@@ -23,12 +24,12 @@ internal sealed class CommitStagedChangesCommandResolver : CommandResponder<Comm
         _workingTreeIndexService = workingTreeIndexService;
     }
 
-    public override bool CanRespondTo(CommsHubCommand<JsonElement> command)
+    public override bool CanRespondTo(NativeCommand<JsonElement> command)
     {
-        return command.CommandType == CommsHubCommandType.CommitStagedChanges;
+        return command.CommandType == NativeMessageType.CommitStagedChanges;
     }
 
-    public override async Task<CommandResponseBase> Resolve(CommsHubCommand<CommitStagedChangesCommandArguments> command)
+    public override async Task<CommandResponseBase> Resolve(NativeCommand<CommitStagedChangesCommandArguments> command)
     {
         if (command.Arguments == null || command.Arguments.RepositoryId == Guid.Empty)
         {
@@ -58,7 +59,7 @@ internal sealed class CommitStagedChangesCommandResolver : CommandResponder<Comm
         }
     }
 
-    private static CommandResponseBase Success(CommsHubCommand<CommitStagedChangesCommandArguments> command)
+    private static CommandResponseBase Success(NativeCommand<CommitStagedChangesCommandArguments> command)
     {
         return new CommandResponseBase
         {
@@ -69,7 +70,7 @@ internal sealed class CommitStagedChangesCommandResolver : CommandResponder<Comm
     }
 
     private static CommandResponseBase Failure(
-        CommsHubCommand<CommitStagedChangesCommandArguments> command,
+        NativeCommand<CommitStagedChangesCommandArguments> command,
         string errorMessage)
     {
         return new CommandResponseBase

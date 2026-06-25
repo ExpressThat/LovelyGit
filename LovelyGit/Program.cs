@@ -2,7 +2,7 @@ using ExpressThat.LovelyGit.Services;
 using ExpressThat.LovelyGit.Services.Data;
 using ExpressThat.LovelyGit.Services.Dialogs;
 using ExpressThat.LovelyGit.Services.Git.CommitGraph;
-using ExpressThat.LovelyGit.Services.Hubs;
+using ExpressThat.LovelyGit.Services.NativeMessaging;
 using ExpressThat.LovelyGit.Services.Keyring;
 using InfiniFrame;
 using InfiniFrame.WebServer;
@@ -51,6 +51,7 @@ public static class Program
                     .SetIconFile(GetWindowIconPath())
                     .SetSize(new Size(800, 600))
                     .SetStartUrl("http://localhost:5000")
+                    .UseNativeMessaging()
                     ;
 
 
@@ -82,8 +83,6 @@ public static class Program
         });
 
         application.UseAutoServerClose();
-
-        application.WebApp.MapHub<CommsHub>("/commsHub");
 
         application.WebApp.UseStaticFiles();
         application.WebApp.MapStaticAssets();

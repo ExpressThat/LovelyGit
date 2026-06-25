@@ -1,11 +1,12 @@
 using System.Text.Json;
+using ExpressThat.LovelyGit.Services.NativeMessaging;
 using System.Text.Json.Serialization.Metadata;
 using ExpressThat.LovelyGit.Services.Data.Models;
 using ExpressThat.LovelyGit.Services.Data.Repositorys;
 using ExpressThat.LovelyGit.Services.Git.Cli;
-using ExpressThat.LovelyGit.Services.Hubs.Commands;
+using ExpressThat.LovelyGit.Services.NativeMessaging.Commands;
 
-namespace ExpressThat.LovelyGit.Services.Hubs.CommandResolvers.WorkingTree;
+namespace ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.WorkingTree;
 
 internal sealed class FetchRepositoryCommandResolver : CommandResponder<GitRemoteCommandArguments>
 {
@@ -23,12 +24,12 @@ internal sealed class FetchRepositoryCommandResolver : CommandResponder<GitRemot
         _gitRemoteCommandService = gitRemoteCommandService;
     }
 
-    public override bool CanRespondTo(CommsHubCommand<JsonElement> command)
+    public override bool CanRespondTo(NativeCommand<JsonElement> command)
     {
-        return command.CommandType == CommsHubCommandType.FetchRepository;
+        return command.CommandType == NativeMessageType.FetchRepository;
     }
 
-    public override async Task<CommandResponseBase> Resolve(CommsHubCommand<GitRemoteCommandArguments> command)
+    public override async Task<CommandResponseBase> Resolve(NativeCommand<GitRemoteCommandArguments> command)
     {
         if (command.Arguments == null || command.Arguments.RepositoryId == Guid.Empty)
         {
@@ -53,7 +54,7 @@ internal sealed class FetchRepositoryCommandResolver : CommandResponder<GitRemot
         }
     }
 
-    private static CommandResponseBase Success(CommsHubCommand<GitRemoteCommandArguments> command)
+    private static CommandResponseBase Success(NativeCommand<GitRemoteCommandArguments> command)
     {
         return new CommandResponseBase
         {
@@ -64,7 +65,7 @@ internal sealed class FetchRepositoryCommandResolver : CommandResponder<GitRemot
     }
 
     private static CommandResponseBase Failure(
-        CommsHubCommand<GitRemoteCommandArguments> command,
+        NativeCommand<GitRemoteCommandArguments> command,
         string errorMessage)
     {
         return new CommandResponseBase

@@ -1,6 +1,7 @@
 using ExpressThat.LovelyGit.Services.Json;
+using ExpressThat.LovelyGit.Services.NativeMessaging;
 
-namespace ExpressThat.LovelyGit.Services.Hubs.Commands;
+namespace ExpressThat.LovelyGit.Services.NativeMessaging.Commands;
 
 internal static class CommandServiceCollectionExtensions
 {

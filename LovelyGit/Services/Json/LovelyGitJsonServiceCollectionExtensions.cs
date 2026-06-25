@@ -1,6 +1,5 @@
-using ExpressThat.LovelyGit.Services.Hubs.Commands;
+using ExpressThat.LovelyGit.Services.NativeMessaging;
 using ExpressThat.LovelyGit.Services.Settings;
-using Microsoft.AspNetCore.SignalR;
 using HttpJsonOptions = Microsoft.AspNetCore.Http.Json.JsonOptions;
 using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
@@ -13,14 +12,8 @@ internal static class LovelyGitJsonServiceCollectionExtensions
     {
         services.Configure<HttpJsonOptions>(options =>
         {
-            options.SerializerOptions.Converters.Add(new JsonStringEnumConverter<CommsHubCommandType>());
+            options.SerializerOptions.Converters.Add(new JsonStringEnumConverter<NativeMessageType>());
             options.SerializerOptions.Converters.Add(new JsonStringEnumConverter<Setting>());
-        });
-
-        services.Configure<JsonHubProtocolOptions>(options =>
-        {
-            options.PayloadSerializerOptions.Converters.Add(new JsonStringEnumConverter<CommsHubCommandType>());
-            options.PayloadSerializerOptions.Converters.Add(new JsonStringEnumConverter<Setting>());
         });
 
         return services;
@@ -33,11 +26,6 @@ internal static class LovelyGitJsonServiceCollectionExtensions
         services.Configure<HttpJsonOptions>(options =>
         {
             options.SerializerOptions.TypeInfoResolverChain.Add(resolver);
-        });
-
-        services.Configure<JsonHubProtocolOptions>(options =>
-        {
-            options.PayloadSerializerOptions.TypeInfoResolverChain.Add(resolver);
         });
 
         return services;

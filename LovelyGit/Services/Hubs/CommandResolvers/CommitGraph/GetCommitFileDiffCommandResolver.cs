@@ -1,14 +1,15 @@
 using ExpressThat.LovelyGit.Services.Data.Models;
+using ExpressThat.LovelyGit.Services.NativeMessaging;
 using ExpressThat.LovelyGit.Services.Data.Repositorys;
 using ExpressThat.LovelyGit.Services.Git.CommitGraph;
 using ExpressThat.LovelyGit.Services.Git.CommitGraph.Models;
 using ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser;
-using ExpressThat.LovelyGit.Services.Hubs.Commands;
+using ExpressThat.LovelyGit.Services.NativeMessaging.Commands;
 using System.Diagnostics;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 
-namespace ExpressThat.LovelyGit.Services.Hubs.CommandResolvers.CommitGraph;
+namespace ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.CommitGraph;
 
 internal class GetCommitFileDiffCommandResolver : CommandResponder<GetCommitFileDiffCommandArguments>
 {
@@ -26,12 +27,12 @@ internal class GetCommitFileDiffCommandResolver : CommandResponder<GetCommitFile
         _commitFileDiffService = commitFileDiffService;
     }
 
-    public override bool CanRespondTo(CommsHubCommand<JsonElement> command)
+    public override bool CanRespondTo(NativeCommand<JsonElement> command)
     {
-        return command.CommandType == CommsHubCommandType.GetCommitFileDiff;
+        return command.CommandType == NativeMessageType.GetCommitFileDiff;
     }
 
-    public override async Task<CommandResponseBase> Resolve(CommsHubCommand<GetCommitFileDiffCommandArguments> command)
+    public override async Task<CommandResponseBase> Resolve(NativeCommand<GetCommitFileDiffCommandArguments> command)
     {
         if (command.Arguments == null || command.Arguments.RepositoryId == Guid.Empty)
         {
@@ -77,7 +78,7 @@ internal class GetCommitFileDiffCommandResolver : CommandResponder<GetCommitFile
     }
 
     private static CommandResponse<CommitFileDiffResponse> Success(
-        CommsHubCommand<GetCommitFileDiffCommandArguments> command,
+        NativeCommand<GetCommitFileDiffCommandArguments> command,
         CommitFileDiffResponse response)
     {
         return new CommandResponse<CommitFileDiffResponse>
@@ -90,7 +91,7 @@ internal class GetCommitFileDiffCommandResolver : CommandResponder<GetCommitFile
     }
 
     private static CommandResponseBase Failure(
-        CommsHubCommand<GetCommitFileDiffCommandArguments> command,
+        NativeCommand<GetCommitFileDiffCommandArguments> command,
         string errorMessage)
     {
         return new CommandResponseBase

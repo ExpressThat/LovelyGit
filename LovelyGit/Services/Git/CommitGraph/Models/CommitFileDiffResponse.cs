@@ -1,9 +1,9 @@
 using System.Text.Json.Serialization;
-using Tapper;
+using ExpressThat.LovelyGit.Services.TypeGeneration;
 
 namespace ExpressThat.LovelyGit.Services.Git.CommitGraph.Models;
 
-[TranspilationSource]
+[TypeSharp]
 [JsonConverter(typeof(JsonStringEnumConverter<CommitDiffViewMode>))]
 public enum CommitDiffViewMode
 {
@@ -11,7 +11,7 @@ public enum CommitDiffViewMode
     Combined,
 }
 
-[TranspilationSource]
+[TypeSharp]
 public record CommitFileDiffResponse
 {
     public string CommitHash { get; set; } = string.Empty;
@@ -23,7 +23,7 @@ public record CommitFileDiffResponse
     public List<CommitFileDiffLine> Lines { get; set; } = new();
 }
 
-[TranspilationSource]
+[TypeSharp]
 public record CommitFileDiffLine
 {
     public int? OldLineNumber { get; set; }
@@ -40,7 +40,7 @@ public record CommitFileDiffLine
     public List<CommitFileDiffChangeSpan> ChangeSpans { get; set; } = new();
 }
 
-[TranspilationSource]
+[TypeSharp]
 public record CommitFileDiffSyntaxSpan
 {
     public int Start { get; set; }
@@ -48,7 +48,7 @@ public record CommitFileDiffSyntaxSpan
     public string Scope { get; set; } = string.Empty;
 }
 
-[TranspilationSource]
+[TypeSharp]
 public record CommitFileDiffChangeSpan
 {
     public int Start { get; set; }

@@ -1,12 +1,13 @@
 using ExpressThat.LovelyGit.Services.Data.Repositorys;
-using ExpressThat.LovelyGit.Services.Hubs.Commands;
+using ExpressThat.LovelyGit.Services.NativeMessaging;
+using ExpressThat.LovelyGit.Services.NativeMessaging.Commands;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
-using Tapper;
+using ExpressThat.LovelyGit.Services.TypeGeneration;
 
-namespace ExpressThat.LovelyGit.Services.Hubs.CommandResolvers.KnownRepository
+namespace ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.KnownRepository
 {
-    [TranspilationSource]
+    [TypeSharp]
     public record RemoveKnownGitRepositorysCommandArguments
     {
         public Guid KnownRepositoryId { get; set; }
@@ -24,13 +25,13 @@ namespace ExpressThat.LovelyGit.Services.Hubs.CommandResolvers.KnownRepository
             _knownGitRepositorysRepository = knownGitRepositorysRepository;
         }
 
-        public override bool CanRespondTo(CommsHubCommand<JsonElement> command)
+        public override bool CanRespondTo(NativeCommand<JsonElement> command)
         {
-            return command.CommandType == CommsHubCommandType.RemoveKnownGitRepositorys;
+            return command.CommandType == NativeMessageType.RemoveKnownGitRepositorys;
         }
 
         public override async Task<CommandResponseBase> Resolve(
-            CommsHubCommand<RemoveKnownGitRepositorysCommandArguments> command)
+            NativeCommand<RemoveKnownGitRepositorysCommandArguments> command)
         {
             if (command.Arguments == null || command.Arguments.KnownRepositoryId == Guid.Empty)
             {

@@ -1,4 +1,4 @@
-using ExpressThat.LovelyGit.Services.Hubs.CommandResolvers.Settings;
+using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Settings;
 using ExpressThat.LovelyGit.Services.Git.CommitGraph.Models;
 using System.Text.Json.Serialization.Metadata;
 

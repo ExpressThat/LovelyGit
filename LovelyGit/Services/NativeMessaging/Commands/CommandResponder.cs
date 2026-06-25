@@ -1,15 +1,16 @@
 using System.Text.Json;
+using ExpressThat.LovelyGit.Services.NativeMessaging;
 using System.Text.Json.Serialization.Metadata;
 
-namespace ExpressThat.LovelyGit.Services.Hubs.Commands
+namespace ExpressThat.LovelyGit.Services.NativeMessaging.Commands
 {
     public abstract class CommandResponder<TArguments> : ICommandResponder
     {
         protected abstract JsonTypeInfo<TArguments> ArgumentsJsonTypeInfo { get; }
 
-        public abstract bool CanRespondTo(CommsHubCommand<JsonElement> command);
+        public abstract bool CanRespondTo(NativeCommand<JsonElement> command);
 
-        async Task<CommandResponseBase> ICommandResponder.Resolve(CommsHubCommand<JsonElement> command)
+        async Task<CommandResponseBase> ICommandResponder.Resolve(NativeCommand<JsonElement> command)
         {
             TArguments? arguments = default;
             if (command.Arguments.ValueKind is not JsonValueKind.Undefined and not JsonValueKind.Null)
@@ -17,7 +18,7 @@ namespace ExpressThat.LovelyGit.Services.Hubs.Commands
                 arguments = command.Arguments.Deserialize(ArgumentsJsonTypeInfo);
             }
 
-            return await Resolve(new CommsHubCommand<TArguments>
+            return await Resolve(new NativeCommand<TArguments>
             {
                 CommandUniqueId = command.CommandUniqueId,
                 CommandType = command.CommandType,
@@ -25,6 +26,6 @@ namespace ExpressThat.LovelyGit.Services.Hubs.Commands
             });
         }
 
-        public abstract Task<CommandResponseBase> Resolve(CommsHubCommand<TArguments> command);
+        public abstract Task<CommandResponseBase> Resolve(NativeCommand<TArguments> command);
     }
 }
