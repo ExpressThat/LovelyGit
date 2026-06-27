@@ -1,4 +1,4 @@
-import { Copy, GitBranch, Tag } from "lucide-react";
+import { Copy, GitBranch, GitCommitHorizontal, Tag } from "lucide-react";
 import type { ReactElement } from "react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/context-menu";
 import type { CommitGraphRow } from "@/generated/types";
 import { shortHash } from "../utils/format";
+import { CheckoutCommitDetachedDialog } from "./CheckoutCommitDetachedDialog";
 import { CreateBranchFromCommitDialog } from "./CreateBranchFromCommitDialog";
 import { CreateTagAtCommitDialog } from "./CreateTagAtCommitDialog";
 
@@ -27,6 +28,7 @@ export function CommitRowContextMenu({
 	repositoryId: string | null;
 	row: CommitGraphRow;
 }) {
+	const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
 	const [isCreateBranchOpen, setIsCreateBranchOpen] = useState(false);
 	const [isCreateTagOpen, setIsCreateTagOpen] = useState(false);
 	const refs = commitRefs(row);
@@ -43,6 +45,13 @@ export function CommitRowContextMenu({
 						</ContextMenuLabel>
 					</ContextMenuGroup>
 					<ContextMenuSeparator />
+					<ContextMenuItem
+						disabled={repositoryId === null}
+						onClick={() => setIsCheckoutOpen(true)}
+					>
+						<GitCommitHorizontal />
+						Checkout commit
+					</ContextMenuItem>
 					<ContextMenuItem
 						disabled={repositoryId === null}
 						onClick={() => setIsCreateBranchOpen(true)}
@@ -107,6 +116,13 @@ export function CommitRowContextMenu({
 					) : null}
 				</ContextMenuContent>
 			</ContextMenu>
+			<CheckoutCommitDetachedDialog
+				commitHash={row.commit.hash}
+				isOpen={isCheckoutOpen}
+				onOpenChange={setIsCheckoutOpen}
+				onSuccess={onRefsChanged}
+				repositoryId={repositoryId}
+			/>
 			<CreateBranchFromCommitDialog
 				commitHash={row.commit.hash}
 				isOpen={isCreateBranchOpen}
