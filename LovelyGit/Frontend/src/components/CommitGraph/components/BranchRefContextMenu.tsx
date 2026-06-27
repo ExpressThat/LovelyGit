@@ -20,6 +20,7 @@ import {
 import type { CommitRefInfo } from "@/generated/types";
 import { sendRequestWithResponse } from "@/lib/commands";
 import { NativeMessageType } from "@/lib/nativeMessaging";
+import { DeleteBranchDialog } from "./DeleteBranchDialog";
 import { RenameBranchDialog } from "./RenameBranchDialog";
 
 export function BranchRefContextMenu({
@@ -35,10 +36,14 @@ export function BranchRefContextMenu({
 	refInfo: CommitRefInfo;
 	repositoryId: string | null;
 }) {
+	const [deleteForce, setDeleteForce] = useState(false);
+	const [isDeleteOpen, setIsDeleteOpen] = useState(false);
 	const [isRenameOpen, setIsRenameOpen] = useState(false);
 	const isLocalBranch = refInfo.kind === "Local";
 	const isCurrentBranch = refInfo.name === currentBranchName;
 	const canCheckout =
+		repositoryId !== null && isLocalBranch && !isCurrentBranch;
+	const canMutateBranch =
 		repositoryId !== null && isLocalBranch && !isCurrentBranch;
 
 	const checkoutBranch = async () => {
@@ -82,7 +87,7 @@ export function BranchRefContextMenu({
 						Checkout branch
 					</ContextMenuItem>
 					<ContextMenuItem
-						disabled={repositoryId === null || !isLocalBranch}
+						disabled={!canMutateBranch}
 						onClick={() => setIsRenameOpen(true)}
 					>
 						<Pencil />
@@ -96,12 +101,38 @@ export function BranchRefContextMenu({
 						<GitPullRequestArrow />
 						Merge into current
 					</ContextMenuItem>
-					<ContextMenuItem disabled variant="destructive">
+					<ContextMenuItem
+						disabled={!canMutateBranch}
+						onClick={() => {
+							setDeleteForce(false);
+							setIsDeleteOpen(true);
+						}}
+						variant="destructive"
+					>
 						<Trash2 />
 						Delete branch
 					</ContextMenuItem>
+					<ContextMenuItem
+						disabled={!canMutateBranch}
+						onClick={() => {
+							setDeleteForce(true);
+							setIsDeleteOpen(true);
+						}}
+						variant="destructive"
+					>
+						<Trash2 />
+						Force delete branch
+					</ContextMenuItem>
 				</ContextMenuContent>
 			</ContextMenu>
+			<DeleteBranchDialog
+				branchName={refInfo.name}
+				force={deleteForce}
+				isOpen={isDeleteOpen}
+				onOpenChange={setIsDeleteOpen}
+				onSuccess={onRefsChanged}
+				repositoryId={repositoryId}
+			/>
 			<RenameBranchDialog
 				branchName={refInfo.name}
 				isOpen={isRenameOpen}

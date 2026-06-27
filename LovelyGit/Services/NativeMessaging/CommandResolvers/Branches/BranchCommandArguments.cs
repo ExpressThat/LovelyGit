@@ -17,3 +17,11 @@ public record RenameBranchCommandArguments
     public string OldBranchName { get; set; } = string.Empty;
     public string NewBranchName { get; set; } = string.Empty;
 }
+
+[TypeSharp]
+public record DeleteBranchCommandArguments
+{
+    public Guid RepositoryId { get; set; }
+    public string BranchName { get; set; } = string.Empty;
+    public bool Force { get; set; }
+}

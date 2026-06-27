@@ -57,6 +57,54 @@ public sealed class GitBranchCommandServiceTests
         Assert.NotEqual(0, oldRef.ExitCode);
     }
 
+    [Fact]
+    public async Task DeleteBranchAsync_DeletesMergedBranch()
+    {
+        using var repository = TemporaryGitRepository.Create();
+        var branchService = new GitBranchCommandService(repository.GitCliService);
+        await branchService.CreateBranchAsync(
+            repository.Path,
+            "feature/delete-me",
+            repository.HeadCommitHash,
+            CancellationToken.None);
+
+        await branchService.DeleteBranchAsync(
+            repository.Path,
+            "feature/delete-me",
+            force: false,
+            CancellationToken.None);
+
+        var branchRef = await repository.GitCliService.ExecuteBufferedAsync(
+            ["show-ref", "--verify", "refs/heads/feature/delete-me"],
+            repository.Path,
+            validateExitCode: false,
+            cancellationToken: CancellationToken.None);
+
+        Assert.NotEqual(0, branchRef.ExitCode);
+    }
+
+    [Fact]
+    public async Task DeleteBranchAsync_ForceDeletesUnmergedBranch()
+    {
+        using var repository = TemporaryGitRepository.Create();
+        var branchService = new GitBranchCommandService(repository.GitCliService);
+        await repository.CreateUnmergedBranchAsync("feature/force-delete-me");
+
+        await branchService.DeleteBranchAsync(
+            repository.Path,
+            "feature/force-delete-me",
+            force: true,
+            CancellationToken.None);
+
+        var branchRef = await repository.GitCliService.ExecuteBufferedAsync(
+            ["show-ref", "--verify", "refs/heads/feature/force-delete-me"],
+            repository.Path,
+            validateExitCode: false,
+            cancellationToken: CancellationToken.None);
+
+        Assert.NotEqual(0, branchRef.ExitCode);
+    }
+
     private sealed class TemporaryGitRepository : IDisposable
     {
         private readonly DirectoryInfo _directory;
@@ -64,19 +112,33 @@ public sealed class GitBranchCommandServiceTests
         private TemporaryGitRepository(
             DirectoryInfo directory,
             GitCliService gitCliService,
+            string defaultBranchName,
             string headCommitHash)
         {
             _directory = directory;
+            DefaultBranchName = defaultBranchName;
             GitCliService = gitCliService;
             HeadCommitHash = headCommitHash;
             Path = directory.FullName;
         }
+
+        private string DefaultBranchName { get; }
 
         public GitCliService GitCliService { get; }
 
         public string HeadCommitHash { get; }
 
         public string Path { get; }
+
+        public async Task CreateUnmergedBranchAsync(string branchName)
+        {
+            RunGit(GitCliService, Path, ["checkout", "-b", branchName]);
+            RunGit(GitCliService, Path, ["commit", "--allow-empty", "-m", "Unmerged"]);
+            await GitCliService.ExecuteBufferedAsync(
+                ["checkout", DefaultBranchName],
+                Path,
+                cancellationToken: CancellationToken.None);
+        }
 
         public static TemporaryGitRepository Create()
         {
@@ -87,13 +149,17 @@ public sealed class GitBranchCommandServiceTests
             RunGit(gitCliService, directory.FullName, ["config", "user.name", "LovelyGit Test"]);
             RunGit(gitCliService, directory.FullName, ["config", "user.email", "test@example.invalid"]);
             RunGit(gitCliService, directory.FullName, ["commit", "--allow-empty", "-m", "Initial"]);
+            var defaultBranchName = RunGit(
+                gitCliService,
+                directory.FullName,
+                ["branch", "--show-current"]).StandardOutput.Trim();
 
             var headCommitHash = RunGit(
                 gitCliService,
                 directory.FullName,
                 ["rev-parse", "HEAD"]).StandardOutput.Trim();
 
-            return new TemporaryGitRepository(directory, gitCliService, headCommitHash);
+            return new TemporaryGitRepository(directory, gitCliService, defaultBranchName, headCommitHash);
         }
 
         public void Dispose()

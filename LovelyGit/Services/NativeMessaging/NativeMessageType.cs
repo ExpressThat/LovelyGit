@@ -57,6 +57,8 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging
         CreateBranchFromCommit,
         [NativeMessageContract(typeof(RenameBranchCommandArguments), typeof(EmptyCommandArguments))]
         RenameBranch,
+        [NativeMessageContract(typeof(DeleteBranchCommandArguments), typeof(EmptyCommandArguments))]
+        DeleteBranch,
         [NativeMessageContract(typeof(CreateTagAtCommitCommandArguments), typeof(EmptyCommandArguments))]
         CreateTagAtCommit,
         [NativeMessageContract(typeof(CheckoutCommitDetachedCommandArguments), typeof(EmptyCommandArguments))]
