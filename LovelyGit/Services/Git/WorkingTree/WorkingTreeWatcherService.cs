@@ -11,6 +11,7 @@ namespace ExpressThat.LovelyGit.Services.Git.WorkingTree;
 internal sealed partial class WorkingTreeWatcherService : IDisposable
 {
     private static readonly TimeSpan DebounceDelay = TimeSpan.FromMilliseconds(200);
+    private const int MaxRecursiveWorkTreeWatcherDirectories = 2000;
     private const ulong FnvOffsetBasis = 14695981039346656037;
     private const ulong FnvPrime = 1099511628211;
     private readonly INativeMessaging _nativeMessaging;
@@ -104,7 +105,10 @@ internal sealed partial class WorkingTreeWatcherService : IDisposable
             _ignoreMatcher = null;
             _commitGraphSnapshot = commitGraphSnapshot;
 
-            AddWatcher(paths.WorkTreeDirectory, "*", includeSubdirectories: true);
+            AddWatcher(
+                paths.WorkTreeDirectory,
+                "*",
+                ShouldWatchWorkTreeRecursively(paths.WorkTreeDirectory));
             AddWatcher(paths.GitDirectory, "*", includeSubdirectories: false);
             var refsPath = Path.Combine(paths.GitDirectory, "refs");
             if (Directory.Exists(refsPath))
