@@ -12,6 +12,7 @@ internal static class CheckoutServiceCollectionExtensions
         services.AddSingleton<GitCheckoutCommandService>();
         services.AddSingleton<ICommandResponder, CheckoutBranchCommandResolver>();
         services.AddSingleton<ICommandResponder, CheckoutCommitDetachedCommandResolver>();
+        services.AddSingleton<ICommandResponder, CheckoutRemoteBranchCommandResolver>();
         return services;
     }
 }

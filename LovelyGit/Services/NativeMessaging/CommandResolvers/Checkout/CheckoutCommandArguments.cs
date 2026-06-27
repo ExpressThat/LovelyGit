@@ -17,3 +17,13 @@ public record CheckoutBranchCommandArguments
 
     public string BranchName { get; set; } = string.Empty;
 }
+
+[TypeSharp]
+public record CheckoutRemoteBranchCommandArguments
+{
+    public Guid RepositoryId { get; set; }
+
+    public string RemoteBranchName { get; set; } = string.Empty;
+
+    public string LocalBranchName { get; set; } = string.Empty;
+}

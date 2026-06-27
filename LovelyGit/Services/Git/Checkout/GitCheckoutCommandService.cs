@@ -60,6 +60,35 @@ internal sealed class GitCheckoutCommandService
         ThrowIfFailed(result);
     }
 
+    public async Task CheckoutRemoteBranchAsync(
+        string repositoryPath,
+        string remoteBranchName,
+        string localBranchName,
+        CancellationToken cancellationToken)
+    {
+        if (!GitBranchNameValidator.IsValidBranchName(remoteBranchName))
+        {
+            throw new ArgumentException("Remote branch name is not valid.", nameof(remoteBranchName));
+        }
+
+        if (!GitBranchNameValidator.IsValidBranchName(localBranchName))
+        {
+            throw new ArgumentException("Local branch name is not valid.", nameof(localBranchName));
+        }
+
+        var repositoryPaths = await GitRepositoryDiscovery
+            .ResolveRepositoryPathsAsync(repositoryPath, cancellationToken)
+            .ConfigureAwait(false);
+
+        var result = await _gitCliService.ExecuteBufferedAsync(
+            ["checkout", "--track", "-b", localBranchName, remoteBranchName],
+            repositoryPaths.WorkTreeDirectory,
+            validateExitCode: false,
+            cancellationToken).ConfigureAwait(false);
+
+        ThrowIfFailed(result);
+    }
+
     private static void ThrowIfFailed(BufferedCommandResult result)
     {
         if (result.ExitCode == 0)

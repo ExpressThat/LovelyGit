@@ -79,6 +79,8 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging
         CheckoutCommitDetached,
         [NativeMessageContract(typeof(CheckoutBranchCommandArguments), typeof(EmptyCommandArguments))]
         CheckoutBranch,
+        [NativeMessageContract(typeof(CheckoutRemoteBranchCommandArguments), typeof(EmptyCommandArguments))]
+        CheckoutRemoteBranch,
         [NativeMessageContract(typeof(CherryPickCommitCommandArguments), typeof(EmptyCommandArguments))]
         CherryPickCommit,
         [NativeMessageContract(typeof(RevertCommitCommandArguments), typeof(EmptyCommandArguments))]

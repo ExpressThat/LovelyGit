@@ -22,6 +22,7 @@ import type { CommitRefInfo } from "@/generated/types";
 import { sendRequestWithResponse } from "@/lib/commands";
 import { NativeMessageType } from "@/lib/nativeMessaging";
 import { BranchUpstreamDialog } from "./BranchUpstreamDialog";
+import { CheckoutRemoteBranchDialog } from "./CheckoutRemoteBranchDialog";
 import { DeleteBranchDialog } from "./DeleteBranchDialog";
 import { MergeBranchDialog } from "./MergeBranchDialog";
 import { PullBranchDialog } from "./PullBranchDialog";
@@ -43,6 +44,7 @@ export function BranchRefContextMenu({
 	repositoryId: string | null;
 }) {
 	const [deleteForce, setDeleteForce] = useState(false);
+	const [isCheckoutRemoteOpen, setIsCheckoutRemoteOpen] = useState(false);
 	const [isDeleteOpen, setIsDeleteOpen] = useState(false);
 	const [isMergeOpen, setIsMergeOpen] = useState(false);
 	const [isPullOpen, setIsPullOpen] = useState(false);
@@ -51,6 +53,7 @@ export function BranchRefContextMenu({
 	const [isRenameOpen, setIsRenameOpen] = useState(false);
 	const [isUpstreamOpen, setIsUpstreamOpen] = useState(false);
 	const isLocalBranch = refInfo.kind === "Local";
+	const isRemoteBranch = refInfo.kind === "Remote";
 	const isCurrentBranch = refInfo.name === currentBranchName;
 	const canCheckout =
 		repositoryId !== null && isLocalBranch && !isCurrentBranch;
@@ -59,6 +62,7 @@ export function BranchRefContextMenu({
 	const canPullBranch =
 		repositoryId !== null && isLocalBranch && isCurrentBranch;
 	const canManageUpstream = repositoryId !== null && isLocalBranch;
+	const canCheckoutRemote = repositoryId !== null && isRemoteBranch;
 
 	const checkoutBranch = async () => {
 		if (!canCheckout || repositoryId === null) {
@@ -99,6 +103,13 @@ export function BranchRefContextMenu({
 					<ContextMenuItem disabled={!canCheckout} onClick={checkoutBranch}>
 						<GitBranch />
 						Checkout branch
+					</ContextMenuItem>
+					<ContextMenuItem
+						disabled={!canCheckoutRemote}
+						onClick={() => setIsCheckoutRemoteOpen(true)}
+					>
+						<GitBranch />
+						Checkout as local branch
 					</ContextMenuItem>
 					<ContextMenuItem
 						disabled={!canMutateBranch}
@@ -172,6 +183,13 @@ export function BranchRefContextMenu({
 				isOpen={isDeleteOpen}
 				onOpenChange={setIsDeleteOpen}
 				onSuccess={onRefsChanged}
+				repositoryId={repositoryId}
+			/>
+			<CheckoutRemoteBranchDialog
+				isOpen={isCheckoutRemoteOpen}
+				onOpenChange={setIsCheckoutRemoteOpen}
+				onSuccess={onRefsChanged}
+				remoteBranchName={refInfo.name}
 				repositoryId={repositoryId}
 			/>
 			<BranchUpstreamDialog
