@@ -1,5 +1,11 @@
 import { Tag } from "lucide-react";
-import { type FormEvent, useEffect, useId, useState } from "react";
+import {
+	type FormEvent,
+	type MouseEvent,
+	useEffect,
+	useId,
+	useState,
+} from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -41,8 +47,7 @@ export function CreateTagAtCommitDialog({
 		}
 	}, [isOpen]);
 
-	const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
-		event.preventDefault();
+	const createTag = async () => {
 		if (!canCreate || repositoryId === null) {
 			return;
 		}
@@ -67,6 +72,14 @@ export function CreateTagAtCommitDialog({
 		} finally {
 			setIsCreating(false);
 		}
+	};
+	const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+		event.preventDefault();
+		void createTag();
+	};
+	const handleCreateClick = (event: MouseEvent<HTMLButtonElement>) => {
+		event.preventDefault();
+		void createTag();
 	};
 
 	return (
@@ -105,7 +118,11 @@ export function CreateTagAtCommitDialog({
 						>
 							Cancel
 						</Button>
-						<Button disabled={!canCreate} type="submit">
+						<Button
+							disabled={!canCreate}
+							onClick={handleCreateClick}
+							type="submit"
+						>
 							{isCreating ? "Creating" : "Create tag"}
 						</Button>
 					</DialogFooter>

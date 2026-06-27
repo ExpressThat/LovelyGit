@@ -11,6 +11,7 @@ internal sealed class CreateTagAtCommitCommandResolver
     : CommandResponder<CreateTagAtCommitCommandArguments>
 {
     private readonly GitTagCommandService _tagCommandService;
+    private readonly CommitGraphRepository _commitGraphRepository;
     private readonly KnownGitRepositorysRepository _knownGitRepositorysRepository;
 
     protected override JsonTypeInfo<CreateTagAtCommitCommandArguments> ArgumentsJsonTypeInfo =>
@@ -18,10 +19,12 @@ internal sealed class CreateTagAtCommitCommandResolver
 
     public CreateTagAtCommitCommandResolver(
         KnownGitRepositorysRepository knownGitRepositorysRepository,
-        GitTagCommandService tagCommandService)
+        GitTagCommandService tagCommandService,
+        CommitGraphRepository commitGraphRepository)
     {
         _knownGitRepositorysRepository = knownGitRepositorysRepository;
         _tagCommandService = tagCommandService;
+        _commitGraphRepository = commitGraphRepository;
     }
 
     public override bool CanRespondTo(NativeCommand<JsonElement> command)
@@ -61,6 +64,9 @@ internal sealed class CreateTagAtCommitCommandResolver
                 arguments.TagName.Trim(),
                 arguments.CommitHash,
                 CancellationToken.None).ConfigureAwait(false);
+            await _commitGraphRepository
+                .ClearRepositoryAsync(arguments.RepositoryId, CancellationToken.None)
+                .ConfigureAwait(false);
             return Success(command);
         }
         catch (Exception ex)
