@@ -1,4 +1,10 @@
-import { Copy, GitBranch, GitCommitHorizontal, Tag } from "lucide-react";
+import {
+	Copy,
+	GitBranch,
+	GitCommitHorizontal,
+	GitPullRequestArrow,
+	Tag,
+} from "lucide-react";
 import type { ReactElement } from "react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -14,6 +20,7 @@ import {
 import type { CommitGraphRow } from "@/generated/types";
 import { shortHash } from "../utils/format";
 import { CheckoutCommitDetachedDialog } from "./CheckoutCommitDetachedDialog";
+import { CherryPickCommitDialog } from "./CherryPickCommitDialog";
 import { CreateBranchFromCommitDialog } from "./CreateBranchFromCommitDialog";
 import { CreateTagAtCommitDialog } from "./CreateTagAtCommitDialog";
 
@@ -28,6 +35,7 @@ export function CommitRowContextMenu({
 	repositoryId: string | null;
 	row: CommitGraphRow;
 }) {
+	const [isCherryPickOpen, setIsCherryPickOpen] = useState(false);
 	const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
 	const [isCreateBranchOpen, setIsCreateBranchOpen] = useState(false);
 	const [isCreateTagOpen, setIsCreateTagOpen] = useState(false);
@@ -51,6 +59,13 @@ export function CommitRowContextMenu({
 					>
 						<GitCommitHorizontal />
 						Checkout commit
+					</ContextMenuItem>
+					<ContextMenuItem
+						disabled={repositoryId === null}
+						onClick={() => setIsCherryPickOpen(true)}
+					>
+						<GitPullRequestArrow />
+						Cherry-pick commit
 					</ContextMenuItem>
 					<ContextMenuItem
 						disabled={repositoryId === null}
@@ -116,6 +131,13 @@ export function CommitRowContextMenu({
 					) : null}
 				</ContextMenuContent>
 			</ContextMenu>
+			<CherryPickCommitDialog
+				commitHash={row.commit.hash}
+				isOpen={isCherryPickOpen}
+				onOpenChange={setIsCherryPickOpen}
+				onSuccess={onRefsChanged}
+				repositoryId={repositoryId}
+			/>
 			<CheckoutCommitDetachedDialog
 				commitHash={row.commit.hash}
 				isOpen={isCheckoutOpen}
