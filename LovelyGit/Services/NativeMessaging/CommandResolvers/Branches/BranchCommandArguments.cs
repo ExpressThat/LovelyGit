@@ -39,3 +39,18 @@ public record PullBranchCommandArguments
     public Guid RepositoryId { get; set; }
     public string BranchName { get; set; } = string.Empty;
 }
+
+[TypeSharp]
+public record SetBranchUpstreamCommandArguments
+{
+    public Guid RepositoryId { get; set; }
+    public string BranchName { get; set; } = string.Empty;
+    public string UpstreamName { get; set; } = string.Empty;
+}
+
+[TypeSharp]
+public record UnsetBranchUpstreamCommandArguments
+{
+    public Guid RepositoryId { get; set; }
+    public string BranchName { get; set; } = string.Empty;
+}

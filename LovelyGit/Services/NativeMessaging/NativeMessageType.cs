@@ -65,6 +65,10 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging
         PullBranch,
         [NativeMessageContract(typeof(PushBranchCommandArguments), typeof(EmptyCommandArguments))]
         PushBranch,
+        [NativeMessageContract(typeof(SetBranchUpstreamCommandArguments), typeof(EmptyCommandArguments))]
+        SetBranchUpstream,
+        [NativeMessageContract(typeof(UnsetBranchUpstreamCommandArguments), typeof(EmptyCommandArguments))]
+        UnsetBranchUpstream,
         [NativeMessageContract(typeof(MergeBranchIntoCurrentCommandArguments), typeof(EmptyCommandArguments))]
         MergeBranchIntoCurrent,
         [NativeMessageContract(typeof(RebaseCurrentBranchOntoBranchCommandArguments), typeof(EmptyCommandArguments))]

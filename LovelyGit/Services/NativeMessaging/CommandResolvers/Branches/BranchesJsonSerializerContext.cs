@@ -9,6 +9,8 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Branch
 [JsonSerializable(typeof(PullBranchCommandArguments))]
 [JsonSerializable(typeof(PushBranchCommandArguments))]
 [JsonSerializable(typeof(RenameBranchCommandArguments))]
+[JsonSerializable(typeof(SetBranchUpstreamCommandArguments))]
+[JsonSerializable(typeof(UnsetBranchUpstreamCommandArguments))]
 [JsonSerializable(typeof(CommandResponse<EmptyCommandArguments>))]
 internal partial class BranchesJsonSerializerContext : JsonSerializerContext
 {

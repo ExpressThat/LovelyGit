@@ -15,6 +15,8 @@ internal static class BranchesServiceCollectionExtensions
         services.AddSingleton<ICommandResponder, PullBranchCommandResolver>();
         services.AddSingleton<ICommandResponder, PushBranchCommandResolver>();
         services.AddSingleton<ICommandResponder, RenameBranchCommandResolver>();
+        services.AddSingleton<ICommandResponder, SetBranchUpstreamCommandResolver>();
+        services.AddSingleton<ICommandResponder, UnsetBranchUpstreamCommandResolver>();
         return services;
     }
 }

@@ -141,6 +141,58 @@ internal sealed class GitBranchCommandService
         ThrowIfFailed(result);
     }
 
+    public async Task SetBranchUpstreamAsync(
+        string repositoryPath,
+        string branchName,
+        string upstreamName,
+        CancellationToken cancellationToken)
+    {
+        if (!GitBranchNameValidator.IsValidBranchName(branchName))
+        {
+            throw new ArgumentException("Branch name is not valid.", nameof(branchName));
+        }
+
+        if (!GitBranchNameValidator.IsValidBranchName(upstreamName))
+        {
+            throw new ArgumentException("Upstream name is not valid.", nameof(upstreamName));
+        }
+
+        var repositoryPaths = await GitRepositoryDiscovery
+            .ResolveRepositoryPathsAsync(repositoryPath, cancellationToken)
+            .ConfigureAwait(false);
+
+        var result = await _gitCliService.ExecuteBufferedAsync(
+            ["branch", "--set-upstream-to", upstreamName, branchName],
+            repositoryPaths.WorkTreeDirectory,
+            validateExitCode: false,
+            cancellationToken).ConfigureAwait(false);
+
+        ThrowIfFailed(result);
+    }
+
+    public async Task UnsetBranchUpstreamAsync(
+        string repositoryPath,
+        string branchName,
+        CancellationToken cancellationToken)
+    {
+        if (!GitBranchNameValidator.IsValidBranchName(branchName))
+        {
+            throw new ArgumentException("Branch name is not valid.", nameof(branchName));
+        }
+
+        var repositoryPaths = await GitRepositoryDiscovery
+            .ResolveRepositoryPathsAsync(repositoryPath, cancellationToken)
+            .ConfigureAwait(false);
+
+        var result = await _gitCliService.ExecuteBufferedAsync(
+            ["branch", "--unset-upstream", branchName],
+            repositoryPaths.WorkTreeDirectory,
+            validateExitCode: false,
+            cancellationToken).ConfigureAwait(false);
+
+        ThrowIfFailed(result);
+    }
+
     private static void ThrowIfFailed(BufferedCommandResult result)
     {
         if (result.ExitCode == 0)

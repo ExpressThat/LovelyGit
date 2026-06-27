@@ -26,6 +26,40 @@ public sealed class GitBranchRemoteCommandServiceTests
         Assert.Equal(repository.UpdaterHeadCommitHash, localHead);
     }
 
+    [Fact]
+    public async Task SetAndUnsetBranchUpstreamAsync_UpdatesBranchTracking()
+    {
+        using var repository = TemporaryRemoteGitRepository.Create();
+        var branchService = new GitBranchCommandService(repository.GitCliService);
+        var upstreamName = $"origin/{repository.DefaultBranchName}";
+
+        await branchService.SetBranchUpstreamAsync(
+            repository.ClonePath,
+            repository.DefaultBranchName,
+            upstreamName,
+            CancellationToken.None);
+
+        var upstream = RunGit(
+            repository.GitCliService,
+            repository.ClonePath,
+            ["rev-parse", "--abbrev-ref", $"{repository.DefaultBranchName}@{{upstream}}"])
+            .StandardOutput.Trim();
+
+        await branchService.UnsetBranchUpstreamAsync(
+            repository.ClonePath,
+            repository.DefaultBranchName,
+            CancellationToken.None);
+
+        var missingUpstream = RunGit(
+            repository.GitCliService,
+            repository.ClonePath,
+            ["rev-parse", "--abbrev-ref", $"{repository.DefaultBranchName}@{{upstream}}"],
+            validateExitCode: false);
+
+        Assert.Equal(upstreamName, upstream);
+        Assert.NotEqual(0, missingUpstream.ExitCode);
+    }
+
     private sealed class TemporaryRemoteGitRepository : IDisposable
     {
         private readonly DirectoryInfo _directory;
@@ -112,10 +146,11 @@ public sealed class GitBranchRemoteCommandServiceTests
     private static CliWrap.Buffered.BufferedCommandResult RunGit(
         GitCliService gitCliService,
         string workingDirectory,
-        IReadOnlyList<string> arguments)
+        IReadOnlyList<string> arguments,
+        bool validateExitCode = true)
     {
         return gitCliService
-            .ExecuteBufferedAsync(arguments, workingDirectory)
+            .ExecuteBufferedAsync(arguments, workingDirectory, validateExitCode)
             .GetAwaiter()
             .GetResult();
     }

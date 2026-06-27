@@ -21,6 +21,7 @@ import {
 import type { CommitRefInfo } from "@/generated/types";
 import { sendRequestWithResponse } from "@/lib/commands";
 import { NativeMessageType } from "@/lib/nativeMessaging";
+import { BranchUpstreamDialog } from "./BranchUpstreamDialog";
 import { DeleteBranchDialog } from "./DeleteBranchDialog";
 import { MergeBranchDialog } from "./MergeBranchDialog";
 import { PullBranchDialog } from "./PullBranchDialog";
@@ -48,6 +49,7 @@ export function BranchRefContextMenu({
 	const [isPushOpen, setIsPushOpen] = useState(false);
 	const [isRebaseOpen, setIsRebaseOpen] = useState(false);
 	const [isRenameOpen, setIsRenameOpen] = useState(false);
+	const [isUpstreamOpen, setIsUpstreamOpen] = useState(false);
 	const isLocalBranch = refInfo.kind === "Local";
 	const isCurrentBranch = refInfo.name === currentBranchName;
 	const canCheckout =
@@ -56,6 +58,7 @@ export function BranchRefContextMenu({
 		repositoryId !== null && isLocalBranch && !isCurrentBranch;
 	const canPullBranch =
 		repositoryId !== null && isLocalBranch && isCurrentBranch;
+	const canManageUpstream = repositoryId !== null && isLocalBranch;
 
 	const checkoutBranch = async () => {
 		if (!canCheckout || repositoryId === null) {
@@ -103,6 +106,13 @@ export function BranchRefContextMenu({
 					>
 						<Pencil />
 						Rename branch
+					</ContextMenuItem>
+					<ContextMenuItem
+						disabled={!canManageUpstream}
+						onClick={() => setIsUpstreamOpen(true)}
+					>
+						<GitBranch />
+						Upstream settings
 					</ContextMenuItem>
 					<ContextMenuItem
 						disabled={!canPullBranch}
@@ -161,6 +171,13 @@ export function BranchRefContextMenu({
 				force={deleteForce}
 				isOpen={isDeleteOpen}
 				onOpenChange={setIsDeleteOpen}
+				onSuccess={onRefsChanged}
+				repositoryId={repositoryId}
+			/>
+			<BranchUpstreamDialog
+				branchName={refInfo.name}
+				isOpen={isUpstreamOpen}
+				onOpenChange={setIsUpstreamOpen}
 				onSuccess={onRefsChanged}
 				repositoryId={repositoryId}
 			/>
