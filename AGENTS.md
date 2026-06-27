@@ -1,5 +1,17 @@
 # AGENTS.md
 
+## Visual Testing
+- Use CMG from `C:\CMG\CMG.exe` for visual checks of the real LovelyGit desktop app, not a plain browser-only `localhost` session.
+- When debugging, set `WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS=--remote-debugging-port=9333` in the Debug/launch profile environment before starting LovelyGit. For this repo's `http` profile, add it beside `ASPNETCORE_ENVIRONMENT` in `LovelyGit/Properties/launchSettings.json`, or set the same variable in the IDE's debug environment UI.
+- To try the debug flow from a shell, run from the project directory:
+  `powershell -NoProfile -Command "$env:WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS='--remote-debugging-port=9333'; dotnet run --project LovelyGit.csproj --launch-profile http"`
+- Launch the compiled WebView2 app with remote debugging enabled and the app project as the working directory:
+  `powershell -NoProfile -Command "$env:WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS='--remote-debugging-port=9333'; Start-Process -FilePath 'C:/Projects/LovelyGit/LovelyGit/bin/Debug/net10.0/win-x64/LovelyGit.exe' -WorkingDirectory 'C:/Projects/LovelyGit/LovelyGit' -PassThru"`
+- Confirm the WebView2 target is available with `Invoke-WebRequest -UseBasicParsing http://127.0.0.1:9333/json`; the target title should be `LovelyGit` and the URL should be `http://localhost:5000/`.
+- Drive the attached app with CMG using the explicit port form, for example `C:/CMG/CMG.exe browser --port 9333 control tabs list` or `C:/CMG/CMG.exe browser --port 9333 control script --file artifacts/lovelygit-app-graph.cmgscript --gif artifacts/lovelygit-app-graph.gif`.
+- Prefer assertions against visible app UI such as `COMMIT MESSAGE`, `HASH`, `AUTHOR`, repository tabs, details panels, and working-tree controls; the new-tab `Open Repo` button only appears when no current repository is selected.
+- Save screenshots/GIFs under `artifacts/` and inspect screenshots before reporting visual success. If the app shows `Missing file: index.html`, it was launched from the wrong working directory.
+
 ## Project Shape
 - Single .NET solution: `LovelyGit.slnx` contains `LovelyGit/LovelyGit.csproj`, a `net10.0` Web SDK app with warnings treated as errors and AOT publishing enabled.
 - Frontend lives under `LovelyGit/Frontend` and is a Vite + React 19 + TypeScript app; production frontend assets are copied into `LovelyGit/wwwroot` by the frontend build.
