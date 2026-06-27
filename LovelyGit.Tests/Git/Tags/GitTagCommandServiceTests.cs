@@ -25,6 +25,31 @@ public sealed class GitTagCommandServiceTests
         Assert.StartsWith(repository.HeadCommitHash, tagRef.StandardOutput);
     }
 
+    [Fact]
+    public async Task DeleteTagAsync_DeletesLocalTag()
+    {
+        using var repository = TemporaryGitRepository.Create();
+        var tagService = new GitTagCommandService(repository.GitCliService);
+        await tagService.CreateTagAsync(
+            repository.Path,
+            "v-test-delete-tag",
+            repository.HeadCommitHash,
+            CancellationToken.None);
+
+        await tagService.DeleteTagAsync(
+            repository.Path,
+            "v-test-delete-tag",
+            CancellationToken.None);
+
+        var tagRef = await repository.GitCliService.ExecuteBufferedAsync(
+            ["show-ref", "--verify", "refs/tags/v-test-delete-tag"],
+            repository.Path,
+            validateExitCode: false,
+            cancellationToken: CancellationToken.None);
+
+        Assert.NotEqual(0, tagRef.ExitCode);
+    }
+
     private sealed class TemporaryGitRepository : IDisposable
     {
         private readonly DirectoryInfo _directory;

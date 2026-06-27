@@ -16,15 +16,18 @@ export function CommitDetails({
 	commitHash,
 	onSelectFile,
 	repositoryId,
+	refreshToken = 0,
 }: {
 	commitHash: string;
 	onSelectFile: (file: CommitChangedFile) => void;
 	repositoryId: string;
+	refreshToken?: number;
 }) {
 	const [state, setState] = useState<CommitDetailsState>({ status: "loading" });
 
 	useEffect(() => {
 		let isActive = true;
+		void refreshToken;
 		setState({ status: "loading" });
 
 		sendRequestWithResponse({
@@ -63,7 +66,7 @@ export function CommitDetails({
 		return () => {
 			isActive = false;
 		};
-	}, [commitHash, repositoryId]);
+	}, [commitHash, refreshToken, repositoryId]);
 
 	if (state.status === "loading") {
 		return (

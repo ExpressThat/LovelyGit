@@ -11,3 +11,11 @@ public record CreateTagAtCommitCommandArguments
 
     public string TagName { get; set; } = string.Empty;
 }
+
+[TypeSharp]
+public record DeleteTagCommandArguments
+{
+    public Guid RepositoryId { get; set; }
+
+    public string TagName { get; set; } = string.Empty;
+}

@@ -42,6 +42,29 @@ internal sealed class GitTagCommandService
         ThrowIfFailed(result);
     }
 
+    public async Task DeleteTagAsync(
+        string repositoryPath,
+        string tagName,
+        CancellationToken cancellationToken)
+    {
+        if (!GitTagNameValidator.IsValidTagName(tagName))
+        {
+            throw new ArgumentException("Tag name is not valid.", nameof(tagName));
+        }
+
+        var repositoryPaths = await GitRepositoryDiscovery
+            .ResolveRepositoryPathsAsync(repositoryPath, cancellationToken)
+            .ConfigureAwait(false);
+
+        var result = await _gitCliService.ExecuteBufferedAsync(
+            ["tag", "-d", "--", tagName],
+            repositoryPaths.WorkTreeDirectory,
+            validateExitCode: false,
+            cancellationToken).ConfigureAwait(false);
+
+        ThrowIfFailed(result);
+    }
+
     private static void ThrowIfFailed(BufferedCommandResult result)
     {
         if (result.ExitCode == 0)

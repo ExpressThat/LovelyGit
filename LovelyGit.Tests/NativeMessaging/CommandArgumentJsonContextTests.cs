@@ -27,6 +27,22 @@ public sealed class CommandArgumentJsonContextTests
         Assert.Equal("codex-test", arguments?.TagName);
     }
 
+    [Fact]
+    public void TagsContext_DeserializesCamelCaseDeleteArguments()
+    {
+        var arguments = JsonSerializer.Deserialize(
+            $$"""
+            {
+              "repositoryId": "{{RepositoryId}}",
+              "tagName": "codex-test"
+            }
+            """,
+            TagsJsonSerializerContext.Default.DeleteTagCommandArguments);
+
+        Assert.Equal(RepositoryId, arguments?.RepositoryId);
+        Assert.Equal("codex-test", arguments?.TagName);
+    }
+
     [Theory]
     [MemberData(nameof(CamelCasePayloads))]
     public void MutatingCommandContexts_DeserializeCamelCaseArguments(

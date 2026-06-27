@@ -75,6 +75,8 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging
         RebaseCurrentBranchOntoBranch,
         [NativeMessageContract(typeof(CreateTagAtCommitCommandArguments), typeof(EmptyCommandArguments))]
         CreateTagAtCommit,
+        [NativeMessageContract(typeof(DeleteTagCommandArguments), typeof(EmptyCommandArguments))]
+        DeleteTag,
         [NativeMessageContract(typeof(CheckoutCommitDetachedCommandArguments), typeof(EmptyCommandArguments))]
         CheckoutCommitDetached,
         [NativeMessageContract(typeof(CheckoutBranchCommandArguments), typeof(EmptyCommandArguments))]

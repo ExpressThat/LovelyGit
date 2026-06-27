@@ -12,6 +12,7 @@ import type { CommitRefInfo } from "@/generated/types";
 import { BranchUpstreamDialog } from "./BranchUpstreamDialog";
 import { CheckoutRemoteBranchDialog } from "./CheckoutRemoteBranchDialog";
 import { DeleteBranchDialog } from "./DeleteBranchDialog";
+import { DeleteTagDialog } from "./DeleteTagDialog";
 import { LocalBranchMenuItems } from "./LocalBranchMenuItems";
 import { MergeBranchDialog } from "./MergeBranchDialog";
 import { PullBranchDialog } from "./PullBranchDialog";
@@ -19,6 +20,7 @@ import { PushBranchDialog } from "./PushBranchDialog";
 import { RebaseBranchDialog } from "./RebaseBranchDialog";
 import { RemoteBranchMenuItems } from "./RemoteBranchMenuItems";
 import { RenameBranchDialog } from "./RenameBranchDialog";
+import { TagMenuItems } from "./TagMenuItems";
 
 export function BranchRefContextMenu({
 	children,
@@ -36,6 +38,7 @@ export function BranchRefContextMenu({
 	const [deleteForce, setDeleteForce] = useState(false);
 	const [isCheckoutRemoteOpen, setIsCheckoutRemoteOpen] = useState(false);
 	const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+	const [isDeleteTagOpen, setIsDeleteTagOpen] = useState(false);
 	const [isMergeOpen, setIsMergeOpen] = useState(false);
 	const [isPullOpen, setIsPullOpen] = useState(false);
 	const [isPushOpen, setIsPushOpen] = useState(false);
@@ -44,6 +47,7 @@ export function BranchRefContextMenu({
 	const [isUpstreamOpen, setIsUpstreamOpen] = useState(false);
 	const isLocalBranch = refInfo.kind === "Local";
 	const isRemoteBranch = refInfo.kind === "Remote";
+	const isTag = refInfo.kind === "Tag";
 	const isCurrentBranch = refInfo.name === currentBranchName;
 	const canMutateBranch =
 		repositoryId !== null && isLocalBranch && !isCurrentBranch;
@@ -52,6 +56,7 @@ export function BranchRefContextMenu({
 	const canManageUpstream = repositoryId !== null && isLocalBranch;
 	const canCheckoutRemote = repositoryId !== null && isRemoteBranch;
 	const canPushBranch = repositoryId !== null && isLocalBranch;
+	const canDeleteTag = repositoryId !== null && isTag;
 
 	return (
 		<>
@@ -71,6 +76,12 @@ export function BranchRefContextMenu({
 						<RemoteBranchMenuItems
 							canCheckoutRemote={canCheckoutRemote}
 							onCheckout={() => setIsCheckoutRemoteOpen(true)}
+						/>
+					) : null}
+					{isTag ? (
+						<TagMenuItems
+							canDeleteTag={canDeleteTag}
+							onDelete={() => setIsDeleteTagOpen(true)}
 						/>
 					) : null}
 					{isLocalBranch ? (
@@ -104,6 +115,13 @@ export function BranchRefContextMenu({
 				onOpenChange={setIsDeleteOpen}
 				onSuccess={onRefsChanged}
 				repositoryId={repositoryId}
+			/>
+			<DeleteTagDialog
+				isOpen={isDeleteTagOpen}
+				onOpenChange={setIsDeleteTagOpen}
+				onSuccess={onRefsChanged}
+				repositoryId={repositoryId}
+				tagName={refInfo.name}
 			/>
 			<CheckoutRemoteBranchDialog
 				isOpen={isCheckoutRemoteOpen}

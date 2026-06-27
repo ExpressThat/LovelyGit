@@ -11,6 +11,7 @@ internal static class TagsServiceCollectionExtensions
         services.AddLovelyGitJsonTypeInfoResolver(TagsJsonSerializerContext.Default);
         services.AddSingleton<GitTagCommandService>();
         services.AddSingleton<ICommandResponder, CreateTagAtCommitCommandResolver>();
+        services.AddSingleton<ICommandResponder, DeleteTagCommandResolver>();
         return services;
     }
 }

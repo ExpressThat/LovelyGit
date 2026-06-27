@@ -198,6 +198,7 @@ function App() {
 										selectedFile: file,
 									})
 								}
+								refreshToken={commitGraphRefreshToken}
 								repositoryId={currentGitRepositoryId}
 							/>
 						) : null}
