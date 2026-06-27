@@ -9,6 +9,16 @@
   `powershell -NoProfile -Command "$env:WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS='--remote-debugging-port=9333'; Start-Process -FilePath 'C:/Projects/LovelyGit/LovelyGit/bin/Debug/net10.0/win-x64/LovelyGit.exe' -WorkingDirectory 'C:/Projects/LovelyGit/LovelyGit' -PassThru"`
 - Confirm the WebView2 target is available with `Invoke-WebRequest -UseBasicParsing http://127.0.0.1:9333/json`; the target title should be `LovelyGit` and the URL should be `http://localhost:5000/`.
 - Drive the attached app with CMG using the explicit port form, for example `C:/CMG/CMG.exe browser --port 9333 control tabs list` or `C:/CMG/CMG.exe browser --port 9333 control script --file artifacts/lovelygit-app-graph.cmgscript --gif artifacts/lovelygit-app-graph.gif`.
+- Always arm CMG frontend error capture before navigation, clicks, typing, or other interactions that might crash React. Use the CLI event commands directly, or the equivalent CMG script commands `captureConsole` and `capturePageErrors` before the interaction:
+  `C:/CMG/CMG.exe browser --port 9333 control events console capture`
+  `C:/CMG/CMG.exe browser --port 9333 control events pageErrors capture`
+- To diagnose a crash after an interaction, use positive waits so CMG prints the captured diagnostics:
+  `C:/CMG/CMG.exe browser --port 9333 control events pageErrors wait "." --match regex --timeout 1000`
+  `C:/CMG/CMG.exe browser --port 9333 control events console wait "." --level error --match regex --timeout 1000`
+- For normal visual-test gates, after the interaction and screenshot, assert no captured frontend failures:
+  `C:/CMG/CMG.exe browser --port 9333 control events pageErrors expectNoPageError --timeout 250`
+  `C:/CMG/CMG.exe browser --port 9333 control events console expectNoConsole --level error --timeout 250`
+- CMG captures future console/page errors only after capture is armed; it does not dump browser console history from before capture was armed. If a crash already happened without capture enabled, reproduce it with capture enabled instead of relying on after-the-fact console history.
 - Prefer assertions against visible app UI such as `COMMIT MESSAGE`, `HASH`, `AUTHOR`, repository tabs, details panels, and working-tree controls; the new-tab `Open Repo` button only appears when no current repository is selected.
 - Save screenshots/GIFs under `artifacts/` and inspect screenshots before reporting visual success. If the app shows `Missing file: index.html`, it was launched from the wrong working directory.
 
