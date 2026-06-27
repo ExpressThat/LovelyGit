@@ -90,6 +90,16 @@ public sealed class CommandArgumentJsonContextTests
                 }
             },
             {
+                CreateJson("tagName", "v-test"),
+                CheckoutJsonSerializerContext.Default.CheckoutTagCommandArguments,
+                value =>
+                {
+                    var arguments = Assert.IsType<CheckoutTagCommandArguments>(value);
+                    Assert.Equal(RepositoryId, arguments.RepositoryId);
+                    Assert.Equal("v-test", arguments.TagName);
+                }
+            },
+            {
                 CreateJson("resetMode", "Hard"),
                 ResetJsonSerializerContext.Default.ResetCurrentBranchToCommitCommandArguments,
                 value =>

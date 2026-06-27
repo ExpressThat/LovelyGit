@@ -2,6 +2,7 @@ using CliWrap.Buffered;
 using ExpressThat.LovelyGit.Services.Git.Branches;
 using ExpressThat.LovelyGit.Services.Git.Cli;
 using ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser;
+using ExpressThat.LovelyGit.Services.Git.Tags;
 
 namespace ExpressThat.LovelyGit.Services.Git.Checkout;
 
@@ -82,6 +83,29 @@ internal sealed class GitCheckoutCommandService
 
         var result = await _gitCliService.ExecuteBufferedAsync(
             ["checkout", "--track", "-b", localBranchName, remoteBranchName],
+            repositoryPaths.WorkTreeDirectory,
+            validateExitCode: false,
+            cancellationToken).ConfigureAwait(false);
+
+        ThrowIfFailed(result);
+    }
+
+    public async Task CheckoutTagAsync(
+        string repositoryPath,
+        string tagName,
+        CancellationToken cancellationToken)
+    {
+        if (!GitTagNameValidator.IsValidTagName(tagName))
+        {
+            throw new ArgumentException("Tag name is not valid.", nameof(tagName));
+        }
+
+        var repositoryPaths = await GitRepositoryDiscovery
+            .ResolveRepositoryPathsAsync(repositoryPath, cancellationToken)
+            .ConfigureAwait(false);
+
+        var result = await _gitCliService.ExecuteBufferedAsync(
+            ["checkout", "--detach", tagName],
             repositoryPaths.WorkTreeDirectory,
             validateExitCode: false,
             cancellationToken).ConfigureAwait(false);

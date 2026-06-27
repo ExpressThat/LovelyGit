@@ -7,6 +7,7 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Checko
 [JsonSerializable(typeof(CheckoutCommitDetachedCommandArguments))]
 [JsonSerializable(typeof(CheckoutBranchCommandArguments))]
 [JsonSerializable(typeof(CheckoutRemoteBranchCommandArguments))]
+[JsonSerializable(typeof(CheckoutTagCommandArguments))]
 [JsonSerializable(typeof(CommandResponse<EmptyCommandArguments>))]
 internal partial class CheckoutJsonSerializerContext : JsonSerializerContext
 {

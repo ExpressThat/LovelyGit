@@ -13,6 +13,7 @@ internal static class CheckoutServiceCollectionExtensions
         services.AddSingleton<ICommandResponder, CheckoutBranchCommandResolver>();
         services.AddSingleton<ICommandResponder, CheckoutCommitDetachedCommandResolver>();
         services.AddSingleton<ICommandResponder, CheckoutRemoteBranchCommandResolver>();
+        services.AddSingleton<ICommandResponder, CheckoutTagCommandResolver>();
         return services;
     }
 }

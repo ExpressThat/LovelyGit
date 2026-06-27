@@ -27,3 +27,11 @@ public record CheckoutRemoteBranchCommandArguments
 
     public string LocalBranchName { get; set; } = string.Empty;
 }
+
+[TypeSharp]
+public record CheckoutTagCommandArguments
+{
+    public Guid RepositoryId { get; set; }
+
+    public string TagName { get; set; } = string.Empty;
+}

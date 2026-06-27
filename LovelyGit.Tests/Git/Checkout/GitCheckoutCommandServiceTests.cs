@@ -48,6 +48,30 @@ public sealed class GitCheckoutCommandServiceTests
         Assert.Equal("feature/test-branch", branch.StandardOutput.Trim());
     }
 
+    [Fact]
+    public async Task CheckoutTagAsync_DetachesHeadAtTag()
+    {
+        using var repository = TemporaryGitRepository.Create();
+        var checkoutService = new GitCheckoutCommandService(repository.GitCliService);
+
+        await checkoutService.CheckoutTagAsync(
+            repository.Path,
+            "v-test",
+            CancellationToken.None);
+
+        var head = await repository.GitCliService.ExecuteBufferedAsync(
+            ["rev-parse", "HEAD"],
+            repository.Path,
+            cancellationToken: CancellationToken.None);
+        var branch = await repository.GitCliService.ExecuteBufferedAsync(
+            ["branch", "--show-current"],
+            repository.Path,
+            cancellationToken: CancellationToken.None);
+
+        Assert.Equal(repository.FirstCommitHash, head.StandardOutput.Trim());
+        Assert.Equal(string.Empty, branch.StandardOutput.Trim());
+    }
+
     private sealed class TemporaryGitRepository : IDisposable
     {
         private readonly DirectoryInfo _directory;
@@ -84,6 +108,7 @@ public sealed class GitCheckoutCommandServiceTests
                 ["rev-parse", "HEAD"]).StandardOutput.Trim();
             RunGit(gitCliService, directory.FullName, ["commit", "--allow-empty", "-m", "Second"]);
             RunGit(gitCliService, directory.FullName, ["branch", "feature/test-branch", firstCommitHash]);
+            RunGit(gitCliService, directory.FullName, ["tag", "v-test", firstCommitHash]);
 
             return new TemporaryGitRepository(directory, gitCliService, firstCommitHash);
         }

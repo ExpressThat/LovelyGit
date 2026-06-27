@@ -11,6 +11,7 @@ import {
 import type { CommitRefInfo } from "@/generated/types";
 import { BranchUpstreamDialog } from "./BranchUpstreamDialog";
 import { CheckoutRemoteBranchDialog } from "./CheckoutRemoteBranchDialog";
+import { CheckoutTagDialog } from "./CheckoutTagDialog";
 import { DeleteBranchDialog } from "./DeleteBranchDialog";
 import { DeleteTagDialog } from "./DeleteTagDialog";
 import { LocalBranchMenuItems } from "./LocalBranchMenuItems";
@@ -37,6 +38,7 @@ export function BranchRefContextMenu({
 }) {
 	const [deleteForce, setDeleteForce] = useState(false);
 	const [isCheckoutRemoteOpen, setIsCheckoutRemoteOpen] = useState(false);
+	const [isCheckoutTagOpen, setIsCheckoutTagOpen] = useState(false);
 	const [isDeleteOpen, setIsDeleteOpen] = useState(false);
 	const [isDeleteTagOpen, setIsDeleteTagOpen] = useState(false);
 	const [isMergeOpen, setIsMergeOpen] = useState(false);
@@ -55,6 +57,7 @@ export function BranchRefContextMenu({
 		repositoryId !== null && isLocalBranch && isCurrentBranch;
 	const canManageUpstream = repositoryId !== null && isLocalBranch;
 	const canCheckoutRemote = repositoryId !== null && isRemoteBranch;
+	const canCheckoutTag = repositoryId !== null && isTag;
 	const canPushBranch = repositoryId !== null && isLocalBranch;
 	const canDeleteTag = repositoryId !== null && isTag;
 
@@ -80,7 +83,9 @@ export function BranchRefContextMenu({
 					) : null}
 					{isTag ? (
 						<TagMenuItems
+							canCheckoutTag={canCheckoutTag}
 							canDeleteTag={canDeleteTag}
+							onCheckout={() => setIsCheckoutTagOpen(true)}
 							onDelete={() => setIsDeleteTagOpen(true)}
 						/>
 					) : null}
@@ -119,6 +124,13 @@ export function BranchRefContextMenu({
 			<DeleteTagDialog
 				isOpen={isDeleteTagOpen}
 				onOpenChange={setIsDeleteTagOpen}
+				onSuccess={onRefsChanged}
+				repositoryId={repositoryId}
+				tagName={refInfo.name}
+			/>
+			<CheckoutTagDialog
+				isOpen={isCheckoutTagOpen}
+				onOpenChange={setIsCheckoutTagOpen}
 				onSuccess={onRefsChanged}
 				repositoryId={repositoryId}
 				tagName={refInfo.name}

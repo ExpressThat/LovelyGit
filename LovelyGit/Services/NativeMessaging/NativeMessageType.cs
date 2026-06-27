@@ -83,6 +83,8 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging
         CheckoutBranch,
         [NativeMessageContract(typeof(CheckoutRemoteBranchCommandArguments), typeof(EmptyCommandArguments))]
         CheckoutRemoteBranch,
+        [NativeMessageContract(typeof(CheckoutTagCommandArguments), typeof(EmptyCommandArguments))]
+        CheckoutTag,
         [NativeMessageContract(typeof(CherryPickCommitCommandArguments), typeof(EmptyCommandArguments))]
         CherryPickCommit,
         [NativeMessageContract(typeof(RevertCommitCommandArguments), typeof(EmptyCommandArguments))]
