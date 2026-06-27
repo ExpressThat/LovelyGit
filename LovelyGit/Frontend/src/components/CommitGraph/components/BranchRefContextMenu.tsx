@@ -23,6 +23,7 @@ import { sendRequestWithResponse } from "@/lib/commands";
 import { NativeMessageType } from "@/lib/nativeMessaging";
 import { DeleteBranchDialog } from "./DeleteBranchDialog";
 import { MergeBranchDialog } from "./MergeBranchDialog";
+import { PullBranchDialog } from "./PullBranchDialog";
 import { PushBranchDialog } from "./PushBranchDialog";
 import { RebaseBranchDialog } from "./RebaseBranchDialog";
 import { RenameBranchDialog } from "./RenameBranchDialog";
@@ -43,6 +44,7 @@ export function BranchRefContextMenu({
 	const [deleteForce, setDeleteForce] = useState(false);
 	const [isDeleteOpen, setIsDeleteOpen] = useState(false);
 	const [isMergeOpen, setIsMergeOpen] = useState(false);
+	const [isPullOpen, setIsPullOpen] = useState(false);
 	const [isPushOpen, setIsPushOpen] = useState(false);
 	const [isRebaseOpen, setIsRebaseOpen] = useState(false);
 	const [isRenameOpen, setIsRenameOpen] = useState(false);
@@ -52,6 +54,8 @@ export function BranchRefContextMenu({
 		repositoryId !== null && isLocalBranch && !isCurrentBranch;
 	const canMutateBranch =
 		repositoryId !== null && isLocalBranch && !isCurrentBranch;
+	const canPullBranch =
+		repositoryId !== null && isLocalBranch && isCurrentBranch;
 
 	const checkoutBranch = async () => {
 		if (!canCheckout || repositoryId === null) {
@@ -100,7 +104,10 @@ export function BranchRefContextMenu({
 						<Pencil />
 						Rename branch
 					</ContextMenuItem>
-					<ContextMenuItem disabled>
+					<ContextMenuItem
+						disabled={!canPullBranch}
+						onClick={() => setIsPullOpen(true)}
+					>
 						<RefreshCw />
 						Pull branch
 					</ContextMenuItem>
@@ -162,6 +169,13 @@ export function BranchRefContextMenu({
 				currentBranchName={currentBranchName}
 				isOpen={isMergeOpen}
 				onOpenChange={setIsMergeOpen}
+				onSuccess={onRefsChanged}
+				repositoryId={repositoryId}
+			/>
+			<PullBranchDialog
+				branchName={refInfo.name}
+				isOpen={isPullOpen}
+				onOpenChange={setIsPullOpen}
 				onSuccess={onRefsChanged}
 				repositoryId={repositoryId}
 			/>

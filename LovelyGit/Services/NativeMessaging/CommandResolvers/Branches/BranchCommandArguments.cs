@@ -32,3 +32,10 @@ public record PushBranchCommandArguments
     public Guid RepositoryId { get; set; }
     public string BranchName { get; set; } = string.Empty;
 }
+
+[TypeSharp]
+public record PullBranchCommandArguments
+{
+    public Guid RepositoryId { get; set; }
+    public string BranchName { get; set; } = string.Empty;
+}
