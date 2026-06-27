@@ -22,6 +22,7 @@ import { sendRequestWithResponse } from "@/lib/commands";
 import { NativeMessageType } from "@/lib/nativeMessaging";
 import { DeleteBranchDialog } from "./DeleteBranchDialog";
 import { MergeBranchDialog } from "./MergeBranchDialog";
+import { RebaseBranchDialog } from "./RebaseBranchDialog";
 import { RenameBranchDialog } from "./RenameBranchDialog";
 
 export function BranchRefContextMenu({
@@ -40,6 +41,7 @@ export function BranchRefContextMenu({
 	const [deleteForce, setDeleteForce] = useState(false);
 	const [isDeleteOpen, setIsDeleteOpen] = useState(false);
 	const [isMergeOpen, setIsMergeOpen] = useState(false);
+	const [isRebaseOpen, setIsRebaseOpen] = useState(false);
 	const [isRenameOpen, setIsRenameOpen] = useState(false);
 	const isLocalBranch = refInfo.kind === "Local";
 	const isCurrentBranch = refInfo.name === currentBranchName;
@@ -108,6 +110,13 @@ export function BranchRefContextMenu({
 					</ContextMenuItem>
 					<ContextMenuItem
 						disabled={!canMutateBranch}
+						onClick={() => setIsRebaseOpen(true)}
+					>
+						<GitPullRequestArrow />
+						Rebase current onto branch
+					</ContextMenuItem>
+					<ContextMenuItem
+						disabled={!canMutateBranch}
 						onClick={() => {
 							setDeleteForce(false);
 							setIsDeleteOpen(true);
@@ -143,6 +152,14 @@ export function BranchRefContextMenu({
 				currentBranchName={currentBranchName}
 				isOpen={isMergeOpen}
 				onOpenChange={setIsMergeOpen}
+				onSuccess={onRefsChanged}
+				repositoryId={repositoryId}
+			/>
+			<RebaseBranchDialog
+				branchName={refInfo.name}
+				currentBranchName={currentBranchName}
+				isOpen={isRebaseOpen}
+				onOpenChange={setIsRebaseOpen}
 				onSuccess={onRefsChanged}
 				repositoryId={repositoryId}
 			/>
