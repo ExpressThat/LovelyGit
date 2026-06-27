@@ -18,6 +18,7 @@ export function useWorkingTreeChanges(repositoryId: string | null, enabled: bool
 	});
 	const [isDirty, setIsDirty] = useState(false);
 	const [summaryCount, setSummaryCount] = useState(0);
+	const [hasSummaryLoaded, setHasSummaryLoaded] = useState(false);
 	const summaryReloadTimerRef = useRef<number | null>(null);
 
 	useEffect(() => {
@@ -25,6 +26,7 @@ export function useWorkingTreeChanges(repositoryId: string | null, enabled: bool
 			setState({ status: "idle", changes: null });
 			setIsDirty(false);
 			setSummaryCount(0);
+			setHasSummaryLoaded(false);
 			return;
 		}
 
@@ -36,6 +38,18 @@ export function useWorkingTreeChanges(repositoryId: string | null, enabled: bool
 		let isActive = true;
 		let isLoading = false;
 		let reloadAgain = false;
+		const setEmptyChangesFromSummary = () => {
+			setState({
+				status: "loaded",
+				changes: {
+					staged: [],
+					unstaged: [],
+					untracked: [],
+					unmerged: [],
+					totalCount: 0,
+				},
+			});
+		};
 		const load = async () => {
 			if (isLoading) {
 				reloadAgain = true;
@@ -65,6 +79,8 @@ export function useWorkingTreeChanges(repositoryId: string | null, enabled: bool
 							},
 					});
 					setSummaryCount(changes?.totalCount ?? 0);
+					setIsDirty(false);
+					setHasSummaryLoaded(true);
 				}
 			} catch (error) {
 				if (isActive) {
@@ -86,7 +102,11 @@ export function useWorkingTreeChanges(repositoryId: string | null, enabled: bool
 			}
 		};
 
-		void load();
+		if (hasSummaryLoaded && summaryCount === 0 && !isDirty) {
+			setEmptyChangesFromSummary();
+		} else {
+			void load();
+		}
 		const unsubscribe = subscribeToServerEvent("WorkingTreeChanged", () => {
 			setIsDirty(true);
 			void load();
@@ -121,10 +141,12 @@ export function useWorkingTreeChanges(repositoryId: string | null, enabled: bool
 				if (isActive) {
 					setSummaryCount(summary?.totalCount ?? 0);
 					setIsDirty(false);
+					setHasSummaryLoaded(true);
 				}
 			} catch {
 				if (isActive) {
 					setIsDirty(true);
+					setHasSummaryLoaded(false);
 				}
 			} finally {
 				isLoading = false;

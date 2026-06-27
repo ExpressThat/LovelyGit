@@ -4,9 +4,15 @@ using ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser;
 
 namespace ExpressThat.LovelyGit.Services.Git.WorkingTree;
 
-internal sealed class GitIndexReader
+internal sealed partial class GitIndexReader
 {
     public async Task<IReadOnlyList<GitIndexEntry>> ReadAsync(
+        string gitDirectory,
+        GitObjectFormat objectFormat,
+        CancellationToken cancellationToken) =>
+        (await ReadSnapshotAsync(gitDirectory, objectFormat, cancellationToken).ConfigureAwait(false)).Entries;
+
+    public async Task<GitIndexSnapshot> ReadSnapshotAsync(
         string gitDirectory,
         GitObjectFormat objectFormat,
         CancellationToken cancellationToken)
@@ -14,7 +20,7 @@ internal sealed class GitIndexReader
         var indexPath = Path.Combine(gitDirectory, "index");
         if (!File.Exists(indexPath))
         {
-            return Array.Empty<GitIndexEntry>();
+            return new GitIndexSnapshot(Array.Empty<GitIndexEntry>(), RootTreeId: null);
         }
 
         var bytes = await ReadIndexBytesAsync(indexPath, cancellationToken).ConfigureAwait(false);
@@ -132,7 +138,8 @@ internal sealed class GitIndexReader
             _ = gid;
         }
 
-        return entries;
+        var rootTreeId = TryReadCacheTreeRootId(bytes, offset, hashLength, objectFormat);
+        return new GitIndexSnapshot(entries, rootTreeId);
     }
 
     private static async Task<byte[]> ReadIndexBytesAsync(

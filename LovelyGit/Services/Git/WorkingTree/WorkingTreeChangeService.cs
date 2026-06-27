@@ -22,9 +22,10 @@ internal sealed partial class WorkingTreeChangeService
         CancellationToken cancellationToken)
     {
         using var repository = await LovelyGitRepository.OpenAsync(repositoryPath, cancellationToken).ConfigureAwait(false);
-        var indexEntries = await new GitIndexReader()
-            .ReadAsync(repository.GitDirectory, repository.ObjectFormat, cancellationToken)
+        var indexSnapshot = await new GitIndexReader()
+            .ReadSnapshotAsync(repository.GitDirectory, repository.ObjectFormat, cancellationToken)
             .ConfigureAwait(false);
+        var indexEntries = indexSnapshot.Entries;
         var normalIndexEntries = indexEntries
             .Where(entry => entry.Stage == 0 && !entry.SkipWorkTree && !entry.IntentToAdd)
             .ToDictionary(entry => entry.Path, StringComparer.Ordinal);
@@ -40,9 +41,19 @@ internal sealed partial class WorkingTreeChangeService
             .OrderBy(file => file.Path, StringComparer.Ordinal)
             .ToList();
 
-        var headFiles = await ReadHeadFilesAsync(repository, cancellationToken).ConfigureAwait(false);
-        var staged = await BuildStagedChangesAsync(repository, headFiles, normalIndexEntries, cancellationToken)
-            .ConfigureAwait(false);
+        var head = repository.HeadTarget == null
+            ? null
+            : await repository.GetCommitAsync(repository.HeadTarget.Value, cancellationToken).ConfigureAwait(false);
+        var staged = head?.TreeHash != null && indexSnapshot.RootTreeId == head.TreeHash
+            ? new List<WorkingTreeChangedFile>()
+            : await BuildStagedChangesAsync(
+                    repository,
+                    head?.TreeHash == null
+                        ? new Dictionary<string, GitTreeFile>(StringComparer.Ordinal)
+                        : await ReadTreeFilesAsync(repository, head.TreeHash.Value, cancellationToken).ConfigureAwait(false),
+                    normalIndexEntries,
+                    cancellationToken)
+                .ConfigureAwait(false);
         var unstaged = await BuildUnstagedChangesAsync(repository, normalIndexEntries, cancellationToken)
             .ConfigureAwait(false);
         var untracked = await BuildUntrackedChangesAsync(repository, normalIndexEntries.Keys, cancellationToken)

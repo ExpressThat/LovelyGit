@@ -12,17 +12,17 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Workin
 internal sealed class GetWorkingTreeChangesCommandResolver : CommandResponder<GetWorkingTreeChangesCommandArguments>
 {
     private readonly KnownGitRepositorysRepository _knownGitRepositorysRepository;
-    private readonly WorkingTreeChangeService _workingTreeChangeService;
+    private readonly WorkingTreeStatusListService _workingTreeStatusListService;
 
     protected override JsonTypeInfo<GetWorkingTreeChangesCommandArguments> ArgumentsJsonTypeInfo =>
         WorkingTreeJsonSerializerContext.Default.GetWorkingTreeChangesCommandArguments;
 
     public GetWorkingTreeChangesCommandResolver(
         KnownGitRepositorysRepository knownGitRepositorysRepository,
-        WorkingTreeChangeService workingTreeChangeService)
+        WorkingTreeStatusListService workingTreeStatusListService)
     {
         _knownGitRepositorysRepository = knownGitRepositorysRepository;
-        _workingTreeChangeService = workingTreeChangeService;
+        _workingTreeStatusListService = workingTreeStatusListService;
     }
 
     public override bool CanRespondTo(NativeCommand<JsonElement> command)
@@ -45,7 +45,7 @@ internal sealed class GetWorkingTreeChangesCommandResolver : CommandResponder<Ge
 
         try
         {
-            var response = await _workingTreeChangeService
+            var response = await _workingTreeStatusListService
                 .GetChangesAsync(foundRepo.Path, CancellationToken.None)
                 .ConfigureAwait(false);
             return new CommandResponse<WorkingTreeChangesResponse>

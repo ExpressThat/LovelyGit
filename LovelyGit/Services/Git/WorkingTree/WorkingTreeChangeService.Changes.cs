@@ -24,8 +24,18 @@ internal sealed partial class WorkingTreeChangeService
         }
 
         var head = await repository.GetCommitAsync(repository.HeadTarget.Value, cancellationToken).ConfigureAwait(false);
+        return head.TreeHash == null
+            ? new Dictionary<string, GitTreeFile>(StringComparer.Ordinal)
+            : await ReadTreeFilesAsync(repository, head.TreeHash.Value, cancellationToken).ConfigureAwait(false);
+    }
+
+    private static async Task<Dictionary<string, GitTreeFile>> ReadTreeFilesAsync(
+        LovelyGitRepository repository,
+        GitObjectId treeId,
+        CancellationToken cancellationToken)
+    {
         var comparison = await repository
-            .GetChangedTreeFilesAsync(null, head.TreeHash, cancellationToken)
+            .GetChangedTreeFilesAsync(null, treeId, cancellationToken)
             .ConfigureAwait(false);
         return new Dictionary<string, GitTreeFile>(comparison.CurrentFiles, StringComparer.Ordinal);
     }
