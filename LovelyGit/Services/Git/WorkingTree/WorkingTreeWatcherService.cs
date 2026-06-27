@@ -11,6 +11,7 @@ namespace ExpressThat.LovelyGit.Services.Git.WorkingTree;
 internal sealed partial class WorkingTreeWatcherService : IDisposable
 {
     private static readonly TimeSpan DebounceDelay = TimeSpan.FromMilliseconds(200);
+    private static readonly TimeSpan LargeWorkTreePollInterval = TimeSpan.FromSeconds(5);
     private const int MaxRecursiveWorkTreeWatcherDirectories = 2000;
     private const ulong FnvOffsetBasis = 14695981039346656037;
     private const ulong FnvPrime = 1099511628211;
@@ -20,12 +21,14 @@ internal sealed partial class WorkingTreeWatcherService : IDisposable
     private readonly List<FileSystemWatcher> _watchers = new();
     private CancellationTokenSource? _debounceCancellation;
     private CancellationTokenSource? _graphDebounceCancellation;
+    private CancellationTokenSource? _workTreePollCancellation;
     private Guid? _activeRepositoryId;
     private string? _activeRepositoryPath;
     private string? _activeGitDirectory;
     private string? _activeWorkTreeDirectory;
     private GitIgnoreMatcher? _ignoreMatcher;
     private ulong? _commitGraphSnapshot;
+    private ulong? _workTreeSnapshot;
     private int _generation;
     private int _graphGeneration;
     private bool _disposed;
@@ -94,6 +97,7 @@ internal sealed partial class WorkingTreeWatcherService : IDisposable
 
         var commitGraphSnapshot = ComputeCommitGraphSnapshot(paths.GitDirectory);
 
+        var watchWorkTreeRecursively = ShouldWatchWorkTreeRecursively(paths.WorkTreeDirectory);
         lock (_lock)
         {
             ThrowIfDisposed();
@@ -104,11 +108,9 @@ internal sealed partial class WorkingTreeWatcherService : IDisposable
             _activeWorkTreeDirectory = paths.WorkTreeDirectory;
             _ignoreMatcher = null;
             _commitGraphSnapshot = commitGraphSnapshot;
+            _workTreeSnapshot = null;
 
-            AddWatcher(
-                paths.WorkTreeDirectory,
-                "*",
-                ShouldWatchWorkTreeRecursively(paths.WorkTreeDirectory));
+            AddWatcher(paths.WorkTreeDirectory, "*", watchWorkTreeRecursively);
             AddWatcher(paths.GitDirectory, "*", includeSubdirectories: false);
             var refsPath = Path.Combine(paths.GitDirectory, "refs");
             if (Directory.Exists(refsPath))
@@ -120,6 +122,11 @@ internal sealed partial class WorkingTreeWatcherService : IDisposable
             if (Directory.Exists(infoPath))
             {
                 AddWatcher(infoPath, "exclude", includeSubdirectories: false);
+            }
+
+            if (!watchWorkTreeRecursively)
+            {
+                StartLargeWorkTreePollingCore();
             }
         }
 

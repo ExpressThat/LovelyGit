@@ -9,6 +9,11 @@ internal sealed partial class WorkingTreeWatcherService
             return false;
         }
 
+        if (OperatingSystem.IsWindows())
+        {
+            return true;
+        }
+
         return CountDirectoriesUpToLimit(
             workTreeDirectory,
             MaxRecursiveWorkTreeWatcherDirectories + 1) <= MaxRecursiveWorkTreeWatcherDirectories;

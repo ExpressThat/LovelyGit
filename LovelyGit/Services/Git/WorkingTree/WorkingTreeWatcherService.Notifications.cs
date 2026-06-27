@@ -155,6 +155,9 @@ internal sealed partial class WorkingTreeWatcherService : IDisposable
         _graphDebounceCancellation?.Cancel();
         _graphDebounceCancellation?.Dispose();
         _graphDebounceCancellation = null;
+        _workTreePollCancellation?.Cancel();
+        _workTreePollCancellation?.Dispose();
+        _workTreePollCancellation = null;
         foreach (var watcher in _watchers)
         {
             watcher.EnableRaisingEvents = false;
@@ -173,6 +176,7 @@ internal sealed partial class WorkingTreeWatcherService : IDisposable
         _activeWorkTreeDirectory = null;
         _ignoreMatcher = null;
         _commitGraphSnapshot = null;
+        _workTreeSnapshot = null;
     }
 
 }

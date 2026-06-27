@@ -23,7 +23,7 @@ public sealed class WorkingTreeWatcherServicePolicyTests
     }
 
     [Fact]
-    public void ShouldWatchWorkTreeRecursively_ReturnsFalseForLargeDirectory()
+    public void ShouldWatchWorkTreeRecursively_UsesPlatformPolicyForLargeDirectory()
     {
         using var directory = TemporaryDirectory.Create("lovelygit-watch-large-");
         for (var index = 0; index < 2001; index++)
@@ -31,7 +31,41 @@ public sealed class WorkingTreeWatcherServicePolicyTests
             Directory.CreateDirectory(Path.Combine(directory.Path, $"d{index}"));
         }
 
-        Assert.False(WorkingTreeWatcherService.ShouldWatchWorkTreeRecursively(directory.Path));
+        Assert.Equal(
+            OperatingSystem.IsWindows(),
+            WorkingTreeWatcherService.ShouldWatchWorkTreeRecursively(directory.Path));
+    }
+
+    [Fact]
+    public void ComputeWorkTreeSnapshot_ChangesForNestedFileEdit()
+    {
+        using var directory = TemporaryDirectory.Create("lovelygit-watch-snapshot-");
+        var nestedDirectory = Path.Combine(directory.Path, "src", "feature");
+        Directory.CreateDirectory(nestedDirectory);
+        var filePath = Path.Combine(nestedDirectory, "file.txt");
+        File.WriteAllText(filePath, "before");
+        var before = WorkingTreeWatcherService.ComputeWorkTreeSnapshot(directory.Path, matcher: null);
+
+        File.WriteAllText(filePath, "after-change");
+        var after = WorkingTreeWatcherService.ComputeWorkTreeSnapshot(directory.Path, matcher: null);
+
+        Assert.NotEqual(before, after);
+    }
+
+    [Fact]
+    public void ComputeWorkTreeSnapshot_IgnoresGitDirectoryChanges()
+    {
+        using var directory = TemporaryDirectory.Create("lovelygit-watch-git-");
+        var gitDirectory = Path.Combine(directory.Path, ".git");
+        Directory.CreateDirectory(gitDirectory);
+        var headPath = Path.Combine(gitDirectory, "HEAD");
+        File.WriteAllText(headPath, "ref: refs/heads/main");
+        var before = WorkingTreeWatcherService.ComputeWorkTreeSnapshot(directory.Path, matcher: null);
+
+        File.WriteAllText(headPath, "ref: refs/heads/feature");
+        var after = WorkingTreeWatcherService.ComputeWorkTreeSnapshot(directory.Path, matcher: null);
+
+        Assert.Equal(before, after);
     }
 
     private sealed class TemporaryDirectory : IDisposable
