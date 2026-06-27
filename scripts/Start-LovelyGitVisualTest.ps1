@@ -14,22 +14,33 @@ $env:LOVELYGIT_TEST_WINDOW_OFFSCREEN = "true"
 
 if ($UseDotNetRun)
 {
-    Start-Process `
+    $process = Start-Process `
         -FilePath "dotnet" `
-        -ArgumentList @("run", "--project", $appProject, "--launch-profile", "http") `
+        -ArgumentList @(
+            "run",
+            "--project",
+            $appProject,
+            "--launch-profile",
+            "http",
+            "-p:LovelyGitPublishAsWinExe=true"
+        ) `
         -WorkingDirectory $appDirectory `
-        -WindowStyle Minimized `
+        -WindowStyle Hidden `
         -PassThru
+    $process.Id
     return
 }
 
-if (-not (Test-Path $compiledApp))
+$buildOutput = dotnet build $appProject -p:LovelyGitPublishAsWinExe=true --no-restore --verbosity quiet
+if ($LASTEXITCODE -ne 0)
 {
-    throw "Compiled app not found at $compiledApp. Run dotnet build LovelyGit\LovelyGit.csproj first."
+    $buildOutput
+    throw "Failed to build LovelyGit as WinExe for visual testing."
 }
 
-Start-Process `
+$process = Start-Process `
     -FilePath $compiledApp `
     -WorkingDirectory $appDirectory `
     -WindowStyle Minimized `
     -PassThru
+$process.Id
