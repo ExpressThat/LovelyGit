@@ -1,33 +1,23 @@
-import {
-	GitBranch,
-	GitPullRequestArrow,
-	Pencil,
-	RefreshCw,
-	Trash2,
-	Upload,
-} from "lucide-react";
 import type { ReactElement } from "react";
 import { useState } from "react";
-import { toast } from "sonner";
 import {
 	ContextMenu,
 	ContextMenuContent,
 	ContextMenuGroup,
-	ContextMenuItem,
 	ContextMenuLabel,
 	ContextMenuSeparator,
 	ContextMenuTrigger,
 } from "@/components/ui/context-menu";
 import type { CommitRefInfo } from "@/generated/types";
-import { sendRequestWithResponse } from "@/lib/commands";
-import { NativeMessageType } from "@/lib/nativeMessaging";
 import { BranchUpstreamDialog } from "./BranchUpstreamDialog";
 import { CheckoutRemoteBranchDialog } from "./CheckoutRemoteBranchDialog";
 import { DeleteBranchDialog } from "./DeleteBranchDialog";
+import { LocalBranchMenuItems } from "./LocalBranchMenuItems";
 import { MergeBranchDialog } from "./MergeBranchDialog";
 import { PullBranchDialog } from "./PullBranchDialog";
 import { PushBranchDialog } from "./PushBranchDialog";
 import { RebaseBranchDialog } from "./RebaseBranchDialog";
+import { RemoteBranchMenuItems } from "./RemoteBranchMenuItems";
 import { RenameBranchDialog } from "./RenameBranchDialog";
 
 export function BranchRefContextMenu({
@@ -55,36 +45,13 @@ export function BranchRefContextMenu({
 	const isLocalBranch = refInfo.kind === "Local";
 	const isRemoteBranch = refInfo.kind === "Remote";
 	const isCurrentBranch = refInfo.name === currentBranchName;
-	const canCheckout =
-		repositoryId !== null && isLocalBranch && !isCurrentBranch;
 	const canMutateBranch =
 		repositoryId !== null && isLocalBranch && !isCurrentBranch;
 	const canPullBranch =
 		repositoryId !== null && isLocalBranch && isCurrentBranch;
 	const canManageUpstream = repositoryId !== null && isLocalBranch;
 	const canCheckoutRemote = repositoryId !== null && isRemoteBranch;
-
-	const checkoutBranch = async () => {
-		if (!canCheckout || repositoryId === null) {
-			return;
-		}
-
-		try {
-			await sendRequestWithResponse({
-				arguments: {
-					branchName: refInfo.name,
-					repositoryId,
-				},
-				commandType: NativeMessageType.CheckoutBranch,
-			});
-			toast.success(`Checked out ${refInfo.name}`);
-			onRefsChanged();
-		} catch (error) {
-			toast.error(
-				error instanceof Error ? error.message : "Could not checkout branch",
-			);
-		}
-	};
+	const canPushBranch = repositoryId !== null && isLocalBranch;
 
 	return (
 		<>
@@ -100,81 +67,34 @@ export function BranchRefContextMenu({
 						</ContextMenuLabel>
 					</ContextMenuGroup>
 					<ContextMenuSeparator />
-					<ContextMenuItem disabled={!canCheckout} onClick={checkoutBranch}>
-						<GitBranch />
-						Checkout branch
-					</ContextMenuItem>
-					<ContextMenuItem
-						disabled={!canCheckoutRemote}
-						onClick={() => setIsCheckoutRemoteOpen(true)}
-					>
-						<GitBranch />
-						Checkout as local branch
-					</ContextMenuItem>
-					<ContextMenuItem
-						disabled={!canMutateBranch}
-						onClick={() => setIsRenameOpen(true)}
-					>
-						<Pencil />
-						Rename branch
-					</ContextMenuItem>
-					<ContextMenuItem
-						disabled={!canManageUpstream}
-						onClick={() => setIsUpstreamOpen(true)}
-					>
-						<GitBranch />
-						Upstream settings
-					</ContextMenuItem>
-					<ContextMenuItem
-						disabled={!canPullBranch}
-						onClick={() => setIsPullOpen(true)}
-					>
-						<RefreshCw />
-						Pull branch
-					</ContextMenuItem>
-					<ContextMenuItem
-						disabled={!isLocalBranch || repositoryId === null}
-						onClick={() => setIsPushOpen(true)}
-					>
-						<Upload />
-						Push branch
-					</ContextMenuItem>
-					<ContextMenuItem
-						disabled={!canMutateBranch}
-						onClick={() => setIsMergeOpen(true)}
-					>
-						<GitPullRequestArrow />
-						Merge into current
-					</ContextMenuItem>
-					<ContextMenuItem
-						disabled={!canMutateBranch}
-						onClick={() => setIsRebaseOpen(true)}
-					>
-						<GitPullRequestArrow />
-						Rebase current onto branch
-					</ContextMenuItem>
-					<ContextMenuItem
-						disabled={!canMutateBranch}
-						onClick={() => {
-							setDeleteForce(false);
-							setIsDeleteOpen(true);
-						}}
-						variant="destructive"
-					>
-						<Trash2 />
-						Delete branch
-					</ContextMenuItem>
-					<ContextMenuItem
-						disabled={!canMutateBranch}
-						onClick={() => {
-							setDeleteForce(true);
-							setIsDeleteOpen(true);
-						}}
-						variant="destructive"
-					>
-						<Trash2 />
-						Force delete branch
-					</ContextMenuItem>
+					{isRemoteBranch ? (
+						<RemoteBranchMenuItems
+							canCheckoutRemote={canCheckoutRemote}
+							onCheckout={() => setIsCheckoutRemoteOpen(true)}
+						/>
+					) : null}
+					{isLocalBranch ? (
+						<LocalBranchMenuItems
+							branchName={refInfo.name}
+							canManageUpstream={canManageUpstream}
+							canMutateBranch={canMutateBranch}
+							canPullBranch={canPullBranch}
+							canPushBranch={canPushBranch}
+							isCurrentBranch={isCurrentBranch}
+							onCheckoutSuccess={onRefsChanged}
+							onDelete={(force) => {
+								setDeleteForce(force);
+								setIsDeleteOpen(true);
+							}}
+							onMerge={() => setIsMergeOpen(true)}
+							onPull={() => setIsPullOpen(true)}
+							onPush={() => setIsPushOpen(true)}
+							onRebase={() => setIsRebaseOpen(true)}
+							onRename={() => setIsRenameOpen(true)}
+							onUpstream={() => setIsUpstreamOpen(true)}
+							repositoryId={repositoryId}
+						/>
+					) : null}
 				</ContextMenuContent>
 			</ContextMenu>
 			<DeleteBranchDialog
