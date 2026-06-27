@@ -5,6 +5,7 @@ using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Branches;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.CommitGraph;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.KnownRepository;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Settings;
+using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Tags;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.WorkingTree;
 using ExpressThat.LovelyGit.Services.NativeMessaging.Commands;
 using ExpressThat.LovelyGit.Services.Json;
@@ -24,6 +25,7 @@ namespace ExpressThat.LovelyGit.Services
                 .AddLovelyGitGitCli()
                 .AddLovelyGitCommands()
                 .AddBranchCommands()
+                .AddTagCommands()
                 .AddKnownRepositoryCommands()
                 .AddCommitGraphCommands()
                 .AddWorkingTreeCommands()

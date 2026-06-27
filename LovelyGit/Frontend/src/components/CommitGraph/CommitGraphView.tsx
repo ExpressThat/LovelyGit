@@ -25,14 +25,14 @@ const HEADER_LABELS: Record<ColKey, string> = {
 };
 
 export function CommitGraphView({
-	onBranchCreated,
 	onSelectCommit,
+	onRefsChanged,
 	refreshToken = 0,
 	repositoryId,
 	selectedCommitHash,
 }: {
-	onBranchCreated: () => void;
 	onSelectCommit: (row: CommitGraphRowModel) => void;
+	onRefsChanged: () => void;
 	refreshToken?: number;
 	repositoryId: string | null;
 	selectedCommitHash: string | null;
@@ -211,8 +211,8 @@ export function CommitGraphView({
 										Boolean(rows[item.index]) &&
 										rows[item.index]?.commit.hash === selectedCommitHash
 									}
-									onBranchCreated={onBranchCreated}
 									onSelect={onSelectCommit}
+									onRefsChanged={onRefsChanged}
 									currentBranchName={currentBranchName}
 									remotePrefixes={remotePrefixes}
 									repositoryId={repositoryId}

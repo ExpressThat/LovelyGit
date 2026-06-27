@@ -13,8 +13,8 @@ export function CommitRow({
 	currentBranchName,
 	graph,
 	isSelected,
-	onBranchCreated,
 	onSelect,
+	onRefsChanged,
 	remotePrefixes,
 	repositoryId,
 	row,
@@ -27,8 +27,8 @@ export function CommitRow({
 		scrollLeft: number;
 	};
 	isSelected: boolean;
-	onBranchCreated: () => void;
 	onSelect: (row: CommitGraphRow) => void;
+	onRefsChanged: () => void;
 	remotePrefixes: string[];
 	repositoryId: string | null;
 	row: CommitGraphRow | null;
@@ -101,7 +101,7 @@ export function CommitRow({
 
 	return (
 		<CommitRowContextMenu
-			onBranchCreated={onBranchCreated}
+			onRefsChanged={onRefsChanged}
 			repositoryId={repositoryId}
 			row={row}
 		>

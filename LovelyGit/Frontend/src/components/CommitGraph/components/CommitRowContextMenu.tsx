@@ -14,19 +14,21 @@ import {
 import type { CommitGraphRow } from "@/generated/types";
 import { shortHash } from "../utils/format";
 import { CreateBranchFromCommitDialog } from "./CreateBranchFromCommitDialog";
+import { CreateTagAtCommitDialog } from "./CreateTagAtCommitDialog";
 
 export function CommitRowContextMenu({
 	children,
-	onBranchCreated,
+	onRefsChanged,
 	repositoryId,
 	row,
 }: {
 	children: ReactElement;
-	onBranchCreated: () => void;
+	onRefsChanged: () => void;
 	repositoryId: string | null;
 	row: CommitGraphRow;
 }) {
 	const [isCreateBranchOpen, setIsCreateBranchOpen] = useState(false);
+	const [isCreateTagOpen, setIsCreateTagOpen] = useState(false);
 	const refs = commitRefs(row);
 	const subject = commitSubject(row);
 
@@ -47,6 +49,13 @@ export function CommitRowContextMenu({
 					>
 						<GitBranch />
 						Create branch
+					</ContextMenuItem>
+					<ContextMenuItem
+						disabled={repositoryId === null}
+						onClick={() => setIsCreateTagOpen(true)}
+					>
+						<Tag />
+						Create tag
 					</ContextMenuItem>
 					<ContextMenuSeparator />
 					<ContextMenuItem
@@ -102,7 +111,14 @@ export function CommitRowContextMenu({
 				commitHash={row.commit.hash}
 				isOpen={isCreateBranchOpen}
 				onOpenChange={setIsCreateBranchOpen}
-				onSuccess={onBranchCreated}
+				onSuccess={onRefsChanged}
+				repositoryId={repositoryId}
+			/>
+			<CreateTagAtCommitDialog
+				commitHash={row.commit.hash}
+				isOpen={isCreateTagOpen}
+				onOpenChange={setIsCreateTagOpen}
+				onSuccess={onRefsChanged}
 				repositoryId={repositoryId}
 			/>
 		</>

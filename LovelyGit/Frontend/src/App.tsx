@@ -88,9 +88,6 @@ function App() {
 									}}
 								>
 									<CommitGraphView
-										onBranchCreated={() =>
-											setCommitGraphRefreshToken((token) => token + 1)
-										}
 										onSelectCommit={(row) =>
 											setDetailsPanel((currentPanel) => {
 												if (
@@ -107,6 +104,9 @@ function App() {
 													kind: "commit",
 												};
 											})
+										}
+										onRefsChanged={() =>
+											setCommitGraphRefreshToken((token) => token + 1)
 										}
 										selectedCommitHash={
 											detailsPanel?.kind === "commit"

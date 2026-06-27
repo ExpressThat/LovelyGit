@@ -3,6 +3,7 @@ using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Branches;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.CommitGraph;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.KnownRepository;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Settings;
+using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Tags;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.WorkingTree;
 using ExpressThat.LovelyGit.Services.NativeMessaging.Commands;
 using ExpressThat.LovelyGit.Services.Data.Models;
@@ -50,6 +51,8 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging
         PushRepository,
         [NativeMessageContract(typeof(CreateBranchFromCommitCommandArguments), typeof(EmptyCommandArguments))]
         CreateBranchFromCommit,
+        [NativeMessageContract(typeof(CreateTagAtCommitCommandArguments), typeof(EmptyCommandArguments))]
+        CreateTagAtCommit,
         [NativeMessageContract(typeof(CancelCommitDiffPreparationCommandArguments))]
         CancelCommitDiffPreparation,
         [NativeMessageContract(typeof(GetSettingsCommandArguments), typeof(JsonElement))]
