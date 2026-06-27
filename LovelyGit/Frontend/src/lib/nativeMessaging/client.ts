@@ -1,27 +1,29 @@
+import { recordNativeMessagePerformance } from "./performance";
 import {
-	NativeMessageType,
-	NativeMessageTypesWithRequest,
-	NativeMessageTypesWithResponse,
+	hasNativeMessaging,
+	registerNativeMessageHandlers,
+	sendNativeMessage,
+} from "./transport";
+import {
 	type NativeMessageRequest,
 	type NativeMessageResponse,
-	type NativeMessageTypesWithRequest as NativeMessageTypesWithRequestValue,
+	NativeMessageType,
+	NativeMessageTypesWithRequest,
 	type NativeMessageTypesWithRequestAndResponse,
+	type NativeMessageTypesWithRequest as NativeMessageTypesWithRequestValue,
 	type NativeMessageTypesWithRequestWithoutResponse,
+	NativeMessageTypesWithResponse,
 	type NativeMessageTypesWithResponse as NativeMessageTypesWithResponseValue,
 	type NativeMessageType as NativeMessageTypeValue,
 	type NativeRequestBodies,
 	type NativeResponseBodies,
 	type NativeSubscriber,
 } from "./types";
-import {
-	hasNativeMessaging,
-	registerNativeMessageHandlers,
-	sendNativeMessage,
-} from "./transport";
 
 type PendingRequest = {
 	resolve: (body: unknown) => void;
 	reject: (error: Error) => void;
+	startedAt: number;
 	timeoutId: number;
 };
 
@@ -87,7 +89,7 @@ export function requestNativeMessage<
 		return;
 	}
 
-	return new Promise<any>((resolve, reject) => {
+	return new Promise<unknown>((resolve, reject) => {
 		const timeoutId = window.setTimeout(() => {
 			pendingRequests.delete(getPendingKey(messageType, messageId));
 			reject(new Error(`Timed out waiting for '${messageType}' response.`));
@@ -96,6 +98,7 @@ export function requestNativeMessage<
 		pendingRequests.set(getPendingKey(messageType, messageId), {
 			resolve: resolve as (body: unknown) => void,
 			reject,
+			startedAt: performance.now(),
 			timeoutId,
 		});
 
@@ -105,17 +108,18 @@ export function requestNativeMessage<
 
 export function subscribeNativeMessage<
 	TMessageType extends NativeMessageTypesWithResponseValue,
->(
-	messageType: TMessageType,
-	callback: NativeSubscriber<TMessageType>,
-) {
+>(messageType: TMessageType, callback: NativeSubscriber<TMessageType>) {
 	ensureMessageHandlersRegistered();
 
 	const typedSubscribers = getSubscribers(messageType);
-	typedSubscribers.add(callback as NativeSubscriber<NativeMessageTypesWithResponseValue>);
+	typedSubscribers.add(
+		callback as NativeSubscriber<NativeMessageTypesWithResponseValue>,
+	);
 
 	return () => {
-		typedSubscribers.delete(callback as NativeSubscriber<NativeMessageTypesWithResponseValue>);
+		typedSubscribers.delete(
+			callback as NativeSubscriber<NativeMessageTypesWithResponseValue>,
+		);
 	};
 }
 
@@ -124,7 +128,8 @@ function ensureMessageHandlersRegistered() {
 		return;
 	}
 
-	messageHandlersRegistered = registerNativeMessageHandlers(handleNativeResponse);
+	messageHandlersRegistered =
+		registerNativeMessageHandlers(handleNativeResponse);
 }
 
 function handleNativeResponse<TMessageType extends NativeMessageTypeValue>(
@@ -135,7 +140,8 @@ function handleNativeResponse<TMessageType extends NativeMessageTypeValue>(
 		return;
 	}
 
-	const responseMessageType = messageType as NativeMessageTypesWithResponseValue;
+	const responseMessageType =
+		messageType as NativeMessageTypesWithResponseValue;
 	const response = parseResponse(responseMessageType, payload);
 	if (!response) {
 		return;
@@ -146,29 +152,39 @@ function handleNativeResponse<TMessageType extends NativeMessageTypeValue>(
 	if (pendingRequest) {
 		window.clearTimeout(pendingRequest.timeoutId);
 		pendingRequests.delete(pendingKey);
+		recordNativeMessagePerformance(
+			responseMessageType,
+			response as NativeMessageResponse<NativeMessageTypesWithResponseValue>,
+			performance.now() - pendingRequest.startedAt,
+		);
 
 		if (response.success) {
 			pendingRequest.resolve(response.body);
 		} else {
-			pendingRequest.reject(new Error(response.error ?? "Native message failed."));
+			pendingRequest.reject(
+				new Error(response.error ?? "Native message failed."),
+			);
 		}
 	}
 
 	for (const subscriber of getSubscribers(responseMessageType)) {
-		subscriber(response as NativeMessageResponse<NativeMessageTypesWithResponseValue>);
+		subscriber(
+			response as NativeMessageResponse<NativeMessageTypesWithResponseValue>,
+		);
 	}
 }
 
-function parseResponse<TMessageType extends NativeMessageTypesWithResponseValue>(
-	_messageType: TMessageType,
-	payload?: string,
-) {
+function parseResponse<
+	TMessageType extends NativeMessageTypesWithResponseValue,
+>(_messageType: TMessageType, payload?: string) {
 	if (payload === undefined) {
 		return null;
 	}
 
 	try {
-		const response = JSON.parse(payload) as Partial<NativeMessageResponse<TMessageType>>;
+		const response = JSON.parse(payload) as Partial<
+			NativeMessageResponse<TMessageType>
+		>;
 		if (
 			typeof response.messageId !== "string" ||
 			typeof response.success !== "boolean"

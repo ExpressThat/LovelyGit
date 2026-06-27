@@ -10,7 +10,8 @@ public sealed record NativeMessageResponse<TBody>(
     string MessageId,
     bool Success,
     TBody? Body,
-    string? Error);
+    string? Error,
+    NativeMessageMetrics? Metrics);
 
 [TypeSharp]
 public sealed record FrontendReadyRequest(string Source, string SentAt);

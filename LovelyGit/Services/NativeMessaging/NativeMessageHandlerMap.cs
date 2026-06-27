@@ -46,7 +46,8 @@ internal sealed class NativeMessageHandlerMap
                     string.Empty,
                     false,
                     null,
-                    $"No native message handler is registered for '{messageType}'."),
+                    $"No native message handler is registered for '{messageType}'.",
+                    null),
                 NativeMessagingJsonContext.Default.NativeMessageResponseObject);
 
             return false;
@@ -78,7 +79,7 @@ internal sealed class NativeMessageHandlerMap
             {
                 var body = handler(services, request.Body);
                 return JsonSerializer.SerializeToElement(
-                    new NativeMessageResponse<TResponse>(request.MessageId, true, body, null),
+                    new NativeMessageResponse<TResponse>(request.MessageId, true, body, null, null),
                     responseJsonTypeInfo);
             }
             catch (Exception exception)
@@ -107,7 +108,7 @@ internal sealed class NativeMessageHandlerMap
         private JsonElement CreateErrorResponse(string messageId, string error)
         {
             return JsonSerializer.SerializeToElement(
-                new NativeMessageResponse<TResponse>(messageId, false, default, error),
+                new NativeMessageResponse<TResponse>(messageId, false, default, error, null),
                 responseJsonTypeInfo);
         }
     }

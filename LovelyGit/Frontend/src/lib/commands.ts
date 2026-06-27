@@ -1,12 +1,12 @@
 import {
-	requestNativeMessage,
-	subscribeNativeMessage,
+	NativeMessageType,
 	type NativeMessageTypesWithRequest,
 	type NativeMessageTypesWithResponseWithoutRequest,
 	type NativeRequestBodies,
 	type NativeResponseBodies,
+	requestNativeMessage,
+	subscribeNativeMessage,
 } from "@/lib/nativeMessaging";
-import { NativeMessageType } from "@/lib/nativeMessaging";
 
 type CommandInput<TCommand extends NativeMessageTypesWithRequest> = {
 	commandType: TCommand;
@@ -28,29 +28,39 @@ type SetMultipleSettingsInput = {
 	};
 };
 
+type NativeRequestSender = (
+	commandType: NativeMessageTypesWithRequest,
+	body: NativeRequestBodies[NativeMessageTypesWithRequest],
+) => Promise<unknown> | undefined;
+
 export async function sendRequestWithResponse<
 	TCommand extends NativeMessageTypesWithRequest,
 >(
 	command: CommandInput<TCommand> | SetSettingInput | SetMultipleSettingsInput,
-): Promise<TCommand extends keyof NativeResponseBodies ? NativeResponseBodies[TCommand] : undefined> {
-	const startTime = performance.now();
-	const requestResult = (requestNativeMessage as any)(
+): Promise<
+	TCommand extends keyof NativeResponseBodies
+		? NativeResponseBodies[TCommand]
+		: undefined
+> {
+	const sendNativeRequest = requestNativeMessage as NativeRequestSender;
+	const requestResult = sendNativeRequest(
 		command.commandType,
 		toNativeBody(command) as NativeRequestBodies[TCommand],
 	);
-	const response = requestResult instanceof Promise ? await requestResult : undefined;
-
-	console.log(
-		`Call to sendRequestWithResponse took ${performance.now() - startTime} milliseconds`,
-	);
-
-	return response;
+	const response =
+		requestResult instanceof Promise ? await requestResult : undefined;
+	return response as TCommand extends keyof NativeResponseBodies
+		? NativeResponseBodies[TCommand]
+		: undefined;
 }
 
 export function sendRequestWithoutResponse<
 	TCommand extends NativeMessageTypesWithRequest,
->(command: CommandInput<TCommand> | SetSettingInput | SetMultipleSettingsInput) {
-	(requestNativeMessage as any)(
+>(
+	command: CommandInput<TCommand> | SetSettingInput | SetMultipleSettingsInput,
+) {
+	const sendNativeRequest = requestNativeMessage as NativeRequestSender;
+	sendNativeRequest(
 		command.commandType,
 		toNativeBody(command) as NativeRequestBodies[TCommand],
 	);
@@ -69,13 +79,8 @@ export function subscribeToServerEvent<
 	});
 }
 
-function toNativeBody<
-	TCommand extends NativeMessageTypesWithRequest,
->(
-	command:
-		| CommandInput<TCommand>
-		| SetSettingInput
-		| SetMultipleSettingsInput,
+function toNativeBody<TCommand extends NativeMessageTypesWithRequest>(
+	command: CommandInput<TCommand> | SetSettingInput | SetMultipleSettingsInput,
 ) {
 	if (isSetSettingInput(command)) {
 		return {
@@ -87,10 +92,9 @@ function toNativeBody<
 	if (isSetMultipleSettingsInput(command)) {
 		return {
 			settingValueJsons: Object.fromEntries(
-				Object.entries(command.arguments.settingValues).map(([setting, value]) => [
-					setting,
-					JSON.stringify(value),
-				]),
+				Object.entries(command.arguments.settingValues).map(
+					([setting, value]) => [setting, JSON.stringify(value)],
+				),
 			),
 		};
 	}
@@ -107,7 +111,9 @@ function isSetSettingInput(command: unknown): command is SetSettingInput {
 	);
 }
 
-function isSetMultipleSettingsInput(command: unknown): command is SetMultipleSettingsInput {
+function isSetMultipleSettingsInput(
+	command: unknown,
+): command is SetMultipleSettingsInput {
 	return (
 		typeof command === "object" &&
 		command !== null &&
