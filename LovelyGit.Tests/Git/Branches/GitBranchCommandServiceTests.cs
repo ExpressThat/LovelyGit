@@ -105,6 +105,35 @@ public sealed class GitBranchCommandServiceTests
         Assert.NotEqual(0, branchRef.ExitCode);
     }
 
+    [Fact]
+    public async Task PushBranchAsync_PushesBranchToOrigin()
+    {
+        using var repository = TemporaryGitRepository.Create();
+        using var remote = TemporaryBareGitRepository.Create(repository.GitCliService);
+        var branchService = new GitBranchCommandService(repository.GitCliService);
+        await branchService.CreateBranchAsync(
+            repository.Path,
+            "feature/push-me",
+            repository.HeadCommitHash,
+            CancellationToken.None);
+        await repository.GitCliService.ExecuteBufferedAsync(
+            ["remote", "add", "origin", remote.Path],
+            repository.Path,
+            cancellationToken: CancellationToken.None);
+
+        await branchService.PushBranchAsync(
+            repository.Path,
+            "feature/push-me",
+            CancellationToken.None);
+
+        var remoteRef = await repository.GitCliService.ExecuteBufferedAsync(
+            ["show-ref", "--verify", "refs/heads/feature/push-me"],
+            remote.Path,
+            cancellationToken: CancellationToken.None);
+
+        Assert.StartsWith(repository.HeadCommitHash, remoteRef.StandardOutput);
+    }
+
     private sealed class TemporaryGitRepository : IDisposable
     {
         private readonly DirectoryInfo _directory;
@@ -164,12 +193,7 @@ public sealed class GitBranchCommandServiceTests
 
         public void Dispose()
         {
-            foreach (var file in _directory.EnumerateFiles("*", SearchOption.AllDirectories))
-            {
-                file.Attributes = FileAttributes.Normal;
-            }
-
-            _directory.Delete(recursive: true);
+            DeleteDirectory(_directory);
         }
 
         private static CliWrap.Buffered.BufferedCommandResult RunGit(
@@ -182,5 +206,42 @@ public sealed class GitBranchCommandServiceTests
                 .GetAwaiter()
                 .GetResult();
         }
+    }
+
+    private sealed class TemporaryBareGitRepository : IDisposable
+    {
+        private readonly DirectoryInfo _directory;
+
+        private TemporaryBareGitRepository(DirectoryInfo directory)
+        {
+            _directory = directory;
+            Path = directory.FullName;
+        }
+
+        public string Path { get; }
+
+        public static TemporaryBareGitRepository Create(GitCliService gitCliService)
+        {
+            var directory = Directory.CreateTempSubdirectory("lovelygit-remote-");
+            gitCliService.ExecuteBufferedAsync(["init", "--bare"], directory.FullName)
+                .GetAwaiter()
+                .GetResult();
+            return new TemporaryBareGitRepository(directory);
+        }
+
+        public void Dispose()
+        {
+            DeleteDirectory(_directory);
+        }
+    }
+
+    private static void DeleteDirectory(DirectoryInfo directory)
+    {
+        foreach (var file in directory.EnumerateFiles("*", SearchOption.AllDirectories))
+        {
+            file.Attributes = FileAttributes.Normal;
+        }
+
+        directory.Delete(recursive: true);
     }
 }

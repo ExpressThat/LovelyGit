@@ -25,3 +25,10 @@ public record DeleteBranchCommandArguments
     public string BranchName { get; set; } = string.Empty;
     public bool Force { get; set; }
 }
+
+[TypeSharp]
+public record PushBranchCommandArguments
+{
+    public Guid RepositoryId { get; set; }
+    public string BranchName { get; set; } = string.Empty;
+}

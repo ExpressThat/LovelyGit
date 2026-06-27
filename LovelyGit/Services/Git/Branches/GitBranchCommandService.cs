@@ -95,6 +95,29 @@ internal sealed class GitBranchCommandService
         ThrowIfFailed(result);
     }
 
+    public async Task PushBranchAsync(
+        string repositoryPath,
+        string branchName,
+        CancellationToken cancellationToken)
+    {
+        if (!GitBranchNameValidator.IsValidBranchName(branchName))
+        {
+            throw new ArgumentException("Branch name is not valid.", nameof(branchName));
+        }
+
+        var repositoryPaths = await GitRepositoryDiscovery
+            .ResolveRepositoryPathsAsync(repositoryPath, cancellationToken)
+            .ConfigureAwait(false);
+
+        var result = await _gitCliService.ExecuteBufferedAsync(
+            ["push", "origin", branchName],
+            repositoryPaths.WorkTreeDirectory,
+            validateExitCode: false,
+            cancellationToken).ConfigureAwait(false);
+
+        ThrowIfFailed(result);
+    }
+
     private static void ThrowIfFailed(BufferedCommandResult result)
     {
         if (result.ExitCode == 0)

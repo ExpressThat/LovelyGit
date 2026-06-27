@@ -4,6 +4,7 @@ import {
 	Pencil,
 	RefreshCw,
 	Trash2,
+	Upload,
 } from "lucide-react";
 import type { ReactElement } from "react";
 import { useState } from "react";
@@ -22,6 +23,7 @@ import { sendRequestWithResponse } from "@/lib/commands";
 import { NativeMessageType } from "@/lib/nativeMessaging";
 import { DeleteBranchDialog } from "./DeleteBranchDialog";
 import { MergeBranchDialog } from "./MergeBranchDialog";
+import { PushBranchDialog } from "./PushBranchDialog";
 import { RebaseBranchDialog } from "./RebaseBranchDialog";
 import { RenameBranchDialog } from "./RenameBranchDialog";
 
@@ -41,6 +43,7 @@ export function BranchRefContextMenu({
 	const [deleteForce, setDeleteForce] = useState(false);
 	const [isDeleteOpen, setIsDeleteOpen] = useState(false);
 	const [isMergeOpen, setIsMergeOpen] = useState(false);
+	const [isPushOpen, setIsPushOpen] = useState(false);
 	const [isRebaseOpen, setIsRebaseOpen] = useState(false);
 	const [isRenameOpen, setIsRenameOpen] = useState(false);
 	const isLocalBranch = refInfo.kind === "Local";
@@ -102,6 +105,13 @@ export function BranchRefContextMenu({
 						Pull branch
 					</ContextMenuItem>
 					<ContextMenuItem
+						disabled={!isLocalBranch || repositoryId === null}
+						onClick={() => setIsPushOpen(true)}
+					>
+						<Upload />
+						Push branch
+					</ContextMenuItem>
+					<ContextMenuItem
 						disabled={!canMutateBranch}
 						onClick={() => setIsMergeOpen(true)}
 					>
@@ -152,6 +162,13 @@ export function BranchRefContextMenu({
 				currentBranchName={currentBranchName}
 				isOpen={isMergeOpen}
 				onOpenChange={setIsMergeOpen}
+				onSuccess={onRefsChanged}
+				repositoryId={repositoryId}
+			/>
+			<PushBranchDialog
+				branchName={refInfo.name}
+				isOpen={isPushOpen}
+				onOpenChange={setIsPushOpen}
 				onSuccess={onRefsChanged}
 				repositoryId={repositoryId}
 			/>

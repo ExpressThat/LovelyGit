@@ -12,6 +12,7 @@ internal static class BranchesServiceCollectionExtensions
         services.AddSingleton<GitBranchCommandService>();
         services.AddSingleton<ICommandResponder, CreateBranchFromCommitCommandResolver>();
         services.AddSingleton<ICommandResponder, DeleteBranchCommandResolver>();
+        services.AddSingleton<ICommandResponder, PushBranchCommandResolver>();
         services.AddSingleton<ICommandResponder, RenameBranchCommandResolver>();
         return services;
     }

@@ -61,6 +61,8 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging
         RenameBranch,
         [NativeMessageContract(typeof(DeleteBranchCommandArguments), typeof(EmptyCommandArguments))]
         DeleteBranch,
+        [NativeMessageContract(typeof(PushBranchCommandArguments), typeof(EmptyCommandArguments))]
+        PushBranch,
         [NativeMessageContract(typeof(MergeBranchIntoCurrentCommandArguments), typeof(EmptyCommandArguments))]
         MergeBranchIntoCurrent,
         [NativeMessageContract(typeof(RebaseCurrentBranchOntoBranchCommandArguments), typeof(EmptyCommandArguments))]
