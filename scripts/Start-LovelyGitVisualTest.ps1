@@ -31,7 +31,7 @@ if ($UseDotNetRun)
     return
 }
 
-$buildOutput = dotnet build $appProject -p:LovelyGitPublishAsWinExe=true --no-restore --verbosity quiet
+$buildOutput = dotnet build $appProject -p:LovelyGitPublishAsWinExe=true --no-restore --no-incremental --verbosity quiet
 if ($LASTEXITCODE -ne 0)
 {
     $buildOutput
