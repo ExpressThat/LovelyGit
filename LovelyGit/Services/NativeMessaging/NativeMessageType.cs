@@ -4,6 +4,7 @@ using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Checkout;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.CherryPick;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.CommitGraph;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.KnownRepository;
+using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Merge;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Reset;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Revert;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Settings;
@@ -59,6 +60,8 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging
         RenameBranch,
         [NativeMessageContract(typeof(DeleteBranchCommandArguments), typeof(EmptyCommandArguments))]
         DeleteBranch,
+        [NativeMessageContract(typeof(MergeBranchIntoCurrentCommandArguments), typeof(EmptyCommandArguments))]
+        MergeBranchIntoCurrent,
         [NativeMessageContract(typeof(CreateTagAtCommitCommandArguments), typeof(EmptyCommandArguments))]
         CreateTagAtCommit,
         [NativeMessageContract(typeof(CheckoutCommitDetachedCommandArguments), typeof(EmptyCommandArguments))]
