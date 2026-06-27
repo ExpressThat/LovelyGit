@@ -55,6 +55,8 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging
         PushRepository,
         [NativeMessageContract(typeof(CreateBranchFromCommitCommandArguments), typeof(EmptyCommandArguments))]
         CreateBranchFromCommit,
+        [NativeMessageContract(typeof(RenameBranchCommandArguments), typeof(EmptyCommandArguments))]
+        RenameBranch,
         [NativeMessageContract(typeof(CreateTagAtCommitCommandArguments), typeof(EmptyCommandArguments))]
         CreateTagAtCommit,
         [NativeMessageContract(typeof(CheckoutCommitDetachedCommandArguments), typeof(EmptyCommandArguments))]

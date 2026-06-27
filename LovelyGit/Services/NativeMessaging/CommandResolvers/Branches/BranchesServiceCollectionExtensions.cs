@@ -11,6 +11,7 @@ internal static class BranchesServiceCollectionExtensions
         services.AddLovelyGitJsonTypeInfoResolver(BranchesJsonSerializerContext.Default);
         services.AddSingleton<GitBranchCommandService>();
         services.AddSingleton<ICommandResponder, CreateBranchFromCommitCommandResolver>();
+        services.AddSingleton<ICommandResponder, RenameBranchCommandResolver>();
         return services;
     }
 }

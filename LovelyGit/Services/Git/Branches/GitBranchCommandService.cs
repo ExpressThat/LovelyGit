@@ -42,6 +42,35 @@ internal sealed class GitBranchCommandService
         ThrowIfFailed(result);
     }
 
+    public async Task RenameBranchAsync(
+        string repositoryPath,
+        string oldBranchName,
+        string newBranchName,
+        CancellationToken cancellationToken)
+    {
+        if (!GitBranchNameValidator.IsValidBranchName(oldBranchName))
+        {
+            throw new ArgumentException("Branch name is not valid.", nameof(oldBranchName));
+        }
+
+        if (!GitBranchNameValidator.IsValidBranchName(newBranchName))
+        {
+            throw new ArgumentException("Branch name is not valid.", nameof(newBranchName));
+        }
+
+        var repositoryPaths = await GitRepositoryDiscovery
+            .ResolveRepositoryPathsAsync(repositoryPath, cancellationToken)
+            .ConfigureAwait(false);
+
+        var result = await _gitCliService.ExecuteBufferedAsync(
+            ["branch", "-m", oldBranchName, newBranchName],
+            repositoryPaths.WorkTreeDirectory,
+            validateExitCode: false,
+            cancellationToken).ConfigureAwait(false);
+
+        ThrowIfFailed(result);
+    }
+
     private static void ThrowIfFailed(BufferedCommandResult result)
     {
         if (result.ExitCode == 0)

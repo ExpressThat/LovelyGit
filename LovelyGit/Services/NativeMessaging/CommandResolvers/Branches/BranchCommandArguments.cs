@@ -9,3 +9,11 @@ public record CreateBranchFromCommitCommandArguments
     public string CommitHash { get; set; } = string.Empty;
     public string BranchName { get; set; } = string.Empty;
 }
+
+[TypeSharp]
+public record RenameBranchCommandArguments
+{
+    public Guid RepositoryId { get; set; }
+    public string OldBranchName { get; set; } = string.Empty;
+    public string NewBranchName { get; set; } = string.Empty;
+}

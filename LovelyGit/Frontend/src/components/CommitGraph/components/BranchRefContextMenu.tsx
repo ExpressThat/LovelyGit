@@ -1,10 +1,12 @@
 import {
 	GitBranch,
 	GitPullRequestArrow,
+	Pencil,
 	RefreshCw,
 	Trash2,
 } from "lucide-react";
 import type { ReactElement } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import {
 	ContextMenu,
@@ -18,6 +20,7 @@ import {
 import type { CommitRefInfo } from "@/generated/types";
 import { sendRequestWithResponse } from "@/lib/commands";
 import { NativeMessageType } from "@/lib/nativeMessaging";
+import { RenameBranchDialog } from "./RenameBranchDialog";
 
 export function BranchRefContextMenu({
 	children,
@@ -32,6 +35,7 @@ export function BranchRefContextMenu({
 	refInfo: CommitRefInfo;
 	repositoryId: string | null;
 }) {
+	const [isRenameOpen, setIsRenameOpen] = useState(false);
 	const isLocalBranch = refInfo.kind === "Local";
 	const isCurrentBranch = refInfo.name === currentBranchName;
 	const canCheckout =
@@ -60,35 +64,51 @@ export function BranchRefContextMenu({
 	};
 
 	return (
-		<ContextMenu>
-			<ContextMenuTrigger
-				onContextMenu={(event) => event.stopPropagation()}
-				render={children}
+		<>
+			<ContextMenu>
+				<ContextMenuTrigger
+					onContextMenu={(event) => event.stopPropagation()}
+					render={children}
+				/>
+				<ContextMenuContent className="w-56">
+					<ContextMenuGroup>
+						<ContextMenuLabel className="truncate">
+							{refInfo.name}
+						</ContextMenuLabel>
+					</ContextMenuGroup>
+					<ContextMenuSeparator />
+					<ContextMenuItem disabled={!canCheckout} onClick={checkoutBranch}>
+						<GitBranch />
+						Checkout branch
+					</ContextMenuItem>
+					<ContextMenuItem
+						disabled={repositoryId === null || !isLocalBranch}
+						onClick={() => setIsRenameOpen(true)}
+					>
+						<Pencil />
+						Rename branch
+					</ContextMenuItem>
+					<ContextMenuItem disabled>
+						<RefreshCw />
+						Pull branch
+					</ContextMenuItem>
+					<ContextMenuItem disabled>
+						<GitPullRequestArrow />
+						Merge into current
+					</ContextMenuItem>
+					<ContextMenuItem disabled variant="destructive">
+						<Trash2 />
+						Delete branch
+					</ContextMenuItem>
+				</ContextMenuContent>
+			</ContextMenu>
+			<RenameBranchDialog
+				branchName={refInfo.name}
+				isOpen={isRenameOpen}
+				onOpenChange={setIsRenameOpen}
+				onSuccess={onRefsChanged}
+				repositoryId={repositoryId}
 			/>
-			<ContextMenuContent className="w-56">
-				<ContextMenuGroup>
-					<ContextMenuLabel className="truncate">
-						{refInfo.name}
-					</ContextMenuLabel>
-				</ContextMenuGroup>
-				<ContextMenuSeparator />
-				<ContextMenuItem disabled={!canCheckout} onClick={checkoutBranch}>
-					<GitBranch />
-					Checkout branch
-				</ContextMenuItem>
-				<ContextMenuItem disabled>
-					<RefreshCw />
-					Pull branch
-				</ContextMenuItem>
-				<ContextMenuItem disabled>
-					<GitPullRequestArrow />
-					Merge into current
-				</ContextMenuItem>
-				<ContextMenuItem disabled variant="destructive">
-					<Trash2 />
-					Delete branch
-				</ContextMenuItem>
-			</ContextMenuContent>
-		</ContextMenu>
+		</>
 	);
 }

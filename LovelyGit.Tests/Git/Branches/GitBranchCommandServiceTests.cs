@@ -25,6 +25,38 @@ public sealed class GitBranchCommandServiceTests
         Assert.StartsWith(repository.HeadCommitHash, branchRef.StandardOutput);
     }
 
+    [Fact]
+    public async Task RenameBranchAsync_RenamesLocalBranch()
+    {
+        using var repository = TemporaryGitRepository.Create();
+        var branchService = new GitBranchCommandService(repository.GitCliService);
+
+        await branchService.CreateBranchAsync(
+            repository.Path,
+            "feature/old-name",
+            repository.HeadCommitHash,
+            CancellationToken.None);
+
+        await branchService.RenameBranchAsync(
+            repository.Path,
+            "feature/old-name",
+            "feature/new-name",
+            CancellationToken.None);
+
+        var renamedRef = await repository.GitCliService.ExecuteBufferedAsync(
+            ["show-ref", "--verify", "refs/heads/feature/new-name"],
+            repository.Path,
+            cancellationToken: CancellationToken.None);
+        var oldRef = await repository.GitCliService.ExecuteBufferedAsync(
+            ["show-ref", "--verify", "refs/heads/feature/old-name"],
+            repository.Path,
+            validateExitCode: false,
+            cancellationToken: CancellationToken.None);
+
+        Assert.StartsWith(repository.HeadCommitHash, renamedRef.StandardOutput);
+        Assert.NotEqual(0, oldRef.ExitCode);
+    }
+
     private sealed class TemporaryGitRepository : IDisposable
     {
         private readonly DirectoryInfo _directory;
