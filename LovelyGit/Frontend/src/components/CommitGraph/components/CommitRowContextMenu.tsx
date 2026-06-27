@@ -3,6 +3,7 @@ import {
 	GitBranch,
 	GitCommitHorizontal,
 	GitPullRequestArrow,
+	RotateCcw,
 	Tag,
 } from "lucide-react";
 import type { ReactElement } from "react";
@@ -23,6 +24,7 @@ import { CheckoutCommitDetachedDialog } from "./CheckoutCommitDetachedDialog";
 import { CherryPickCommitDialog } from "./CherryPickCommitDialog";
 import { CreateBranchFromCommitDialog } from "./CreateBranchFromCommitDialog";
 import { CreateTagAtCommitDialog } from "./CreateTagAtCommitDialog";
+import { RevertCommitDialog } from "./RevertCommitDialog";
 
 export function CommitRowContextMenu({
 	children,
@@ -39,6 +41,7 @@ export function CommitRowContextMenu({
 	const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
 	const [isCreateBranchOpen, setIsCreateBranchOpen] = useState(false);
 	const [isCreateTagOpen, setIsCreateTagOpen] = useState(false);
+	const [isRevertOpen, setIsRevertOpen] = useState(false);
 	const refs = commitRefs(row);
 	const subject = commitSubject(row);
 
@@ -66,6 +69,14 @@ export function CommitRowContextMenu({
 					>
 						<GitPullRequestArrow />
 						Cherry-pick commit
+					</ContextMenuItem>
+					<ContextMenuItem
+						className="text-destructive focus:text-destructive"
+						disabled={repositoryId === null}
+						onClick={() => setIsRevertOpen(true)}
+					>
+						<RotateCcw />
+						Revert commit
 					</ContextMenuItem>
 					<ContextMenuItem
 						disabled={repositoryId === null}
@@ -135,6 +146,13 @@ export function CommitRowContextMenu({
 				commitHash={row.commit.hash}
 				isOpen={isCherryPickOpen}
 				onOpenChange={setIsCherryPickOpen}
+				onSuccess={onRefsChanged}
+				repositoryId={repositoryId}
+			/>
+			<RevertCommitDialog
+				commitHash={row.commit.hash}
+				isOpen={isRevertOpen}
+				onOpenChange={setIsRevertOpen}
 				onSuccess={onRefsChanged}
 				repositoryId={repositoryId}
 			/>
