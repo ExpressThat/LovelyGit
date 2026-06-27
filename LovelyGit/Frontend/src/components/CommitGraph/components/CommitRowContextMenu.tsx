@@ -1,5 +1,6 @@
 import { Copy, GitBranch, Tag } from "lucide-react";
 import type { ReactElement } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import {
 	ContextMenu,
@@ -12,76 +13,99 @@ import {
 } from "@/components/ui/context-menu";
 import type { CommitGraphRow } from "@/generated/types";
 import { shortHash } from "../utils/format";
+import { CreateBranchFromCommitDialog } from "./CreateBranchFromCommitDialog";
 
 export function CommitRowContextMenu({
 	children,
+	onBranchCreated,
+	repositoryId,
 	row,
 }: {
 	children: ReactElement;
+	onBranchCreated: () => void;
+	repositoryId: string | null;
 	row: CommitGraphRow;
 }) {
+	const [isCreateBranchOpen, setIsCreateBranchOpen] = useState(false);
 	const refs = commitRefs(row);
 	const subject = commitSubject(row);
 
 	return (
-		<ContextMenu>
-			<ContextMenuTrigger render={children} />
-			<ContextMenuContent className="w-56">
-				<ContextMenuGroup>
-					<ContextMenuLabel className="truncate font-mono">
-						{shortHash(row.commit.hash)}
-					</ContextMenuLabel>
-				</ContextMenuGroup>
-				<ContextMenuSeparator />
-				<ContextMenuItem
-					onClick={() => void copyToClipboard(row.commit.hash, "Commit hash")}
-				>
-					<Copy />
-					Copy full hash
-				</ContextMenuItem>
-				<ContextMenuItem
-					onClick={() =>
-						void copyToClipboard(shortHash(row.commit.hash), "Short hash")
-					}
-				>
-					<Copy />
-					Copy short hash
-				</ContextMenuItem>
-				<ContextMenuItem
-					onClick={() => void copyToClipboard(subject, "Subject")}
-				>
-					<Copy />
-					Copy subject
-				</ContextMenuItem>
-				<ContextMenuItem
-					onClick={() => void copyToClipboard(row.commit.message, "Message")}
-				>
-					<Copy />
-					Copy message
-				</ContextMenuItem>
-				{refs.length > 0 ? (
-					<>
-						<ContextMenuSeparator />
-						<ContextMenuItem
-							onClick={() => void copyToClipboard(refs.join("\n"), "Refs")}
-						>
-							<GitBranch />
-							Copy refs
-						</ContextMenuItem>
-						{row.commit.tags.length > 0 ? (
+		<>
+			<ContextMenu>
+				<ContextMenuTrigger render={children} />
+				<ContextMenuContent className="w-56">
+					<ContextMenuGroup>
+						<ContextMenuLabel className="truncate font-mono">
+							{shortHash(row.commit.hash)}
+						</ContextMenuLabel>
+					</ContextMenuGroup>
+					<ContextMenuSeparator />
+					<ContextMenuItem
+						disabled={repositoryId === null}
+						onClick={() => setIsCreateBranchOpen(true)}
+					>
+						<GitBranch />
+						Create branch
+					</ContextMenuItem>
+					<ContextMenuSeparator />
+					<ContextMenuItem
+						onClick={() => void copyToClipboard(row.commit.hash, "Commit hash")}
+					>
+						<Copy />
+						Copy full hash
+					</ContextMenuItem>
+					<ContextMenuItem
+						onClick={() =>
+							void copyToClipboard(shortHash(row.commit.hash), "Short hash")
+						}
+					>
+						<Copy />
+						Copy short hash
+					</ContextMenuItem>
+					<ContextMenuItem
+						onClick={() => void copyToClipboard(subject, "Subject")}
+					>
+						<Copy />
+						Copy subject
+					</ContextMenuItem>
+					<ContextMenuItem
+						onClick={() => void copyToClipboard(row.commit.message, "Message")}
+					>
+						<Copy />
+						Copy message
+					</ContextMenuItem>
+					{refs.length > 0 ? (
+						<>
+							<ContextMenuSeparator />
 							<ContextMenuItem
-								onClick={() =>
-									void copyToClipboard(row.commit.tags.join("\n"), "Tags")
-								}
+								onClick={() => void copyToClipboard(refs.join("\n"), "Refs")}
 							>
-								<Tag />
-								Copy tags
+								<GitBranch />
+								Copy refs
 							</ContextMenuItem>
-						) : null}
-					</>
-				) : null}
-			</ContextMenuContent>
-		</ContextMenu>
+							{row.commit.tags.length > 0 ? (
+								<ContextMenuItem
+									onClick={() =>
+										void copyToClipboard(row.commit.tags.join("\n"), "Tags")
+									}
+								>
+									<Tag />
+									Copy tags
+								</ContextMenuItem>
+							) : null}
+						</>
+					) : null}
+				</ContextMenuContent>
+			</ContextMenu>
+			<CreateBranchFromCommitDialog
+				commitHash={row.commit.hash}
+				isOpen={isCreateBranchOpen}
+				onOpenChange={setIsCreateBranchOpen}
+				onSuccess={onBranchCreated}
+				repositoryId={repositoryId}
+			/>
+		</>
 	);
 }
 

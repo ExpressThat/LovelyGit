@@ -13,8 +13,10 @@ export function CommitRow({
 	currentBranchName,
 	graph,
 	isSelected,
+	onBranchCreated,
 	onSelect,
 	remotePrefixes,
+	repositoryId,
 	row,
 	rowIndex,
 	templateColumns,
@@ -25,8 +27,10 @@ export function CommitRow({
 		scrollLeft: number;
 	};
 	isSelected: boolean;
+	onBranchCreated: () => void;
 	onSelect: (row: CommitGraphRow) => void;
 	remotePrefixes: string[];
+	repositoryId: string | null;
 	row: CommitGraphRow | null;
 	rowIndex: number;
 	templateColumns: string;
@@ -95,7 +99,15 @@ export function CommitRow({
 		</button>
 	);
 
-	return <CommitRowContextMenu row={row}>{content}</CommitRowContextMenu>;
+	return (
+		<CommitRowContextMenu
+			onBranchCreated={onBranchCreated}
+			repositoryId={repositoryId}
+			row={row}
+		>
+			{content}
+		</CommitRowContextMenu>
+	);
 }
 
 function Column({

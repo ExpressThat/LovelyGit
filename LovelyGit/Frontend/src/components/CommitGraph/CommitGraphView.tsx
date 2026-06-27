@@ -25,12 +25,16 @@ const HEADER_LABELS: Record<ColKey, string> = {
 };
 
 export function CommitGraphView({
+	onBranchCreated,
 	onSelectCommit,
 	refreshToken = 0,
+	repositoryId,
 	selectedCommitHash,
 }: {
+	onBranchCreated: () => void;
 	onSelectCommit: (row: CommitGraphRowModel) => void;
 	refreshToken?: number;
+	repositoryId: string | null;
 	selectedCommitHash: string | null;
 }) {
 	const viewportRef = useRef<HTMLDivElement | null>(null);
@@ -207,9 +211,11 @@ export function CommitGraphView({
 										Boolean(rows[item.index]) &&
 										rows[item.index]?.commit.hash === selectedCommitHash
 									}
+									onBranchCreated={onBranchCreated}
 									onSelect={onSelectCommit}
 									currentBranchName={currentBranchName}
 									remotePrefixes={remotePrefixes}
+									repositoryId={repositoryId}
 									row={rows[item.index] ?? null}
 									rowIndex={item.index}
 									templateColumns={templateColumns}

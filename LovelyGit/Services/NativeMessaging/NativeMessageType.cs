@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Branches;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.CommitGraph;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.KnownRepository;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Settings;
@@ -47,6 +48,8 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging
         FetchRepository,
         [NativeMessageContract(typeof(GitRemoteCommandArguments))]
         PushRepository,
+        [NativeMessageContract(typeof(CreateBranchFromCommitCommandArguments), typeof(EmptyCommandArguments))]
+        CreateBranchFromCommit,
         [NativeMessageContract(typeof(CancelCommitDiffPreparationCommandArguments))]
         CancelCommitDiffPreparation,
         [NativeMessageContract(typeof(GetSettingsCommandArguments), typeof(JsonElement))]

@@ -1,23 +1,24 @@
 import "./App.css";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
+import {
+	cancelCommitDiffPreparation,
+	type DetailsPanelState,
+	panelTitle,
+} from "./AppPanelState";
 import { CommitDetails } from "./components/CommitDetails/CommitDetails";
 import { CommitFileDiffView } from "./components/CommitFileDiff/CommitFileDiffView";
 import { CommitGraphView } from "./components/CommitGraph/CommitGraphView";
 import { SlidingDetailsPanel } from "./components/DetailsPanel/SlidingDetailsPanel";
 import { NewTab } from "./components/NewTab/NewTab";
 import { TopNavBar } from "./components/TopNavBar/TopNavBar";
+import { Toaster } from "./components/ui/sonner";
 import { useWorkingTreeChanges } from "./components/WorkingChanges/useWorkingTreeChanges";
 import { WorkingChangesPanel } from "./components/WorkingChanges/WorkingChangesPanel";
 import { WorkingTreeFileDiffView } from "./components/WorkingChanges/WorkingTreeFileDiffView";
-import { Toaster } from "./components/ui/sonner";
-import {
-	cancelCommitDiffPreparation,
-	type DetailsPanelState,
-	panelTitle,
-} from "./AppPanelState";
 import { RepositoryProvider } from "./lib/repositoryContext";
 import { useSetting } from "./lib/settings/settingsStore";
+
 function App() {
 	const currentGitRepositoryId = useSetting("CurrentGitRepositoryId");
 	const [detailsPanel, setDetailsPanel] = useState<DetailsPanelState | null>(
@@ -56,7 +57,9 @@ function App() {
 		<RepositoryProvider>
 			<main className="app-shell">
 				<TopNavBar
-					onOpenWorkingChanges={() => setDetailsPanel({ kind: "workingChanges" })}
+					onOpenWorkingChanges={() =>
+						setDetailsPanel({ kind: "workingChanges" })
+					}
 					repositoryId={currentGitRepositoryId}
 					workingChangesCount={workingTreeChanges.totalCount}
 				/>
@@ -85,6 +88,9 @@ function App() {
 									}}
 								>
 									<CommitGraphView
+										onBranchCreated={() =>
+											setCommitGraphRefreshToken((token) => token + 1)
+										}
 										onSelectCommit={(row) =>
 											setDetailsPanel((currentPanel) => {
 												if (
@@ -108,6 +114,7 @@ function App() {
 												: null
 										}
 										refreshToken={commitGraphRefreshToken}
+										repositoryId={currentGitRepositoryId}
 									/>
 								</motion.div>
 								<AnimatePresence initial={false}>
