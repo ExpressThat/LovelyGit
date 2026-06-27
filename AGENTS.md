@@ -3,10 +3,11 @@
 ## Visual Testing
 - Use CMG from `C:\CMG\CMG.exe` for visual checks of the real LovelyGit desktop app, not a plain browser-only `localhost` session.
 - When debugging, set `WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS=--remote-debugging-port=9333` in the Debug/launch profile environment before starting LovelyGit. For this repo's `http` profile, add it beside `ASPNETCORE_ENVIRONMENT` in `LovelyGit/Properties/launchSettings.json`, or set the same variable in the IDE's debug environment UI.
-- To try the debug flow from a shell, run from the project directory:
-  `powershell -NoProfile -Command "$env:WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS='--remote-debugging-port=9333'; dotnet run --project LovelyGit.csproj --launch-profile http"`
-- Launch the compiled WebView2 app with remote debugging enabled and the app project as the working directory:
-  `powershell -NoProfile -Command "$env:WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS='--remote-debugging-port=9333'; Start-Process -FilePath 'C:/Projects/LovelyGit/LovelyGit/bin/Debug/net10.0/win-x64/LovelyGit.exe' -WorkingDirectory 'C:/Projects/LovelyGit/LovelyGit' -PassThru"`
+- Visual-test launches must also set `LOVELYGIT_TEST_WINDOW_OFFSCREEN=true` so the native window is placed away from the user's main monitor and starts minimized while CMG drives the WebView2 target.
+- Do not run visual tests with a direct foreground `dotnet run`, because its console window can steal focus and interrupt fullscreen apps. Use the helper script so both the host console and native app window are minimized/off-main-monitor:
+  `powershell -NoProfile -ExecutionPolicy Bypass -File C:/Projects/LovelyGit/scripts/Start-LovelyGitVisualTest.ps1 -UseDotNetRun`
+- Launch the compiled WebView2 app with remote debugging enabled through the same helper:
+  `powershell -NoProfile -ExecutionPolicy Bypass -File C:/Projects/LovelyGit/scripts/Start-LovelyGitVisualTest.ps1`
 - Confirm the WebView2 target is available with `Invoke-WebRequest -UseBasicParsing http://127.0.0.1:9333/json`; the target title should be `LovelyGit` and the URL should be `http://localhost:5000/`.
 - Drive the attached app with CMG using the explicit port form, for example `C:/CMG/CMG.exe browser --port 9333 control tabs list` or `C:/CMG/CMG.exe browser --port 9333 control script --file artifacts/lovelygit-app-graph.cmgscript --gif artifacts/lovelygit-app-graph.gif`.
 - Always arm CMG frontend error capture before navigation, clicks, typing, or other interactions that might crash React. Use the CLI event commands directly, or the equivalent CMG script commands `captureConsole` and `capturePageErrors` before the interaction:

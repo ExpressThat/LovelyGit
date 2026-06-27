@@ -21,6 +21,7 @@ public static class Program
     private const bool EnableCommitGraphCacheWorker = false;
     private const bool EnableCommitDetailsPreloadWorker = false;
     private const bool EnableCommitFileDiffPreparationWorker = false;
+    private const string TestWindowOffscreenEnvironmentVariable = "LOVELYGIT_TEST_WINDOW_OFFSCREEN";
 
     [STAThread]
     public static void Main(string[] args)
@@ -42,11 +43,10 @@ public static class Program
         appBuilder.Services.AddLovelyGitServices();
 
 
-        appBuilder.WindowBuilder
+        var windowBuilder = appBuilder.WindowBuilder
                     .SetUseOsDefaultSize(false)
                     .SetChromeless(false)
                     .SetResizable(true)
-                    .Center()
                     .SetTitle("LovelyGit")
                     .SetIconFile(GetWindowIconPath())
                     .SetSize(new Size(800, 600))
@@ -54,6 +54,7 @@ public static class Program
                     .UseNativeMessaging()
                     ;
 
+        ApplyInitialWindowPlacement(windowBuilder);
 
         Keyring.GetPassword();
 
@@ -98,6 +99,26 @@ public static class Program
             : "LovelyGit.png";
 
         return Path.Combine(AppContext.BaseDirectory, "Assets", fileName);
+    }
+
+    private static void ApplyInitialWindowPlacement(IInfiniFrameWindowBuilder windowBuilder)
+    {
+        if (IsTestWindowOffscreenEnabled())
+        {
+            windowBuilder
+                .SetUseOsDefaultLocation(false)
+                .SetLocation(-32000, -32000)
+                .SetMinimized(true);
+            return;
+        }
+
+        windowBuilder.Center();
+    }
+
+    private static bool IsTestWindowOffscreenEnabled()
+    {
+        var value = Environment.GetEnvironmentVariable(TestWindowOffscreenEnvironmentVariable);
+        return bool.TryParse(value, out var enabled) && enabled;
     }
 
     private static void CheckForUpdatesAtStartup(string[] args)
