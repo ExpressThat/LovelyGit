@@ -4,23 +4,28 @@ import {
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
 import type { CommitGraphRow } from "@/generated/types";
+import { BranchRefContextMenu } from "./BranchRefContextMenu";
 import {
 	buildLegacyRefs,
 	groupRefs,
 	normalizeRefs,
+	type RefGroup,
 	RefIcon,
 	refLabelForRemotes,
-	type RefGroup,
 	uniqueKinds,
 } from "./RefCellUtils";
 
 export function RefCell({
 	currentBranchName,
+	onRefsChanged,
 	remotePrefixes,
+	repositoryId,
 	row,
 }: {
 	currentBranchName: string | null;
+	onRefsChanged: () => void;
 	remotePrefixes: string[];
+	repositoryId: string | null;
 	row: CommitGraphRow;
 }) {
 	const refs =
@@ -37,26 +42,35 @@ export function RefCell({
 	return (
 		<div className="flex min-w-0 gap-1">
 			<RefGroupPill
+				currentBranchName={currentBranchName}
 				group={primaryGroup}
 				hiddenGroups={groups.slice(1)}
+				onRefsChanged={onRefsChanged}
 				remotePrefixes={remotePrefixes}
+				repositoryId={repositoryId}
 			/>
 		</div>
 	);
 }
 function RefGroupPill({
+	currentBranchName,
 	group,
 	hiddenGroups,
+	onRefsChanged,
 	remotePrefixes,
+	repositoryId,
 }: {
+	currentBranchName: string | null;
 	group: RefGroup;
 	hiddenGroups: RefGroup[];
+	onRefsChanged: () => void;
 	remotePrefixes: string[];
+	repositoryId: string | null;
 }) {
 	const hiddenCount = hiddenGroups.length;
 	const icons = uniqueKinds(group.refs);
 	const pill = (
-		<span className="inline-flex h-[17px] max-w-full items-center gap-1 overflow-hidden whitespace-nowrap rounded-[3px] border border-border bg-secondary px-1 text-[11px] text-secondary-foreground shadow-sm">
+		<span className="inline-flex h-[17px] max-w-full items-center gap-1 overflow-hidden whitespace-nowrap rounded-[3px] border border-border bg-secondary px-1 text-[11px] text-secondary-foreground shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
 			<span className="inline-flex shrink-0 items-center gap-0.5">
 				{icons.map((kind) => (
 					<RefIcon kind={kind} key={kind} />
@@ -72,9 +86,19 @@ function RefGroupPill({
 			) : null}
 		</span>
 	);
+	const menuPill = (
+		<BranchRefContextMenu
+			currentBranchName={currentBranchName}
+			onRefsChanged={onRefsChanged}
+			refInfo={group.primary}
+			repositoryId={repositoryId}
+		>
+			{pill}
+		</BranchRefContextMenu>
+	);
 
 	if (hiddenGroups.length === 0) {
-		return pill;
+		return menuPill;
 	}
 
 	return (
@@ -84,7 +108,7 @@ function RefGroupPill({
 				delay={150}
 				render={<span className="inline-flex min-w-0 max-w-full" />}
 			>
-				{pill}
+				{menuPill}
 			</TooltipTrigger>
 			<TooltipContent
 				align="start"

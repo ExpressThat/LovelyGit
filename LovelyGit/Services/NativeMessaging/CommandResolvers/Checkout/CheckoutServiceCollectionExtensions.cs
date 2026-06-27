@@ -10,6 +10,7 @@ internal static class CheckoutServiceCollectionExtensions
     {
         services.AddLovelyGitJsonTypeInfoResolver(CheckoutJsonSerializerContext.Default);
         services.AddSingleton<GitCheckoutCommandService>();
+        services.AddSingleton<ICommandResponder, CheckoutBranchCommandResolver>();
         services.AddSingleton<ICommandResponder, CheckoutCommitDetachedCommandResolver>();
         return services;
     }

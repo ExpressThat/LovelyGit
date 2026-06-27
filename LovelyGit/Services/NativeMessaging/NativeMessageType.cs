@@ -59,6 +59,8 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging
         CreateTagAtCommit,
         [NativeMessageContract(typeof(CheckoutCommitDetachedCommandArguments), typeof(EmptyCommandArguments))]
         CheckoutCommitDetached,
+        [NativeMessageContract(typeof(CheckoutBranchCommandArguments), typeof(EmptyCommandArguments))]
+        CheckoutBranch,
         [NativeMessageContract(typeof(CherryPickCommitCommandArguments), typeof(EmptyCommandArguments))]
         CherryPickCommit,
         [NativeMessageContract(typeof(RevertCommitCommandArguments), typeof(EmptyCommandArguments))]

@@ -76,7 +76,9 @@ export function CommitRow({
 			<Column className="px-[6px] py-[2px]">
 				<RefCell
 					currentBranchName={currentBranchName}
+					onRefsChanged={onRefsChanged}
 					remotePrefixes={remotePrefixes}
+					repositoryId={repositoryId}
 					row={row}
 				/>
 			</Column>

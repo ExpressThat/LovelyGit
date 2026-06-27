@@ -1,4 +1,5 @@
 using CliWrap.Buffered;
+using ExpressThat.LovelyGit.Services.Git.Branches;
 using ExpressThat.LovelyGit.Services.Git.Cli;
 using ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser;
 
@@ -29,6 +30,29 @@ internal sealed class GitCheckoutCommandService
 
         var result = await _gitCliService.ExecuteBufferedAsync(
             ["checkout", "--detach", commitHash],
+            repositoryPaths.WorkTreeDirectory,
+            validateExitCode: false,
+            cancellationToken).ConfigureAwait(false);
+
+        ThrowIfFailed(result);
+    }
+
+    public async Task CheckoutBranchAsync(
+        string repositoryPath,
+        string branchName,
+        CancellationToken cancellationToken)
+    {
+        if (!GitBranchNameValidator.IsValidBranchName(branchName))
+        {
+            throw new ArgumentException("Branch name is not valid.", nameof(branchName));
+        }
+
+        var repositoryPaths = await GitRepositoryDiscovery
+            .ResolveRepositoryPathsAsync(repositoryPath, cancellationToken)
+            .ConfigureAwait(false);
+
+        var result = await _gitCliService.ExecuteBufferedAsync(
+            ["checkout", branchName],
             repositoryPaths.WorkTreeDirectory,
             validateExitCode: false,
             cancellationToken).ConfigureAwait(false);

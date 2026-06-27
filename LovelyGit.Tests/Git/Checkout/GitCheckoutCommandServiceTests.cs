@@ -29,6 +29,25 @@ public sealed class GitCheckoutCommandServiceTests
         Assert.Equal(string.Empty, branch.StandardOutput.Trim());
     }
 
+    [Fact]
+    public async Task CheckoutBranchAsync_SwitchesToLocalBranch()
+    {
+        using var repository = TemporaryGitRepository.Create();
+        var checkoutService = new GitCheckoutCommandService(repository.GitCliService);
+
+        await checkoutService.CheckoutBranchAsync(
+            repository.Path,
+            "feature/test-branch",
+            CancellationToken.None);
+
+        var branch = await repository.GitCliService.ExecuteBufferedAsync(
+            ["branch", "--show-current"],
+            repository.Path,
+            cancellationToken: CancellationToken.None);
+
+        Assert.Equal("feature/test-branch", branch.StandardOutput.Trim());
+    }
+
     private sealed class TemporaryGitRepository : IDisposable
     {
         private readonly DirectoryInfo _directory;
@@ -64,6 +83,7 @@ public sealed class GitCheckoutCommandServiceTests
                 directory.FullName,
                 ["rev-parse", "HEAD"]).StandardOutput.Trim();
             RunGit(gitCliService, directory.FullName, ["commit", "--allow-empty", "-m", "Second"]);
+            RunGit(gitCliService, directory.FullName, ["branch", "feature/test-branch", firstCommitHash]);
 
             return new TemporaryGitRepository(directory, gitCliService, firstCommitHash);
         }
