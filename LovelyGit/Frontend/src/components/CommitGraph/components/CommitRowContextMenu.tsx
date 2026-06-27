@@ -1,0 +1,107 @@
+import { Copy, GitBranch, Tag } from "lucide-react";
+import type { ReactElement } from "react";
+import { toast } from "sonner";
+import {
+	ContextMenu,
+	ContextMenuContent,
+	ContextMenuGroup,
+	ContextMenuItem,
+	ContextMenuLabel,
+	ContextMenuSeparator,
+	ContextMenuTrigger,
+} from "@/components/ui/context-menu";
+import type { CommitGraphRow } from "@/generated/types";
+import { shortHash } from "../utils/format";
+
+export function CommitRowContextMenu({
+	children,
+	row,
+}: {
+	children: ReactElement;
+	row: CommitGraphRow;
+}) {
+	const refs = commitRefs(row);
+	const subject = commitSubject(row);
+
+	return (
+		<ContextMenu>
+			<ContextMenuTrigger render={children} />
+			<ContextMenuContent className="w-56">
+				<ContextMenuGroup>
+					<ContextMenuLabel className="truncate font-mono">
+						{shortHash(row.commit.hash)}
+					</ContextMenuLabel>
+				</ContextMenuGroup>
+				<ContextMenuSeparator />
+				<ContextMenuItem
+					onClick={() => void copyToClipboard(row.commit.hash, "Commit hash")}
+				>
+					<Copy />
+					Copy full hash
+				</ContextMenuItem>
+				<ContextMenuItem
+					onClick={() =>
+						void copyToClipboard(shortHash(row.commit.hash), "Short hash")
+					}
+				>
+					<Copy />
+					Copy short hash
+				</ContextMenuItem>
+				<ContextMenuItem
+					onClick={() => void copyToClipboard(subject, "Subject")}
+				>
+					<Copy />
+					Copy subject
+				</ContextMenuItem>
+				<ContextMenuItem
+					onClick={() => void copyToClipboard(row.commit.message, "Message")}
+				>
+					<Copy />
+					Copy message
+				</ContextMenuItem>
+				{refs.length > 0 ? (
+					<>
+						<ContextMenuSeparator />
+						<ContextMenuItem
+							onClick={() => void copyToClipboard(refs.join("\n"), "Refs")}
+						>
+							<GitBranch />
+							Copy refs
+						</ContextMenuItem>
+						{row.commit.tags.length > 0 ? (
+							<ContextMenuItem
+								onClick={() =>
+									void copyToClipboard(row.commit.tags.join("\n"), "Tags")
+								}
+							>
+								<Tag />
+								Copy tags
+							</ContextMenuItem>
+						) : null}
+					</>
+				) : null}
+			</ContextMenuContent>
+		</ContextMenu>
+	);
+}
+
+function commitSubject(row: CommitGraphRow) {
+	return row.commit.message.split(/\r?\n/, 1)[0] || "(no commit message)";
+}
+
+function commitRefs(row: CommitGraphRow) {
+	const refs =
+		row.commit.refs.length > 0
+			? row.commit.refs.map((ref) => ref.name)
+			: [...row.commit.branches, ...row.commit.tags];
+	return [...new Set(refs)].sort((left, right) => left.localeCompare(right));
+}
+
+async function copyToClipboard(value: string, label: string) {
+	try {
+		await navigator.clipboard.writeText(value);
+		toast.success(`${label} copied`);
+	} catch {
+		toast.error(`Could not copy ${label.toLowerCase()}`);
+	}
+}

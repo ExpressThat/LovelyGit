@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import type { CommitGraphRow } from "@/generated/types";
 import { AuthorCell } from "./AuthorCell";
 import { CommitMessage } from "./CommitMessage";
+import { CommitRowContextMenu } from "./CommitRowContextMenu";
 import { GraphCell } from "./GraphCell";
 import { HashCell } from "./HashCell";
 import { RefCell } from "./RefCell";
@@ -61,7 +62,7 @@ export function CommitRow({
 		);
 	}
 
-	return (
+	const content = (
 		<button
 			className={`${rowClassName} w-full cursor-pointer border-0 p-0 text-left text-inherit focus-visible:bg-accent focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-ring`}
 			onClick={() => onSelect(row)}
@@ -93,6 +94,8 @@ export function CommitRow({
 			</Column>
 		</button>
 	);
+
+	return <CommitRowContextMenu row={row}>{content}</CommitRowContextMenu>;
 }
 
 function Column({
