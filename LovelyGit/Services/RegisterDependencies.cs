@@ -6,6 +6,7 @@ using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Checkout;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.CherryPick;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.CommitGraph;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.KnownRepository;
+using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Reset;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Revert;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Settings;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Tags;
@@ -31,6 +32,7 @@ namespace ExpressThat.LovelyGit.Services
                 .AddCheckoutCommands()
                 .AddCherryPickCommands()
                 .AddRevertCommands()
+                .AddResetCommands()
                 .AddTagCommands()
                 .AddKnownRepositoryCommands()
                 .AddCommitGraphCommands()

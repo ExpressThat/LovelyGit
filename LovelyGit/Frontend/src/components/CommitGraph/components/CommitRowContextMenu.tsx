@@ -5,6 +5,7 @@ import {
 	GitPullRequestArrow,
 	RotateCcw,
 	Tag,
+	Undo2,
 } from "lucide-react";
 import type { ReactElement } from "react";
 import { useState } from "react";
@@ -16,14 +17,22 @@ import {
 	ContextMenuItem,
 	ContextMenuLabel,
 	ContextMenuSeparator,
+	ContextMenuSub,
+	ContextMenuSubContent,
+	ContextMenuSubTrigger,
 	ContextMenuTrigger,
 } from "@/components/ui/context-menu";
-import type { CommitGraphRow } from "@/generated/types";
+import {
+	type CommitGraphRow,
+	GitResetMode,
+	type GitResetMode as GitResetModeValue,
+} from "@/generated/types";
 import { shortHash } from "../utils/format";
 import { CheckoutCommitDetachedDialog } from "./CheckoutCommitDetachedDialog";
 import { CherryPickCommitDialog } from "./CherryPickCommitDialog";
 import { CreateBranchFromCommitDialog } from "./CreateBranchFromCommitDialog";
 import { CreateTagAtCommitDialog } from "./CreateTagAtCommitDialog";
+import { ResetCurrentBranchDialog } from "./ResetCurrentBranchDialog";
 import { RevertCommitDialog } from "./RevertCommitDialog";
 
 export function CommitRowContextMenu({
@@ -42,6 +51,7 @@ export function CommitRowContextMenu({
 	const [isCreateBranchOpen, setIsCreateBranchOpen] = useState(false);
 	const [isCreateTagOpen, setIsCreateTagOpen] = useState(false);
 	const [isRevertOpen, setIsRevertOpen] = useState(false);
+	const [resetMode, setResetMode] = useState<GitResetModeValue | null>(null);
 	const refs = commitRefs(row);
 	const subject = commitSubject(row);
 
@@ -78,6 +88,26 @@ export function CommitRowContextMenu({
 						<RotateCcw />
 						Revert commit
 					</ContextMenuItem>
+					<ContextMenuSub>
+						<ContextMenuSubTrigger disabled={repositoryId === null}>
+							<Undo2 />
+							Reset current branch
+						</ContextMenuSubTrigger>
+						<ContextMenuSubContent className="w-44">
+							<ContextMenuItem onClick={() => setResetMode(GitResetMode.Soft)}>
+								Soft reset
+							</ContextMenuItem>
+							<ContextMenuItem onClick={() => setResetMode(GitResetMode.Mixed)}>
+								Mixed reset
+							</ContextMenuItem>
+							<ContextMenuItem
+								variant="destructive"
+								onClick={() => setResetMode(GitResetMode.Hard)}
+							>
+								Hard reset
+							</ContextMenuItem>
+						</ContextMenuSubContent>
+					</ContextMenuSub>
 					<ContextMenuItem
 						disabled={repositoryId === null}
 						onClick={() => setIsCreateBranchOpen(true)}
@@ -160,6 +190,17 @@ export function CommitRowContextMenu({
 				commitHash={row.commit.hash}
 				isOpen={isCheckoutOpen}
 				onOpenChange={setIsCheckoutOpen}
+				onSuccess={onRefsChanged}
+				repositoryId={repositoryId}
+			/>
+			<ResetCurrentBranchDialog
+				commitHash={row.commit.hash}
+				mode={resetMode}
+				onOpenChange={(isOpen) => {
+					if (!isOpen) {
+						setResetMode(null);
+					}
+				}}
 				onSuccess={onRefsChanged}
 				repositoryId={repositoryId}
 			/>

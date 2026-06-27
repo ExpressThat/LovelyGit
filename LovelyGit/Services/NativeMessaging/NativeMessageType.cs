@@ -4,6 +4,7 @@ using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Checkout;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.CherryPick;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.CommitGraph;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.KnownRepository;
+using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Reset;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Revert;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Settings;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Tags;
@@ -62,6 +63,8 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging
         CherryPickCommit,
         [NativeMessageContract(typeof(RevertCommitCommandArguments), typeof(EmptyCommandArguments))]
         RevertCommit,
+        [NativeMessageContract(typeof(ResetCurrentBranchToCommitCommandArguments), typeof(EmptyCommandArguments))]
+        ResetCurrentBranchToCommit,
         [NativeMessageContract(typeof(CancelCommitDiffPreparationCommandArguments))]
         CancelCommitDiffPreparation,
         [NativeMessageContract(typeof(GetSettingsCommandArguments), typeof(JsonElement))]
