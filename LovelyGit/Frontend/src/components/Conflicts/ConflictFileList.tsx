@@ -1,5 +1,8 @@
-import { AlertTriangle, CheckCircle2, FileWarning } from "lucide-react";
+import { AlertTriangle, CheckCircle2, ListTree } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { GitConflictFile } from "@/generated/types";
+import { setSetting, useSetting } from "@/lib/settings/settingsStore";
+import { FileButton, FileTreeGroup } from "./ConflictFileRows";
 
 export function ConflictFileList({
 	conflictedFiles,
@@ -12,22 +15,64 @@ export function ConflictFileList({
 	resolvedFiles: GitConflictFile[];
 	selectedPath: string | null;
 }) {
+	const viewMode = useSetting("ConflictFileViewMode");
 	return (
-		<aside className="flex min-h-0 w-80 flex-col border-r bg-card/40">
-			<FileGroup
-				files={conflictedFiles}
-				icon="conflict"
-				onSelectFile={onSelectFile}
-				selectedPath={selectedPath}
-				title={`Conflicted Files (${conflictedFiles.length})`}
-			/>
-			<FileGroup
-				files={resolvedFiles}
-				icon="resolved"
-				onSelectFile={onSelectFile}
-				selectedPath={selectedPath}
-				title={`Resolved Files (${resolvedFiles.length})`}
-			/>
+		<aside className="flex min-h-0 w-88 flex-col border-r bg-card/40">
+			<Tabs
+				className="min-h-0 flex-1 gap-0"
+				onValueChange={(value) =>
+					void setSetting(
+						"ConflictFileViewMode",
+						value === "Tree" ? "Tree" : "Path",
+					)
+				}
+				value={viewMode}
+			>
+				<div className="flex items-center justify-between border-b px-3 py-2">
+					<h2 className="font-medium text-sm">Conflict files</h2>
+					<TabsList aria-label="Conflict file view" variant="line">
+						<TabsTrigger title="Show conflict files by path" value="Path">
+							Path
+						</TabsTrigger>
+						<TabsTrigger title="Show conflict files as a tree" value="Tree">
+							<ListTree aria-hidden="true" />
+							Tree
+						</TabsTrigger>
+					</TabsList>
+				</div>
+				<TabsContent className="min-h-0 overflow-hidden" value="Path">
+					<FileGroup
+						files={conflictedFiles}
+						icon="conflict"
+						onSelectFile={onSelectFile}
+						selectedPath={selectedPath}
+						title={`Conflicted Files (${conflictedFiles.length})`}
+					/>
+					<FileGroup
+						files={resolvedFiles}
+						icon="resolved"
+						onSelectFile={onSelectFile}
+						selectedPath={selectedPath}
+						title={`Resolved Files (${resolvedFiles.length})`}
+					/>
+				</TabsContent>
+				<TabsContent className="min-h-0 overflow-auto p-2" value="Tree">
+					<FileTreeGroup
+						files={conflictedFiles}
+						icon="conflict"
+						onSelectFile={onSelectFile}
+						selectedPath={selectedPath}
+						title={`Conflicted (${conflictedFiles.length})`}
+					/>
+					<FileTreeGroup
+						files={resolvedFiles}
+						icon="resolved"
+						onSelectFile={onSelectFile}
+						selectedPath={selectedPath}
+						title={`Resolved (${resolvedFiles.length})`}
+					/>
+				</TabsContent>
+			</Tabs>
 		</aside>
 	);
 }
@@ -53,31 +98,21 @@ function FileGroup({
 				{title}
 			</h2>
 			<div className="max-h-full overflow-auto p-2">
-				{files.map((file) => (
-					<button
-						className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm ${
-							file.path === selectedPath
-								? "bg-accent text-accent-foreground"
-								: "hover:bg-accent/70"
-						}`}
-						key={`${icon}:${file.path}`}
-						onClick={() => onSelectFile(file)}
-						title={file.path}
-						type="button"
-					>
-						{icon === "conflict" ? (
-							<FileWarning className="size-4 shrink-0 text-amber-500" />
-						) : (
-							<CheckCircle2 className="size-4 shrink-0 text-emerald-500" />
-						)}
-						<span className="min-w-0 flex-1 truncate">{file.path}</span>
-						{file.conflictCount > 0 ? (
-							<span className="text-muted-foreground text-xs">
-								{file.conflictCount}
-							</span>
-						) : null}
-					</button>
-				))}
+				{files.length > 0 ? (
+					files.map((file) => (
+						<FileButton
+							file={file}
+							icon={icon}
+							key={`${icon}:${file.path}`}
+							onSelectFile={onSelectFile}
+							selectedPath={selectedPath}
+						/>
+					))
+				) : (
+					<p className="px-2 py-1.5 text-muted-foreground text-xs">
+						No files in this group.
+					</p>
+				)}
 			</div>
 		</section>
 	);

@@ -16,7 +16,8 @@ namespace ExpressThat.LovelyGit.Services.Settings
         CommitDiffWrapLines,
         CommitDiffIgnoreWhitespace,
         CommitGraphRefsPanelOpen,
-        RemotePrimaryAction
+        RemotePrimaryAction,
+        ConflictFileViewMode
     }
 
     [TypeSharp]
@@ -48,6 +49,15 @@ namespace ExpressThat.LovelyGit.Services.Settings
         PullRebase,
         PullFastForwardOnly,
         Push
+    }
+
+    [TypeSharp]
+    [Union]
+    [JsonConverter(typeof(JsonStringEnumConverter<ConflictFileViewMode>))]
+    public enum ConflictFileViewMode
+    {
+        Path,
+        Tree
     }
 
 }
