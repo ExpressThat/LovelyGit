@@ -79,6 +79,7 @@ export function BranchRefContextMenu({
 						<RemoteBranchMenuItems
 							canCheckoutRemote={canCheckoutRemote}
 							onCheckout={() => setIsCheckoutRemoteOpen(true)}
+							remoteBranchName={refInfo.name}
 						/>
 					) : null}
 					{isTag ? (
@@ -87,6 +88,7 @@ export function BranchRefContextMenu({
 							canDeleteTag={canDeleteTag}
 							onCheckout={() => setIsCheckoutTagOpen(true)}
 							onDelete={() => setIsDeleteTagOpen(true)}
+							tagName={refInfo.name}
 						/>
 					) : null}
 					{isLocalBranch ? (

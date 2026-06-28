@@ -9,7 +9,6 @@ import {
 } from "lucide-react";
 import type { ReactElement } from "react";
 import { useState } from "react";
-import { toast } from "sonner";
 import {
 	ContextMenu,
 	ContextMenuContent,
@@ -27,6 +26,7 @@ import {
 	GitResetMode,
 	type GitResetMode as GitResetModeValue,
 } from "@/generated/types";
+import { copyToClipboard } from "../utils/clipboard";
 import { shortHash } from "../utils/format";
 import { CheckoutCommitDetachedDialog } from "./CheckoutCommitDetachedDialog";
 import { CherryPickCommitDialog } from "./CherryPickCommitDialog";
@@ -232,13 +232,4 @@ function commitRefs(row: CommitGraphRow) {
 			? row.commit.refs.map((ref) => ref.name)
 			: [...row.commit.branches, ...row.commit.tags];
 	return [...new Set(refs)].sort((left, right) => left.localeCompare(right));
-}
-
-async function copyToClipboard(value: string, label: string) {
-	try {
-		await navigator.clipboard.writeText(value);
-		toast.success(`${label} copied`);
-	} catch {
-		toast.error(`Could not copy ${label.toLowerCase()}`);
-	}
 }

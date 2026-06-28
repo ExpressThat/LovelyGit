@@ -1,4 +1,5 @@
 import {
+	Copy,
 	GitBranch,
 	GitPullRequestArrow,
 	Pencil,
@@ -10,6 +11,7 @@ import { toast } from "sonner";
 import { ContextMenuItem } from "@/components/ui/context-menu";
 import { sendRequestWithResponse } from "@/lib/commands";
 import { NativeMessageType } from "@/lib/nativeMessaging";
+import { copyToClipboard } from "../utils/clipboard";
 
 export function LocalBranchMenuItems({
 	branchName,
@@ -52,6 +54,12 @@ export function LocalBranchMenuItems({
 					Checkout branch
 				</ContextMenuItem>
 			) : null}
+			<ContextMenuItem
+				onClick={() => void copyToClipboard(branchName, "Branch name")}
+			>
+				<Copy />
+				Copy branch name
+			</ContextMenuItem>
 			{canMutateBranch ? (
 				<ContextMenuItem onClick={onRename}>
 					<Pencil />
