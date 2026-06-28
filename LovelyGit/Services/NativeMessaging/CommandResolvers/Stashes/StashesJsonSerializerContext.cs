@@ -5,6 +5,7 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Stashe
 
 [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
 [JsonSerializable(typeof(StashChangesCommandArguments))]
+[JsonSerializable(typeof(StashReferenceCommandArguments))]
 [JsonSerializable(typeof(CommandResponse<EmptyCommandArguments>))]
 internal partial class StashesJsonSerializerContext : JsonSerializerContext
 {

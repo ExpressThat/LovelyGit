@@ -11,6 +11,7 @@ internal static class StashesServiceCollectionExtensions
         services.AddLovelyGitJsonTypeInfoResolver(StashesJsonSerializerContext.Default);
         services.AddSingleton<GitStashCommandService>();
         services.AddSingleton<ICommandResponder, StashChangesCommandResolver>();
+        services.AddSingleton<ICommandResponder, StashReferenceCommandResolver>();
         return services;
     }
 }

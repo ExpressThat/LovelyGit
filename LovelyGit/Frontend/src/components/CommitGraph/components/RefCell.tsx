@@ -9,6 +9,7 @@ import {
 	refLabelForRemotes,
 	uniqueKinds,
 } from "./RefCellUtils";
+import { StashRefContextMenu } from "./StashRefContextMenu";
 
 export function RefCell({
 	currentBranchName,
@@ -78,7 +79,15 @@ function RefGroupPill({
 		</span>
 	);
 	if (group.primary.kind === "Stash") {
-		return pill;
+		return (
+			<StashRefContextMenu
+				onRefsChanged={onRefsChanged}
+				refInfo={group.primary}
+				repositoryId={repositoryId}
+			>
+				{pill}
+			</StashRefContextMenu>
+		);
 	}
 
 	return (

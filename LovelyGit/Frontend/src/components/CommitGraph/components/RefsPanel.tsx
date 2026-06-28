@@ -14,6 +14,7 @@ import {
 	type RefPanelSection,
 	refPanelItemToRefInfo,
 } from "./RefsPanelData";
+import { StashRefContextMenu } from "./StashRefContextMenu";
 
 export function RefsPanel({
 	currentBranchName,
@@ -202,7 +203,15 @@ function RefPanelRow({
 	);
 
 	if (item.kind === "Stash") {
-		return button;
+		return (
+			<StashRefContextMenu
+				onRefsChanged={onRefsChanged}
+				refInfo={refPanelItemToRefInfo(item)}
+				repositoryId={repositoryId}
+			>
+				{button}
+			</StashRefContextMenu>
+		);
 	}
 
 	return (

@@ -77,6 +77,66 @@ public sealed class GitStashCommandServiceTests
                 CancellationToken.None));
     }
 
+    [Fact]
+    public async Task ApplyStashAsync_RestoresChangesAndKeepsStash()
+    {
+        using var repository = TemporaryGitRepository.Create();
+        var stashService = new GitStashCommandService(repository.GitOperationService);
+        await CreateTrackedStashAsync(repository, stashService);
+
+        await stashService.ApplyStashAsync(repository.Path, "stash", CancellationToken.None);
+
+        Assert.Contains("changed", await File.ReadAllTextAsync(repository.TrackedPath));
+        Assert.Contains("LovelyGit action stash", await StashListAsync(repository));
+    }
+
+    [Fact]
+    public async Task PopStashAsync_RestoresChangesAndRemovesStash()
+    {
+        using var repository = TemporaryGitRepository.Create();
+        var stashService = new GitStashCommandService(repository.GitOperationService);
+        await CreateTrackedStashAsync(repository, stashService);
+
+        await stashService.PopStashAsync(repository.Path, "stash", CancellationToken.None);
+
+        Assert.Contains("changed", await File.ReadAllTextAsync(repository.TrackedPath));
+        Assert.Equal(string.Empty, (await StashListAsync(repository)).Trim());
+    }
+
+    [Fact]
+    public async Task DropStashAsync_RemovesStash()
+    {
+        using var repository = TemporaryGitRepository.Create();
+        var stashService = new GitStashCommandService(repository.GitOperationService);
+        await CreateTrackedStashAsync(repository, stashService);
+
+        await stashService.DropStashAsync(repository.Path, "stash", CancellationToken.None);
+
+        Assert.Equal(string.Empty, (await StashListAsync(repository)).Trim());
+        Assert.DoesNotContain("changed", await File.ReadAllTextAsync(repository.TrackedPath));
+    }
+
+    private static async Task CreateTrackedStashAsync(
+        TemporaryGitRepository repository,
+        GitStashCommandService stashService)
+    {
+        await File.AppendAllTextAsync(repository.TrackedPath, "changed", CancellationToken.None);
+        await stashService.StashChangesAsync(
+            repository.Path,
+            "LovelyGit action stash",
+            includeUntracked: false,
+            CancellationToken.None);
+    }
+
+    private static async Task<string> StashListAsync(TemporaryGitRepository repository)
+    {
+        var result = await repository.GitCliService.ExecuteBufferedAsync(
+            ["stash", "list"],
+            repository.Path,
+            cancellationToken: CancellationToken.None);
+        return result.StandardOutput;
+    }
+
     private sealed class TemporaryGitRepository : IDisposable
     {
         private readonly DirectoryInfo _directory;
@@ -96,6 +156,8 @@ public sealed class GitStashCommandServiceTests
         public GitOperationService GitOperationService { get; }
 
         public string Path { get; }
+
+        public string TrackedPath => System.IO.Path.Combine(Path, "tracked.txt");
 
         public static TemporaryGitRepository Create()
         {

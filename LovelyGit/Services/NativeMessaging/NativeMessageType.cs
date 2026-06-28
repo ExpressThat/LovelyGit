@@ -74,6 +74,12 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging
         PushRepository,
         [NativeMessageContract(typeof(StashChangesCommandArguments), typeof(EmptyCommandArguments))]
         StashChanges,
+        [NativeMessageContract(typeof(StashReferenceCommandArguments), typeof(EmptyCommandArguments))]
+        ApplyStash,
+        [NativeMessageContract(typeof(StashReferenceCommandArguments), typeof(EmptyCommandArguments))]
+        PopStash,
+        [NativeMessageContract(typeof(StashReferenceCommandArguments), typeof(EmptyCommandArguments))]
+        DropStash,
         [NativeMessageContract(typeof(CreateBranchFromCommitCommandArguments), typeof(EmptyCommandArguments))]
         CreateBranchFromCommit,
         [NativeMessageContract(typeof(CreateBranchFromTagCommandArguments), typeof(EmptyCommandArguments))]

@@ -44,6 +44,42 @@ internal sealed class GitStashCommandService
             cancellationToken).ConfigureAwait(false);
     }
 
+    public async Task ApplyStashAsync(
+        string repositoryPath,
+        string stashName,
+        CancellationToken cancellationToken) =>
+        await RunStashReferenceActionAsync(
+            repositoryPath,
+            stashName,
+            "Apply stash",
+            action => ["stash", "apply", action],
+            "Resolve conflicts or inspect the working tree before retrying.",
+            cancellationToken).ConfigureAwait(false);
+
+    public async Task PopStashAsync(
+        string repositoryPath,
+        string stashName,
+        CancellationToken cancellationToken) =>
+        await RunStashReferenceActionAsync(
+            repositoryPath,
+            stashName,
+            "Pop stash",
+            action => ["stash", "pop", action],
+            "Resolve conflicts or inspect the working tree before retrying.",
+            cancellationToken).ConfigureAwait(false);
+
+    public async Task DropStashAsync(
+        string repositoryPath,
+        string stashName,
+        CancellationToken cancellationToken) =>
+        await RunStashReferenceActionAsync(
+            repositoryPath,
+            stashName,
+            "Delete stash",
+            action => ["stash", "drop", action],
+            "Check that the selected stash still exists.",
+            cancellationToken).ConfigureAwait(false);
+
     private async Task StashTrackedChangesAsync(
         string workingDirectory,
         string message,
@@ -118,5 +154,49 @@ internal sealed class GitStashCommandService
         {
             File.Delete(pathspecFile);
         }
+    }
+
+    private async Task RunStashReferenceActionAsync(
+        string repositoryPath,
+        string stashName,
+        string operationName,
+        Func<string, IReadOnlyList<string>> createArguments,
+        string recoveryHint,
+        CancellationToken cancellationToken)
+    {
+        var normalizedStashName = NormalizeStashName(stashName);
+        if (normalizedStashName == null)
+        {
+            throw new ArgumentException("Stash reference is not valid.", nameof(stashName));
+        }
+
+        var repositoryPaths = await GitRepositoryDiscovery
+            .ResolveRepositoryPathsAsync(repositoryPath, cancellationToken)
+            .ConfigureAwait(false);
+
+        await _gitOperationService.ExecuteRequiredBufferedAsync(
+            operationName,
+            createArguments(normalizedStashName),
+            repositoryPaths.WorkTreeDirectory,
+            recoveryHint,
+            cancellationToken).ConfigureAwait(false);
+    }
+
+    private static string? NormalizeStashName(string stashName)
+    {
+        var value = stashName.Trim();
+        if (value == "stash")
+        {
+            return "stash@{0}";
+        }
+
+        if (!value.StartsWith("stash@{", StringComparison.Ordinal)
+            || !value.EndsWith('}'))
+        {
+            return null;
+        }
+
+        var number = value.AsSpan(7, value.Length - 8);
+        return number.Length > 0 && int.TryParse(number, out _) ? value : null;
     }
 }
