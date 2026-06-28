@@ -24,6 +24,44 @@ public sealed class GitConflictServiceTests
     }
 
     [Fact]
+    public async Task GetStateAsync_ReturnsResolvedFilesAfterConflictIsStaged()
+    {
+        using var repository = await ConflictRepository.CreateAsync();
+        var commandService = new GitConflictCommandService(
+            new GitOperationService(new GitCliService()),
+            new GitOperationStateService());
+        await commandService.ResolveFileAsync(
+            repository.Path,
+            "conflict.ts",
+            GitConflictAction.UseOurs,
+            CancellationToken.None);
+        var service = new GitConflictService(new GitOperationStateService());
+
+        var state = await service.GetStateAsync(repository.Path, CancellationToken.None);
+
+        Assert.Empty(state.ConflictedFiles);
+        var file = Assert.Single(state.ResolvedFiles);
+        Assert.Equal("conflict.ts", file.Path);
+        Assert.Equal("Resolved", file.Status);
+    }
+
+    [Fact]
+    public void ExtractConflictPaths_ReadsGitCommitMessageConflictBlock()
+    {
+        const string message = """
+            Merge branch 'feature'
+
+            # Conflicts:
+            #	conflict.ts
+            #	src/second.ts
+            """;
+
+        var paths = GitConflictService.ExtractConflictPaths(message).ToArray();
+
+        Assert.Equal(["conflict.ts", "src/second.ts"], paths);
+    }
+
+    [Fact]
     public async Task GetContentAsync_ReadsOursTheirsAndResult()
     {
         using var repository = await ConflictRepository.CreateAsync();

@@ -65,7 +65,11 @@ function FileGroup({
 						title={file.path}
 						type="button"
 					>
-						<FileWarning className="size-4 shrink-0 text-amber-500" />
+						{icon === "conflict" ? (
+							<FileWarning className="size-4 shrink-0 text-amber-500" />
+						) : (
+							<CheckCircle2 className="size-4 shrink-0 text-emerald-500" />
+						)}
 						<span className="min-w-0 flex-1 truncate">{file.path}</span>
 						{file.conflictCount > 0 ? (
 							<span className="text-muted-foreground text-xs">

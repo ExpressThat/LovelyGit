@@ -35,6 +35,21 @@ export function ConflictWorkspace({
 	const [isBusy, setIsBusy] = useState(false);
 	const [isClosed, setIsClosed] = useState(false);
 	const hasConflicts = state.conflictedFiles.length > 0;
+	const fallbackFile =
+		state.conflictedFiles[0] ?? state.resolvedFiles[0] ?? null;
+
+	useEffect(() => {
+		if (
+			selectedFile &&
+			[...state.conflictedFiles, ...state.resolvedFiles].some(
+				(file) => file.path === selectedFile.path,
+			)
+		) {
+			return;
+		}
+
+		setSelectedFile(fallbackFile);
+	}, [fallbackFile, selectedFile, state.conflictedFiles, state.resolvedFiles]);
 
 	useEffect(() => {
 		if (!selectedFile) {
@@ -75,7 +90,9 @@ export function ConflictWorkspace({
 			});
 			toast.success(`${selectedFile.path} marked resolved`);
 			const nextState = await onReload();
-			setSelectedFile(nextState?.conflictedFiles[0] ?? null);
+			setSelectedFile(
+				nextState?.conflictedFiles[0] ?? nextState?.resolvedFiles[0] ?? null,
+			);
 		} catch (error) {
 			toast.error(
 				error instanceof Error ? error.message : "Could not resolve file",
@@ -134,7 +151,9 @@ export function ConflictWorkspace({
 				/>
 				<div className="flex min-w-0 flex-1 flex-col overflow-hidden">
 					<ConflictToolbar
-						disabled={isBusy || !selectedFile}
+						disabled={
+							isBusy || !selectedFile || selectedFile.status === "Resolved"
+						}
 						onMarkResolved={() => void resolveFile("MarkResolved")}
 						onUseOurs={() => void resolveFile("UseOurs")}
 						onUseTheirs={() => void resolveFile("UseTheirs")}

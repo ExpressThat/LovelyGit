@@ -32,13 +32,16 @@ internal sealed class GitConflictService
                 indexEntries,
                 cancellationToken)
             .ConfigureAwait(false);
+        var commitMessage = await ReadCommitMessageAsync(repository.GitDirectory, cancellationToken)
+            .ConfigureAwait(false);
+        var conflictedPaths = conflicted.Select(file => file.Path).ToHashSet(StringComparer.Ordinal);
 
         return new GitConflictStateResponse
         {
             Operation = operation,
             ConflictedFiles = conflicted,
-            CommitMessage = await ReadCommitMessageAsync(repository.GitDirectory, cancellationToken)
-                .ConfigureAwait(false),
+            ResolvedFiles = BuildResolvedFiles(commitMessage, conflictedPaths),
+            CommitMessage = commitMessage,
         };
     }
 
@@ -71,14 +74,73 @@ internal sealed class GitConflictService
         return result;
     }
 
+    private static List<GitConflictFile> BuildResolvedFiles(
+        string commitMessage,
+        HashSet<string> conflictedPaths)
+    {
+        return ExtractConflictPaths(commitMessage)
+            .Where(path => !conflictedPaths.Contains(path))
+            .Select(path => new GitConflictFile
+            {
+                Path = path,
+                Status = "Resolved",
+            })
+            .ToList();
+    }
+
     private static async Task<string> ReadCommitMessageAsync(
         string gitDirectory,
         CancellationToken cancellationToken)
     {
-        var path = Path.Combine(gitDirectory, "MERGE_MSG");
-        return File.Exists(path)
-            ? await File.ReadAllTextAsync(path, cancellationToken).ConfigureAwait(false)
-            : string.Empty;
+        foreach (var path in EnumerateMessagePaths(gitDirectory))
+        {
+            if (File.Exists(path))
+            {
+                return await File.ReadAllTextAsync(path, cancellationToken).ConfigureAwait(false);
+            }
+        }
+
+        return string.Empty;
+    }
+
+    private static IEnumerable<string> EnumerateMessagePaths(string gitDirectory)
+    {
+        yield return Path.Combine(gitDirectory, "MERGE_MSG");
+        yield return Path.Combine(gitDirectory, "rebase-merge", "message");
+        yield return Path.Combine(gitDirectory, "rebase-apply", "final-commit");
+    }
+
+    internal static IEnumerable<string> ExtractConflictPaths(string commitMessage)
+    {
+        var inConflictBlock = false;
+        foreach (var line in commitMessage.Replace("\r\n", "\n", StringComparison.Ordinal).Split('\n'))
+        {
+            var trimmed = line.Trim();
+            if (trimmed.Equals("# Conflicts:", StringComparison.Ordinal)
+                || trimmed.Equals("Conflicts:", StringComparison.Ordinal))
+            {
+                inConflictBlock = true;
+                continue;
+            }
+
+            if (!inConflictBlock)
+            {
+                continue;
+            }
+
+            trimmed = trimmed.TrimStart('#').Trim();
+            if (trimmed.Length == 0)
+            {
+                continue;
+            }
+
+            if (trimmed.Contains(':', StringComparison.Ordinal))
+            {
+                yield break;
+            }
+
+            yield return trimmed.Replace('\\', '/');
+        }
     }
 
     private static int CountConflictMarkers(string text) =>
