@@ -7,6 +7,7 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Workin
 public record GetWorkingTreeChangesCommandArguments
 {
     public Guid RepositoryId { get; set; }
+    public bool AllowIncompleteSummary { get; set; }
 }
 
 [TypeSharp]

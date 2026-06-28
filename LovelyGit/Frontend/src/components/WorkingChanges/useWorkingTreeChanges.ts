@@ -144,7 +144,7 @@ export function useWorkingTreeChanges(
 
 		let isLoading = false;
 		let reloadAgain = false;
-		const loadSummary = async () => {
+		const loadSummary = async (allowIncompleteSummary: boolean) => {
 			if (isLoading) {
 				reloadAgain = true;
 				return;
@@ -152,11 +152,17 @@ export function useWorkingTreeChanges(
 
 			isLoading = true;
 			try {
-				const totalCount = await loadWorkingTreeChangeSummary(repositoryId);
+				const summary = await loadWorkingTreeChangeSummary(
+					repositoryId,
+					allowIncompleteSummary,
+				);
 				if (previousRepositoryIdRef.current === repositoryId) {
-					setSummaryCount(totalCount);
+					setSummaryCount(summary.totalCount);
 					setIsDirty(false);
 					setHasSummaryLoaded(true);
+					if (!summary.isComplete) {
+						window.setTimeout(() => void loadSummary(false), 0);
+					}
 				}
 			} catch {
 				if (previousRepositoryIdRef.current === repositoryId) {
@@ -179,11 +185,11 @@ export function useWorkingTreeChanges(
 
 			summaryReloadTimerRef.current = window.setTimeout(() => {
 				summaryReloadTimerRef.current = null;
-				void loadSummary();
+				void loadSummary(true);
 			}, 150);
 		};
 
-		void loadSummary();
+		void loadSummary(true);
 		const unsubscribe = subscribeToServerEvent(
 			"WorkingTreeChanged",
 			(event) => {

@@ -130,10 +130,44 @@ public sealed class WorkingTreeStatusListServiceTests
         await File.WriteAllTextAsync(Path.Combine(directory.Path, "file.txt"), "changed content");
         await File.WriteAllTextAsync(Path.Combine(directory.Path, "new.txt"), "new content");
 
-        var response = await new WorkingTreeSummaryService(new GitCliService())
+        var response = await CreateSummaryService()
             .GetSummaryAsync(directory.Path, CancellationToken.None);
 
         Assert.Equal(2, response.TotalCount);
+        Assert.True(response.IsComplete);
+    }
+
+    [Fact]
+    public async Task GetSummaryAsync_CanReturnFastIncompleteRootUntrackedCount()
+    {
+        using var directory = TemporaryDirectory.Create("lovelygit-status-fast-summary-");
+        await CreateInitialCommitAsync(directory.Path);
+        await File.WriteAllTextAsync(Path.Combine(directory.Path, "new-root.txt"), "new content");
+
+        var response = await CreateSummaryService()
+            .GetSummaryAsync(
+                directory.Path,
+                CancellationToken.None,
+                allowIncomplete: true);
+
+        Assert.Equal(1, response.TotalCount);
+        Assert.False(response.IsComplete);
+    }
+
+    [Fact]
+    public async Task GetSummaryAsync_FastIncompleteSummaryDoesNotCountTrackedRoot()
+    {
+        using var directory = TemporaryDirectory.Create("lovelygit-status-fast-summary-");
+        await CreateInitialCommitAsync(directory.Path);
+
+        var response = await CreateSummaryService()
+            .GetSummaryAsync(
+                directory.Path,
+                CancellationToken.None,
+                allowIncomplete: true);
+
+        Assert.Equal(0, response.TotalCount);
+        Assert.False(response.IsComplete);
     }
 
     private static void AssertStatus(
@@ -156,4 +190,7 @@ public sealed class WorkingTreeStatusListServiceTests
         await GitTestProcess.RunAsync(path, "add", ".");
         await GitTestProcess.RunAsync(path, "commit", "-m", "initial");
     }
+
+    private static WorkingTreeSummaryService CreateSummaryService() =>
+        new(new GitCliService(), new WorkingTreePreliminarySummaryService());
 }

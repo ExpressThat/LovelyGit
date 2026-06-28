@@ -7,20 +7,23 @@ export async function loadWorkingTreeChanges(repositoryId: string) {
 	const changes = await sendRequestWithResponse(
 		{
 			commandType: "GetWorkingTreeChanges",
-			arguments: { repositoryId },
+			arguments: { allowIncompleteSummary: false, repositoryId },
 		},
 		{ timeoutMs: workingTreeStatusTimeoutMs },
 	);
 	return changes ?? createEmptyWorkingTreeChanges();
 }
 
-export async function loadWorkingTreeChangeSummary(repositoryId: string) {
+export async function loadWorkingTreeChangeSummary(
+	repositoryId: string,
+	allowIncompleteSummary = false,
+) {
 	const summary = await sendRequestWithResponse(
 		{
 			commandType: "GetWorkingTreeChangeSummary",
-			arguments: { repositoryId },
+			arguments: { allowIncompleteSummary, repositoryId },
 		},
 		{ timeoutMs: workingTreeStatusTimeoutMs },
 	);
-	return summary?.totalCount ?? 0;
+	return summary ?? { hasChanges: false, isComplete: true, totalCount: 0 };
 }

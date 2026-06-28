@@ -46,7 +46,10 @@ internal sealed class GetWorkingTreeChangeSummaryCommandResolver : CommandRespon
         try
         {
             var response = await _workingTreeSummaryService
-                .GetSummaryAsync(foundRepo.Path, CancellationToken.None)
+                .GetSummaryAsync(
+                    foundRepo.Path,
+                    CancellationToken.None,
+                    command.Arguments.AllowIncompleteSummary)
                 .ConfigureAwait(false);
             return new CommandResponse<WorkingTreeChangeSummaryResponse>
             {

@@ -7,19 +7,31 @@ namespace ExpressThat.LovelyGit.Services.Git.WorkingTree;
 internal sealed class WorkingTreeSummaryService
 {
     private readonly GitCliService _gitCliService;
+    private readonly WorkingTreePreliminarySummaryService _preliminarySummaryService;
 
-    public WorkingTreeSummaryService(GitCliService gitCliService)
+    public WorkingTreeSummaryService(
+        GitCliService gitCliService,
+        WorkingTreePreliminarySummaryService preliminarySummaryService)
     {
         _gitCliService = gitCliService;
+        _preliminarySummaryService = preliminarySummaryService;
     }
 
     public async Task<WorkingTreeChangeSummaryResponse> GetSummaryAsync(
         string repositoryPath,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        bool allowIncomplete = false)
     {
         var paths = await GitRepositoryDiscovery
             .ResolveRepositoryPathsAsync(repositoryPath, cancellationToken)
             .ConfigureAwait(false);
+        if (allowIncomplete)
+        {
+            return await _preliminarySummaryService
+                .GetSummaryAsync(paths.WorkTreeDirectory, paths.GitDirectory, cancellationToken)
+                .ConfigureAwait(false);
+        }
+
         var result = await _gitCliService
             .ExecuteBufferedAsync(
                 ["--no-optional-locks", "status", "--porcelain=v1", "-z", "--untracked-files=all"],

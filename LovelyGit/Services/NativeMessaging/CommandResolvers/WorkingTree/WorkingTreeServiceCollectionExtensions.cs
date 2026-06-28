@@ -11,6 +11,7 @@ internal static class WorkingTreeServiceCollectionExtensions
         services.AddLovelyGitJsonTypeInfoResolver(WorkingTreeJsonSerializerContext.Default);
         services.AddSingleton<WorkingTreeChangeService>();
         services.AddSingleton<WorkingTreeStatusListService>();
+        services.AddSingleton<WorkingTreePreliminarySummaryService>();
         services.AddSingleton<WorkingTreeSummaryService>();
         services.AddSingleton<WorkingTreeIndexService>();
         services.AddSingleton<WorkingTreeWatcherService>();
