@@ -61,6 +61,7 @@ public sealed class GitConflictServiceTests
             repository.Path,
             "conflict.ts",
             GitConflictAction.UseOurs,
+            resultText: null,
             CancellationToken.None);
         var service = new GitConflictService(new GitOperationStateService());
 
@@ -102,7 +103,27 @@ public sealed class GitConflictServiceTests
         Assert.Contains(content.OursLines, line => line.Text.Contains("ours"));
         Assert.Contains(content.TheirsLines, line => line.Text.Contains("theirs"));
         Assert.Contains(content.ResultLines, line => line.MarkerKind == "OursStart");
+        Assert.Contains(content.ResultLines, line => line.SyntaxSpans.Count > 0);
         Assert.Equal(1, content.ConflictCount);
+    }
+
+    [Fact]
+    public async Task GetContentAsync_SkipsSyntaxHighlightingForLargeFiles()
+    {
+        using var repository = await ConflictRepository.CreateAsync();
+        var largeText = string.Join(
+            "\n",
+            Enumerable.Repeat("const value = 'large conflict fixture';", 4_000));
+        await File.WriteAllTextAsync(repository.FilePath, largeText);
+        var service = new GitConflictFileContentService();
+
+        var content = await service.GetContentAsync(
+            repository.Path,
+            "conflict.ts",
+            CancellationToken.None);
+
+        Assert.NotEmpty(content.ResultLines);
+        Assert.DoesNotContain(content.ResultLines, line => line.SyntaxSpans.Count > 0);
     }
 
     [Fact]
@@ -117,11 +138,32 @@ public sealed class GitConflictServiceTests
             repository.Path,
             "conflict.ts",
             GitConflictAction.UseOurs,
+            resultText: null,
             CancellationToken.None);
 
         var unmerged = await RunGitAsync(repository.Path, false, "ls-files", "-u");
         Assert.Equal(string.Empty, unmerged.Output);
         Assert.Equal("export const value = 'ours';", await File.ReadAllTextAsync(repository.FilePath));
+    }
+
+    [Fact]
+    public async Task ResolveFileAsync_MarkResolvedWritesEditedResult()
+    {
+        using var repository = await ConflictRepository.CreateAsync();
+        var service = new GitConflictCommandService(
+            new GitOperationService(new GitCliService()),
+            new GitOperationStateService());
+
+        await service.ResolveFileAsync(
+            repository.Path,
+            "conflict.ts",
+            GitConflictAction.MarkResolved,
+            "export const value = 'edited';",
+            CancellationToken.None);
+
+        var unmerged = await RunGitAsync(repository.Path, false, "ls-files", "-u");
+        Assert.Equal(string.Empty, unmerged.Output);
+        Assert.Equal("export const value = 'edited';", await File.ReadAllTextAsync(repository.FilePath));
     }
 
     private sealed class ConflictRepository : IDisposable

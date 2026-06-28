@@ -21,6 +21,7 @@ internal sealed class GitConflictCommandService
         string repositoryPath,
         string path,
         GitConflictAction action,
+        string? resultText,
         CancellationToken cancellationToken)
     {
         path = ValidatePath(path);
@@ -34,6 +35,11 @@ internal sealed class GitConflictCommandService
         else if (action == GitConflictAction.UseTheirs)
         {
             await RunAsync("Use theirs", ["checkout", "--theirs", "--", path], workTreeDirectory, cancellationToken)
+                .ConfigureAwait(false);
+        }
+        else if (resultText != null)
+        {
+            await WriteResultAsync(workTreeDirectory, path, resultText, cancellationToken)
                 .ConfigureAwait(false);
         }
 
@@ -110,6 +116,25 @@ internal sealed class GitConflictCommandService
         return paths.WorkTreeDirectory;
     }
 
+    private static async Task WriteResultAsync(
+        string workTreeDirectory,
+        string path,
+        string resultText,
+        CancellationToken cancellationToken)
+    {
+        var fullPath = Path.GetFullPath(Path.Combine(workTreeDirectory, FromGitPath(path)));
+        var rootPath = Path.GetFullPath(workTreeDirectory)
+            .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        if (!fullPath.StartsWith(rootPath + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase)
+            && !string.Equals(fullPath, rootPath, StringComparison.OrdinalIgnoreCase))
+        {
+            throw new ArgumentException("Conflict path is not valid.", nameof(path));
+        }
+
+        await File.WriteAllTextAsync(fullPath, resultText, cancellationToken)
+            .ConfigureAwait(false);
+    }
+
     private static string ValidatePath(string path)
     {
         path = path.Replace('\\', '/').TrimStart('/');
@@ -120,4 +145,6 @@ internal sealed class GitConflictCommandService
 
         return path;
     }
+
+    private static string FromGitPath(string path) => path.Replace('/', Path.DirectorySeparatorChar);
 }

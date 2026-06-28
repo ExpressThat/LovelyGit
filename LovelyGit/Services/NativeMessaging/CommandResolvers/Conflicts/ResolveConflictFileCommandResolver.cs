@@ -44,6 +44,7 @@ internal sealed class ResolveConflictFileCommandResolver
                 path,
                 arguments.Path,
                 arguments.Action,
+                arguments.ResultText,
                 CancellationToken.None);
             return ConflictRepositoryResolver.EmptySuccess(command.CommandUniqueId, command.CommandType);
         }

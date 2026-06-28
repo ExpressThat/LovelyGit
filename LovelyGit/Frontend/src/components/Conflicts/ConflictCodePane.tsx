@@ -26,7 +26,7 @@ export function ConflictCodePane({
 						<div className="select-none border-r bg-card/45 px-2 text-right text-muted-foreground">
 							{line.lineNumber}
 						</div>
-						<pre className="min-w-max px-2 whitespace-pre">
+						<pre className="min-w-max bg-transparent px-2 whitespace-pre">
 							{renderLine(line)}
 						</pre>
 					</div>

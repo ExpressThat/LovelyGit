@@ -1,5 +1,14 @@
+import { useEffect, useMemo, useState } from "react";
 import type { GitConflictFileContentResponse } from "@/generated/types";
-import { ConflictCodePane } from "./ConflictCodePane";
+import { ConflictChoicePane } from "./ConflictChoicePane";
+import {
+	type ConflictChoice,
+	composeConflictResult,
+	composeConflictResultLines,
+	parseConflictHunks,
+	textFromConflictLines,
+} from "./ConflictHunks";
+import { ConflictResultEditor } from "./ConflictResultEditor";
 
 export type ContentState =
 	| { status: "idle"; content: null; message?: string }
@@ -8,11 +17,15 @@ export type ContentState =
 	| { status: "error"; content: null; message: string };
 
 export function ConflictContent({
+	onResultTextChange,
 	oursLabel,
+	resultText,
 	state,
 	theirsLabel,
 }: {
+	onResultTextChange: (value: string) => void;
 	oursLabel: string;
+	resultText: string;
 	state: ContentState;
 	theirsLabel: string;
 }) {
@@ -35,21 +48,96 @@ export function ConflictContent({
 		);
 	}
 	return (
-		<div className="flex min-h-0 flex-1 overflow-hidden">
-			<ConflictCodePane
-				lines={state.content.oursLines}
-				title={oursLabel}
-				tone="ours"
-			/>
-			<ConflictCodePane
-				lines={state.content.theirsLines}
-				title={theirsLabel}
-				tone="theirs"
-			/>
-			<ConflictCodePane
-				lines={state.content.resultLines}
-				title="Result"
-				tone="result"
+		<LoadedConflictContent
+			content={state.content}
+			onResultTextChange={onResultTextChange}
+			oursLabel={oursLabel}
+			resultText={resultText}
+			theirsLabel={theirsLabel}
+		/>
+	);
+}
+
+function LoadedConflictContent({
+	content,
+	onResultTextChange,
+	oursLabel,
+	resultText,
+	theirsLabel,
+}: {
+	content: GitConflictFileContentResponse;
+	onResultTextChange: (value: string) => void;
+	oursLabel: string;
+	resultText: string;
+	theirsLabel: string;
+}) {
+	const originalResultText = textFromConflictLines(content.resultLines);
+	const hunks = useMemo(
+		() => parseConflictHunks(originalResultText),
+		[originalResultText],
+	);
+	const [choices, setChoices] = useState<ConflictChoice[]>([]);
+	const [activeHunkIndex, setActiveHunkIndex] = useState(0);
+
+	useEffect(() => {
+		const defaultChoices = hunks.map(() => "current" as const);
+		setChoices(defaultChoices);
+		setActiveHunkIndex(0);
+		onResultTextChange(
+			composeConflictResult(originalResultText, hunks, defaultChoices),
+		);
+	}, [hunks, onResultTextChange, originalResultText]);
+
+	const chooseHunk = (index: number, choice: Exclude<ConflictChoice, null>) => {
+		const nextChoices = hunks.map((_, choiceIndex) =>
+			choiceIndex === index ? choice : (choices[choiceIndex] ?? null),
+		);
+		setChoices(nextChoices);
+		setActiveHunkIndex(Math.min(index + 1, Math.max(0, hunks.length - 1)));
+		onResultTextChange(
+			composeConflictResult(originalResultText, hunks, nextChoices),
+		);
+	};
+	const resultLines = composeConflictResultLines(
+		content.resultLines,
+		content.oursLines,
+		content.theirsLines,
+		hunks,
+		choices,
+	);
+
+	return (
+		<div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+			<div className="grid min-h-[35%] flex-none grid-cols-1 overflow-hidden xl:grid-cols-2">
+				<ConflictChoicePane
+					activeHunkIndex={activeHunkIndex}
+					choices={choices}
+					hunks={hunks}
+					lines={content.oursLines}
+					onChoose={chooseHunk}
+					side="current"
+					title={oursLabel}
+				/>
+				<ConflictChoicePane
+					activeHunkIndex={activeHunkIndex}
+					choices={choices}
+					hunks={hunks}
+					lines={content.theirsLines}
+					onChoose={chooseHunk}
+					side="incoming"
+					title={theirsLabel}
+				/>
+			</div>
+			<ConflictResultEditor
+				activeIndex={activeHunkIndex}
+				hunkCount={hunks.length}
+				onChange={onResultTextChange}
+				onNext={() =>
+					setActiveHunkIndex((index) => Math.min(hunks.length - 1, index + 1))
+				}
+				onPrevious={() => setActiveHunkIndex((index) => Math.max(0, index - 1))}
+				lines={resultLines}
+				value={resultText}
 			/>
 		</div>
 	);

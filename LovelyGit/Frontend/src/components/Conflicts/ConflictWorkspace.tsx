@@ -8,6 +8,7 @@ import { sendRequestWithResponse } from "@/lib/commands";
 import { NativeMessageType } from "@/lib/nativeMessaging";
 import { ConflictContent, type ContentState } from "./ConflictContent";
 import { ConflictFileList } from "./ConflictFileList";
+import { textFromConflictLines } from "./ConflictHunks";
 import {
 	ConflictHeader,
 	type ConflictOperationCommand,
@@ -34,6 +35,7 @@ export function ConflictWorkspace({
 	});
 	const [isBusy, setIsBusy] = useState(false);
 	const [isClosed, setIsClosed] = useState(false);
+	const [editedResultText, setEditedResultText] = useState("");
 	const hasConflicts = state.conflictedFiles.length > 0;
 	const fallbackFile =
 		state.conflictedFiles[0] ?? state.resolvedFiles[0] ?? null;
@@ -64,7 +66,9 @@ export function ConflictWorkspace({
 			commandType: NativeMessageType.GetConflictFileContent,
 		})
 			.then((content) => {
-				if (isActive) setContentState({ status: "loaded", content });
+				if (!isActive) return;
+				setContentState({ status: "loaded", content });
+				setEditedResultText(textFromConflictLines(content.resultLines));
 			})
 			.catch((error) => {
 				const message =
@@ -85,7 +89,12 @@ export function ConflictWorkspace({
 		setIsBusy(true);
 		try {
 			await sendRequestWithResponse({
-				arguments: { action, path: selectedFile.path, repositoryId },
+				arguments: {
+					action,
+					path: selectedFile.path,
+					repositoryId,
+					resultText: action === "MarkResolved" ? editedResultText : null,
+				},
 				commandType: NativeMessageType.ResolveConflictFile,
 			});
 			toast.success(`${selectedFile.path} marked resolved`);
@@ -162,7 +171,9 @@ export function ConflictWorkspace({
 						theirsLabel={state.theirsLabel}
 					/>
 					<ConflictContent
+						onResultTextChange={setEditedResultText}
 						oursLabel={state.oursLabel}
+						resultText={editedResultText}
 						state={contentState}
 						theirsLabel={state.theirsLabel}
 					/>

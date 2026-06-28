@@ -22,6 +22,7 @@ public sealed record ResolveConflictFileCommandArguments
     public Guid RepositoryId { get; set; }
     public string Path { get; set; } = string.Empty;
     public GitConflictAction Action { get; set; }
+    public string? ResultText { get; set; }
 }
 
 [TypeSharp]

@@ -1,8 +1,4 @@
 using ColorCode;
-using ColorCode.Common;
-using ColorCode.Compilation;
-using ColorCode.Parsing;
-using ExpressThat.LovelyGit.Services.Git.CommitGraph.Models;
 using ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser;
 using ExpressThat.LovelyGit.Services.Git.WorkingTree;
 
@@ -10,7 +6,6 @@ namespace ExpressThat.LovelyGit.Services.Git.Conflicts;
 
 internal sealed class GitConflictFileContentService
 {
-    private const int MaxSyntaxHighlightedLineLength = 2_000;
     private const int MaxFileBytes = 1_000_000;
 
     public async Task<GitConflictFileContentResponse> GetContentAsync(
@@ -85,6 +80,7 @@ internal sealed class GitConflictFileContentService
     {
         var rawLines = text.Replace("\r\n", "\n", StringComparison.Ordinal).Split('\n');
         var lines = new List<GitConflictTextLine>(rawLines.Length);
+        var highlighter = ConflictSyntaxHighlighter.Create(language, text.Length);
         for (var index = 0; index < rawLines.Length; index++)
         {
             var line = rawLines[index];
@@ -93,49 +89,11 @@ internal sealed class GitConflictFileContentService
                 LineNumber = index + 1,
                 Text = line,
                 MarkerKind = MarkerKind(line),
-                SyntaxSpans = BuildSyntaxSpans(line, language),
+                SyntaxSpans = highlighter.BuildSpans(line),
             });
         }
 
         return lines;
-    }
-
-    private static List<CommitFileDiffSyntaxSpan> BuildSyntaxSpans(string text, ILanguage? language)
-    {
-        if (language == null || string.IsNullOrEmpty(text) || text.Length > MaxSyntaxHighlightedLineLength)
-        {
-            return [];
-        }
-
-        var spans = new List<CommitFileDiffSyntaxSpan>();
-        var repository = new LanguageRepository(new Dictionary<string, ILanguage>(StringComparer.OrdinalIgnoreCase));
-        var compiler = new LanguageCompiler(
-            new Dictionary<string, CompiledLanguage>(StringComparer.OrdinalIgnoreCase),
-            new ReaderWriterLockSlim());
-        var parser = new LanguageParser(compiler, repository);
-        try
-        {
-            parser.Parse(text, language, (chunk, scopes) =>
-            {
-                foreach (var scope in scopes)
-                {
-                    spans.Add(new CommitFileDiffSyntaxSpan
-                    {
-                        Start = scope.Index,
-                        Length = scope.Length,
-                        Scope = scope.Name,
-                    });
-                }
-
-                _ = chunk;
-            });
-        }
-        catch
-        {
-            return [];
-        }
-
-        return spans;
     }
 
     private static ILanguage? ResolveLanguage(string path) =>
