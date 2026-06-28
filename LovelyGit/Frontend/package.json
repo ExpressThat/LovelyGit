@@ -17,7 +17,8 @@
     "lint:fix": "pnpm exec biome check src --write",
     "git-binaries:bump": "node scripts/bump-dugite-binaries.ts",
     "git-binaries:download": "node scripts/download-local-dugite-binaries.ts",
-    "prod": "pnpm build"
+    "prod": "pnpm build",
+    "test": "vitest run"
   },
   "dependencies": {
     "@base-ui/react": "^1.5.0",
@@ -40,6 +41,7 @@
     "@biomejs/biome": "^2.4.15",
     "@eslint/js": "^10.0.1",
     "@rolldown/plugin-babel": "^0.2.3",
+    "@siyavuyachagi/typesharp": "^0.2.3",
     "@tailwindcss/vite": "^4.3.0",
     "@types/node": "^24.12.4",
     "@types/react": "^19.2.14",
@@ -51,12 +53,12 @@
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.2",
     "globals": "^17.6.0",
-    "@siyavuyachagi/typesharp": "^0.2.3",
     "postcss": "^8.5.15",
     "tailwindcss": "^4.3.0",
     "typescript": "~6.0.3",
     "typescript-eslint": "^8.59.2",
-    "vite": "^8.0.12"
+    "vite": "^8.0.12",
+    "vitest": "^4.1.9"
   },
   "packageManager": "pnpm@11.3.0+sha512.2c403d6594527287672b1f7056343a1f7c3634036a67ffabfcc2b3d7595d843768f8787148d1b57cf7956c90606bbd192857c363af19e96d2d0ec9ec5741d215"
 }
