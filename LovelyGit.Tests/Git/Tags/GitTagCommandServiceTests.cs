@@ -15,6 +15,8 @@ public sealed class GitTagCommandServiceTests
             repository.Path,
             "v-test-create-tag",
             repository.HeadCommitHash,
+            isAnnotated: false,
+            message: string.Empty,
             CancellationToken.None);
 
         var tagRef = await repository.GitCliService.ExecuteBufferedAsync(
@@ -26,6 +28,33 @@ public sealed class GitTagCommandServiceTests
     }
 
     [Fact]
+    public async Task CreateTagAsync_CreatesAnnotatedTagAtCommit()
+    {
+        using var repository = TemporaryGitRepository.Create();
+        var tagService = new GitTagCommandService(repository.GitOperationService);
+
+        await tagService.CreateTagAsync(
+            repository.Path,
+            "v-test-annotated-tag",
+            repository.HeadCommitHash,
+            isAnnotated: true,
+            message: "LovelyGit annotated tag",
+            CancellationToken.None);
+
+        var tagType = await repository.GitCliService.ExecuteBufferedAsync(
+            ["cat-file", "-t", "v-test-annotated-tag"],
+            repository.Path,
+            cancellationToken: CancellationToken.None);
+        var tagMessage = await repository.GitCliService.ExecuteBufferedAsync(
+            ["tag", "-l", "v-test-annotated-tag", "--format=%(contents)"],
+            repository.Path,
+            cancellationToken: CancellationToken.None);
+
+        Assert.Equal("tag", tagType.StandardOutput.Trim());
+        Assert.Contains("LovelyGit annotated tag", tagMessage.StandardOutput);
+    }
+
+    [Fact]
     public async Task DeleteTagAsync_DeletesLocalTag()
     {
         using var repository = TemporaryGitRepository.Create();
@@ -34,6 +63,8 @@ public sealed class GitTagCommandServiceTests
             repository.Path,
             "v-test-delete-tag",
             repository.HeadCommitHash,
+            isAnnotated: false,
+            message: string.Empty,
             CancellationToken.None);
 
         await tagService.DeleteTagAsync(
@@ -64,6 +95,8 @@ public sealed class GitTagCommandServiceTests
             repository.Path,
             "v-test-push-tag",
             repository.HeadCommitHash,
+            isAnnotated: false,
+            message: string.Empty,
             CancellationToken.None);
 
         await tagService.PushTagAsync(

@@ -16,19 +16,28 @@ namespace LovelyGit.Tests.NativeMessaging;
 
 public sealed class CommandArgumentJsonContextTests
 {
-    private static readonly Guid RepositoryId =
-        Guid.Parse("bd3d4c1a-5061-453c-abef-70a2aafa6050");
+    private static readonly Guid RepositoryId = Guid.Parse("bd3d4c1a-5061-453c-abef-70a2aafa6050");
 
     [Fact]
     public void TagsContext_DeserializesCamelCaseArguments()
     {
         var arguments = JsonSerializer.Deserialize(
-            CreateJson("tagName", "codex-test"),
+            $$"""
+            {
+              "repositoryId": "{{RepositoryId}}",
+              "commitHash": "abc123",
+              "tagName": "codex-test",
+              "isAnnotated": true,
+              "message": "Annotated from LovelyGit"
+            }
+            """,
             TagsJsonSerializerContext.Default.CreateTagAtCommitCommandArguments);
 
         Assert.Equal(RepositoryId, arguments?.RepositoryId);
         Assert.Equal("abc123", arguments?.CommitHash);
         Assert.Equal("codex-test", arguments?.TagName);
+        Assert.True(arguments?.IsAnnotated);
+        Assert.Equal("Annotated from LovelyGit", arguments?.Message);
     }
 
     [Fact]

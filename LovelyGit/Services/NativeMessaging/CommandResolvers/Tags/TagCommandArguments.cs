@@ -10,6 +10,10 @@ public record CreateTagAtCommitCommandArguments
     public string CommitHash { get; set; } = string.Empty;
 
     public string TagName { get; set; } = string.Empty;
+
+    public bool IsAnnotated { get; set; }
+
+    public string Message { get; set; } = string.Empty;
 }
 
 [TypeSharp]

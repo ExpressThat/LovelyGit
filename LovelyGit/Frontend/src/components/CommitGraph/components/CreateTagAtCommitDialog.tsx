@@ -8,6 +8,7 @@ import {
 } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
 	Dialog,
 	DialogContent,
@@ -35,15 +36,25 @@ export function CreateTagAtCommitDialog({
 	repositoryId: string | null;
 }) {
 	const tagNameId = useId();
+	const annotatedTagId = useId();
+	const tagMessageId = useId();
 	const [tagName, setTagName] = useState("");
+	const [isAnnotated, setIsAnnotated] = useState(false);
+	const [message, setMessage] = useState("");
 	const [isCreating, setIsCreating] = useState(false);
 	const trimmedTagName = tagName.trim();
+	const trimmedMessage = message.trim();
 	const canCreate =
-		!isCreating && repositoryId !== null && trimmedTagName.length > 0;
+		!isCreating &&
+		repositoryId !== null &&
+		trimmedTagName.length > 0 &&
+		(!isAnnotated || trimmedMessage.length > 0);
 
 	useEffect(() => {
 		if (isOpen) {
 			setTagName("");
+			setMessage("");
+			setIsAnnotated(false);
 		}
 	}, [isOpen]);
 
@@ -57,6 +68,8 @@ export function CreateTagAtCommitDialog({
 			await sendRequestWithResponse({
 				arguments: {
 					commitHash,
+					isAnnotated,
+					message: isAnnotated ? trimmedMessage : "",
 					repositoryId,
 					tagName: trimmedTagName,
 				},
@@ -92,7 +105,7 @@ export function CreateTagAtCommitDialog({
 							Create tag
 						</DialogTitle>
 						<DialogDescription>
-							Add a lightweight tag at commit {shortHash(commitHash)}.
+							Add a tag at commit {shortHash(commitHash)}.
 						</DialogDescription>
 					</DialogHeader>
 					<div className="grid gap-2">
@@ -111,6 +124,45 @@ export function CreateTagAtCommitDialog({
 							value={tagName}
 						/>
 					</div>
+					<div className="flex items-center gap-2">
+						<Checkbox
+							aria-label="Create annotated tag"
+							checked={isAnnotated}
+							disabled={isCreating}
+							id={annotatedTagId}
+							onCheckedChange={(checked) => setIsAnnotated(checked === true)}
+						/>
+						<button
+							aria-controls={`${tagMessageId}-message`}
+							aria-expanded={isAnnotated}
+							className="text-left text-sm disabled:cursor-not-allowed disabled:opacity-70"
+							disabled={isCreating}
+							onClick={() => setIsAnnotated((current) => !current)}
+							type="button"
+						>
+							Create annotated tag
+						</button>
+					</div>
+					{isAnnotated ? (
+						<div className="grid gap-2">
+							<label
+								className="text-sm font-medium"
+								htmlFor={`${tagMessageId}-message`}
+							>
+								Tag message
+							</label>
+							<Input
+								aria-label="Tag message"
+								autoComplete="off"
+								disabled={isCreating}
+								id={`${tagMessageId}-message`}
+								onChange={(event) => setMessage(event.currentTarget.value)}
+								onInput={(event) => setMessage(event.currentTarget.value)}
+								placeholder="Release notes or milestone"
+								value={message}
+							/>
+						</div>
+					) : null}
 					<DialogFooter>
 						<Button
 							disabled={isCreating}

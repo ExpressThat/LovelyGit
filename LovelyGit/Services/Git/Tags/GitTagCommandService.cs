@@ -16,6 +16,8 @@ internal sealed class GitTagCommandService
         string repositoryPath,
         string tagName,
         string commitHash,
+        bool isAnnotated,
+        string message,
         CancellationToken cancellationToken)
     {
         if (!GitTagNameValidator.IsValidTagName(tagName))
@@ -28,13 +30,22 @@ internal sealed class GitTagCommandService
             throw new ArgumentException("Commit hash is not valid.", nameof(commitHash));
         }
 
+        message = message.Trim();
+        if (isAnnotated && string.IsNullOrWhiteSpace(message))
+        {
+            throw new ArgumentException("Annotated tag message is required.", nameof(message));
+        }
+
         var repositoryPaths = await GitRepositoryDiscovery
             .ResolveRepositoryPathsAsync(repositoryPath, cancellationToken)
             .ConfigureAwait(false);
+        var arguments = isAnnotated
+            ? new[] { "tag", "-a", tagName, commitHash, "-m", message }
+            : ["tag", "--", tagName, commitHash];
 
         await _gitOperationService.ExecuteRequiredBufferedAsync(
             "Create local tag",
-            ["tag", "--", tagName, commitHash],
+            arguments,
             repositoryPaths.WorkTreeDirectory,
             "Choose a unique tag name or delete the existing tag first.",
             cancellationToken).ConfigureAwait(false);

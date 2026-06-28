@@ -63,6 +63,8 @@ internal sealed class CreateTagAtCommitCommandResolver
                 foundRepo.Path,
                 arguments.TagName.Trim(),
                 arguments.CommitHash,
+                arguments.IsAnnotated,
+                arguments.Message,
                 CancellationToken.None).ConfigureAwait(false);
             await _commitGraphRepository
                 .ClearRepositoryAsync(arguments.RepositoryId, CancellationToken.None)
