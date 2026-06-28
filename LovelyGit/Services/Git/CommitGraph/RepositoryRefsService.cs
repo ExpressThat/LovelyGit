@@ -3,6 +3,7 @@ using ExpressThat.LovelyGit.Services.Git.CommitGraph.Models;
 using ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser;
 using ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser.Refs;
 using ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser.Remotes;
+using ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser.Worktrees;
 
 namespace ExpressThat.LovelyGit.Services.Git.CommitGraph;
 
@@ -39,12 +40,16 @@ internal sealed class RepositoryRefsService
         var remoteUrl = await GitRemoteConfigReader
             .ReadPrimaryRemoteUrlAsync(paths.GitDirectory, cancellationToken)
             .ConfigureAwait(false);
+        var worktrees = await GitWorktreeReader
+            .ReadAsync(paths.GitDirectory, paths.WorkTreeDirectory, cancellationToken)
+            .ConfigureAwait(false);
 
         return new RepositoryRefsResponse
         {
             CurrentBranchName = summary.CurrentBranchName,
             RemotePrefixes = summary.RemotePrefixes.ToList(),
             Refs = summary.Refs.Select(reference => ToItem(reference, remoteUrl)).ToList(),
+            Worktrees = worktrees.Select(ToItem).ToList(),
         };
     }
 
@@ -66,5 +71,15 @@ internal sealed class RepositoryRefsService
             GitRefKind.Tag => CommitRefKind.Tag,
             GitRefKind.Stash => CommitRefKind.Stash,
             _ => CommitRefKind.Local,
+        };
+
+    private static RepositoryWorktreeItem ToItem(GitWorktree worktree) =>
+        new()
+        {
+            Path = worktree.Path,
+            BranchName = worktree.BranchName,
+            IsCurrent = worktree.IsCurrent,
+            IsLocked = worktree.IsLocked,
+            LockReason = worktree.LockReason,
         };
 }
