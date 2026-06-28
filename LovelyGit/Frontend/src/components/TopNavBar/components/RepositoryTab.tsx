@@ -1,4 +1,4 @@
-import { Check, Copy, FolderOpen, X } from "lucide-react";
+import { Check, Copy, FolderOpen, SquareTerminal, X } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { toast } from "sonner";
 import { copyToClipboard } from "@/components/CommitGraph/utils/clipboard";
@@ -15,6 +15,8 @@ import type { KnownGitRepository } from "@/generated/types";
 import { sendRequestWithResponse } from "@/lib/commands";
 import { NativeMessageType } from "@/lib/nativeMessaging";
 import { cn, getPathTail } from "@/lib/utils";
+import { openRepositoryTerminal } from "./RepositoryCommands";
+import { getRepositoryTabMenuActions } from "./RepositoryTabMenuActions";
 
 type RepositoryTabProps = {
 	closeRepository: (repositoryId: string) => void;
@@ -45,6 +47,10 @@ export function RepositoryTab({
 	const isPendingClose = pendingCloseRepositoryId === repository.id;
 	const label = repository.name || getPathTail(repository.path ?? "") || "Repo";
 	const path = repository.path ?? "";
+	const menuActions = getRepositoryTabMenuActions({
+		hasPath: path.length > 0,
+		isActive,
+	});
 
 	const revealRepository = async () => {
 		try {
@@ -173,7 +179,7 @@ export function RepositoryTab({
 					<ContextMenuLabel className="truncate">{label}</ContextMenuLabel>
 				</ContextMenuGroup>
 				<ContextMenuSeparator />
-				{path ? (
+				{menuActions.includes("copy-path") ? (
 					<ContextMenuItem
 						onClick={() => void copyToClipboard(path, "Repository path")}
 						title="Copy repository path"
@@ -182,7 +188,7 @@ export function RepositoryTab({
 						Copy repository path
 					</ContextMenuItem>
 				) : null}
-				{path ? (
+				{menuActions.includes("reveal") ? (
 					<ContextMenuItem
 						onClick={() => void revealRepository()}
 						title="Reveal repository in file explorer"
@@ -191,13 +197,24 @@ export function RepositoryTab({
 						Reveal in file explorer
 					</ContextMenuItem>
 				) : null}
-				<ContextMenuItem
-					onClick={() => setCurrentRepositoryId(repository.id)}
-					title="Select repository"
-				>
-					<Check />
-					Select repository
-				</ContextMenuItem>
+				{menuActions.includes("open-terminal") ? (
+					<ContextMenuItem
+						onClick={() => void openRepositoryTerminal(repository.id)}
+						title="Open terminal at repository"
+					>
+						<SquareTerminal />
+						Open terminal here
+					</ContextMenuItem>
+				) : null}
+				{menuActions.includes("select") ? (
+					<ContextMenuItem
+						onClick={() => setCurrentRepositoryId(repository.id)}
+						title="Select repository"
+					>
+						<Check />
+						Select repository
+					</ContextMenuItem>
+				) : null}
 				<ContextMenuSeparator />
 				<ContextMenuItem
 					onClick={() => setPendingCloseRepositoryId(repository.id)}

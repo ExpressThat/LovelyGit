@@ -1,8 +1,6 @@
 import { SquareTerminal } from "lucide-react";
-import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { sendRequestWithResponse } from "@/lib/commands";
-import { NativeMessageType } from "@/lib/nativeMessaging";
+import { openRepositoryTerminal } from "./RepositoryCommands";
 
 export function TerminalActionControl({
 	repositoryId,
@@ -14,24 +12,7 @@ export function TerminalActionControl({
 			return;
 		}
 
-		toast.success("Opening terminal at repository");
-		try {
-			await sendRequestWithResponse(
-				{
-					arguments: { knownRepositoryId: repositoryId },
-					commandType: NativeMessageType.OpenRepositoryTerminal,
-				},
-				{ timeoutMs: 2_000 },
-			);
-		} catch (error) {
-			if (error instanceof Error && error.message.includes("Timed out")) {
-				return;
-			}
-
-			toast.error(
-				error instanceof Error ? error.message : "Could not open terminal",
-			);
-		}
+		await openRepositoryTerminal(repositoryId);
 	};
 
 	return (
