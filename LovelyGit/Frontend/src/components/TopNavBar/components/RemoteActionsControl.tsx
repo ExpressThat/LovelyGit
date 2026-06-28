@@ -6,6 +6,10 @@ import {
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
+import {
+	showConflictWorkspaceIfNeeded,
+	showGitActionError,
+} from "@/components/Conflicts/ConflictTransition";
 import { Button } from "@/components/ui/button";
 import {
 	DropdownMenu,
@@ -16,6 +20,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import type { GitPullMode, RemotePrimaryAction } from "@/generated/types";
 import { sendRequestWithResponse } from "@/lib/commands";
+import { gitMutationTimeoutMs } from "@/lib/gitMutationTimeout";
 import {
 	NativeMessageType,
 	type NativeMessageTypesWithRequest,
@@ -71,8 +76,6 @@ const defaultableActions: RemoteAction[] = [
 		value: "PullRebase",
 	},
 ];
-
-const gitMutationTimeoutMs = 120_000;
 
 const pushAction: RemoteAction = {
 	commandType: NativeMessageType.PushRepository,
@@ -143,10 +146,16 @@ export function RemoteActionsControl({
 			);
 			toast.success(`${action.label} complete`, { id: toastId });
 		} catch (error) {
-			toast.error(
-				error instanceof Error ? error.message : `${action.label} failed`,
-				{ id: toastId },
-			);
+			if (
+				action.commandType === NativeMessageType.PullRepository &&
+				(await showConflictWorkspaceIfNeeded({
+					repositoryId,
+					toastId,
+				}))
+			) {
+				return;
+			}
+			showGitActionError(error, `${action.label} failed`, toastId);
 		} finally {
 			setBusyAction(null);
 		}

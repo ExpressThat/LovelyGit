@@ -2,6 +2,10 @@ import { RefreshCw } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import {
+	showConflictWorkspaceIfNeeded,
+	showGitActionError,
+} from "@/components/Conflicts/ConflictTransition";
+import {
 	AlertDialog,
 	AlertDialogAction,
 	AlertDialogCancel,
@@ -12,6 +16,7 @@ import {
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { sendRequestWithResponse } from "@/lib/commands";
+import { gitMutationTimeoutMs } from "@/lib/gitMutationTimeout";
 import { NativeMessageType } from "@/lib/nativeMessaging";
 
 export function PullBranchDialog({
@@ -37,20 +42,30 @@ export function PullBranchDialog({
 
 		setIsPulling(true);
 		try {
-			await sendRequestWithResponse({
-				arguments: {
-					branchName,
-					repositoryId,
+			await sendRequestWithResponse(
+				{
+					arguments: {
+						branchName,
+						repositoryId,
+					},
+					commandType: NativeMessageType.PullBranch,
 				},
-				commandType: NativeMessageType.PullBranch,
-			});
+				{ timeoutMs: gitMutationTimeoutMs },
+			);
 			toast.success(`Pulled ${branchName}`);
 			onSuccess();
 			onOpenChange(false);
 		} catch (error) {
-			toast.error(
-				error instanceof Error ? error.message : "Could not pull branch",
-			);
+			if (
+				await showConflictWorkspaceIfNeeded({
+					repositoryId,
+				})
+			) {
+				onSuccess();
+				onOpenChange(false);
+				return;
+			}
+			showGitActionError(error, "Could not pull branch");
 		} finally {
 			setIsPulling(false);
 		}

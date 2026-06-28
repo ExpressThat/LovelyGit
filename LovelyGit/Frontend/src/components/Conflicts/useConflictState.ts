@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import type { GitConflictStateResponse } from "@/generated/types";
 import { sendRequestWithResponse } from "@/lib/commands";
 import { NativeMessageType } from "@/lib/nativeMessaging";
+import { subscribeGitOperationChanged } from "./ConflictOperationEvents";
 
 type ConflictStateLoad =
 	| { status: "idle"; state: null; message?: string }
@@ -43,6 +44,25 @@ export function useConflictState(repositoryId: string | null) {
 	useEffect(() => {
 		void reload();
 	}, [reload]);
+
+	useEffect(() => {
+		if (!repositoryId) {
+			return;
+		}
+
+		return subscribeGitOperationChanged((detail) => {
+			if (detail.repositoryId !== repositoryId) {
+				return;
+			}
+
+			if (detail.state) {
+				setLoadState({ status: "loaded", state: detail.state });
+				return;
+			}
+
+			void reload();
+		});
+	}, [reload, repositoryId]);
 
 	return { ...loadState, reload };
 }

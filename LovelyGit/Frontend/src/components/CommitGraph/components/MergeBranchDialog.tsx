@@ -2,6 +2,10 @@ import { GitPullRequestArrow } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import {
+	showConflictWorkspaceIfNeeded,
+	showGitActionError,
+} from "@/components/Conflicts/ConflictTransition";
+import {
 	AlertDialog,
 	AlertDialogAction,
 	AlertDialogCancel,
@@ -12,6 +16,7 @@ import {
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { sendRequestWithResponse } from "@/lib/commands";
+import { gitMutationTimeoutMs } from "@/lib/gitMutationTimeout";
 import { NativeMessageType } from "@/lib/nativeMessaging";
 
 export function MergeBranchDialog({
@@ -40,20 +45,30 @@ export function MergeBranchDialog({
 
 		setIsMerging(true);
 		try {
-			await sendRequestWithResponse({
-				arguments: {
-					branchName,
-					repositoryId,
+			await sendRequestWithResponse(
+				{
+					arguments: {
+						branchName,
+						repositoryId,
+					},
+					commandType: NativeMessageType.MergeBranchIntoCurrent,
 				},
-				commandType: NativeMessageType.MergeBranchIntoCurrent,
-			});
+				{ timeoutMs: gitMutationTimeoutMs },
+			);
 			toast.success(`Merged ${branchName}`);
 			onSuccess();
 			onOpenChange(false);
 		} catch (error) {
-			toast.error(
-				error instanceof Error ? error.message : "Could not merge branch",
-			);
+			if (
+				await showConflictWorkspaceIfNeeded({
+					repositoryId,
+				})
+			) {
+				onSuccess();
+				onOpenChange(false);
+				return;
+			}
+			showGitActionError(error, "Could not merge branch");
 		} finally {
 			setIsMerging(false);
 		}
