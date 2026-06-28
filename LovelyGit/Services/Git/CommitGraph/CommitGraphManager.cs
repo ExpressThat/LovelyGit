@@ -1,6 +1,7 @@
 using ExpressThat.LovelyGit.Services.Data.Repositorys;
 using ExpressThat.LovelyGit.Services.Git.CommitGraph.Models;
 using ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser;
+using ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser.Remotes;
 
 namespace ExpressThat.LovelyGit.Services.Git.CommitGraph;
 
@@ -8,15 +9,18 @@ public sealed class CommitGraphManager : IDisposable
 {
     private readonly LovelyGitRepository _repository;
     private readonly Guid _repositoryId;
+    private readonly string? _remoteUrl;
     private CommitGraphTraversalSession? _session;
     private bool _disposed;
 
     private CommitGraphManager(
         LovelyGitRepository repository,
-        Guid repositoryId)
+        Guid repositoryId,
+        string? remoteUrl)
     {
         _repository = repository;
         _repositoryId = repositoryId;
+        _remoteUrl = remoteUrl;
     }
 
     public int CommitCount => -1;
@@ -36,9 +40,12 @@ public sealed class CommitGraphManager : IDisposable
         {
             var repository = await LovelyGitRepository.OpenAsync(gitDirOrWorkTreePath, cancellationToken)
                 .ConfigureAwait(false);
+            var remoteUrl = await GitRemoteConfigReader
+                .ReadPrimaryRemoteUrlAsync(repository.GitDirectory, cancellationToken)
+                .ConfigureAwait(false);
             return new CommitGraphOpenResult(
                 true,
-                new CommitGraphManager(repository, repositoryId),
+                new CommitGraphManager(repository, repositoryId, remoteUrl),
                 null);
         }
         catch (Exception ex)
@@ -137,7 +144,8 @@ public sealed class CommitGraphManager : IDisposable
                     parents,
                     rowIndex,
                     activeLaneTargets,
-                    ref maxLaneCount));
+                    ref maxLaneCount,
+                    _remoteUrl));
             }
             else
             {
@@ -146,7 +154,8 @@ public sealed class CommitGraphManager : IDisposable
                     parents,
                     rowIndex,
                     activeLaneTargets,
-                    ref maxLaneCount);
+                    ref maxLaneCount,
+                    _remoteUrl);
             }
 
             rowCount++;

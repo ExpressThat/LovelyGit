@@ -41,6 +41,30 @@ public sealed class CommitGraphManagerCursorTests
             resumedPage.Response.Rows.Single().Commit.Hash);
     }
 
+    [Fact]
+    public async Task GetCommitGraphPageAsync_IncludesRemoteCommitUrl()
+    {
+        using var temporary = TemporaryGitRepository.Create();
+        temporary.AddRemote("origin", "git@github.com:example/repo.git");
+        var open = await CommitGraphManager.TryOpenAsync(
+            temporary.Path,
+            Guid.NewGuid(),
+            null!,
+            CancellationToken.None);
+        Assert.True(open.Success);
+        using var graph = open.Graph!;
+
+        var page = await graph.GetCommitGraphPageAsync(
+            new CommitGraphCursorState(null, 0),
+            1,
+            CancellationToken.None);
+
+        var row = page.Response.Rows.Single();
+        Assert.Equal(
+            $"https://github.com/example/repo/commit/{row.Commit.Hash}",
+            row.Commit.RemoteUrl);
+    }
+
     private sealed class TemporaryGitRepository : IDisposable
     {
         private readonly DirectoryInfo _directory;
@@ -52,6 +76,11 @@ public sealed class CommitGraphManagerCursorTests
         }
 
         public string Path { get; }
+
+        public void AddRemote(string name, string url)
+        {
+            RunGit(new GitCliService(), Path, ["remote", "add", name, url]);
+        }
 
         public static TemporaryGitRepository Create()
         {

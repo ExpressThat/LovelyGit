@@ -1,5 +1,4 @@
 import {
-	Copy,
 	GitBranch,
 	GitCommitHorizontal,
 	GitPullRequestArrow,
@@ -26,10 +25,10 @@ import {
 	GitResetMode,
 	type GitResetMode as GitResetModeValue,
 } from "@/generated/types";
-import { copyToClipboard } from "../utils/clipboard";
 import { shortHash } from "../utils/format";
 import { CheckoutCommitDetachedDialog } from "./CheckoutCommitDetachedDialog";
 import { CherryPickCommitDialog } from "./CherryPickCommitDialog";
+import { CommitRowLinkMenuItems } from "./CommitRowLinkMenuItems";
 import { CreateBranchFromCommitDialog } from "./CreateBranchFromCommitDialog";
 import { CreateTagAtCommitDialog } from "./CreateTagAtCommitDialog";
 import { ResetCurrentBranchDialog } from "./ResetCurrentBranchDialog";
@@ -122,54 +121,7 @@ export function CommitRowContextMenu({
 						<Tag />
 						Create tag
 					</ContextMenuItem>
-					<ContextMenuSeparator />
-					<ContextMenuItem
-						onClick={() => void copyToClipboard(row.commit.hash, "Commit hash")}
-					>
-						<Copy />
-						Copy full hash
-					</ContextMenuItem>
-					<ContextMenuItem
-						onClick={() =>
-							void copyToClipboard(shortHash(row.commit.hash), "Short hash")
-						}
-					>
-						<Copy />
-						Copy short hash
-					</ContextMenuItem>
-					<ContextMenuItem
-						onClick={() => void copyToClipboard(subject, "Subject")}
-					>
-						<Copy />
-						Copy subject
-					</ContextMenuItem>
-					<ContextMenuItem
-						onClick={() => void copyToClipboard(row.commit.message, "Message")}
-					>
-						<Copy />
-						Copy message
-					</ContextMenuItem>
-					{refs.length > 0 ? (
-						<>
-							<ContextMenuSeparator />
-							<ContextMenuItem
-								onClick={() => void copyToClipboard(refs.join("\n"), "Refs")}
-							>
-								<GitBranch />
-								Copy refs
-							</ContextMenuItem>
-							{row.commit.tags.length > 0 ? (
-								<ContextMenuItem
-									onClick={() =>
-										void copyToClipboard(row.commit.tags.join("\n"), "Tags")
-									}
-								>
-									<Tag />
-									Copy tags
-								</ContextMenuItem>
-							) : null}
-						</>
-					) : null}
+					<CommitRowLinkMenuItems refs={refs} row={row} subject={subject} />
 				</ContextMenuContent>
 			</ContextMenu>
 			<CherryPickCommitDialog

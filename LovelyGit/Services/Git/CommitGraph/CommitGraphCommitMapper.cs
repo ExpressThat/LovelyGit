@@ -7,7 +7,7 @@ internal static class CommitGraphCommitMapper
 {
     private const int CommitMessagePreviewChars = 160;
 
-    public static CommitInfo BuildInfo(GitCommit commit, List<string> parents)
+    public static CommitInfo BuildInfo(GitCommit commit, List<string> parents, string? remoteUrl)
     {
         var message = commit.Subject?.Trim();
         if (string.IsNullOrWhiteSpace(message))
@@ -37,6 +37,7 @@ internal static class CommitGraphCommitMapper
                     },
                 })
                 .ToList(),
+            RemoteUrl = RemoteCommitUrlBuilder.Build(remoteUrl, commit.Hash.ToString()),
             Stats = null,
         };
     }

@@ -10,7 +10,8 @@ internal static class CommitGraphRowBuilder
         IReadOnlyList<string> parents,
         int rowIndex,
         List<string?> activeLaneTargets,
-        ref int maxLaneCount)
+        ref int maxLaneCount,
+        string? remoteUrl)
     {
         var hash = commit.Hash.ToString();
         var parentList = parents is List<string> list ? list : parents.ToList();
@@ -53,7 +54,7 @@ internal static class CommitGraphRowBuilder
         CommitGraphLaneLayout.TrimTrailingEmptyLanes(activeLaneTargets);
         maxLaneCount = Math.Max(maxLaneCount, activeLaneTargets.Count);
 
-        var commitInfo = CommitGraphCommitMapper.BuildInfo(commit, parentList);
+        var commitInfo = CommitGraphCommitMapper.BuildInfo(commit, parentList, remoteUrl);
         return new CommitGraphRow
         {
             Commit = commitInfo,

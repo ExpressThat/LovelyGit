@@ -32,6 +32,7 @@ namespace ExpressThat.LovelyGit.Services.Git.CommitGraph.Models
         public List<string> Branches { get; set; } = new();
         public List<string> Tags { get; set; } = new();
         public List<CommitRefInfo> Refs { get; set; } = new();
+        public string? RemoteUrl { get; set; }
         public CommitStats? Stats { get; set; }
     }
 }
