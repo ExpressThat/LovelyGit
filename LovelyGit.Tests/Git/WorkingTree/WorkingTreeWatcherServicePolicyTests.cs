@@ -1,4 +1,5 @@
 using ExpressThat.LovelyGit.Services.Git.WorkingTree;
+using ExpressThat.LovelyGit.Services.Git.WorkingTree.Models;
 
 namespace LovelyGit.Tests.Git.WorkingTree;
 
@@ -23,7 +24,7 @@ public sealed class WorkingTreeWatcherServicePolicyTests
     }
 
     [Fact]
-    public void ShouldWatchWorkTreeRecursively_UsesPlatformPolicyForLargeDirectory()
+    public void ShouldWatchWorkTreeRecursively_ReturnsTrueForLargeDirectory()
     {
         using var directory = TemporaryDirectory.Create("lovelygit-watch-large-");
         for (var index = 0; index < 2001; index++)
@@ -31,9 +32,7 @@ public sealed class WorkingTreeWatcherServicePolicyTests
             Directory.CreateDirectory(Path.Combine(directory.Path, $"d{index}"));
         }
 
-        Assert.Equal(
-            OperatingSystem.IsWindows(),
-            WorkingTreeWatcherService.ShouldWatchWorkTreeRecursively(directory.Path));
+        Assert.True(WorkingTreeWatcherService.ShouldWatchWorkTreeRecursively(directory.Path));
     }
 
     [Fact]
@@ -66,6 +65,33 @@ public sealed class WorkingTreeWatcherServicePolicyTests
         var after = WorkingTreeWatcherService.ComputeWorkTreeSnapshot(directory.Path, matcher: null);
 
         Assert.Equal(before, after);
+    }
+
+    [Fact]
+    public void MergePendingObservedChange_KeepsAddedWhenCreatedIsFollowedByChanged()
+    {
+        var pending = new List<WorkingTreeChangedFile>
+        {
+            new()
+            {
+                Path = "deep/file.txt",
+                Status = "Added",
+                Group = WorkingTreeChangeGroup.Untracked,
+            },
+        };
+
+        WorkingTreeWatcherService.MergePendingObservedChange(
+            pending,
+            new WorkingTreeChangedFile
+            {
+                Path = "deep/file.txt",
+                Status = "Modified",
+                Group = WorkingTreeChangeGroup.Unstaged,
+            });
+
+        var change = Assert.Single(pending);
+        Assert.Equal("Added", change.Status);
+        Assert.Equal(WorkingTreeChangeGroup.Untracked, change.Group);
     }
 
     private sealed class TemporaryDirectory : IDisposable

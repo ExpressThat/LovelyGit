@@ -65,8 +65,64 @@ internal sealed partial class WorkingTreeWatcherService : IDisposable
             return;
         }
 
-        QueueInvalidation();
+        QueueInvalidation(CreateObservedChange(eventArgs));
     }
+
+    private WorkingTreeChangedFile? CreateObservedChange(FileSystemEventArgs eventArgs)
+    {
+        string? workTreeDirectory;
+        lock (_lock)
+        {
+            workTreeDirectory = _activeWorkTreeDirectory;
+        }
+
+        if (string.IsNullOrEmpty(workTreeDirectory))
+        {
+            return null;
+        }
+
+        var path = NormalizeObservedPath(workTreeDirectory, eventArgs.FullPath);
+        if (path == null || Directory.Exists(eventArgs.FullPath))
+        {
+            return null;
+        }
+
+        var oldPath = eventArgs is RenamedEventArgs renamed
+            ? NormalizeObservedPath(workTreeDirectory, renamed.OldFullPath)
+            : null;
+        var status = ToObservedStatus(eventArgs.ChangeType);
+        return new WorkingTreeChangedFile
+        {
+            Path = path,
+            OldPath = oldPath,
+            Status = status,
+            Group = status == "Added"
+                ? WorkingTreeChangeGroup.Untracked
+                : WorkingTreeChangeGroup.Unstaged,
+        };
+    }
+
+    private static string? NormalizeObservedPath(string workTreeDirectory, string path)
+    {
+        var relativePath = Path.GetRelativePath(workTreeDirectory, path).Replace('\\', '/');
+        if (relativePath.Equals("..", StringComparison.Ordinal)
+            || relativePath.StartsWith("../", StringComparison.Ordinal)
+            || relativePath.Equals(".git", StringComparison.Ordinal)
+            || relativePath.StartsWith(".git/", StringComparison.Ordinal))
+        {
+            return null;
+        }
+
+        return relativePath;
+    }
+
+    private static string ToObservedStatus(WatcherChangeTypes changeType) =>
+        changeType switch
+        {
+            WatcherChangeTypes.Created or WatcherChangeTypes.Renamed => "Added",
+            WatcherChangeTypes.Deleted => "Deleted",
+            _ => "Modified",
+        };
 
     private bool IsRelevantGitMetadataPath(string path)
     {

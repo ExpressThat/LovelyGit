@@ -87,6 +87,18 @@ internal sealed partial class WorkingTreeWatcherService : IDisposable
         }
     }
 
+    private static IEnumerable<string> EnumerateDirectories(string directory)
+    {
+        try
+        {
+            return Directory.EnumerateDirectories(directory);
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        {
+            return [];
+        }
+    }
+
     private static bool IsReparseDirectory(string directory)
     {
         try

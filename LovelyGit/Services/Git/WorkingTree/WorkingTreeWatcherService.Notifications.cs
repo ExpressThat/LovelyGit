@@ -10,7 +10,7 @@ namespace ExpressThat.LovelyGit.Services.Git.WorkingTree;
 
 internal sealed partial class WorkingTreeWatcherService : IDisposable
 {
-    private void QueueInvalidation()
+    private void QueueInvalidation(WorkingTreeChangedFile? observedChange = null)
     {
         CancellationTokenSource cancellation;
         lock (_lock)
@@ -18,6 +18,11 @@ internal sealed partial class WorkingTreeWatcherService : IDisposable
             if (_disposed || _activeRepositoryId == null)
             {
                 return;
+            }
+
+            if (observedChange != null)
+            {
+                AddPendingObservedChange(observedChange);
             }
 
             _debounceCancellation?.Cancel();
@@ -30,7 +35,7 @@ internal sealed partial class WorkingTreeWatcherService : IDisposable
         {
             try
             {
-                await Task.Delay(DebounceDelay, cancellation.Token).ConfigureAwait(false);
+                await Task.Delay(WorkTreeDebounceDelay, cancellation.Token).ConfigureAwait(false);
                 await SendInvalidationAsync(cancellation).ConfigureAwait(false);
             }
             catch (OperationCanceledException)
@@ -52,7 +57,9 @@ internal sealed partial class WorkingTreeWatcherService : IDisposable
             notification = new WorkingTreeChangedNotification
             {
                 Generation = unchecked(++_generation),
+                ObservedChanges = [.. _pendingObservedChanges],
             };
+            _pendingObservedChanges.Clear();
         }
 
         _nativeMessaging.Send(
@@ -61,6 +68,34 @@ internal sealed partial class WorkingTreeWatcherService : IDisposable
             NativeMessagingJsonContext.Default.NativeMessageResponseWorkingTreeChangedNotification);
 
         await Task.CompletedTask.ConfigureAwait(false);
+    }
+
+    private void AddPendingObservedChange(WorkingTreeChangedFile change)
+    {
+        MergePendingObservedChange(_pendingObservedChanges, change);
+    }
+
+    internal static void MergePendingObservedChange(
+        List<WorkingTreeChangedFile> pendingChanges,
+        WorkingTreeChangedFile change)
+    {
+        for (var index = pendingChanges.Count - 1; index >= 0; index--)
+        {
+            var pending = pendingChanges[index];
+            if (!string.Equals(pending.Path, change.Path, StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            if (pending.Status == "Added" && change.Status == "Modified")
+            {
+                return;
+            }
+
+            pendingChanges.RemoveAt(index);
+        }
+
+        pendingChanges.Add(change);
     }
 
     private void QueueGraphInvalidation()
@@ -83,7 +118,7 @@ internal sealed partial class WorkingTreeWatcherService : IDisposable
         {
             try
             {
-                await Task.Delay(DebounceDelay, cancellation.Token).ConfigureAwait(false);
+                await Task.Delay(GraphDebounceDelay, cancellation.Token).ConfigureAwait(false);
                 await SendGraphInvalidationAsync(cancellation).ConfigureAwait(false);
             }
             catch (OperationCanceledException)
@@ -177,6 +212,7 @@ internal sealed partial class WorkingTreeWatcherService : IDisposable
         _ignoreMatcher = null;
         _commitGraphSnapshot = null;
         _workTreeSnapshot = null;
+        _pendingObservedChanges.Clear();
     }
 
 }

@@ -4,7 +4,7 @@ namespace ExpressThat.LovelyGit.Services.Git.WorkingTree;
 
 internal sealed partial class WorkingTreeStatusListService
 {
-    private static async Task<List<WorkingTreeChangedFile>> FindUntrackedFilesAsync(
+    private static async Task<UntrackedFileScanResult> FindUntrackedFilesAsync(
         string workTreeDirectory,
         string gitDirectory,
         HashSet<string> rootTrackedFiles,
@@ -20,10 +20,14 @@ internal sealed partial class WorkingTreeStatusListService
         pending.Push(workTreeDirectory);
         var visitedDirectories = 0;
 
-        while (pending.Count > 0
-            && files.Count < MaxNativeUntrackedFiles
-            && visitedDirectories < MaxNativeUntrackedDirectories)
+        while (pending.Count > 0)
         {
+            if (files.Count >= MaxNativeUntrackedFiles
+                || visitedDirectories >= MaxNativeUntrackedDirectories)
+            {
+                return new UntrackedFileScanResult(files, IsComplete: false);
+            }
+
             cancellationToken.ThrowIfCancellationRequested();
             visitedDirectories++;
             var directory = pending.Pop();
@@ -49,7 +53,7 @@ internal sealed partial class WorkingTreeStatusListService
         }
 
         files.Sort((left, right) => string.Compare(left.Path, right.Path, StringComparison.Ordinal));
-        return files;
+        return new UntrackedFileScanResult(files, IsComplete: true);
     }
 
     private static void AddUntrackedFile(
@@ -127,4 +131,8 @@ internal sealed partial class WorkingTreeStatusListService
             return [];
         }
     }
+
+    private sealed record UntrackedFileScanResult(
+        List<WorkingTreeChangedFile> Files,
+        bool IsComplete);
 }

@@ -1,21 +1,11 @@
 import { useEffect, useRef, useState } from "react";
-import type { WorkingTreeChangesResponse } from "@/generated/types";
+import { subscribeToServerEvent } from "@/lib/commands";
 import {
-	sendRequestWithResponse,
-	subscribeToServerEvent,
-} from "@/lib/commands";
-
-type WorkingTreeChangesState =
-	| { status: "idle"; changes: null }
-	| { status: "loading"; changes: WorkingTreeChangesResponse | null }
-	| {
-			status: "error";
-			changes: WorkingTreeChangesResponse | null;
-			message: string;
-	  }
-	| { status: "loaded"; changes: WorkingTreeChangesResponse };
-
-const workingTreeStatusTimeoutMs = 60_000;
+	applyObservedWorkingTreeChanges,
+	countObservedNewPaths,
+} from "./OptimisticWorkingTreeChanges";
+import { loadWorkingTreeChanges } from "./WorkingTreeChangesRequests";
+import type { WorkingTreeChangesState } from "./WorkingTreeChangesState";
 
 export function useWorkingTreeChanges(
 	repositoryId: string | null,
@@ -49,13 +39,13 @@ export function useWorkingTreeChanges(
 		}
 
 		if (!enabled) {
-			setState({ status: "idle", changes: null });
 			return;
 		}
 
 		let isActive = true;
 		let isLoading = false;
 		let reloadAgain = false;
+		let reconcileTimer: number | null = null;
 		const load = async () => {
 			if (isLoading) {
 				reloadAgain = true;
@@ -68,25 +58,13 @@ export function useWorkingTreeChanges(
 				changes: current.changes,
 			}));
 			try {
-				const changes = await sendRequestWithResponse(
-					{
-						commandType: "GetWorkingTreeChanges",
-						arguments: { repositoryId },
-					},
-					{ timeoutMs: workingTreeStatusTimeoutMs },
-				);
+				const changes = await loadWorkingTreeChanges(repositoryId);
 				if (isActive) {
 					setState({
 						status: "loaded",
-						changes: changes ?? {
-							staged: [],
-							unstaged: [],
-							untracked: [],
-							unmerged: [],
-							totalCount: 0,
-						},
+						changes,
 					});
-					setSummaryCount(changes?.totalCount ?? 0);
+					setSummaryCount(changes.totalCount);
 					setIsDirty(false);
 					setHasSummaryLoaded(true);
 				}
@@ -111,13 +89,46 @@ export function useWorkingTreeChanges(
 		};
 
 		void load();
-		const unsubscribe = subscribeToServerEvent("WorkingTreeChanged", () => {
-			setIsDirty(true);
-			void load();
-		});
+		const unsubscribe = subscribeToServerEvent(
+			"WorkingTreeChanged",
+			(event) => {
+				setIsDirty(true);
+				const hasObservedChanges = (event.observedChanges?.length ?? 0) > 0;
+				setState((current) => {
+					const newPathCount = countObservedNewPaths(
+						current.changes,
+						event.observedChanges,
+					);
+					const changes = applyObservedWorkingTreeChanges(
+						current.changes,
+						event.observedChanges,
+					);
+					if (!changes) {
+						return current;
+					}
+
+					setSummaryCount((count) => count + newPathCount);
+					return { status: "loaded", changes };
+				});
+				if (reconcileTimer != null) {
+					window.clearTimeout(reconcileTimer);
+				}
+
+				reconcileTimer = hasObservedChanges
+					? window.setTimeout(() => void load(), 1500)
+					: null;
+				if (!hasObservedChanges) {
+					void load();
+				}
+			},
+		);
 
 		return () => {
 			isActive = false;
+			if (reconcileTimer != null) {
+				window.clearTimeout(reconcileTimer);
+			}
+
 			unsubscribe();
 		};
 	}, [repositoryId, enabled]);
@@ -127,10 +138,9 @@ export function useWorkingTreeChanges(
 			return;
 		}
 
-		let isActive = true;
 		let isLoading = false;
 		let reloadAgain = false;
-		const loadSummary = async () => {
+		const loadChanges = async () => {
 			if (isLoading) {
 				reloadAgain = true;
 				return;
@@ -138,51 +148,61 @@ export function useWorkingTreeChanges(
 
 			isLoading = true;
 			try {
-				const summary = await sendRequestWithResponse(
-					{
-						commandType: "GetWorkingTreeChangeSummary",
-						arguments: { repositoryId },
-					},
-					{ timeoutMs: workingTreeStatusTimeoutMs },
-				);
-				if (isActive) {
-					setSummaryCount(summary?.totalCount ?? 0);
+				const loadedChanges = await loadWorkingTreeChanges(repositoryId);
+				if (previousRepositoryIdRef.current === repositoryId) {
+					setState({
+						status: "loaded",
+						changes: loadedChanges,
+					});
+					setSummaryCount(loadedChanges.totalCount);
 					setIsDirty(false);
 					setHasSummaryLoaded(true);
 				}
 			} catch {
-				if (isActive) {
+				if (previousRepositoryIdRef.current === repositoryId) {
 					setIsDirty(true);
 					setHasSummaryLoaded(false);
 				}
 			} finally {
 				isLoading = false;
-				if (isActive && reloadAgain) {
+				if (previousRepositoryIdRef.current === repositoryId && reloadAgain) {
 					reloadAgain = false;
-					scheduleSummaryLoad();
+					scheduleChangesLoad();
 				}
 			}
 		};
 
-		const scheduleSummaryLoad = () => {
+		const scheduleChangesLoad = () => {
 			if (summaryReloadTimerRef.current != null) {
 				window.clearTimeout(summaryReloadTimerRef.current);
 			}
 
 			summaryReloadTimerRef.current = window.setTimeout(() => {
 				summaryReloadTimerRef.current = null;
-				void loadSummary();
+				void loadChanges();
 			}, 150);
 		};
 
-		void loadSummary();
-		const unsubscribe = subscribeToServerEvent("WorkingTreeChanged", () => {
-			setIsDirty(true);
-			scheduleSummaryLoad();
-		});
+		void loadChanges();
+		const unsubscribe = subscribeToServerEvent(
+			"WorkingTreeChanged",
+			(event) => {
+				setIsDirty(true);
+				setState((current) => {
+					const changes = applyObservedWorkingTreeChanges(
+						current.changes,
+						event.observedChanges,
+					);
+					return changes ? { status: "loaded", changes } : current;
+				});
+				setSummaryCount(
+					(count) => count + (event.observedChanges?.length ?? 0),
+				);
+				scheduleChangesLoad();
+			},
+		);
 
 		return () => {
-			isActive = false;
 			if (summaryReloadTimerRef.current != null) {
 				window.clearTimeout(summaryReloadTimerRef.current);
 				summaryReloadTimerRef.current = null;
@@ -201,24 +221,12 @@ export function useWorkingTreeChanges(
 				return;
 			}
 
-			const changes = await sendRequestWithResponse(
-				{
-					commandType: "GetWorkingTreeChanges",
-					arguments: { repositoryId },
-				},
-				{ timeoutMs: workingTreeStatusTimeoutMs },
-			);
+			const changes = await loadWorkingTreeChanges(repositoryId);
 			setState({
 				status: "loaded",
-				changes: changes ?? {
-					staged: [],
-					unstaged: [],
-					untracked: [],
-					unmerged: [],
-					totalCount: 0,
-				},
+				changes,
 			});
-			setSummaryCount(changes?.totalCount ?? 0);
+			setSummaryCount(changes.totalCount);
 			setIsDirty(false);
 			setHasSummaryLoaded(true);
 		},

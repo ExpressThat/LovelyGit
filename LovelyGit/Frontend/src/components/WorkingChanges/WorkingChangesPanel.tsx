@@ -16,7 +16,6 @@ import { WorkingChangesGroups } from "./WorkingChangesGroups";
 import {
 	BulkIndexActions,
 	WorkingChangesHeader,
-	WorkingChangesSkeleton,
 } from "./WorkingChangesPanelParts";
 export function WorkingChangesPanel({
 	changes,
@@ -26,6 +25,7 @@ export function WorkingChangesPanel({
 	onCommitSuccess,
 	onSelectFile,
 	repositoryId,
+	totalCount,
 }: {
 	changes: WorkingTreeChangesResponse | null;
 	error: string | null;
@@ -34,6 +34,7 @@ export function WorkingChangesPanel({
 	onRefresh: () => Promise<void> | void;
 	onSelectFile: (file: WorkingTreeChangedFile) => void;
 	repositoryId: string;
+	totalCount: number;
 }) {
 	const workingFiles = changes
 		? [...changes.unstaged, ...changes.untracked]
@@ -80,14 +81,25 @@ export function WorkingChangesPanel({
 		repositoryId,
 	});
 	if (!changes && isLoading) {
-		return <WorkingChangesSkeleton />;
+		return (
+			<div className="space-y-4 p-4 text-left text-sm">
+				<WorkingChangesHeader
+					isLoading={isLoading}
+					onRefresh={onRefresh}
+					totalCount={totalCount}
+				/>
+				<div className="rounded-md border bg-card p-4 text-sm text-muted-foreground">
+					Loading changed files.
+				</div>
+			</div>
+		);
 	}
 	return (
 		<div className="space-y-4 p-4 text-left text-sm">
 			<WorkingChangesHeader
 				isLoading={isLoading}
 				onRefresh={onRefresh}
-				totalCount={changes?.totalCount ?? 0}
+				totalCount={changes?.totalCount ?? totalCount}
 			/>
 			{changes && changes.totalCount > 0 ? (
 				<BulkIndexActions

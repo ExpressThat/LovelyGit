@@ -50,6 +50,34 @@ public sealed class WorkingTreeStatusListServiceTests
     }
 
     [Fact]
+    public async Task GetChangesAsync_FallsBackWhenNativeUntrackedScanIsIncomplete()
+    {
+        using var directory = TemporaryDirectory.Create("lovelygit-status-");
+        await CreateInitialCommitAsync(directory.Path);
+        var trackedRoot = Path.Combine(directory.Path, "tracked-root");
+        Directory.CreateDirectory(trackedRoot);
+        await File.WriteAllTextAsync(Path.Combine(trackedRoot, "tracked.txt"), "tracked");
+        await GitTestProcess.RunAsync(directory.Path, "add", ".");
+        await GitTestProcess.RunAsync(directory.Path, "commit", "-m", "tracked root");
+
+        for (var index = 0; index < 4001; index++)
+        {
+            Directory.CreateDirectory(Path.Combine(trackedRoot, $"d{index:D4}"));
+        }
+
+        var deepFile = Path.Combine(trackedRoot, "d4000", "deep.tmp");
+        await File.WriteAllTextAsync(deepFile, "deep");
+
+        var response = await new WorkingTreeStatusListService(new GitCliService())
+            .GetChangesAsync(directory.Path, CancellationToken.None);
+
+        Assert.Contains(response.Untracked, file =>
+            file.Path == "tracked-root/d4000/deep.tmp"
+            && file.Status == "Added"
+            && file.Group == WorkingTreeChangeGroup.Untracked);
+    }
+
+    [Fact]
     public void ParsePorcelainStatus_GroupsCommonStatuses()
     {
         var response = WorkingTreeStatusListService.ParsePorcelainStatus(

@@ -36,14 +36,20 @@ internal sealed partial class WorkingTreeStatusListService
             var rootTracking = await GetRootTrackingAsync(repository, cancellationToken)
                 .ConfigureAwait(false);
             var fastResponse = new WorkingTreeChangesResponse();
-            fastResponse.Untracked.AddRange(await FindUntrackedFilesAsync(
+            var rootUntracked = await FindUntrackedFilesAsync(
                     repository.WorkTreeDirectory,
                     repository.GitDirectory,
                     rootTracking.RootTrackedFiles,
                     rootTracking.RootTrackedDirectories,
                     cancellationToken,
                     scanTrackedDirectories: false)
-                .ConfigureAwait(false));
+                .ConfigureAwait(false);
+            if (!rootUntracked.IsComplete)
+            {
+                return null;
+            }
+
+            fastResponse.Untracked.AddRange(rootUntracked.Files);
             if (fastResponse.Untracked.Count > 0)
             {
                 Sort(fastResponse.Untracked);
@@ -63,13 +69,19 @@ internal sealed partial class WorkingTreeStatusListService
                 return null;
             }
 
-            fullScan.Response.Untracked.AddRange(await FindUntrackedFilesAsync(
+            var untracked = await FindUntrackedFilesAsync(
                     repository.WorkTreeDirectory,
                     repository.GitDirectory,
                     fullScan.RootTrackedFiles,
                     fullScan.RootTrackedDirectories,
                     cancellationToken)
-                .ConfigureAwait(false));
+                .ConfigureAwait(false);
+            if (!untracked.IsComplete)
+            {
+                return null;
+            }
+
+            fullScan.Response.Untracked.AddRange(untracked.Files);
             Sort(fullScan.Response.Unstaged);
             Sort(fullScan.Response.Untracked);
             Sort(fullScan.Response.Unmerged);

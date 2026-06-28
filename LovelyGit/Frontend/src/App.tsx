@@ -237,6 +237,7 @@ function App() {
 									})
 								}
 								repositoryId={currentGitRepositoryId}
+								totalCount={workingTreeChanges.totalCount}
 							/>
 						) : null}
 					</SlidingDetailsPanel>

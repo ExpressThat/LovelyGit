@@ -51,6 +51,7 @@ public record WorkingTreeChangeSummaryResponse
 public record WorkingTreeChangedNotification
 {
     public int Generation { get; set; }
+    public List<WorkingTreeChangedFile> ObservedChanges { get; set; } = new();
 }
 
 [TypeSharp]
