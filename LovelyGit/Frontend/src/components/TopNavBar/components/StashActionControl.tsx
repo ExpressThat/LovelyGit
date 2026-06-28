@@ -100,7 +100,11 @@ export function StashActionControl({
 			</Button>
 			<Dialog onOpenChange={setIsOpen} open={isOpen}>
 				<DialogContent>
-					<form className="grid gap-4" onSubmit={stashChanges}>
+					<form
+						autoComplete="off"
+						className="grid gap-4"
+						onSubmit={stashChanges}
+					>
 						<DialogHeader>
 							<DialogTitle className="flex items-center gap-2">
 								<Archive aria-hidden="true" />
@@ -118,8 +122,10 @@ export function StashActionControl({
 							<Input
 								aria-label="Stash message"
 								autoFocus
+								autoComplete="off"
 								disabled={isStashing}
 								id={messageId}
+								name="lovelygit-stash-message"
 								onChange={(event) => setMessage(event.currentTarget.value)}
 								onInput={(event) => setMessage(event.currentTarget.value)}
 								placeholder="WIP on main"

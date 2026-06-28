@@ -11,6 +11,7 @@ export type Settings = {
 	CommitDiffLineDisplayMode: CommitDiffLineDisplayMode;
 	CommitDiffViewMode: CommitDiffViewMode;
 	CommitDiffWrapLines: boolean;
+	CommitGraphRefsPanelOpen: boolean;
 	CurrentGitRepositoryId: string | null;
 	RemotePrimaryAction: RemotePrimaryAction;
 	Theme: AppTheme;
@@ -23,6 +24,7 @@ export const DEFAULT_SETTINGS: Settings = {
 	CommitDiffLineDisplayMode: "Changes",
 	CommitDiffViewMode: "SideBySide",
 	CommitDiffWrapLines: false,
+	CommitGraphRefsPanelOpen: true,
 	CurrentGitRepositoryId: null,
 	RemotePrimaryAction: "Fetch",
 	Theme: "System",

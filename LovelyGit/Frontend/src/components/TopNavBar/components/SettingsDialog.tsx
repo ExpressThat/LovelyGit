@@ -1,4 +1,9 @@
-import { FileText, GitPullRequestArrow, Settings } from "lucide-react";
+import {
+	FileText,
+	GitBranch,
+	GitPullRequestArrow,
+	Settings,
+} from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,9 +15,10 @@ import {
 	DialogTrigger,
 } from "@/components/ui/dialog";
 import { FileDiffViewSettings } from "./FileDiffViewSettings";
+import { GraphViewSettings } from "./GraphViewSettings";
 import { RemoteOperationSettings } from "./RemoteOperationSettings";
 
-type SettingsCategory = "fileDiffView" | "remoteOperations";
+type SettingsCategory = "fileDiffView" | "graphView" | "remoteOperations";
 
 const categories: Array<{
 	description: string;
@@ -25,6 +31,12 @@ const categories: Array<{
 		icon: FileText,
 		id: "fileDiffView",
 		label: "File Diff View",
+	},
+	{
+		description: "Commit graph layout and ref navigation",
+		icon: GitBranch,
+		id: "graphView",
+		label: "Graph View",
 	},
 	{
 		description: "Fetch, pull, rebase, and push defaults",
@@ -75,6 +87,7 @@ export function SettingsDialog() {
 						{activeCategory === "fileDiffView" ? (
 							<FileDiffViewSettings />
 						) : null}
+						{activeCategory === "graphView" ? <GraphViewSettings /> : null}
 						{activeCategory === "remoteOperations" ? (
 							<RemoteOperationSettings />
 						) : null}

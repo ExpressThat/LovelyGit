@@ -57,6 +57,11 @@ namespace ExpressThat.LovelyGit.Services.Settings
             false,
             GetJsonTypeInfo<bool>());
 
+        public static readonly SettingDefinition<bool> CommitGraphRefsPanelOpen = new(
+            nameof(Setting.CommitGraphRefsPanelOpen),
+            true,
+            GetJsonTypeInfo<bool>());
+
         public static readonly SettingDefinition<RemotePrimaryAction> RemotePrimaryAction = new(
             nameof(Setting.RemotePrimaryAction),
             Settings.RemotePrimaryAction.Fetch,
@@ -72,6 +77,7 @@ namespace ExpressThat.LovelyGit.Services.Settings
                 [Setting.CommitDiffContextLines] = CommitDiffContextLines,
                 [Setting.CommitDiffWrapLines] = CommitDiffWrapLines,
                 [Setting.CommitDiffIgnoreWhitespace] = CommitDiffIgnoreWhitespace,
+                [Setting.CommitGraphRefsPanelOpen] = CommitGraphRefsPanelOpen,
                 [Setting.RemotePrimaryAction] = RemotePrimaryAction,
             };
 

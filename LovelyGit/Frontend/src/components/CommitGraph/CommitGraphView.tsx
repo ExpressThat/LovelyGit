@@ -1,8 +1,9 @@
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { CommitGraphRow as CommitGraphRowModel } from "@/generated/types";
+import { CommitGraphHeader } from "./components/CommitGraphHeader";
 import { CommitRow } from "./components/CommitRow";
-import { HeaderCell } from "./components/HeaderCell";
+import { RefsPanel } from "./components/RefsPanel";
 import type { ColKey } from "./constants";
 import {
 	COL_DEFAULT,
@@ -15,14 +16,6 @@ import {
 } from "./constants";
 import { useCommitGraphData } from "./hooks/useCommitGraphData";
 import { resolveWidths } from "./utils/columns";
-
-const HEADER_LABELS: Record<ColKey, string> = {
-	author: "Author",
-	branch: "Branch",
-	graph: "Graph",
-	hash: "Hash",
-	message: "Commit Message",
-};
 
 export function CommitGraphView({
 	onSelectCommit,
@@ -159,88 +152,83 @@ export function CommitGraphView({
 
 	return (
 		<section className="h-full w-full overflow-hidden bg-background">
-			<div ref={viewportRef} className="flex h-full w-full flex-col">
-				<div
-					className="grid h-[22px] border-b bg-card text-[10px] font-bold uppercase leading-[21px] text-muted-foreground"
-					style={{ gridTemplateColumns: templateColumns }}
-				>
-					{COL_ORDER.map((keyName, index) => (
-						<HeaderCell
-							key={keyName}
-							keyName={keyName}
-							label={
-								isInitialLoading && keyName === "message"
-									? "Loading"
-									: HEADER_LABELS[keyName]
-							}
-							onResizeStart={handleResizeStart}
-							showHandle={index < COL_ORDER.length - 1}
-						/>
-					))}
-				</div>
+			<div className="flex h-full w-full min-w-0">
+				<RefsPanel
+					currentBranchName={currentBranchName}
+					onSelectCommit={onSelectCommit}
+					remotePrefixes={remotePrefixes}
+					rows={rows}
+				/>
+				<div ref={viewportRef} className="flex h-full min-w-0 flex-1 flex-col">
+					<CommitGraphHeader
+						isInitialLoading={isInitialLoading}
+						onResizeStart={handleResizeStart}
+						templateColumns={templateColumns}
+					/>
 
-				{error ? (
-					<div className="h-7 border-b border-destructive/40 bg-destructive/10 px-[10px] leading-[27px] text-destructive">
-						{error}
-					</div>
-				) : null}
+					{error ? (
+						<div className="h-7 border-b border-destructive/40 bg-destructive/10 px-[10px] leading-[27px] text-destructive">
+							{error}
+						</div>
+					) : null}
 
-				<div
-					ref={scrollRef}
-					className="custom-scrollbar relative min-h-0 flex-1 w-full overflow-x-hidden overflow-y-auto bg-[repeating-linear-gradient(to_bottom,var(--background)_0,var(--background)_21px,var(--card)_21px,var(--card)_22px)]"
-				>
 					<div
-						className="relative h-full w-full"
-						style={{ height: `${virtualizer.getTotalSize()}px` }}
+						ref={scrollRef}
+						className="custom-scrollbar relative min-h-0 w-full flex-1 overflow-x-hidden overflow-y-auto bg-[repeating-linear-gradient(to_bottom,var(--background)_0,var(--background)_21px,var(--card)_21px,var(--card)_22px)]"
 					>
-						{virtualItems.map((item) => (
-							<div
-								className="absolute left-0 top-0 w-full"
-								key={item.key}
-								style={{
-									height: `${ROW_HEIGHT}px`,
-									transform: `translateY(${Math.round(item.start)}px)`,
-								}}
-							>
-								<CommitRow
-									graph={{
-										contentWidth: graphContentWidth,
-										scrollLeft: graphScrollLeft,
+						<div
+							className="relative h-full w-full"
+							style={{ height: `${virtualizer.getTotalSize()}px` }}
+						>
+							{virtualItems.map((item) => (
+								<div
+									className="absolute left-0 top-0 w-full"
+									key={item.key}
+									style={{
+										height: `${ROW_HEIGHT}px`,
+										transform: `translateY(${Math.round(item.start)}px)`,
 									}}
-									isSelected={
-										Boolean(rows[item.index]) &&
-										rows[item.index]?.commit.hash === selectedCommitHash
-									}
-									onSelect={onSelectCommit}
-									onRefsChanged={onRefsChanged}
-									currentBranchName={currentBranchName}
-									remotePrefixes={remotePrefixes}
-									repositoryId={repositoryId}
-									row={rows[item.index] ?? null}
-									rowIndex={item.index}
-									templateColumns={templateColumns}
-								/>
-							</div>
-						))}
+								>
+									<CommitRow
+										graph={{
+											contentWidth: graphContentWidth,
+											scrollLeft: graphScrollLeft,
+										}}
+										isSelected={
+											Boolean(rows[item.index]) &&
+											rows[item.index]?.commit.hash === selectedCommitHash
+										}
+										onSelect={onSelectCommit}
+										onRefsChanged={onRefsChanged}
+										currentBranchName={currentBranchName}
+										remotePrefixes={remotePrefixes}
+										repositoryId={repositoryId}
+										row={rows[item.index] ?? null}
+										rowIndex={item.index}
+										templateColumns={templateColumns}
+									/>
+								</div>
+							))}
+						</div>
 					</div>
-				</div>
-				<div
-					className="grid h-3 border-t bg-background"
-					style={{ gridTemplateColumns: templateColumns }}
-				>
-					<div />
 					<div
-						className="custom-scrollbar overflow-x-auto overflow-y-hidden"
-						ref={graphScrollerRef}
-						onScroll={(event) =>
-							setGraphScrollLeft(event.currentTarget.scrollLeft)
-						}
+						className="grid h-3 border-t bg-background"
+						style={{ gridTemplateColumns: templateColumns }}
 					>
-						<div style={{ height: 1, width: graphContentWidth }} />
+						<div />
+						<div
+							className="custom-scrollbar overflow-x-auto overflow-y-hidden"
+							ref={graphScrollerRef}
+							onScroll={(event) =>
+								setGraphScrollLeft(event.currentTarget.scrollLeft)
+							}
+						>
+							<div style={{ height: 1, width: graphContentWidth }} />
+						</div>
+						<div />
+						<div />
+						<div />
 					</div>
-					<div />
-					<div />
-					<div />
 				</div>
 			</div>
 		</section>

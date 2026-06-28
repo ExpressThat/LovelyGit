@@ -1,0 +1,112 @@
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import type { CommitGraphRow } from "@/generated/types";
+import { setSetting, useSetting } from "@/lib/settings/settingsStore";
+import { shortHash } from "../utils/format";
+import { RefIcon } from "./RefCellUtils";
+import { buildRefPanelSections, type RefPanelSection } from "./RefsPanelData";
+
+export function RefsPanel({
+	currentBranchName,
+	onSelectCommit,
+	remotePrefixes,
+	rows,
+}: {
+	currentBranchName: string | null;
+	onSelectCommit: (row: CommitGraphRow) => void;
+	remotePrefixes: string[];
+	rows: Array<CommitGraphRow | null>;
+}) {
+	const isOpen = useSetting("CommitGraphRefsPanelOpen");
+	const sections = buildRefPanelSections({
+		currentBranchName,
+		remotePrefixes,
+		rows,
+	});
+
+	if (!isOpen) {
+		return (
+			<aside className="flex w-9 shrink-0 justify-center border-r bg-sidebar py-2">
+				<Button
+					aria-label="Show refs panel"
+					onClick={() => void setSetting("CommitGraphRefsPanelOpen", true)}
+					size="icon-sm"
+					title="Show refs panel"
+					variant="ghost"
+				>
+					<ChevronRight aria-hidden="true" />
+				</Button>
+			</aside>
+		);
+	}
+
+	return (
+		<aside className="flex w-56 shrink-0 flex-col border-r bg-sidebar text-sidebar-foreground">
+			<header className="flex h-[34px] items-center justify-between border-b px-2">
+				<h2 className="text-xs font-semibold uppercase text-muted-foreground">
+					Refs
+				</h2>
+				<Button
+					aria-label="Hide refs panel"
+					onClick={() => void setSetting("CommitGraphRefsPanelOpen", false)}
+					size="icon-xs"
+					title="Hide refs panel"
+					variant="ghost"
+				>
+					<ChevronLeft aria-hidden="true" />
+				</Button>
+			</header>
+			<div className="custom-scrollbar min-h-0 flex-1 overflow-y-auto p-2">
+				{sections.length > 0 ? (
+					sections.map((section) => (
+						<RefSection
+							key={section.kind}
+							onSelectCommit={onSelectCommit}
+							section={section}
+						/>
+					))
+				) : (
+					<p className="px-1 py-2 text-xs text-muted-foreground">
+						Refs appear as graph pages load.
+					</p>
+				)}
+			</div>
+		</aside>
+	);
+}
+
+function RefSection({
+	onSelectCommit,
+	section,
+}: {
+	onSelectCommit: (row: CommitGraphRow) => void;
+	section: RefPanelSection;
+}) {
+	return (
+		<section className="mb-3 last:mb-0">
+			<div className="mb-1 flex items-center justify-between px-1 text-[10px] font-semibold uppercase text-muted-foreground">
+				<span>{section.label}</span>
+				<span>{section.count}</span>
+			</div>
+			<div className="grid gap-1">
+				{section.items.map((item) => (
+					<Button
+						className="h-7 min-w-0 justify-start gap-2 px-2 font-normal"
+						key={`${item.kind}:${item.name}:${item.commitHash}`}
+						onClick={() => onSelectCommit(item.row)}
+						title={`${item.name} at ${shortHash(item.commitHash)}`}
+						variant={item.isCurrent ? "secondary" : "ghost"}
+					>
+						<RefIcon kind={item.kind} />
+						<span className="min-w-0 flex-1 truncate text-left">
+							{item.label}
+						</span>
+						<span className="font-mono text-[10px] text-muted-foreground">
+							{shortHash(item.commitHash)}
+						</span>
+					</Button>
+				))}
+			</div>
+		</section>
+	);
+}
