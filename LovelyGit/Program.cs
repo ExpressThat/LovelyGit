@@ -22,6 +22,9 @@ public static class Program
     private const bool EnableCommitDetailsPreloadWorker = false;
     private const bool EnableCommitFileDiffPreparationWorker = false;
     private const string TestWindowOffscreenEnvironmentVariable = "LOVELYGIT_TEST_WINDOW_OFFSCREEN";
+    private const string TestWindowWidthEnvironmentVariable = "LOVELYGIT_TEST_WINDOW_WIDTH";
+    private const string TestWindowHeightEnvironmentVariable = "LOVELYGIT_TEST_WINDOW_HEIGHT";
+    private static readonly Size DefaultWindowSize = new(800, 600);
 
     [STAThread]
     public static void Main(string[] args)
@@ -49,7 +52,7 @@ public static class Program
                     .SetResizable(true)
                     .SetTitle("LovelyGit")
                     .SetIconFile(GetWindowIconPath())
-                    .SetSize(new Size(800, 600))
+                    .SetSize(GetInitialWindowSize())
                     .SetStartUrl("http://localhost:5000")
                     .UseNativeMessaging()
                     ;
@@ -119,6 +122,21 @@ public static class Program
     {
         var value = Environment.GetEnvironmentVariable(TestWindowOffscreenEnvironmentVariable);
         return bool.TryParse(value, out var enabled) && enabled;
+    }
+
+    private static Size GetInitialWindowSize()
+    {
+        return new Size(
+            GetWindowDimension(TestWindowWidthEnvironmentVariable, DefaultWindowSize.Width),
+            GetWindowDimension(TestWindowHeightEnvironmentVariable, DefaultWindowSize.Height));
+    }
+
+    private static int GetWindowDimension(string environmentVariable, int fallback)
+    {
+        var value = Environment.GetEnvironmentVariable(environmentVariable);
+        return int.TryParse(value, out var parsed) && parsed >= 400
+            ? parsed
+            : fallback;
     }
 
     private static void CheckForUpdatesAtStartup(string[] args)

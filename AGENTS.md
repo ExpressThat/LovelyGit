@@ -5,6 +5,7 @@
 - Treat the shipped release skill `C:\CMG\SKILL.md` as the CMG usage contract. Do not inspect or depend on CMG source internals for normal LovelyGit testing guidance.
 - When debugging, set `WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS=--remote-debugging-port=9333` in the Debug/launch profile environment before starting LovelyGit. For this repo's `http` profile, add it beside `ASPNETCORE_ENVIRONMENT` in `LovelyGit/Properties/launchSettings.json`, or set the same variable in the IDE's debug environment UI.
 - Visual-test launches should keep the native LovelyGit window visible unless the user explicitly asks for an offscreen/minimized run.
+- Use a larger visible window for dense workflows such as merge conflict resolution; the helper accepts `-Width` and `-Height` and defaults visual-test launches to a larger size than normal app startup.
 - Prefer the helper script over direct foreground `dotnet run`; it sets WebView2 remote debugging and rebuilds the debug app as `WinExe` while leaving the app window visible:
   `powershell -NoProfile -ExecutionPolicy Bypass -File C:/Projects/LovelyGit/scripts/Start-LovelyGitVisualTest.ps1 -UseDotNetRun`
 - Launch the compiled WebView2 app with remote debugging enabled through the same helper:

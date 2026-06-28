@@ -1,5 +1,7 @@
 param(
-    [switch] $UseDotNetRun
+    [switch] $UseDotNetRun,
+    [int] $Width = 1440,
+    [int] $Height = 1000
 )
 
 $ErrorActionPreference = "Stop"
@@ -10,6 +12,8 @@ $appDirectory = Join-Path $repoRoot "LovelyGit"
 $compiledApp = Join-Path $appDirectory "bin\Debug\net10.0\win-x64\LovelyGit.exe"
 
 $env:WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS = "--remote-debugging-port=9333"
+$env:LOVELYGIT_TEST_WINDOW_WIDTH = $Width
+$env:LOVELYGIT_TEST_WINDOW_HEIGHT = $Height
 Remove-Item Env:\LOVELYGIT_TEST_WINDOW_OFFSCREEN -ErrorAction SilentlyContinue
 
 if ($UseDotNetRun)

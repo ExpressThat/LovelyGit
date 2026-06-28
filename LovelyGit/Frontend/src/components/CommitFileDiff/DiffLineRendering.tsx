@@ -194,7 +194,7 @@ export function changeMarker(changeType: string) {
 	}
 }
 
-function syntaxClass(scope: string) {
+export function syntaxClass(scope: string) {
 	switch (scope) {
 		case "Keyword":
 			return "text-blue-600 dark:text-blue-300";

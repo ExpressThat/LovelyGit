@@ -3,6 +3,7 @@ using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Branches;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Checkout;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.CherryPick;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.CommitGraph;
+using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Conflicts;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.KnownRepository;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Merge;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.OperationState;
@@ -17,6 +18,7 @@ using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.WorkingTre
 using ExpressThat.LovelyGit.Services.NativeMessaging.Commands;
 using ExpressThat.LovelyGit.Services.Data.Models;
 using ExpressThat.LovelyGit.Services.Git.CommitGraph.Models;
+using ExpressThat.LovelyGit.Services.Git.Conflicts;
 using ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser.Remotes;
 using ExpressThat.LovelyGit.Services.Git.OperationState;
 using ExpressThat.LovelyGit.Services.Git.WorkingTree.Models;
@@ -48,6 +50,16 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging
         GetCommitPatch,
         [NativeMessageContract(typeof(GetGitOperationStateCommandArguments), typeof(GitOperationState))]
         GetGitOperationState,
+        [NativeMessageContract(typeof(GetConflictStateCommandArguments), typeof(GitConflictStateResponse))]
+        GetConflictState,
+        [NativeMessageContract(typeof(GetConflictFileContentCommandArguments), typeof(GitConflictFileContentResponse))]
+        GetConflictFileContent,
+        [NativeMessageContract(typeof(ResolveConflictFileCommandArguments), typeof(EmptyCommandArguments))]
+        ResolveConflictFile,
+        [NativeMessageContract(typeof(CompleteConflictOperationCommandArguments), typeof(EmptyCommandArguments))]
+        ContinueConflictOperation,
+        [NativeMessageContract(typeof(CompleteConflictOperationCommandArguments), typeof(EmptyCommandArguments))]
+        AbortConflictOperation,
         [NativeMessageContract(typeof(GetRepositoryRemotesCommandArguments), typeof(List<GitRemote>))]
         GetRepositoryRemotes,
         [NativeMessageContract(typeof(GetWorkingTreeChangesCommandArguments), typeof(WorkingTreeChangeSummaryResponse))]
