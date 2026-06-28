@@ -12,14 +12,21 @@ internal sealed class GitRemoteCommandService
         _gitCliService = gitCliService;
     }
 
-    public Task FetchAsync(string repositoryPath, CancellationToken cancellationToken)
+    public Task FetchAsync(
+        string repositoryPath,
+        string? remoteName,
+        CancellationToken cancellationToken)
     {
-        return RunRemoteCommandAsync(repositoryPath, ["fetch"], cancellationToken);
+        return RunRemoteCommandAsync(
+            repositoryPath,
+            AddRemote(["fetch"], remoteName),
+            cancellationToken);
     }
 
     public Task PullAsync(
         string repositoryPath,
         GitPullMode mode,
+        string? remoteName,
         CancellationToken cancellationToken)
     {
         IReadOnlyList<string> arguments = mode switch
@@ -28,12 +35,38 @@ internal sealed class GitRemoteCommandService
             GitPullMode.FastForwardOnly => ["pull", "--ff-only"],
             _ => ["pull"],
         };
-        return RunRemoteCommandAsync(repositoryPath, arguments, cancellationToken);
+        return RunRemoteCommandAsync(
+            repositoryPath,
+            AddRemote(arguments, remoteName),
+            cancellationToken);
     }
 
-    public Task PushAsync(string repositoryPath, CancellationToken cancellationToken)
+    public Task PushAsync(
+        string repositoryPath,
+        string? remoteName,
+        CancellationToken cancellationToken)
     {
-        return RunRemoteCommandAsync(repositoryPath, ["push"], cancellationToken);
+        return RunRemoteCommandAsync(
+            repositoryPath,
+            AddRemote(["push"], remoteName),
+            cancellationToken);
+    }
+
+    internal static IReadOnlyList<string> AddRemote(
+        IReadOnlyList<string> arguments,
+        string? remoteName)
+    {
+        if (string.IsNullOrWhiteSpace(remoteName))
+        {
+            return arguments;
+        }
+
+        if (!GitRemoteNameValidator.IsValidRemoteName(remoteName))
+        {
+            throw new ArgumentException("Remote name is not valid.", nameof(remoteName));
+        }
+
+        return arguments.Concat([remoteName.Trim()]).ToArray();
     }
 
     private async Task RunRemoteCommandAsync(

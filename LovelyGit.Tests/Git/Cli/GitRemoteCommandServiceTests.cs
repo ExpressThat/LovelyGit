@@ -6,6 +6,34 @@ namespace LovelyGit.Tests.Git.Cli;
 public sealed class GitRemoteCommandServiceTests
 {
     [Fact]
+    public void AddRemote_AppendsValidRemoteName()
+    {
+        var arguments = GitRemoteCommandService.AddRemote(["fetch"], "origin");
+
+        Assert.Equal(["fetch", "origin"], arguments);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData(" ")]
+    public void AddRemote_LeavesArgumentsWithoutRemoteName(string? remoteName)
+    {
+        var arguments = GitRemoteCommandService.AddRemote(["pull", "--rebase"], remoteName);
+
+        Assert.Equal(["pull", "--rebase"], arguments);
+    }
+
+    [Theory]
+    [InlineData(" origin")]
+    [InlineData("origin/main")]
+    public void AddRemote_RejectsInvalidRemoteName(string remoteName)
+    {
+        Assert.Throws<ArgumentException>(() =>
+            GitRemoteCommandService.AddRemote(["push"], remoteName));
+    }
+
+    [Fact]
     public async Task PullAsync_Rebase_ReplaysLocalCommitOnRemoteHead()
     {
         using var repository = TemporaryRemoteGitRepository.Create();
@@ -16,6 +44,7 @@ public sealed class GitRemoteCommandServiceTests
         await service.PullAsync(
             repository.ClonePath,
             GitPullMode.Rebase,
+            remoteName: null,
             CancellationToken.None);
 
         var subjects = repository.RunGit(
@@ -40,6 +69,7 @@ public sealed class GitRemoteCommandServiceTests
             service.PullAsync(
                 repository.ClonePath,
                 GitPullMode.FastForwardOnly,
+                remoteName: null,
                 CancellationToken.None));
     }
 

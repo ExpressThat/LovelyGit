@@ -30,6 +30,7 @@ internal sealed class PullRepositoryCommandResolver : GitRemoteCommandResolver
         return _gitRemoteCommandService.PullAsync(
             repositoryPath,
             arguments.PullMode,
+            arguments.RemoteName,
             cancellationToken);
     }
 }

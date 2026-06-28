@@ -58,4 +58,5 @@ public record GitRemoteCommandArguments
 {
     public Guid RepositoryId { get; set; }
     public GitPullMode PullMode { get; set; } = GitPullMode.Merge;
+    public string? RemoteName { get; set; }
 }

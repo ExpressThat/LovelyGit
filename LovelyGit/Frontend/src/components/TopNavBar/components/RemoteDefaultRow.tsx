@@ -1,4 +1,4 @@
-import type { RemoteAction } from "./RemoteActionsControl";
+import type { RemoteAction } from "./RemoteActions";
 
 export function RemoteDefaultRow({
 	action,

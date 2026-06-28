@@ -27,6 +27,9 @@ internal sealed class PushRepositoryCommandResolver : GitRemoteCommandResolver
         GitRemoteCommandArguments arguments,
         CancellationToken cancellationToken)
     {
-        return _gitRemoteCommandService.PushAsync(repositoryPath, cancellationToken);
+        return _gitRemoteCommandService.PushAsync(
+            repositoryPath,
+            arguments.RemoteName,
+            cancellationToken);
     }
 }

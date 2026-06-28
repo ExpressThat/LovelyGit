@@ -27,6 +27,9 @@ internal sealed class FetchRepositoryCommandResolver : GitRemoteCommandResolver
         GitRemoteCommandArguments arguments,
         CancellationToken cancellationToken)
     {
-        return _gitRemoteCommandService.FetchAsync(repositoryPath, cancellationToken);
+        return _gitRemoteCommandService.FetchAsync(
+            repositoryPath,
+            arguments.RemoteName,
+            cancellationToken);
     }
 }
