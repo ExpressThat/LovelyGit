@@ -6,6 +6,7 @@ import type {
 } from "@/generated/types";
 import { sendRequestWithResponse } from "@/lib/commands";
 import { formatDate, shortHash } from "../CommitGraph/utils/format";
+import { CommitDetailsCopyButtons } from "./CommitDetailsCopyButtons";
 
 type CommitDetailsState =
 	| { status: "loading" }
@@ -92,7 +93,7 @@ export function CommitDetails({
 	return (
 		<div className="space-y-4 p-4 text-left text-sm">
 			<section className="space-y-2">
-				<div className="flex items-center gap-2 text-xs text-muted-foreground">
+				<div className="flex min-w-0 items-center gap-2 text-xs text-muted-foreground">
 					<span className="font-mono">{shortHash(details.hash)}</span>
 					<span>{formatDate(details.date)}</span>
 				</div>
@@ -102,6 +103,7 @@ export function CommitDetails({
 				<div className="text-xs text-muted-foreground">
 					{details.author} &lt;{details.email || "unknown"}&gt;
 				</div>
+				<CommitDetailsCopyButtons details={details} />
 			</section>
 
 			{details.message ? (
