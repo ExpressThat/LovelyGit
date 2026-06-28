@@ -2,6 +2,7 @@
 
 ## Visual Testing
 - Use CMG from `C:\CMG\CMG.exe` for visual checks of the real LovelyGit desktop app, not a plain browser-only `localhost` session.
+- Treat the shipped release skill `C:\CMG\SKILL.md` as the CMG usage contract. Do not inspect or depend on CMG source internals for normal LovelyGit testing guidance.
 - When debugging, set `WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS=--remote-debugging-port=9333` in the Debug/launch profile environment before starting LovelyGit. For this repo's `http` profile, add it beside `ASPNETCORE_ENVIRONMENT` in `LovelyGit/Properties/launchSettings.json`, or set the same variable in the IDE's debug environment UI.
 - Visual-test launches must also set `LOVELYGIT_TEST_WINDOW_OFFSCREEN=true` so the native window is placed away from the user's main monitor while CMG drives the WebView2 target.
 - Do not run visual tests with a direct foreground `dotnet run`, because its console window can steal focus and interrupt fullscreen apps. Use the helper script so the host console is suppressed, the debug app is rebuilt as `WinExe`, and the native app window is off-main-monitor:
@@ -12,6 +13,9 @@
 - Attach CMG to the running WebView2 app before driving it so CMG installs page diagnostics automatically:
   `C:/CMG/CMG.exe browser app attach --port 9333`
 - Drive the attached app with CMG using the selected app target when available, for example `C:/CMG/CMG.exe browser control tabs list`, `C:/CMG/CMG.exe browser control script --file artifacts/lovelygit-app-graph.cmgscript --gif artifacts/lovelygit-app-graph.gif`, or `C:/CMG/CMG.exe browser control script --inline "screenshotPage output=\"artifacts/app.png\""`. If the selected app target is not honored by the current shell session, use the explicit debug-port form for every command, for example `C:/CMG/CMG.exe browser --port 9333 control tabs list`.
+- Prefer `browser control script --file <path>` for multi-step user journeys and `cmg run <path> --report-json artifacts/<name>.json --trace artifacts/<name>-trace` for repeatable flow tests that need structured reports, retries, traces, or per-test GIFs.
+- Use CMG rich/provider locators such as `getByRole=button|Save`, `getByLabel=Repository path`, `getByTitle=...`, and `getByText=...` where possible so visual checks also pressure accessible names. Quote locators that contain spaces.
+- User-like CMG actions such as `click`, `type`, `clear`, `hover`, `select`, and `dragAndDrop` do not scroll automatically; add `scrollIntoView`, `scrollTo`, `scrollBy`, or `wheel` before interacting with off-viewport content.
 - CMG now arms console and page-error diagnostics automatically when `browser launch`, `browser app launch`, or `browser app attach` succeeds. Do not require `captureConsole` or `capturePageErrors` for new workflows; they are deprecated compatibility aliases that only ensure capture is installed and do not clear existing captured entries.
 - After risky UI actions, inspect captured diagnostics before gating:
   `C:/CMG/CMG.exe browser control events pageErrors listPageErrors`
@@ -26,6 +30,7 @@
   `C:/CMG/CMG.exe browser control events pageErrors expectNoPageError --timeout 250`
   `C:/CMG/CMG.exe browser control events console expectNoConsole --level error --timeout 250`
 - CMG diagnostics are forward-only from launch/attach/arming time; events that happened before CMG attached cannot be recovered. If a crash happened before attach, reproduce it after `browser app attach`.
+- Use `accessibilitySnapshot` or `expectAccessible` when validating dialogs, context menus, custom controls, or regressions in keyboard/label behavior, and save the JSON under `artifacts/` when it is useful evidence.
 - Prefer assertions against visible app UI such as `COMMIT MESSAGE`, `HASH`, `AUTHOR`, repository tabs, details panels, and working-tree controls; the new-tab `Open Repo` button only appears when no current repository is selected.
 - Save screenshots/GIFs under `artifacts/` and inspect screenshots before reporting visual success. If the app shows `Missing file: index.html`, it was launched from the wrong working directory.
 
