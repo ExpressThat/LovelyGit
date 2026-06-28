@@ -79,10 +79,6 @@ internal sealed partial class WorkingTreeStatusListService
                 rootTracking.RootTrackedDirectories,
                 cancellationToken)
             .ConfigureAwait(false);
-        if (!untracked.IsComplete)
-        {
-            return null;
-        }
 
         var response = fullScan.Response;
         response.Untracked.AddRange(untracked.Files);

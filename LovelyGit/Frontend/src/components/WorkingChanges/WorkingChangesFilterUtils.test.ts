@@ -22,6 +22,7 @@ describe("filterWorkingChanges", () => {
 			"src/view.tsx",
 		]);
 		expect(filtered.untracked.map((item) => item.path)).toEqual(["notes.txt"]);
+		expect(filtered.totalCount).toBe(2);
 		expect(countWorkingChanges(changes)).toBe(4);
 	});
 

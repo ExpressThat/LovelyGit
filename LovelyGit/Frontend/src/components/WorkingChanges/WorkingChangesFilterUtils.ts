@@ -20,25 +20,30 @@ export function filterWorkingChanges(
 ): WorkingTreeChangesResponse {
 	const matcher = createMatcher(filter.query);
 	const include = (file: WorkingTreeChangedFile) => matcher(file);
+	const staged =
+		filter.group === "All" || filter.group === "Staged"
+			? changes.staged.filter(include)
+			: [];
+	const unstaged =
+		filter.group === "All" || filter.group === "Changes"
+			? changes.unstaged.filter(include)
+			: [];
+	const unmerged =
+		filter.group === "All" || filter.group === "Unmerged"
+			? changes.unmerged.filter(include)
+			: [];
+	const untracked =
+		filter.group === "All" || filter.group === "Changes"
+			? changes.untracked.filter(include)
+			: [];
 
 	return {
-		staged:
-			filter.group === "All" || filter.group === "Staged"
-				? changes.staged.filter(include)
-				: [],
-		unstaged:
-			filter.group === "All" || filter.group === "Changes"
-				? changes.unstaged.filter(include)
-				: [],
-		unmerged:
-			filter.group === "All" || filter.group === "Unmerged"
-				? changes.unmerged.filter(include)
-				: [],
-		untracked:
-			filter.group === "All" || filter.group === "Changes"
-				? changes.untracked.filter(include)
-				: [],
-		totalCount: 0,
+		staged,
+		unstaged,
+		unmerged,
+		untracked,
+		totalCount:
+			staged.length + unstaged.length + untracked.length + unmerged.length,
 	};
 }
 
