@@ -17,40 +17,40 @@ internal sealed class GitIndexRootTracker
             return new GitIndexRootTracking([], []);
         }
 
-        await using var file = File.Open(indexPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
-        var header = await ReadBytesAsync(file, 12, cancellationToken).ConfigureAwait(false);
-        if (!header.AsSpan(0, 4).SequenceEqual("DIRC"u8))
+        var bytes = await File.ReadAllBytesAsync(indexPath, cancellationToken).ConfigureAwait(false);
+        if (bytes.Length < 12 || !bytes.AsSpan(0, 4).SequenceEqual("DIRC"u8))
         {
             throw new InvalidDataException("Git index header is invalid.");
         }
 
-        var version = BinaryPrimitives.ReadUInt32BigEndian(header.AsSpan(4, 4));
+        var version = BinaryPrimitives.ReadUInt32BigEndian(bytes.AsSpan(4, 4));
         if (version is not (2 or 3 or 4))
         {
             throw new NotSupportedException($"Unsupported Git index version: {version}");
         }
 
-        var count = BinaryPrimitives.ReadUInt32BigEndian(header.AsSpan(8, 4));
+        var count = BinaryPrimitives.ReadUInt32BigEndian(bytes.AsSpan(8, 4));
         var hashLength = GitObjectId.GetByteLength(objectFormat);
         var files = new HashSet<string>(StringComparer.Ordinal);
         var directories = new HashSet<string>(StringComparer.Ordinal);
         var previousPath = string.Empty;
+        var offset = 12;
 
         for (var index = 0; index < count; index++)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            var entryStart = file.Position;
-            await SkipBytesAsync(file, 40 + hashLength, cancellationToken).ConfigureAwait(false);
-            var flagsBytes = await ReadBytesAsync(file, 2, cancellationToken).ConfigureAwait(false);
-            var flags = BinaryPrimitives.ReadUInt16BigEndian(flagsBytes);
+            var entryStart = offset;
+            offset += 40 + hashLength;
+            var flags = BinaryPrimitives.ReadUInt16BigEndian(bytes.AsSpan(offset, 2));
+            offset += 2;
             if (version >= 3 && (flags & 0x4000) != 0)
             {
-                await SkipBytesAsync(file, 2, cancellationToken).ConfigureAwait(false);
+                offset += 2;
             }
 
             var path = version == 4
-                ? ReadVersion4Path(file, previousPath)
-                : ReadPaddedPath(file, entryStart);
+                ? ReadVersion4Path(bytes, ref offset, previousPath)
+                : ReadPaddedPath(bytes, ref offset, entryStart, flags);
             previousPath = path;
             AddRoot(path.Replace('\\', '/'), files, directories);
         }
@@ -58,58 +58,49 @@ internal sealed class GitIndexRootTracker
         return new GitIndexRootTracking(files, directories);
     }
 
-    private static string ReadVersion4Path(
-        FileStream file,
-        string previousPath)
+    private static string ReadVersion4Path(byte[] bytes, ref int offset, string previousPath)
     {
-        var prefixLength = ReadIndexVarInt(file);
-        var suffix = ReadNulTerminatedString(file);
+        var prefixLength = ReadIndexVarInt(bytes, ref offset);
+        var end = Array.IndexOf(bytes, (byte)0, offset);
+        if (end < 0)
+        {
+            throw new InvalidDataException("Git index v4 path is unterminated.");
+        }
+
+        var suffix = Encoding.UTF8.GetString(bytes, offset, end - offset);
+        offset = end + 1;
         return string.Concat(previousPath.AsSpan(0, prefixLength), suffix);
     }
 
-    private static string ReadPaddedPath(
-        FileStream file,
-        long entryStart)
+    private static string ReadPaddedPath(byte[] bytes, ref int offset, int entryStart, ushort flags)
     {
-        var path = ReadNulTerminatedString(file);
-        var paddedLength = ((file.Position - entryStart + 7) / 8) * 8;
-        file.Position = entryStart + paddedLength;
-        return path;
-    }
-
-    private static string ReadNulTerminatedString(FileStream file)
-    {
-        var bytes = new List<byte>(128);
-        while (true)
+        var nameLength = flags & 0x0fff;
+        int end;
+        if (nameLength < 0x0fff)
         {
-            var value = file.ReadByte();
-            if (value < 0)
+            end = offset + nameLength;
+        }
+        else
+        {
+            end = Array.IndexOf(bytes, (byte)0, offset);
+            if (end < 0)
             {
                 throw new InvalidDataException("Git index path is unterminated.");
             }
-
-            if (value == 0)
-            {
-                return Encoding.UTF8.GetString(bytes.ToArray());
-            }
-
-            bytes.Add((byte)value);
         }
+
+        var path = Encoding.UTF8.GetString(bytes, offset, end - offset);
+        offset = entryStart + (((end + 1 - entryStart + 7) / 8) * 8);
+        return path;
     }
 
-    private static int ReadIndexVarInt(FileStream file)
+    private static int ReadIndexVarInt(byte[] bytes, ref int offset)
     {
         var value = 0;
         byte current;
         do
         {
-            var next = file.ReadByte();
-            if (next < 0)
-            {
-                throw new InvalidDataException("Git index varint is truncated.");
-            }
-
-            current = (byte)next;
+            current = bytes[offset++];
             value = (value << 7) + (current & 0x7f);
             if ((current & 0x80) != 0)
             {
@@ -118,30 +109,6 @@ internal sealed class GitIndexRootTracker
         } while ((current & 0x80) != 0);
 
         return value;
-    }
-
-    private static async Task<byte[]> ReadBytesAsync(
-        FileStream file,
-        int count,
-        CancellationToken cancellationToken)
-    {
-        var bytes = new byte[count];
-        await file.ReadExactlyAsync(bytes, cancellationToken).ConfigureAwait(false);
-        return bytes;
-    }
-
-    private static async Task SkipBytesAsync(
-        FileStream file,
-        int count,
-        CancellationToken cancellationToken)
-    {
-        if (file.CanSeek)
-        {
-            file.Position += count;
-            return;
-        }
-
-        _ = await ReadBytesAsync(file, count, cancellationToken).ConfigureAwait(false);
     }
 
     private static void AddRoot(

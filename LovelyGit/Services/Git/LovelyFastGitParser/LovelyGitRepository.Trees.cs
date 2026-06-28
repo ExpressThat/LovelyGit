@@ -4,6 +4,11 @@ namespace ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser;
 
 internal sealed partial class LovelyGitRepository : IDisposable
 {
+    public async Task<List<GitTreeEntry>> ReadRootTreeEntriesAsync(
+        GitObjectId treeId,
+        CancellationToken cancellationToken) =>
+        await ReadTreeEntriesAsync(treeId, string.Empty, cancellationToken).ConfigureAwait(false);
+
     private async Task ReadTreeFilesAsync(
         GitObjectId treeId,
         string prefix,

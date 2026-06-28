@@ -26,9 +26,12 @@ export function recordNativeMessagePerformance<
 		return;
 	}
 
-	console.warn("LovelyGit performance target missed", {
-		messageType,
-		roundTripMs: roundedRoundTripMs,
-		metrics,
-	});
+	console.warn(
+		"LovelyGit performance target missed",
+		JSON.stringify({
+			messageType,
+			roundTripMs: roundedRoundTripMs,
+			metrics,
+		}),
+	);
 }

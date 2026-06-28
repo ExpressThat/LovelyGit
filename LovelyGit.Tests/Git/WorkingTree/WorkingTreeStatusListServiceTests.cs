@@ -21,6 +21,21 @@ public sealed class WorkingTreeStatusListServiceTests
     }
 
     [Fact]
+    public async Task GetChangesAsync_NativePathFindsUntrackedFileInNewDirectory()
+    {
+        using var directory = TemporaryDirectory.Create("lovelygit-status-");
+        await CreateInitialCommitAsync(directory.Path);
+        var featureDirectory = Directory.CreateDirectory(Path.Combine(directory.Path, "new-feature"));
+        await File.WriteAllTextAsync(Path.Combine(featureDirectory.FullName, "launch.tmp"), "hello");
+
+        var response = await new WorkingTreeStatusListService(new GitCliService())
+            .GetChangesAsync(directory.Path, CancellationToken.None);
+
+        var file = Assert.Single(response.Untracked);
+        AssertStatus(file, "new-feature/launch.tmp", "Added", WorkingTreeChangeGroup.Untracked);
+    }
+
+    [Fact]
     public async Task GetChangesAsync_NativePathFindsModifiedTrackedFile()
     {
         using var directory = TemporaryDirectory.Create("lovelygit-status-");

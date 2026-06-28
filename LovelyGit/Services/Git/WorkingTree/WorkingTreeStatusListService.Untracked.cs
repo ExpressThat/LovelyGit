@@ -36,11 +36,6 @@ internal sealed partial class WorkingTreeStatusListService
                 }
             }
 
-            if (!scanTrackedDirectories && directory == workTreeDirectory)
-            {
-                continue;
-            }
-
             foreach (var childDirectory in SafeEnumerateDirectories(directory))
             {
                 AddPendingDirectory(
@@ -48,7 +43,8 @@ internal sealed partial class WorkingTreeStatusListService
                     rootTrackedDirectories,
                     matcher,
                     pending,
-                    childDirectory);
+                    childDirectory,
+                    scanTrackedDirectories);
             }
         }
 
@@ -79,18 +75,30 @@ internal sealed partial class WorkingTreeStatusListService
         HashSet<string> rootTrackedDirectories,
         GitIgnoreMatcher matcher,
         Stack<string> pending,
-        string path)
+        string path,
+        bool scanTrackedDirectories)
     {
         var relative = NormalizeWorkTreePath(workTreeDirectory, path);
         if (relative.Equals(".git", StringComparison.Ordinal)
             || relative.StartsWith(".git/", StringComparison.Ordinal)
-            || !rootTrackedDirectories.Contains(relative)
             || matcher.IsIgnored(relative, isDirectory: true))
         {
             return;
         }
 
+        if (!scanTrackedDirectories && IsInTrackedRoot(relative, rootTrackedDirectories))
+        {
+            return;
+        }
+
         pending.Push(path);
+    }
+
+    private static bool IsInTrackedRoot(string relative, HashSet<string> trackedDirectories)
+    {
+        var slash = relative.IndexOf('/');
+        var root = slash < 0 ? relative : relative[..slash];
+        return trackedDirectories.Contains(root);
     }
 
     private static string NormalizeWorkTreePath(string workTreeDirectory, string path) =>

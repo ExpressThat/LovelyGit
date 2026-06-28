@@ -33,11 +33,7 @@ internal sealed partial class WorkingTreeStatusListService
             .ConfigureAwait(false);
         using (repository)
         {
-            var rootTracking = await new GitIndexRootTracker()
-                .ReadAsync(
-                    repository.GitDirectory,
-                    repository.ObjectFormat,
-                    cancellationToken)
+            var rootTracking = await GetRootTrackingAsync(repository, cancellationToken)
                 .ConfigureAwait(false);
             var fastResponse = new WorkingTreeChangesResponse();
             fastResponse.Untracked.AddRange(await FindUntrackedFilesAsync(
@@ -110,6 +106,42 @@ internal sealed partial class WorkingTreeStatusListService
         var head = await repository.GetCommitAsync(repository.HeadTarget.Value, cancellationToken)
             .ConfigureAwait(false);
         return head.TreeHash == null || scan.RootTreeId != head.TreeHash;
+    }
+
+    private static async Task<GitIndexRootTracking> GetRootTrackingAsync(
+        LovelyGitRepository repository,
+        CancellationToken cancellationToken)
+    {
+        if (repository.HeadTarget == null)
+        {
+            return await new GitIndexRootTracker()
+                .ReadAsync(repository.GitDirectory, repository.ObjectFormat, cancellationToken)
+                .ConfigureAwait(false);
+        }
+
+        var head = await repository.GetCommitAsync(repository.HeadTarget.Value, cancellationToken)
+            .ConfigureAwait(false);
+        if (head.TreeHash == null)
+        {
+            return new GitIndexRootTracking([], []);
+        }
+
+        var files = new HashSet<string>(StringComparer.Ordinal);
+        var directories = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var entry in await repository.ReadRootTreeEntriesAsync(head.TreeHash.Value, cancellationToken)
+            .ConfigureAwait(false))
+        {
+            if (entry.IsTree)
+            {
+                directories.Add(entry.Name);
+            }
+            else
+            {
+                files.Add(entry.Name);
+            }
+        }
+
+        return new GitIndexRootTracking(files, directories);
     }
 
     private static WorkingTreeChangedFile Create(
