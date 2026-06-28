@@ -2,18 +2,53 @@ namespace ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser.Remotes;
 
 internal static class GitRemoteConfigReader
 {
+    public static async Task<List<GitRemote>> ReadRemotesAsync(
+        string gitDirectory,
+        CancellationToken cancellationToken)
+    {
+        var remotes = new List<GitRemote>();
+        await ReadRemoteConfigAsync(
+                gitDirectory,
+                (name, url) => remotes.Add(new GitRemote { Name = name, Url = url }),
+                cancellationToken)
+            .ConfigureAwait(false);
+        remotes.Sort((left, right) => string.Compare(left.Name, right.Name, StringComparison.Ordinal));
+        return remotes;
+    }
+
     public static async Task<string?> ReadPrimaryRemoteUrlAsync(
         string gitDirectory,
+        CancellationToken cancellationToken)
+    {
+        string? firstRemoteUrl = null;
+        string? originUrl = null;
+        await ReadRemoteConfigAsync(
+                gitDirectory,
+                (name, url) =>
+                {
+                    firstRemoteUrl ??= url;
+                    if (name.Equals("origin", StringComparison.Ordinal))
+                    {
+                        originUrl = url;
+                    }
+                },
+                cancellationToken)
+            .ConfigureAwait(false);
+        return originUrl ?? firstRemoteUrl;
+    }
+
+    private static async Task ReadRemoteConfigAsync(
+        string gitDirectory,
+        Action<string, string> onRemote,
         CancellationToken cancellationToken)
     {
         var configPath = Path.Combine(gitDirectory, "config");
         if (!File.Exists(configPath))
         {
-            return null;
+            return;
         }
 
         string? remoteName = null;
-        string? firstRemoteUrl = null;
         foreach (var rawLine in await File.ReadAllLinesAsync(configPath, cancellationToken).ConfigureAwait(false))
         {
             var line = rawLine.AsSpan().Trim();
@@ -33,14 +68,8 @@ internal static class GitRemoteConfigReader
                 continue;
             }
 
-            firstRemoteUrl ??= url;
-            if (remoteName.Equals("origin", StringComparison.Ordinal))
-            {
-                return url;
-            }
+            onRemote(remoteName, url);
         }
-
-        return firstRemoteUrl;
     }
 
     private static bool TryReadRemoteSection(ReadOnlySpan<char> line, out string name)

@@ -50,6 +50,69 @@ public sealed class GitTagCommandServiceTests
         Assert.NotEqual(0, tagRef.ExitCode);
     }
 
+    [Fact]
+    public async Task PushTagAsync_PushesTagToRemote()
+    {
+        using var repository = TemporaryGitRepository.Create();
+        using var remote = TemporaryBareRepository.Create();
+        var tagService = new GitTagCommandService(repository.GitOperationService);
+        await repository.GitCliService.ExecuteBufferedAsync(
+            ["remote", "add", "lovelygit-test", remote.Path],
+            repository.Path,
+            cancellationToken: CancellationToken.None);
+        await tagService.CreateTagAsync(
+            repository.Path,
+            "v-test-push-tag",
+            repository.HeadCommitHash,
+            CancellationToken.None);
+
+        await tagService.PushTagAsync(
+            repository.Path,
+            "lovelygit-test",
+            "v-test-push-tag",
+            CancellationToken.None);
+
+        var tagRef = await repository.GitCliService.ExecuteBufferedAsync(
+            ["show-ref", "--verify", "refs/tags/v-test-push-tag"],
+            remote.Path,
+            cancellationToken: CancellationToken.None);
+
+        Assert.StartsWith(repository.HeadCommitHash, tagRef.StandardOutput);
+    }
+
+    private sealed class TemporaryBareRepository : IDisposable
+    {
+        private readonly DirectoryInfo _directory;
+
+        private TemporaryBareRepository(DirectoryInfo directory)
+        {
+            _directory = directory;
+            Path = directory.FullName;
+        }
+
+        public string Path { get; }
+
+        public static TemporaryBareRepository Create()
+        {
+            var directory = Directory.CreateTempSubdirectory("lovelygit-tag-remote-");
+            new GitCliService()
+                .ExecuteBufferedAsync(["init", "--bare"], directory.FullName)
+                .GetAwaiter()
+                .GetResult();
+            return new TemporaryBareRepository(directory);
+        }
+
+        public void Dispose()
+        {
+            foreach (var file in _directory.EnumerateFiles("*", SearchOption.AllDirectories))
+            {
+                file.Attributes = FileAttributes.Normal;
+            }
+
+            _directory.Delete(recursive: true);
+        }
+    }
+
     private sealed class TemporaryGitRepository : IDisposable
     {
         private readonly DirectoryInfo _directory;

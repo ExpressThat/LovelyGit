@@ -38,6 +38,35 @@ public sealed class GitRemoteConfigReaderTests
         Assert.Equal("git@gitlab.com:example/upstream.git", url);
     }
 
+    [Fact]
+    public async Task ReadRemotesAsync_ReturnsConfiguredRemotesByName()
+    {
+        using var directory = TemporaryGitDirectory.Create(
+            """
+            [remote "upstream"]
+                url = git@gitlab.com:example/upstream.git
+            [remote "origin"]
+                url = https://github.com/example/origin.git
+            """);
+
+        var remotes = await GitRemoteConfigReader.ReadRemotesAsync(
+            directory.Path,
+            CancellationToken.None);
+
+        Assert.Collection(
+            remotes,
+            remote =>
+            {
+                Assert.Equal("origin", remote.Name);
+                Assert.Equal("https://github.com/example/origin.git", remote.Url);
+            },
+            remote =>
+            {
+                Assert.Equal("upstream", remote.Name);
+                Assert.Equal("git@gitlab.com:example/upstream.git", remote.Url);
+            });
+    }
+
     private sealed class TemporaryGitDirectory : IDisposable
     {
         private readonly DirectoryInfo _directory;

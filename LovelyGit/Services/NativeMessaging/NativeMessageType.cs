@@ -7,6 +7,7 @@ using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.KnownRepos
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Merge;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.OperationState;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Rebase;
+using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Remotes;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Reset;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Revert;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Settings;
@@ -16,6 +17,7 @@ using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.WorkingTre
 using ExpressThat.LovelyGit.Services.NativeMessaging.Commands;
 using ExpressThat.LovelyGit.Services.Data.Models;
 using ExpressThat.LovelyGit.Services.Git.CommitGraph.Models;
+using ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser.Remotes;
 using ExpressThat.LovelyGit.Services.Git.OperationState;
 using ExpressThat.LovelyGit.Services.Git.WorkingTree.Models;
 using ExpressThat.LovelyGit.Services.Settings;
@@ -46,6 +48,8 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging
         GetCommitPatch,
         [NativeMessageContract(typeof(GetGitOperationStateCommandArguments), typeof(GitOperationState))]
         GetGitOperationState,
+        [NativeMessageContract(typeof(GetRepositoryRemotesCommandArguments), typeof(List<GitRemote>))]
+        GetRepositoryRemotes,
         [NativeMessageContract(typeof(GetWorkingTreeChangesCommandArguments), typeof(WorkingTreeChangeSummaryResponse))]
         GetWorkingTreeChangeSummary,
         [NativeMessageContract(typeof(GetWorkingTreeChangesCommandArguments), typeof(WorkingTreeChangesResponse))]
@@ -104,6 +108,8 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging
         CreateTagAtCommit,
         [NativeMessageContract(typeof(DeleteTagCommandArguments), typeof(EmptyCommandArguments))]
         DeleteTag,
+        [NativeMessageContract(typeof(PushTagCommandArguments), typeof(EmptyCommandArguments))]
+        PushTag,
         [NativeMessageContract(typeof(CheckoutCommitDetachedCommandArguments), typeof(EmptyCommandArguments))]
         CheckoutCommitDetached,
         [NativeMessageContract(typeof(CheckoutBranchCommandArguments), typeof(EmptyCommandArguments))]

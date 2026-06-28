@@ -61,4 +61,32 @@ internal sealed class GitTagCommandService
             "Refresh tags and confirm the tag still exists locally.",
             cancellationToken).ConfigureAwait(false);
     }
+
+    public async Task PushTagAsync(
+        string repositoryPath,
+        string remoteName,
+        string tagName,
+        CancellationToken cancellationToken)
+    {
+        if (!GitRemoteNameValidator.IsValidRemoteName(remoteName))
+        {
+            throw new ArgumentException("Remote name is not valid.", nameof(remoteName));
+        }
+
+        if (!GitTagNameValidator.IsValidTagName(tagName))
+        {
+            throw new ArgumentException("Tag name is not valid.", nameof(tagName));
+        }
+
+        var repositoryPaths = await GitRepositoryDiscovery
+            .ResolveRepositoryPathsAsync(repositoryPath, cancellationToken)
+            .ConfigureAwait(false);
+
+        await _gitOperationService.ExecuteRequiredBufferedAsync(
+            "Push tag",
+            ["push", remoteName, $"refs/tags/{tagName}:refs/tags/{tagName}"],
+            repositoryPaths.WorkTreeDirectory,
+            "Confirm the remote exists and accepts tag updates.",
+            cancellationToken).ConfigureAwait(false);
+    }
 }

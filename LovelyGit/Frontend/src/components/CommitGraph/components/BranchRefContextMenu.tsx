@@ -19,6 +19,7 @@ import { LocalBranchMenuItems } from "./LocalBranchMenuItems";
 import { MergeBranchDialog } from "./MergeBranchDialog";
 import { PullBranchDialog } from "./PullBranchDialog";
 import { PushBranchDialog } from "./PushBranchDialog";
+import { PushTagDialog } from "./PushTagDialog";
 import { RebaseBranchDialog } from "./RebaseBranchDialog";
 import { RemoteBranchMenuItems } from "./RemoteBranchMenuItems";
 import { RenameBranchDialog } from "./RenameBranchDialog";
@@ -47,6 +48,7 @@ export function BranchRefContextMenu({
 	const [isMergeOpen, setIsMergeOpen] = useState(false);
 	const [isPullOpen, setIsPullOpen] = useState(false);
 	const [isPushOpen, setIsPushOpen] = useState(false);
+	const [isPushTagOpen, setIsPushTagOpen] = useState(false);
 	const [isRebaseOpen, setIsRebaseOpen] = useState(false);
 	const [isRenameOpen, setIsRenameOpen] = useState(false);
 	const [isUpstreamOpen, setIsUpstreamOpen] = useState(false);
@@ -64,6 +66,7 @@ export function BranchRefContextMenu({
 	const canCreateBranchFromTag = repositoryId !== null && isTag;
 	const canPushBranch = repositoryId !== null && isLocalBranch;
 	const canDeleteTag = repositoryId !== null && isTag;
+	const canPushTag = repositoryId !== null && isTag;
 
 	return (
 		<>
@@ -91,9 +94,13 @@ export function BranchRefContextMenu({
 							canCheckoutTag={canCheckoutTag}
 							canCreateBranch={canCreateBranchFromTag}
 							canDeleteTag={canDeleteTag}
+							canPushTag={canPushTag}
 							onCheckout={() => setIsCheckoutTagOpen(true)}
 							onCreateBranch={() => setIsCreateBranchFromTagOpen(true)}
 							onDelete={() => setIsDeleteTagOpen(true)}
+							onPush={() => setIsPushTagOpen(true)}
+							onPushSuccess={onRefsChanged}
+							repositoryId={repositoryId}
 							tagName={refInfo.name}
 							tagRemoteUrl={refInfo.remoteUrl}
 						/>
@@ -133,6 +140,13 @@ export function BranchRefContextMenu({
 			<DeleteTagDialog
 				isOpen={isDeleteTagOpen}
 				onOpenChange={setIsDeleteTagOpen}
+				onSuccess={onRefsChanged}
+				repositoryId={repositoryId}
+				tagName={refInfo.name}
+			/>
+			<PushTagDialog
+				isOpen={isPushTagOpen}
+				onOpenChange={setIsPushTagOpen}
 				onSuccess={onRefsChanged}
 				repositoryId={repositoryId}
 				tagName={refInfo.name}

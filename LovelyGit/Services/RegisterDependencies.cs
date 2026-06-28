@@ -9,6 +9,7 @@ using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.KnownRepos
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Merge;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.OperationState;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Rebase;
+using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Remotes;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Reset;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Revert;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Settings;
@@ -39,6 +40,7 @@ namespace ExpressThat.LovelyGit.Services
                 .AddResetCommands()
                 .AddMergeCommands()
                 .AddRebaseCommands()
+                .AddRemoteCommands()
                 .AddStashCommands()
                 .AddTagCommands()
                 .AddOperationStateCommands()

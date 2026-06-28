@@ -19,3 +19,13 @@ public record DeleteTagCommandArguments
 
     public string TagName { get; set; } = string.Empty;
 }
+
+[TypeSharp]
+public record PushTagCommandArguments
+{
+    public Guid RepositoryId { get; set; }
+
+    public string RemoteName { get; set; } = "origin";
+
+    public string TagName { get; set; } = string.Empty;
+}

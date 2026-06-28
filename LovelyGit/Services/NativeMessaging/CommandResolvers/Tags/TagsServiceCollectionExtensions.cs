@@ -12,6 +12,7 @@ internal static class TagsServiceCollectionExtensions
         services.AddSingleton<GitTagCommandService>();
         services.AddSingleton<ICommandResponder, CreateTagAtCommitCommandResolver>();
         services.AddSingleton<ICommandResponder, DeleteTagCommandResolver>();
+        services.AddSingleton<ICommandResponder, PushTagCommandResolver>();
         return services;
     }
 }
