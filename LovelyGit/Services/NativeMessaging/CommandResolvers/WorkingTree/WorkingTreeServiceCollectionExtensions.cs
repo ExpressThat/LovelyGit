@@ -18,6 +18,7 @@ internal static class WorkingTreeServiceCollectionExtensions
         services.AddSingleton<ICommandResponder, GetWorkingTreeChangesCommandResolver>();
         services.AddSingleton<ICommandResponder, GetWorkingTreeChangeSummaryCommandResolver>();
         services.AddSingleton<ICommandResponder, GetWorkingTreeFileDiffCommandResolver>();
+        services.AddSingleton<ICommandResponder, RevealWorkingTreeFileCommandResolver>();
         services.AddSingleton<ICommandResponder, StageWorkingTreeFilesCommandResolver>();
         services.AddSingleton<ICommandResponder, UnstageWorkingTreeFilesCommandResolver>();
         services.AddSingleton<ICommandResponder, DiscardWorkingTreeChangesCommandResolver>();

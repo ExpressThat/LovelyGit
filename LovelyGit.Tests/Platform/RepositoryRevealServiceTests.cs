@@ -23,4 +23,28 @@ public sealed class RepositoryRevealServiceTests
         Assert.True(startInfo.CreateNoWindow);
         Assert.Equal(new[] { repositoryPath }, startInfo.ArgumentList);
     }
+
+    [Fact]
+    public void CreateRevealPathStartInfo_WindowsSelectsExistingFile()
+    {
+        var startInfo = RepositoryRevealService.CreateRevealPathStartInfo(
+            @"C:\repos\project\file.txt",
+            @"C:\repos\project\file.txt",
+            RepositoryRevealPlatform.Windows);
+
+        Assert.Equal("explorer.exe", startInfo.FileName);
+        Assert.Equal(new[] { @"/select,C:\repos\project\file.txt" }, startInfo.ArgumentList);
+    }
+
+    [Fact]
+    public void CreateRevealPathStartInfo_LinuxOpensParentDirectory()
+    {
+        var startInfo = RepositoryRevealService.CreateRevealPathStartInfo(
+            "/repos/project/file.txt",
+            "/repos/project",
+            RepositoryRevealPlatform.Linux);
+
+        Assert.Equal("xdg-open", startInfo.FileName);
+        Assert.Equal(new[] { "/repos/project" }, startInfo.ArgumentList);
+    }
 }

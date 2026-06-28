@@ -4,6 +4,7 @@ import {
 	FilePlus2,
 	FileQuestion,
 	FileX2,
+	FolderOpen,
 	GitPullRequestArrow,
 	MinusSquare,
 	Search,
@@ -22,6 +23,7 @@ import {
 	ContextMenuTrigger,
 } from "@/components/ui/context-menu";
 import type { WorkingTreeChangedFile } from "@/generated/types";
+import { revealWorkingTreeFile } from "./revealWorkingTreeFile";
 import { getWorkingChangedFileRowActions } from "./WorkingChangedFileRowActions";
 
 export function ChangedFileRow({
@@ -33,6 +35,7 @@ export function ChangedFileRow({
 	onDestructiveAction,
 	onSelect,
 	onToggleSelected,
+	repositoryId,
 	rowActionLabel,
 }: {
 	file: WorkingTreeChangedFile;
@@ -43,6 +46,7 @@ export function ChangedFileRow({
 	onDestructiveAction?: () => void;
 	onSelect: () => void;
 	onToggleSelected?: () => void;
+	repositoryId: string;
 	rowActionLabel?: string;
 }) {
 	const Icon = statusIcon(file.status, file.group);
@@ -132,6 +136,13 @@ export function ChangedFileRow({
 				>
 					<Copy />
 					Copy path
+				</ContextMenuItem>
+				<ContextMenuItem
+					onClick={() => void revealWorkingTreeFile(repositoryId, file.path)}
+					title="Reveal file in file manager"
+				>
+					<FolderOpen />
+					Reveal file
 				</ContextMenuItem>
 				{rowActions.length > 0 ? <ContextMenuSeparator /> : null}
 				{rowActions.includes("stage") ? (

@@ -93,6 +93,7 @@ export function ChangeGroup({
 	onFileAction,
 	onSelectFile,
 	onToggleSelected,
+	repositoryId,
 	selectedKeys,
 	title,
 }: {
@@ -109,6 +110,7 @@ export function ChangeGroup({
 	onFileAction?: (file: WorkingTreeChangedFile) => void;
 	onSelectFile: (file: WorkingTreeChangedFile) => void;
 	onToggleSelected?: (file: WorkingTreeChangedFile) => void;
+	repositoryId: string;
 	selectedKeys?: Set<string>;
 	title: string;
 }) {
@@ -159,6 +161,7 @@ export function ChangeGroup({
 								? () => onFileDestructiveAction(file)
 								: undefined
 						}
+						repositoryId={repositoryId}
 						rowActionLabel={singleFileActionLabel(title)}
 						onSelect={() => onSelectFile(file)}
 						onToggleSelected={

@@ -7,6 +7,7 @@ export function WorkingChangesGroups({
 	onIndexCommand,
 	onSelectFile,
 	onToggleSelected,
+	repositoryId,
 	selectedKeys,
 	stagedFiles,
 	workingFiles,
@@ -21,6 +22,7 @@ export function WorkingChangesGroups({
 	) => void;
 	onSelectFile: (file: WorkingTreeChangedFile) => void;
 	onToggleSelected: (file: WorkingTreeChangedFile) => void;
+	repositoryId: string;
 	selectedKeys: Set<string>;
 	stagedFiles: WorkingTreeChangedFile[];
 	workingFiles: WorkingTreeChangedFile[];
@@ -48,6 +50,7 @@ export function WorkingChangesGroups({
 				}
 				onSelectFile={onSelectFile}
 				onToggleSelected={onToggleSelected}
+				repositoryId={repositoryId}
 				selectedKeys={selectedKeys}
 				title="Staged"
 			/>
@@ -79,6 +82,7 @@ export function WorkingChangesGroups({
 				}
 				onSelectFile={onSelectFile}
 				onToggleSelected={onToggleSelected}
+				repositoryId={repositoryId}
 				selectedKeys={selectedKeys}
 				title="Changes"
 			/>
@@ -86,6 +90,7 @@ export function WorkingChangesGroups({
 				files={unmergedFiles}
 				isBusy={isBusy}
 				onSelectFile={onSelectFile}
+				repositoryId={repositoryId}
 				title="Unmerged"
 			/>
 		</>

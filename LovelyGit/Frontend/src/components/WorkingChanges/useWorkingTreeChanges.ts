@@ -15,6 +15,8 @@ type WorkingTreeChangesState =
 	  }
 	| { status: "loaded"; changes: WorkingTreeChangesResponse };
 
+const workingTreeStatusTimeoutMs = 60_000;
+
 export function useWorkingTreeChanges(
 	repositoryId: string | null,
 	enabled: boolean,
@@ -66,10 +68,13 @@ export function useWorkingTreeChanges(
 				changes: current.changes,
 			}));
 			try {
-				const changes = await sendRequestWithResponse({
-					commandType: "GetWorkingTreeChanges",
-					arguments: { repositoryId },
-				});
+				const changes = await sendRequestWithResponse(
+					{
+						commandType: "GetWorkingTreeChanges",
+						arguments: { repositoryId },
+					},
+					{ timeoutMs: workingTreeStatusTimeoutMs },
+				);
 				if (isActive) {
 					setState({
 						status: "loaded",
@@ -133,10 +138,13 @@ export function useWorkingTreeChanges(
 
 			isLoading = true;
 			try {
-				const summary = await sendRequestWithResponse({
-					commandType: "GetWorkingTreeChangeSummary",
-					arguments: { repositoryId },
-				});
+				const summary = await sendRequestWithResponse(
+					{
+						commandType: "GetWorkingTreeChangeSummary",
+						arguments: { repositoryId },
+					},
+					{ timeoutMs: workingTreeStatusTimeoutMs },
+				);
 				if (isActive) {
 					setSummaryCount(summary?.totalCount ?? 0);
 					setIsDirty(false);
@@ -193,10 +201,13 @@ export function useWorkingTreeChanges(
 				return;
 			}
 
-			const changes = await sendRequestWithResponse({
-				commandType: "GetWorkingTreeChanges",
-				arguments: { repositoryId },
-			});
+			const changes = await sendRequestWithResponse(
+				{
+					commandType: "GetWorkingTreeChanges",
+					arguments: { repositoryId },
+				},
+				{ timeoutMs: workingTreeStatusTimeoutMs },
+			);
 			setState({
 				status: "loaded",
 				changes: changes ?? {

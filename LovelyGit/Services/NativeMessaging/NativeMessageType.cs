@@ -48,6 +48,8 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging
         GetWorkingTreeChanges,
         [NativeMessageContract(typeof(GetWorkingTreeFileDiffArguments), typeof(CommitFileDiffResponse))]
         GetWorkingTreeFileDiff,
+        [NativeMessageContract(typeof(RevealWorkingTreeFileCommandArguments), typeof(EmptyCommandArguments))]
+        RevealWorkingTreeFile,
         [NativeMessageContract(typeof(UpdateWorkingTreeIndexCommandArguments))]
         StageWorkingTreeFiles,
         [NativeMessageContract(typeof(UpdateWorkingTreeIndexCommandArguments))]

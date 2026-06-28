@@ -10,6 +10,13 @@ public record GetWorkingTreeChangesCommandArguments
 }
 
 [TypeSharp]
+public record RevealWorkingTreeFileCommandArguments
+{
+    public Guid RepositoryId { get; set; }
+    public string Path { get; set; } = string.Empty;
+}
+
+[TypeSharp]
 public record UpdateWorkingTreeIndexCommandArguments
 {
     public Guid RepositoryId { get; set; }
