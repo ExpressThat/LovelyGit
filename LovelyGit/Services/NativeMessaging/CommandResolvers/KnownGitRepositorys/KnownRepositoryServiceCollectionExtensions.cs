@@ -10,10 +10,12 @@ internal static class KnownRepositoryServiceCollectionExtensions
     {
         services.AddLovelyGitJsonTypeInfoResolver(KnownRepositoriesJsonSerializerContext.Default);
         services.AddSingleton<RepositoryRevealService>();
+        services.AddSingleton<RepositoryTerminalService>();
         services.AddSingleton<ICommandResponder, KnownGitRepositorysCommandResolver>();
         services.AddSingleton<ICommandResponder, AddKnownGitRepositorysCommandResolver>();
         services.AddSingleton<ICommandResponder, RemoveKnownGitRepositorysCommandResolver>();
         services.AddSingleton<ICommandResponder, RevealKnownGitRepositoryCommandResolver>();
+        services.AddSingleton<ICommandResponder, OpenRepositoryTerminalCommandResolver>();
 
         return services;
     }

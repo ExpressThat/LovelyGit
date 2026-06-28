@@ -32,6 +32,8 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging
         RemoveKnownGitRepositorys,
         [NativeMessageContract(typeof(RevealKnownGitRepositoryCommandArguments), typeof(EmptyCommandArguments))]
         RevealKnownGitRepository,
+        [NativeMessageContract(typeof(OpenRepositoryTerminalCommandArguments), typeof(EmptyCommandArguments))]
+        OpenRepositoryTerminal,
         [NativeMessageContract(typeof(CommitGraphCommandArguments), typeof(CommitGraphResponse))]
         CommitGraph,
         [NativeMessageContract(typeof(GetCommitDetailsCommandArguments), typeof(CommitDetailsResponse))]

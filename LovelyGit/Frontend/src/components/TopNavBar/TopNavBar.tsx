@@ -4,6 +4,7 @@ import { RemoteActionsControl } from "./components/RemoteActionsControl";
 import { SettingsDialog } from "./components/SettingsDialog";
 import { StashActionControl } from "./components/StashActionControl";
 import { Tabs } from "./components/Tabs";
+import { TerminalActionControl } from "./components/TerminalActionControl";
 import { ThemeSelector } from "./components/ThemeSelector";
 
 export function TopNavBar({
@@ -40,6 +41,7 @@ export function TopNavBar({
 						workingChangesKnown={workingChangesKnown}
 						workingChangesCount={workingChangesCount}
 					/>
+					<TerminalActionControl repositoryId={repositoryId} />
 				</div>
 				<div className="flex items-center justify-end gap-1">
 					<button
