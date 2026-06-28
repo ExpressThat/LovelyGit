@@ -5,6 +5,7 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Branch
 
 [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
 [JsonSerializable(typeof(CreateBranchFromCommitCommandArguments))]
+[JsonSerializable(typeof(CreateBranchFromTagCommandArguments))]
 [JsonSerializable(typeof(DeleteBranchCommandArguments))]
 [JsonSerializable(typeof(PullBranchCommandArguments))]
 [JsonSerializable(typeof(PushBranchCommandArguments))]

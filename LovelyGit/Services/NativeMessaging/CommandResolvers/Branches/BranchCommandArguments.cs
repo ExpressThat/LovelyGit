@@ -11,6 +11,14 @@ public record CreateBranchFromCommitCommandArguments
 }
 
 [TypeSharp]
+public record CreateBranchFromTagCommandArguments
+{
+    public Guid RepositoryId { get; set; }
+    public string TagName { get; set; } = string.Empty;
+    public string BranchName { get; set; } = string.Empty;
+}
+
+[TypeSharp]
 public record RenameBranchCommandArguments
 {
     public Guid RepositoryId { get; set; }

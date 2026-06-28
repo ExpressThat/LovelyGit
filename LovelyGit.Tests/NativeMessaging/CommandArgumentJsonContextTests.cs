@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
+using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Branches;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Checkout;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.CherryPick;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.CommitGraph;
@@ -66,6 +67,23 @@ public sealed class CommandArgumentJsonContextTests
                 CreateJson("branchName", "feature/test"),
                 MergeJsonSerializerContext.Default.MergeBranchIntoCurrentCommandArguments,
                 value => AssertBranch(value as MergeBranchIntoCurrentCommandArguments)
+            },
+            {
+                $$"""
+                {
+                  "repositoryId": "{{RepositoryId}}",
+                  "tagName": "v-test",
+                  "branchName": "feature/from-tag"
+                }
+                """,
+                BranchesJsonSerializerContext.Default.CreateBranchFromTagCommandArguments,
+                value =>
+                {
+                    var arguments = Assert.IsType<CreateBranchFromTagCommandArguments>(value);
+                    Assert.Equal(RepositoryId, arguments.RepositoryId);
+                    Assert.Equal("v-test", arguments.TagName);
+                    Assert.Equal("feature/from-tag", arguments.BranchName);
+                }
             },
             {
                 CreateJson("branchName", "main"),

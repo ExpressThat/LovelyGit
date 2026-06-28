@@ -12,6 +12,7 @@ import type { CommitRefInfo } from "@/generated/types";
 import { BranchUpstreamDialog } from "./BranchUpstreamDialog";
 import { CheckoutRemoteBranchDialog } from "./CheckoutRemoteBranchDialog";
 import { CheckoutTagDialog } from "./CheckoutTagDialog";
+import { CreateBranchFromTagDialog } from "./CreateBranchFromTagDialog";
 import { DeleteBranchDialog } from "./DeleteBranchDialog";
 import { DeleteTagDialog } from "./DeleteTagDialog";
 import { LocalBranchMenuItems } from "./LocalBranchMenuItems";
@@ -39,6 +40,8 @@ export function BranchRefContextMenu({
 	const [deleteForce, setDeleteForce] = useState(false);
 	const [isCheckoutRemoteOpen, setIsCheckoutRemoteOpen] = useState(false);
 	const [isCheckoutTagOpen, setIsCheckoutTagOpen] = useState(false);
+	const [isCreateBranchFromTagOpen, setIsCreateBranchFromTagOpen] =
+		useState(false);
 	const [isDeleteOpen, setIsDeleteOpen] = useState(false);
 	const [isDeleteTagOpen, setIsDeleteTagOpen] = useState(false);
 	const [isMergeOpen, setIsMergeOpen] = useState(false);
@@ -58,6 +61,7 @@ export function BranchRefContextMenu({
 	const canManageUpstream = repositoryId !== null && isLocalBranch;
 	const canCheckoutRemote = repositoryId !== null && isRemoteBranch;
 	const canCheckoutTag = repositoryId !== null && isTag;
+	const canCreateBranchFromTag = repositoryId !== null && isTag;
 	const canPushBranch = repositoryId !== null && isLocalBranch;
 	const canDeleteTag = repositoryId !== null && isTag;
 
@@ -85,8 +89,10 @@ export function BranchRefContextMenu({
 					{isTag ? (
 						<TagMenuItems
 							canCheckoutTag={canCheckoutTag}
+							canCreateBranch={canCreateBranchFromTag}
 							canDeleteTag={canDeleteTag}
 							onCheckout={() => setIsCheckoutTagOpen(true)}
+							onCreateBranch={() => setIsCreateBranchFromTagOpen(true)}
 							onDelete={() => setIsDeleteTagOpen(true)}
 							tagName={refInfo.name}
 						/>
@@ -133,6 +139,13 @@ export function BranchRefContextMenu({
 			<CheckoutTagDialog
 				isOpen={isCheckoutTagOpen}
 				onOpenChange={setIsCheckoutTagOpen}
+				onSuccess={onRefsChanged}
+				repositoryId={repositoryId}
+				tagName={refInfo.name}
+			/>
+			<CreateBranchFromTagDialog
+				isOpen={isCreateBranchFromTagOpen}
+				onOpenChange={setIsCreateBranchFromTagOpen}
 				onSuccess={onRefsChanged}
 				repositoryId={repositoryId}
 				tagName={refInfo.name}

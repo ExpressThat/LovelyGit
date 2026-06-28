@@ -26,6 +26,30 @@ public sealed class GitBranchCommandServiceTests
     }
 
     [Fact]
+    public async Task CreateBranchFromTagAsync_CreatesBranchAtTag()
+    {
+        using var repository = TemporaryGitRepository.Create();
+        var branchService = new GitBranchCommandService(repository.GitCliService);
+        await repository.GitCliService.ExecuteBufferedAsync(
+            ["tag", "v-test-branch-source", repository.HeadCommitHash],
+            repository.Path,
+            cancellationToken: CancellationToken.None);
+
+        await branchService.CreateBranchFromTagAsync(
+            repository.Path,
+            "feature/from-tag",
+            "v-test-branch-source",
+            CancellationToken.None);
+
+        var branchRef = await repository.GitCliService.ExecuteBufferedAsync(
+            ["show-ref", "--verify", "refs/heads/feature/from-tag"],
+            repository.Path,
+            cancellationToken: CancellationToken.None);
+
+        Assert.StartsWith(repository.HeadCommitHash, branchRef.StandardOutput);
+    }
+
+    [Fact]
     public async Task RenameBranchAsync_RenamesLocalBranch()
     {
         using var repository = TemporaryGitRepository.Create();

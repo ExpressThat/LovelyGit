@@ -1,6 +1,7 @@
 using CliWrap.Buffered;
 using ExpressThat.LovelyGit.Services.Git.Cli;
 using ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser;
+using ExpressThat.LovelyGit.Services.Git.Tags;
 
 namespace ExpressThat.LovelyGit.Services.Git.Branches;
 
@@ -35,6 +36,35 @@ internal sealed class GitBranchCommandService
 
         var result = await _gitCliService.ExecuteBufferedAsync(
             ["branch", branchName, commitHash],
+            repositoryPaths.WorkTreeDirectory,
+            validateExitCode: false,
+            cancellationToken).ConfigureAwait(false);
+
+        ThrowIfFailed(result);
+    }
+
+    public async Task CreateBranchFromTagAsync(
+        string repositoryPath,
+        string branchName,
+        string tagName,
+        CancellationToken cancellationToken)
+    {
+        if (!GitBranchNameValidator.IsValidBranchName(branchName))
+        {
+            throw new ArgumentException("Branch name is not valid.", nameof(branchName));
+        }
+
+        if (!GitTagNameValidator.IsValidTagName(tagName))
+        {
+            throw new ArgumentException("Tag name is not valid.", nameof(tagName));
+        }
+
+        var repositoryPaths = await GitRepositoryDiscovery
+            .ResolveRepositoryPathsAsync(repositoryPath, cancellationToken)
+            .ConfigureAwait(false);
+
+        var result = await _gitCliService.ExecuteBufferedAsync(
+            ["branch", branchName, tagName],
             repositoryPaths.WorkTreeDirectory,
             validateExitCode: false,
             cancellationToken).ConfigureAwait(false);

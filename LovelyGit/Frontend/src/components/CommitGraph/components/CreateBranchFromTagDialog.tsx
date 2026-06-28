@@ -1,11 +1,5 @@
-import { Tag } from "lucide-react";
-import {
-	type FormEvent,
-	type MouseEvent,
-	useEffect,
-	useId,
-	useState,
-} from "react";
+import { GitBranch } from "lucide-react";
+import { type FormEvent, useEffect, useId, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -19,35 +13,35 @@ import {
 import { Input } from "@/components/ui/input";
 import { sendRequestWithResponse } from "@/lib/commands";
 import { NativeMessageType } from "@/lib/nativeMessaging";
-import { shortHash } from "../utils/format";
 
-export function CreateTagAtCommitDialog({
-	commitHash,
+export function CreateBranchFromTagDialog({
 	isOpen,
 	onOpenChange,
 	onSuccess,
 	repositoryId,
+	tagName,
 }: {
-	commitHash: string;
 	isOpen: boolean;
 	onOpenChange: (isOpen: boolean) => void;
 	onSuccess: () => void;
 	repositoryId: string | null;
+	tagName: string;
 }) {
-	const tagNameId = useId();
-	const [tagName, setTagName] = useState("");
+	const branchNameId = useId();
+	const [branchName, setBranchName] = useState("");
 	const [isCreating, setIsCreating] = useState(false);
-	const trimmedTagName = tagName.trim();
+	const trimmedBranchName = branchName.trim();
 	const canCreate =
-		!isCreating && repositoryId !== null && trimmedTagName.length > 0;
+		!isCreating && repositoryId !== null && trimmedBranchName.length > 0;
 
 	useEffect(() => {
 		if (isOpen) {
-			setTagName("");
+			setBranchName("");
 		}
 	}, [isOpen]);
 
-	const createTag = async () => {
+	const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+		event.preventDefault();
 		if (!canCreate || repositoryId === null) {
 			return;
 		}
@@ -56,30 +50,22 @@ export function CreateTagAtCommitDialog({
 		try {
 			await sendRequestWithResponse({
 				arguments: {
-					commitHash,
+					branchName: trimmedBranchName,
 					repositoryId,
-					tagName: trimmedTagName,
+					tagName,
 				},
-				commandType: NativeMessageType.CreateTagAtCommit,
+				commandType: NativeMessageType.CreateBranchFromTag,
 			});
-			toast.success(`Created tag ${trimmedTagName}`);
+			toast.success(`Created branch ${trimmedBranchName}`);
 			onSuccess();
 			onOpenChange(false);
 		} catch (error) {
 			toast.error(
-				error instanceof Error ? error.message : "Could not create tag",
+				error instanceof Error ? error.message : "Could not create branch",
 			);
 		} finally {
 			setIsCreating(false);
 		}
-	};
-	const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
-		event.preventDefault();
-		void createTag();
-	};
-	const handleCreateClick = (event: MouseEvent<HTMLButtonElement>) => {
-		event.preventDefault();
-		void createTag();
 	};
 
 	return (
@@ -88,27 +74,27 @@ export function CreateTagAtCommitDialog({
 				<form className="grid gap-4" onSubmit={handleSubmit}>
 					<DialogHeader>
 						<DialogTitle className="flex items-center gap-2">
-							<Tag aria-hidden="true" />
-							Create tag
+							<GitBranch aria-hidden="true" />
+							Create branch from tag
 						</DialogTitle>
 						<DialogDescription>
-							Add a lightweight tag at commit {shortHash(commitHash)}.
+							Start a new branch at tag {tagName}.
 						</DialogDescription>
 					</DialogHeader>
 					<div className="grid gap-2">
-						<label className="text-sm font-medium" htmlFor={tagNameId}>
-							Tag name
+						<label className="text-sm font-medium" htmlFor={branchNameId}>
+							Branch name
 						</label>
 						<Input
-							aria-label="Tag name"
+							aria-label="Branch name"
 							autoComplete="off"
 							autoFocus
 							disabled={isCreating}
-							id={tagNameId}
-							onChange={(event) => setTagName(event.currentTarget.value)}
-							onInput={(event) => setTagName(event.currentTarget.value)}
-							placeholder="v1.0.0"
-							value={tagName}
+							id={branchNameId}
+							onChange={(event) => setBranchName(event.currentTarget.value)}
+							onInput={(event) => setBranchName(event.currentTarget.value)}
+							placeholder="feature/name"
+							value={branchName}
 						/>
 					</div>
 					<DialogFooter>
@@ -120,12 +106,8 @@ export function CreateTagAtCommitDialog({
 						>
 							Cancel
 						</Button>
-						<Button
-							disabled={!canCreate}
-							onClick={handleCreateClick}
-							type="submit"
-						>
-							{isCreating ? "Creating" : "Create tag"}
+						<Button disabled={!canCreate} type="submit">
+							{isCreating ? "Creating" : "Create branch"}
 						</Button>
 					</DialogFooter>
 				</form>

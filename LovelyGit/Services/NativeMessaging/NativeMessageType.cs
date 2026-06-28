@@ -66,6 +66,8 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging
         StashChanges,
         [NativeMessageContract(typeof(CreateBranchFromCommitCommandArguments), typeof(EmptyCommandArguments))]
         CreateBranchFromCommit,
+        [NativeMessageContract(typeof(CreateBranchFromTagCommandArguments), typeof(EmptyCommandArguments))]
+        CreateBranchFromTag,
         [NativeMessageContract(typeof(RenameBranchCommandArguments), typeof(EmptyCommandArguments))]
         RenameBranch,
         [NativeMessageContract(typeof(DeleteBranchCommandArguments), typeof(EmptyCommandArguments))]

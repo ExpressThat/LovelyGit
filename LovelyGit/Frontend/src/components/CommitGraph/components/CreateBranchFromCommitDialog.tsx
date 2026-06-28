@@ -87,6 +87,8 @@ export function CreateBranchFromCommitDialog({
 							Branch name
 						</label>
 						<Input
+							aria-label="Branch name"
+							autoComplete="off"
 							autoFocus
 							disabled={isCreating}
 							id={branchNameId}
