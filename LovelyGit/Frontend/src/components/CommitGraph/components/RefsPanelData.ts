@@ -82,6 +82,31 @@ export function buildRefPanelSections({
 		.filter((section) => section.count > 0);
 }
 
+export function filterRefPanelSections(
+	sections: RefPanelSection[],
+	query: string,
+): RefPanelSection[] {
+	const normalizedQuery = query.trim().toLocaleLowerCase();
+	if (normalizedQuery.length === 0) {
+		return sections;
+	}
+
+	return sections
+		.map((section) => {
+			const items = section.items.filter((item) =>
+				`${item.name} ${item.label} ${item.commitHash}`
+					.toLocaleLowerCase()
+					.includes(normalizedQuery),
+			);
+			return {
+				...section,
+				count: items.length,
+				items,
+			};
+		})
+		.filter((section) => section.count > 0);
+}
+
 function rowRefs(
 	row: CommitGraphRow,
 	remotePrefixes: string[],

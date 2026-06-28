@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { CommitGraphRow, CommitInfo } from "@/generated/types";
-import { buildRefPanelSections } from "./RefsPanelData";
+import { buildRefPanelSections, filterRefPanelSections } from "./RefsPanelData";
 
 describe("buildRefPanelSections", () => {
 	it("groups loaded refs by kind and puts the current branch first", () => {
@@ -41,6 +41,28 @@ describe("buildRefPanelSections", () => {
 			"Tags",
 		]);
 		expect(sections[0].items[0].kind).toBe("Local");
+	});
+
+	it("filters refs by name, display label, and hash", () => {
+		const sections = buildRefPanelSections({
+			currentBranchName: "main",
+			remotePrefixes: ["origin"],
+			rows: [
+				row("abc1234", [
+					{ kind: "Local", name: "main" },
+					{ kind: "Remote", name: "origin/release/canary" },
+				]),
+				row("def5678", [{ kind: "Tag", name: "v1.0.0" }]),
+			],
+		});
+
+		expect(filterRefPanelSections(sections, "canary")[0].items[0].name).toBe(
+			"origin/release/canary",
+		);
+		expect(filterRefPanelSections(sections, "def")[0].items[0].name).toBe(
+			"v1.0.0",
+		);
+		expect(filterRefPanelSections(sections, "missing")).toEqual([]);
 	});
 });
 

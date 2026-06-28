@@ -1,10 +1,16 @@
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Search, X } from "lucide-react";
+import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import type { CommitGraphRow } from "@/generated/types";
 import { setSetting, useSetting } from "@/lib/settings/settingsStore";
 import { shortHash } from "../utils/format";
 import { RefIcon } from "./RefCellUtils";
-import { buildRefPanelSections, type RefPanelSection } from "./RefsPanelData";
+import {
+	buildRefPanelSections,
+	filterRefPanelSections,
+	type RefPanelSection,
+} from "./RefsPanelData";
 
 export function RefsPanel({
 	currentBranchName,
@@ -18,11 +24,20 @@ export function RefsPanel({
 	rows: Array<CommitGraphRow | null>;
 }) {
 	const isOpen = useSetting("CommitGraphRefsPanelOpen");
-	const sections = buildRefPanelSections({
-		currentBranchName,
-		remotePrefixes,
-		rows,
-	});
+	const [query, setQuery] = useState("");
+	const sections = useMemo(
+		() =>
+			buildRefPanelSections({
+				currentBranchName,
+				remotePrefixes,
+				rows,
+			}),
+		[currentBranchName, remotePrefixes, rows],
+	);
+	const filteredSections = useMemo(
+		() => filterRefPanelSections(sections, query),
+		[sections, query],
+	);
 
 	if (!isOpen) {
 		return (
@@ -56,9 +71,39 @@ export function RefsPanel({
 					<ChevronLeft aria-hidden="true" />
 				</Button>
 			</header>
+			<div className="border-b p-2">
+				<div className="relative">
+					<Search
+						aria-hidden="true"
+						className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground"
+						size={14}
+					/>
+					<Input
+						aria-label="Filter refs"
+						className="h-7 rounded-md pl-7 pr-7 text-xs"
+						onChange={(event) => setQuery(event.currentTarget.value)}
+						onInput={(event) => setQuery(event.currentTarget.value)}
+						placeholder="Filter refs"
+						value={query}
+					/>
+					{query ? (
+						<Button
+							aria-label="Clear ref filter"
+							className="absolute right-1 top-1/2 size-5 -translate-y-1/2"
+							onClick={() => setQuery("")}
+							size="icon-xs"
+							title="Clear ref filter"
+							type="button"
+							variant="ghost"
+						>
+							<X aria-hidden="true" size={12} />
+						</Button>
+					) : null}
+				</div>
+			</div>
 			<div className="custom-scrollbar min-h-0 flex-1 overflow-y-auto p-2">
-				{sections.length > 0 ? (
-					sections.map((section) => (
+				{filteredSections.length > 0 ? (
+					filteredSections.map((section) => (
 						<RefSection
 							key={section.kind}
 							onSelectCommit={onSelectCommit}
@@ -66,12 +111,20 @@ export function RefsPanel({
 						/>
 					))
 				) : (
-					<p className="px-1 py-2 text-xs text-muted-foreground">
-						Refs appear as graph pages load.
-					</p>
+					<RefsEmptyState hasQuery={query.trim().length > 0} />
 				)}
 			</div>
 		</aside>
+	);
+}
+
+function RefsEmptyState({ hasQuery }: { hasQuery: boolean }) {
+	return (
+		<p className="px-1 py-2 text-xs text-muted-foreground">
+			{hasQuery
+				? "No refs match this filter."
+				: "Refs appear as graph pages load."}
+		</p>
 	);
 }
 
