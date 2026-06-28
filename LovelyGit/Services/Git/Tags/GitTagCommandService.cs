@@ -1,4 +1,3 @@
-using CliWrap.Buffered;
 using ExpressThat.LovelyGit.Services.Git.Cli;
 using ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser;
 
@@ -6,11 +5,11 @@ namespace ExpressThat.LovelyGit.Services.Git.Tags;
 
 internal sealed class GitTagCommandService
 {
-    private readonly GitCliService _gitCliService;
+    private readonly GitOperationService _gitOperationService;
 
-    public GitTagCommandService(GitCliService gitCliService)
+    public GitTagCommandService(GitOperationService gitOperationService)
     {
-        _gitCliService = gitCliService;
+        _gitOperationService = gitOperationService;
     }
 
     public async Task CreateTagAsync(
@@ -33,13 +32,12 @@ internal sealed class GitTagCommandService
             .ResolveRepositoryPathsAsync(repositoryPath, cancellationToken)
             .ConfigureAwait(false);
 
-        var result = await _gitCliService.ExecuteBufferedAsync(
+        await _gitOperationService.ExecuteRequiredBufferedAsync(
+            "Create local tag",
             ["tag", "--", tagName, commitHash],
             repositoryPaths.WorkTreeDirectory,
-            validateExitCode: false,
+            "Choose a unique tag name or delete the existing tag first.",
             cancellationToken).ConfigureAwait(false);
-
-        ThrowIfFailed(result);
     }
 
     public async Task DeleteTagAsync(
@@ -56,39 +54,11 @@ internal sealed class GitTagCommandService
             .ResolveRepositoryPathsAsync(repositoryPath, cancellationToken)
             .ConfigureAwait(false);
 
-        var result = await _gitCliService.ExecuteBufferedAsync(
+        await _gitOperationService.ExecuteRequiredBufferedAsync(
+            "Delete local tag",
             ["tag", "-d", "--", tagName],
             repositoryPaths.WorkTreeDirectory,
-            validateExitCode: false,
+            "Refresh tags and confirm the tag still exists locally.",
             cancellationToken).ConfigureAwait(false);
-
-        ThrowIfFailed(result);
-    }
-
-    private static void ThrowIfFailed(BufferedCommandResult result)
-    {
-        if (result.ExitCode == 0)
-        {
-            return;
-        }
-
-        var message = FirstNonEmptyLine(result.StandardError)
-            ?? FirstNonEmptyLine(result.StandardOutput)
-            ?? "Git tag command failed.";
-        throw new InvalidOperationException(message);
-    }
-
-    private static string? FirstNonEmptyLine(string text)
-    {
-        foreach (var line in text.AsSpan().EnumerateLines())
-        {
-            var trimmed = line.Trim();
-            if (!trimmed.IsEmpty)
-            {
-                return trimmed.ToString();
-            }
-        }
-
-        return null;
     }
 }

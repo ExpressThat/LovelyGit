@@ -9,7 +9,7 @@ public sealed class GitTagCommandServiceTests
     public async Task CreateTagAsync_CreatesTagAtCommit()
     {
         using var repository = TemporaryGitRepository.Create();
-        var tagService = new GitTagCommandService(repository.GitCliService);
+        var tagService = new GitTagCommandService(repository.GitOperationService);
 
         await tagService.CreateTagAsync(
             repository.Path,
@@ -29,7 +29,7 @@ public sealed class GitTagCommandServiceTests
     public async Task DeleteTagAsync_DeletesLocalTag()
     {
         using var repository = TemporaryGitRepository.Create();
-        var tagService = new GitTagCommandService(repository.GitCliService);
+        var tagService = new GitTagCommandService(repository.GitOperationService);
         await tagService.CreateTagAsync(
             repository.Path,
             "v-test-delete-tag",
@@ -61,11 +61,14 @@ public sealed class GitTagCommandServiceTests
         {
             _directory = directory;
             GitCliService = gitCliService;
+            GitOperationService = new GitOperationService(gitCliService);
             HeadCommitHash = headCommitHash;
             Path = directory.FullName;
         }
 
         public GitCliService GitCliService { get; }
+
+        public GitOperationService GitOperationService { get; }
 
         public string HeadCommitHash { get; }
 
