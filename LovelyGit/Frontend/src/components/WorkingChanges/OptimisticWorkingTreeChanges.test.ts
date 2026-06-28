@@ -30,6 +30,17 @@ describe("applyObservedWorkingTreeChanges", () => {
 		expect(next?.unstaged.map((change) => change.path)).toEqual(["src/app.ts"]);
 		expect(next?.totalCount).toBe(1);
 	});
+
+	it("removes an observed untracked file when it is deleted", () => {
+		const current = response([file("scratch.txt", "Added", "Untracked")]);
+		const next = applyObservedWorkingTreeChanges(current, [
+			file("scratch.txt", "Deleted", "Unstaged"),
+		]);
+
+		expect(next?.untracked).toEqual([]);
+		expect(next?.unstaged).toEqual([]);
+		expect(next?.totalCount).toBe(0);
+	});
 });
 
 describe("countObservedNewPaths", () => {

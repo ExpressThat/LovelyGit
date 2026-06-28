@@ -53,10 +53,11 @@ export function useWorkingTreeChanges(
 			}
 
 			isLoading = true;
-			setState((current) => ({
-				status: current.changes ? "loading" : "loading",
-				changes: current.changes,
-			}));
+			setState((current) =>
+				current.changes
+					? { status: "loaded", changes: current.changes }
+					: { status: "loading", changes: null },
+			);
 			try {
 				const changes = await loadWorkingTreeChanges(repositoryId);
 				if (isActive) {
@@ -193,11 +194,13 @@ export function useWorkingTreeChanges(
 						current.changes,
 						event.observedChanges,
 					);
-					return changes ? { status: "loaded", changes } : current;
+					if (!changes) {
+						return current;
+					}
+
+					setSummaryCount(changes.totalCount);
+					return { status: "loaded", changes };
 				});
-				setSummaryCount(
-					(count) => count + (event.observedChanges?.length ?? 0),
-				);
 				scheduleChangesLoad();
 			},
 		);

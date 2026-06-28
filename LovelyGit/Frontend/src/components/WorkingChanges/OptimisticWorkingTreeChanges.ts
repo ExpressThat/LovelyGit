@@ -13,6 +13,13 @@ export function applyObservedWorkingTreeChanges(
 
 	const next = cloneChanges(current);
 	for (const change of observedChanges) {
+		if (
+			change.status === "Deleted" &&
+			removeUntrackedAddition(next, change.path)
+		) {
+			continue;
+		}
+
 		removePath(next, change.path);
 		targetGroup(next, change).push(change);
 	}
@@ -63,6 +70,17 @@ function removePath(changes: WorkingTreeChangesResponse, path: string) {
 	changes.unstaged = changes.unstaged.filter((file) => file.path !== path);
 	changes.untracked = changes.untracked.filter((file) => file.path !== path);
 	changes.unmerged = changes.unmerged.filter((file) => file.path !== path);
+}
+
+function removeUntrackedAddition(
+	changes: WorkingTreeChangesResponse,
+	path: string,
+) {
+	const previousLength = changes.untracked.length;
+	changes.untracked = changes.untracked.filter(
+		(file) => file.path !== path || file.status !== "Added",
+	);
+	return changes.untracked.length !== previousLength;
 }
 
 function targetGroup(

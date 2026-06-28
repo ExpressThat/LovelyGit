@@ -12,7 +12,8 @@ internal sealed partial class GitIndexStatusScanner
         string workTreeDirectory,
         GitObjectFormat objectFormat,
         CancellationToken cancellationToken,
-        bool includeTrackedChanges = true)
+        bool includeTrackedChanges = true,
+        bool collectRootTracking = true)
     {
         var indexPath = Path.Combine(gitDirectory, "index");
         if (!File.Exists(indexPath))
@@ -22,7 +23,13 @@ internal sealed partial class GitIndexStatusScanner
 
         var bytes = await File.ReadAllBytesAsync(indexPath, cancellationToken).ConfigureAwait(false);
         var length = bytes.Length;
-        var result = Scan(bytes, workTreeDirectory, objectFormat, cancellationToken, includeTrackedChanges);
+        var result = Scan(
+            bytes,
+            workTreeDirectory,
+            objectFormat,
+            cancellationToken,
+            includeTrackedChanges,
+            collectRootTracking);
         bytes = [];
         GitIndexMemory.ReleaseLargeBuffer(length);
         return result;
@@ -33,7 +40,8 @@ internal sealed partial class GitIndexStatusScanner
         string workTreeDirectory,
         GitObjectFormat objectFormat,
         CancellationToken cancellationToken,
-        bool includeTrackedChanges)
+        bool includeTrackedChanges,
+        bool collectRootTracking)
     {
         if (bytes.Length < 12 || !bytes.AsSpan(0, 4).SequenceEqual("DIRC"u8))
         {
@@ -60,7 +68,10 @@ internal sealed partial class GitIndexStatusScanner
             cancellationToken.ThrowIfCancellationRequested();
             var entry = ReadEntry(bytes, version, hashLength, ref offset, previousPath);
             previousPath = entry.Path;
-            AddRootTracking(entry.Path, rootTrackedFiles, rootTrackedDirectories);
+            if (collectRootTracking)
+            {
+                AddRootTracking(entry.Path, rootTrackedFiles, rootTrackedDirectories);
+            }
             if (entry.Stage == 0)
             {
                 if (includeTrackedChanges)
@@ -178,25 +189,6 @@ internal sealed partial class GitIndexStatusScanner
         } while ((current & 0x80) != 0);
 
         return value;
-    }
-
-    private static void AddRootTracking(
-        string path,
-        HashSet<string> rootTrackedFiles,
-        HashSet<string> rootTrackedDirectories)
-    {
-        rootTrackedFiles.Add(path);
-        var slash = path.IndexOf('/');
-        if (slash < 0)
-        {
-            return;
-        }
-
-        while (slash >= 0)
-        {
-            rootTrackedDirectories.Add(path[..slash]);
-            slash = path.IndexOf('/', slash + 1);
-        }
     }
 
     private static void AddWorkTreeChange(

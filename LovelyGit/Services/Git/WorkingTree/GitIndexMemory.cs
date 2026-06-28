@@ -13,7 +13,12 @@ internal static class GitIndexMemory
             return;
         }
 
+        ReleaseLargeAllocations();
+    }
+
+    public static void ReleaseLargeAllocations()
+    {
         GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce;
-        GC.Collect(2, GCCollectionMode.Aggressive, blocking: false, compacting: true);
+        GC.Collect(2, GCCollectionMode.Aggressive, blocking: true, compacting: true);
     }
 }

@@ -88,8 +88,10 @@ export function WorkingChangesPanel({
 					onRefresh={onRefresh}
 					totalCount={totalCount}
 				/>
-				<div className="rounded-md border bg-card p-4 text-sm text-muted-foreground">
-					Loading changed files.
+				<div className="rounded-md border bg-card/70 p-4 text-sm text-muted-foreground">
+					{totalCount === 0
+						? "No working changes."
+						: "Checking the working tree."}
 				</div>
 			</div>
 		);
@@ -145,7 +147,7 @@ export function WorkingChangesPanel({
 					onCommitTitleChange={setCommitTitle}
 				/>
 			) : null}
-			{filteredChanges ? (
+			{filteredChanges && filteredChanges.totalCount > 0 ? (
 				<>
 					{filteredCount > 0 ? (
 						<WorkingChangesGroups

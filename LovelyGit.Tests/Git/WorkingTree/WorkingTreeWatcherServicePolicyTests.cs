@@ -94,6 +94,12 @@ public sealed class WorkingTreeWatcherServicePolicyTests
         Assert.Equal(WorkingTreeChangeGroup.Untracked, change.Group);
     }
 
+    [Fact]
+    public void ReleaseLargeBuffer_DoesNotThrowForLargeIndex()
+    {
+        GitIndexMemory.ReleaseLargeBuffer(32 * 1024 * 1024);
+    }
+
     private sealed class TemporaryDirectory : IDisposable
     {
         private readonly DirectoryInfo _directory;

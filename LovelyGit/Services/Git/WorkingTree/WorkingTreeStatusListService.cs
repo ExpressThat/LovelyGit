@@ -63,7 +63,8 @@ internal sealed partial class WorkingTreeStatusListService
                 paths.GitDirectory,
                 paths.WorkTreeDirectory,
                 objectFormat,
-                cancellationToken)
+                cancellationToken,
+                collectRootTracking: false)
             .ConfigureAwait(false);
         if (await HasStagedChangesAsync(paths.GitDirectory, objectFormat, fullScan, cancellationToken)
                 .ConfigureAwait(false))
@@ -74,8 +75,8 @@ internal sealed partial class WorkingTreeStatusListService
         var untracked = await FindUntrackedFilesAsync(
                 paths.WorkTreeDirectory,
                 paths.GitDirectory,
-                fullScan.RootTrackedFiles,
-                fullScan.RootTrackedDirectories,
+                rootTracking.RootTrackedFiles,
+                rootTracking.RootTrackedDirectories,
                 cancellationToken)
             .ConfigureAwait(false);
         if (!untracked.IsComplete)
@@ -83,11 +84,15 @@ internal sealed partial class WorkingTreeStatusListService
             return null;
         }
 
-        fullScan.Response.Untracked.AddRange(untracked.Files);
-        Sort(fullScan.Response.Unstaged);
-        Sort(fullScan.Response.Untracked);
-        Sort(fullScan.Response.Unmerged);
-        return fullScan.Response;
+        var response = fullScan.Response;
+        response.Untracked.AddRange(untracked.Files);
+        fullScan.RootTrackedFiles.Clear();
+        fullScan.RootTrackedDirectories.Clear();
+        GitIndexMemory.ReleaseLargeAllocations();
+        Sort(response.Unstaged);
+        Sort(response.Untracked);
+        Sort(response.Unmerged);
+        return response;
     }
 
     public async Task<WorkingTreeChangeSummaryResponse> GetSummaryAsync(
