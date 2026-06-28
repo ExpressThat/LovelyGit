@@ -82,7 +82,8 @@ internal sealed partial class CommitFileDiffService : IDisposable
         Guid repositoryId,
         string commitHash,
         string path,
-        CommitDiffViewMode viewMode)
+        CommitDiffViewMode viewMode,
+        bool ignoreWhitespace)
     {
         return string.Concat(
             repositoryId.ToString("N"),
@@ -90,6 +91,8 @@ internal sealed partial class CommitFileDiffService : IDisposable
             commitHash,
             ':',
             viewMode.ToString(),
+            ':',
+            ignoreWhitespace ? "ignore-ws" : "exact",
             ':',
             path);
     }

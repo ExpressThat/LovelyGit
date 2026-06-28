@@ -66,4 +66,5 @@ public record GetWorkingTreeFileDiffArguments
     public string Path { get; set; } = string.Empty;
     public WorkingTreeChangeGroup Group { get; set; }
     public CommitDiffViewMode ViewMode { get; set; } = CommitDiffViewMode.SideBySide;
+    public bool IgnoreWhitespace { get; set; }
 }

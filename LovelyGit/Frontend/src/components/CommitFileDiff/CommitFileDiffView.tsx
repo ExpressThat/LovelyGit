@@ -28,6 +28,7 @@ export function CommitFileDiffView({
 	const contextLines = useSetting("CommitDiffContextLines");
 	const lineDisplayMode = useSetting("CommitDiffLineDisplayMode");
 	const wrapLines = useSetting("CommitDiffWrapLines");
+	const ignoreWhitespace = useSetting("CommitDiffIgnoreWhitespace");
 	const [state, setState] = useState<DiffState>({ status: "loading" });
 
 	useEffect(() => {
@@ -39,6 +40,7 @@ export function CommitFileDiffView({
 			arguments: {
 				commitHash,
 				path: file.path,
+				ignoreWhitespace,
 				repositoryId,
 				viewMode,
 			},
@@ -72,7 +74,7 @@ export function CommitFileDiffView({
 		return () => {
 			isActive = false;
 		};
-	}, [commitHash, file.path, repositoryId, viewMode]);
+	}, [commitHash, file.path, ignoreWhitespace, repositoryId, viewMode]);
 
 	const handleClose = () => {
 		setState({ status: "loading" });

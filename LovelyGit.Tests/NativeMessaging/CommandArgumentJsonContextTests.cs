@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Checkout;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.CherryPick;
+using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.CommitGraph;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Merge;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Rebase;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Reset;
@@ -110,6 +111,45 @@ public sealed class CommandArgumentJsonContextTests
                     Assert.Equal(RepositoryId, arguments.RepositoryId);
                     Assert.Equal("abc123", arguments.CommitHash);
                     Assert.Equal(GitResetMode.Hard, arguments.ResetMode);
+                }
+            },
+            {
+                """
+                {
+                  "repositoryId": "bd3d4c1a-5061-453c-abef-70a2aafa6050",
+                  "commitHash": "abc123",
+                  "path": "README.md",
+                  "viewMode": "Combined",
+                  "ignoreWhitespace": true
+                }
+                """,
+                CommitGraphJsonSerializerContext.Default.GetCommitFileDiffCommandArguments,
+                value =>
+                {
+                    var arguments = Assert.IsType<GetCommitFileDiffCommandArguments>(value);
+                    Assert.Equal(RepositoryId, arguments.RepositoryId);
+                    Assert.Equal("README.md", arguments.Path);
+                    Assert.True(arguments.IgnoreWhitespace);
+                }
+            },
+            {
+                """
+                {
+                  "repositoryId": "bd3d4c1a-5061-453c-abef-70a2aafa6050",
+                  "path": "README.md",
+                  "group": "Unstaged",
+                  "viewMode": "Combined",
+                  "ignoreWhitespace": true
+                }
+                """,
+                WorkingTreeJsonSerializerContext.Default.GetWorkingTreeFileDiffArguments,
+                value =>
+                {
+                    var arguments = Assert.IsType<GetWorkingTreeFileDiffArguments>(value);
+                    Assert.Equal(RepositoryId, arguments.RepositoryId);
+                    Assert.Equal("README.md", arguments.Path);
+                    Assert.Equal(WorkingTreeChangeGroup.Unstaged, arguments.Group);
+                    Assert.True(arguments.IgnoreWhitespace);
                 }
             },
             {

@@ -20,9 +20,10 @@ internal sealed partial class WorkingTreeChangeService
         string status,
         string oldText,
         string newText,
-        ILanguage? language)
+        ILanguage? language,
+        bool ignoreWhitespace)
     {
-        var model = new SideBySideDiffBuilder(new Differ()).BuildDiffModel(oldText, newText);
+        var model = new SideBySideDiffBuilder(new Differ()).BuildDiffModel(oldText, newText, ignoreWhitespace);
         var lineCount = Math.Max(model.OldText.Lines.Count, model.NewText.Lines.Count);
         var lines = new List<CommitFileDiffLine>(lineCount);
         for (var index = 0; index < lineCount; index++)
@@ -80,9 +81,10 @@ internal sealed partial class WorkingTreeChangeService
         string status,
         string oldText,
         string newText,
-        ILanguage? language)
+        ILanguage? language,
+        bool ignoreWhitespace)
     {
-        var model = new InlineDiffBuilder(new Differ()).BuildDiffModel(oldText, newText);
+        var model = new InlineDiffBuilder(new Differ()).BuildDiffModel(oldText, newText, ignoreWhitespace);
         var oldLineNumber = 1;
         var newLineNumber = 1;
         var lines = new List<CommitFileDiffLine>(model.Lines.Count);

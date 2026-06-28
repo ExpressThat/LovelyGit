@@ -73,6 +73,7 @@ internal sealed partial class WorkingTreeChangeService
         string path,
         WorkingTreeChangeGroup group,
         CommitDiffViewMode viewMode,
+        bool ignoreWhitespace,
         CancellationToken cancellationToken)
     {
         path = NormalizePath(path);
@@ -83,7 +84,6 @@ internal sealed partial class WorkingTreeChangeService
         var indexByPath = indexEntries
             .Where(entry => entry.Stage == 0)
             .ToDictionary(entry => entry.Path, StringComparer.Ordinal);
-        var headFiles = await ReadHeadFilesAsync(repository, cancellationToken).ConfigureAwait(false);
 
         byte[] oldBytes = Array.Empty<byte>();
         byte[] newBytes = Array.Empty<byte>();
@@ -91,6 +91,7 @@ internal sealed partial class WorkingTreeChangeService
 
         if (group == WorkingTreeChangeGroup.Staged)
         {
+            var headFiles = await ReadHeadFilesAsync(repository, cancellationToken).ConfigureAwait(false);
             headFiles.TryGetValue(path, out var headFile);
             indexByPath.TryGetValue(path, out var indexEntry);
             oldBytes = headFile == null
@@ -137,7 +138,7 @@ internal sealed partial class WorkingTreeChangeService
 
                 newBytes = readBytes ?? Array.Empty<byte>();
                 status = File.Exists(worktreePath) ? "Modified" : "Deleted";
-                return BuildDiffResponse("WORKTREE", path, status, viewMode, oldBytes, newBytes);
+                return BuildDiffResponse("WORKTREE", path, status, viewMode, ignoreWhitespace, oldBytes, newBytes);
             }
 
             var untrackedBytes = await TryReadWorktreeFileBytesAsync(worktreePath, cancellationToken).ConfigureAwait(false);
@@ -154,7 +155,7 @@ internal sealed partial class WorkingTreeChangeService
             throw new InvalidOperationException("Unmerged file diffs are not available yet.");
         }
 
-        return BuildDiffResponse("WORKTREE", path, status, viewMode, oldBytes, newBytes);
+        return BuildDiffResponse("WORKTREE", path, status, viewMode, ignoreWhitespace, oldBytes, newBytes);
     }
 
 }

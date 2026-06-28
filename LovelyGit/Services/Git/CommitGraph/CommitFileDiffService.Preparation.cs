@@ -73,10 +73,22 @@ internal sealed partial class CommitFileDiffService : IDisposable
         CancellationToken cancellationToken)
     {
         var hasSideBySide = await _commitGraphRepository
-            .HasCommitFileDiffAsync(repositoryId, commitHash, path, CommitDiffViewMode.SideBySide, cancellationToken)
+            .HasCommitFileDiffAsync(
+                repositoryId,
+                commitHash,
+                path,
+                CommitDiffViewMode.SideBySide,
+                ignoreWhitespace: false,
+                cancellationToken)
             .ConfigureAwait(false);
         var hasCombined = await _commitGraphRepository
-            .HasCommitFileDiffAsync(repositoryId, commitHash, path, CommitDiffViewMode.Combined, cancellationToken)
+            .HasCommitFileDiffAsync(
+                repositoryId,
+                commitHash,
+                path,
+                CommitDiffViewMode.Combined,
+                ignoreWhitespace: false,
+                cancellationToken)
             .ConfigureAwait(false);
 
         if (hasSideBySide && hasCombined)
@@ -120,9 +132,10 @@ internal sealed partial class CommitFileDiffService : IDisposable
         string commitHash,
         string path,
         CommitDiffViewMode viewMode,
+        bool ignoreWhitespace,
         CancellationToken cancellationToken)
     {
-        var gateKey = MakeDiffGateKey(repositoryId, commitHash, path, viewMode);
+        var gateKey = MakeDiffGateKey(repositoryId, commitHash, path, viewMode, ignoreWhitespace);
         var gate = GetBuildGate(gateKey);
         var enteredGate = false;
         try
@@ -130,7 +143,13 @@ internal sealed partial class CommitFileDiffService : IDisposable
             await gate.Semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
             enteredGate = true;
 
-            var cached = await TryGetCachedDiffAsync(repositoryId, commitHash, path, viewMode, cancellationToken)
+            var cached = await TryGetCachedDiffAsync(
+                    repositoryId,
+                    commitHash,
+                    path,
+                    viewMode,
+                    ignoreWhitespace,
+                    cancellationToken)
                 .ConfigureAwait(false);
             if (cached != null)
             {
@@ -142,14 +161,27 @@ internal sealed partial class CommitFileDiffService : IDisposable
                     commitHash,
                     path,
                     viewMode,
+                    ignoreWhitespace,
                     cancellationToken)
                 .ConfigureAwait(false);
 
             await _commitGraphRepository
-                .SaveCommitFileDiffAsync(repositoryId, commitHash, path, response, cancellationToken)
+                .SaveCommitFileDiffAsync(
+                    repositoryId,
+                    commitHash,
+                    path,
+                    response,
+                    ignoreWhitespace,
+                    cancellationToken)
                 .ConfigureAwait(false);
 
-            return await TryGetCachedDiffAsync(repositoryId, commitHash, path, viewMode, cancellationToken)
+            return await TryGetCachedDiffAsync(
+                    repositoryId,
+                    commitHash,
+                    path,
+                    viewMode,
+                    ignoreWhitespace,
+                    cancellationToken)
                 .ConfigureAwait(false) ?? response;
         }
         finally
@@ -172,7 +204,8 @@ internal sealed partial class CommitFileDiffService : IDisposable
         CommitFileDiffSource source,
         CancellationToken cancellationToken)
     {
-        var gateKey = MakeDiffGateKey(repositoryId, commitHash, path, viewMode);
+        const bool ignoreWhitespace = false;
+        var gateKey = MakeDiffGateKey(repositoryId, commitHash, path, viewMode, ignoreWhitespace);
         var gate = GetBuildGate(gateKey);
         var enteredGate = false;
         try
@@ -180,19 +213,37 @@ internal sealed partial class CommitFileDiffService : IDisposable
             await gate.Semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
             enteredGate = true;
 
-            var cached = await TryGetCachedDiffAsync(repositoryId, commitHash, path, viewMode, cancellationToken)
+            var cached = await TryGetCachedDiffAsync(
+                    repositoryId,
+                    commitHash,
+                    path,
+                    viewMode,
+                    ignoreWhitespace,
+                    cancellationToken)
                 .ConfigureAwait(false);
             if (cached != null)
             {
                 return cached;
             }
 
-            var response = BuildResponseFromSource(commitHash, path, viewMode, source);
+            var response = BuildResponseFromSource(commitHash, path, viewMode, ignoreWhitespace, source);
             await _commitGraphRepository
-                .SaveCommitFileDiffAsync(repositoryId, commitHash, path, response, cancellationToken)
+                .SaveCommitFileDiffAsync(
+                    repositoryId,
+                    commitHash,
+                    path,
+                    response,
+                    ignoreWhitespace,
+                    cancellationToken)
                 .ConfigureAwait(false);
 
-            return await TryGetCachedDiffAsync(repositoryId, commitHash, path, viewMode, cancellationToken)
+            return await TryGetCachedDiffAsync(
+                    repositoryId,
+                    commitHash,
+                    path,
+                    viewMode,
+                    ignoreWhitespace,
+                    cancellationToken)
                 .ConfigureAwait(false) ?? response;
         }
         finally

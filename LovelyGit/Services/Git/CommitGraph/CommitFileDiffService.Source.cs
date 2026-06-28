@@ -19,11 +19,12 @@ internal sealed partial class CommitFileDiffService : IDisposable
         string commitHash,
         string path,
         CommitDiffViewMode viewMode,
+        bool ignoreWhitespace,
         CancellationToken cancellationToken)
     {
         var source = await BuildCommitFileDiffSourceAsync(repositoryPath, commitHash, path, cancellationToken)
             .ConfigureAwait(false);
-        return BuildResponseFromSource(commitHash, path, viewMode, source);
+        return BuildResponseFromSource(commitHash, path, viewMode, ignoreWhitespace, source);
     }
 
     private async Task<CommitFileDiffResponse?> TryGetCachedDiffAsync(
@@ -31,12 +32,19 @@ internal sealed partial class CommitFileDiffService : IDisposable
         string commitHash,
         string path,
         CommitDiffViewMode viewMode,
+        bool ignoreWhitespace,
         CancellationToken cancellationToken)
     {
         try
         {
             return await _commitGraphRepository
-                .GetCommitFileDiffAsync(repositoryId, commitHash, path, viewMode, cancellationToken)
+                .GetCommitFileDiffAsync(
+                    repositoryId,
+                    commitHash,
+                    path,
+                    viewMode,
+                    ignoreWhitespace,
+                    cancellationToken)
                 .ConfigureAwait(false);
         }
         catch when (!cancellationToken.IsCancellationRequested)
@@ -123,6 +131,7 @@ internal sealed partial class CommitFileDiffService : IDisposable
         string commitHash,
         string path,
         CommitDiffViewMode viewMode,
+        bool ignoreWhitespace,
         CommitFileDiffSource source)
     {
         if (source.IsBinary)
@@ -139,8 +148,22 @@ internal sealed partial class CommitFileDiffService : IDisposable
         }
 
         return viewMode == CommitDiffViewMode.SideBySide
-            ? BuildSideBySideResponse(commitHash, path, source.Status, source.OldText, source.NewText, source.Language)
-            : BuildCombinedResponse(commitHash, path, source.Status, source.OldText, source.NewText, source.Language);
+            ? BuildSideBySideResponse(
+                commitHash,
+                path,
+                source.Status,
+                source.OldText,
+                source.NewText,
+                source.Language,
+                ignoreWhitespace)
+            : BuildCombinedResponse(
+                commitHash,
+                path,
+                source.Status,
+                source.OldText,
+                source.NewText,
+                source.Language,
+                ignoreWhitespace);
     }
 
     private static CommitFileDiffResponse BuildSideBySideResponse(
@@ -149,9 +172,10 @@ internal sealed partial class CommitFileDiffService : IDisposable
         string status,
         string oldText,
         string newText,
-        ILanguage? language)
+        ILanguage? language,
+        bool ignoreWhitespace)
     {
-        var model = new SideBySideDiffBuilder(new Differ()).BuildDiffModel(oldText, newText);
+        var model = new SideBySideDiffBuilder(new Differ()).BuildDiffModel(oldText, newText, ignoreWhitespace);
         var lineCount = Math.Max(model.OldText.Lines.Count, model.NewText.Lines.Count);
         var lines = new List<CommitFileDiffLine>(lineCount);
         for (var index = 0; index < lineCount; index++)
@@ -193,9 +217,10 @@ internal sealed partial class CommitFileDiffService : IDisposable
         string status,
         string oldText,
         string newText,
-        ILanguage? language)
+        ILanguage? language,
+        bool ignoreWhitespace)
     {
-        var model = new InlineDiffBuilder(new Differ()).BuildDiffModel(oldText, newText);
+        var model = new InlineDiffBuilder(new Differ()).BuildDiffModel(oldText, newText, ignoreWhitespace);
         var oldLineNumber = 1;
         var newLineNumber = 1;
         var lines = new List<CommitFileDiffLine>(model.Lines.Count);

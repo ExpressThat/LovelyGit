@@ -54,9 +54,10 @@ internal sealed partial class CommitFileDiffCacheRepository
         string hash,
         string path,
         CommitDiffViewMode viewMode,
+        bool ignoreWhitespace,
         CancellationToken cancellationToken)
     {
-        var id = MakeDiffId(repositoryId, hash, path, viewMode);
+        var id = MakeDiffId(repositoryId, hash, path, viewMode, ignoreWhitespace);
         var entry = await _gitRepoCache.CommitFileDiffs
             .FindByIdAsync(id, cancellationToken)
             .ConfigureAwait(false);
@@ -75,10 +76,11 @@ internal sealed partial class CommitFileDiffCacheRepository
         string hash,
         string path,
         CommitDiffViewMode viewMode,
+        bool ignoreWhitespace,
         CancellationToken cancellationToken)
     {
         return await _gitRepoCache.CommitFileDiffs
-            .FindByIdAsync(MakeDiffId(repositoryId, hash, path, viewMode), cancellationToken)
+            .FindByIdAsync(MakeDiffId(repositoryId, hash, path, viewMode, ignoreWhitespace), cancellationToken)
             .ConfigureAwait(false) != null;
     }
 
@@ -87,9 +89,10 @@ internal sealed partial class CommitFileDiffCacheRepository
         string hash,
         string path,
         CommitFileDiffResponse response,
+        bool ignoreWhitespace,
         CancellationToken cancellationToken)
     {
-        var id = MakeDiffId(repositoryId, hash, path, response.ViewMode);
+        var id = MakeDiffId(repositoryId, hash, path, response.ViewMode, ignoreWhitespace);
         var gate = GetSaveGate(id);
         var enteredGate = false;
         try
@@ -104,6 +107,7 @@ internal sealed partial class CommitFileDiffCacheRepository
                 Hash = hash,
                 Path = path,
                 ViewMode = response.ViewMode.ToString(),
+                IgnoreWhitespace = ignoreWhitespace,
                 Status = response.Status,
                 IsBinary = response.IsBinary,
                 HasDifferences = response.HasDifferences,
@@ -116,7 +120,14 @@ internal sealed partial class CommitFileDiffCacheRepository
 
             using (var metadataDeleteTransaction = _gitRepoCache.BeginTransaction())
             {
-                await DeleteDiffEntryAsync(repositoryId, hash, path, response.ViewMode, metadataDeleteTransaction, cancellationToken)
+                await DeleteDiffEntryAsync(
+                        repositoryId,
+                        hash,
+                        path,
+                        response.ViewMode,
+                        ignoreWhitespace,
+                        metadataDeleteTransaction,
+                        cancellationToken)
                     .ConfigureAwait(false);
                 await _gitRepoCache.SaveChangesAsync(metadataDeleteTransaction, cancellationToken).ConfigureAwait(false);
             }
@@ -138,6 +149,7 @@ internal sealed partial class CommitFileDiffCacheRepository
                     Hash = hash,
                     Path = path,
                     ViewMode = response.ViewMode.ToString(),
+                    IgnoreWhitespace = ignoreWhitespace,
                     DiffId = lineLookupId,
                     LineIndex = index,
                     Line = ToCache(Normalize(response.Lines[index])),

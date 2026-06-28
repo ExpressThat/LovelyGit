@@ -54,18 +54,6 @@ export function useWorkingTreeChanges(
 		let isActive = true;
 		let isLoading = false;
 		let reloadAgain = false;
-		const setEmptyChangesFromSummary = () => {
-			setState({
-				status: "loaded",
-				changes: {
-					staged: [],
-					unstaged: [],
-					untracked: [],
-					unmerged: [],
-					totalCount: 0,
-				},
-			});
-		};
 		const load = async () => {
 			if (isLoading) {
 				reloadAgain = true;
@@ -117,11 +105,7 @@ export function useWorkingTreeChanges(
 			}
 		};
 
-		if (hasSummaryLoaded && summaryCount === 0 && !isDirty) {
-			setEmptyChangesFromSummary();
-		} else {
-			void load();
-		}
+		void load();
 		const unsubscribe = subscribeToServerEvent("WorkingTreeChanged", () => {
 			setIsDirty(true);
 			void load();
@@ -131,7 +115,7 @@ export function useWorkingTreeChanges(
 			isActive = false;
 			unsubscribe();
 		};
-	}, [repositoryId, enabled, hasSummaryLoaded, summaryCount, isDirty]);
+	}, [repositoryId, enabled]);
 
 	useEffect(() => {
 		if (!repositoryId || enabled) {

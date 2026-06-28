@@ -2,6 +2,7 @@ import {
 	Columns2,
 	FileText,
 	ListCollapse,
+	Pilcrow,
 	Rows3,
 	WrapText,
 	X,
@@ -26,6 +27,7 @@ export function WorkingTreeDiffHeader({
 	const contextLines = useSetting("CommitDiffContextLines");
 	const lineDisplayMode = useSetting("CommitDiffLineDisplayMode");
 	const wrapLines = useSetting("CommitDiffWrapLines");
+	const ignoreWhitespace = useSetting("CommitDiffIgnoreWhitespace");
 
 	return (
 		<header className="shrink-0 border-b bg-popover text-popover-foreground">
@@ -49,8 +51,8 @@ export function WorkingTreeDiffHeader({
 					<X aria-hidden="true" size={16} />
 				</button>
 			</div>
-			<div className="flex h-10 items-center justify-center border-t bg-card/60 px-3">
-				<div className="inline-flex rounded-md border bg-background p-0.5">
+			<div className="diff-toolbar flex h-10 items-center justify-center border-t bg-card/60 px-3">
+				<div className="inline-flex shrink-0 rounded-md border bg-background p-0.5">
 					<ModeButton
 						icon={<Columns2 aria-hidden="true" size={14} />}
 						isActive={viewMode === "SideBySide"}
@@ -64,7 +66,7 @@ export function WorkingTreeDiffHeader({
 						onClick={() => void setSetting("CommitDiffViewMode", "Combined")}
 					/>
 				</div>
-				<div className="ml-2 inline-flex rounded-md border bg-background p-0.5">
+				<div className="diff-toolbar-control ml-2 inline-flex shrink-0 rounded-md border bg-background p-0.5">
 					<ModeButton
 						icon={<ListCollapse aria-hidden="true" size={14} />}
 						isActive={lineDisplayMode === "Changes"}
@@ -85,12 +87,20 @@ export function WorkingTreeDiffHeader({
 				{lineDisplayMode === "Changes" ? (
 					<ContextLinesControl contextLines={contextLines} />
 				) : null}
-				<div className="ml-2 inline-flex rounded-md border bg-background p-0.5">
+				<div className="diff-toolbar-control ml-2 inline-flex shrink-0 rounded-md border bg-background p-0.5">
 					<ModeButton
 						icon={<WrapText aria-hidden="true" size={14} />}
 						isActive={wrapLines}
 						label="Wrap lines"
 						onClick={() => void setSetting("CommitDiffWrapLines", !wrapLines)}
+					/>
+					<ModeButton
+						icon={<Pilcrow aria-hidden="true" size={14} />}
+						isActive={ignoreWhitespace}
+						label="Ignore whitespace"
+						onClick={() =>
+							void setSetting("CommitDiffIgnoreWhitespace", !ignoreWhitespace)
+						}
 					/>
 				</div>
 			</div>

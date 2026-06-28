@@ -79,7 +79,7 @@ export function ModeButton({
 	return (
 		<button
 			aria-label={label}
-			className={`inline-flex h-7 items-center gap-1 rounded px-2 text-xs text-muted-foreground hover:bg-accent hover:text-accent-foreground ${
+			className={`diff-toolbar-button inline-flex h-7 items-center gap-1 rounded px-2 text-xs text-muted-foreground hover:bg-accent hover:text-accent-foreground ${
 				isActive ? "bg-accent font-semibold text-accent-foreground" : ""
 			}`}
 			onClick={onClick}
@@ -87,7 +87,7 @@ export function ModeButton({
 			type="button"
 		>
 			{icon}
-			<span>{label}</span>
+			<span className="diff-toolbar-label">{label}</span>
 		</button>
 	);
 }

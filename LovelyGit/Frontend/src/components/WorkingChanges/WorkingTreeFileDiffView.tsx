@@ -36,6 +36,7 @@ export function WorkingTreeFileDiffView({
 	const contextLines = useSetting("CommitDiffContextLines");
 	const lineDisplayMode = useSetting("CommitDiffLineDisplayMode");
 	const wrapLines = useSetting("CommitDiffWrapLines");
+	const ignoreWhitespace = useSetting("CommitDiffIgnoreWhitespace");
 	const [state, setState] = useState<DiffState>({ status: "loading" });
 	const [isLineActionBusy, setIsLineActionBusy] = useState(false);
 
@@ -46,11 +47,12 @@ export function WorkingTreeFileDiffView({
 				arguments: {
 					path: file.path,
 					group: file.group,
+					ignoreWhitespace,
 					repositoryId,
 					viewMode,
 				},
 			}),
-		[file.group, file.path, repositoryId, viewMode],
+		[file.group, file.path, ignoreWhitespace, repositoryId, viewMode],
 	);
 
 	const refreshDiffInPlace = async () => {

@@ -52,6 +52,11 @@ namespace ExpressThat.LovelyGit.Services.Settings
             false,
             GetJsonTypeInfo<bool>());
 
+        public static readonly SettingDefinition<bool> CommitDiffIgnoreWhitespace = new(
+            nameof(Setting.CommitDiffIgnoreWhitespace),
+            false,
+            GetJsonTypeInfo<bool>());
+
         public static readonly SettingDefinition<RemotePrimaryAction> RemotePrimaryAction = new(
             nameof(Setting.RemotePrimaryAction),
             Settings.RemotePrimaryAction.Fetch,
@@ -66,6 +71,7 @@ namespace ExpressThat.LovelyGit.Services.Settings
                 [Setting.CommitDiffLineDisplayMode] = CommitDiffLineDisplayMode,
                 [Setting.CommitDiffContextLines] = CommitDiffContextLines,
                 [Setting.CommitDiffWrapLines] = CommitDiffWrapLines,
+                [Setting.CommitDiffIgnoreWhitespace] = CommitDiffIgnoreWhitespace,
                 [Setting.RemotePrimaryAction] = RemotePrimaryAction,
             };
 

@@ -108,9 +108,16 @@ namespace ExpressThat.LovelyGit.Services.Data.Repositorys
             string hash,
             string path,
             CommitDiffViewMode viewMode,
+            bool ignoreWhitespace,
             CancellationToken cancellationToken)
         {
-            return _fileDiffCache.GetCommitFileDiffAsync(repositoryId, hash, path, viewMode, cancellationToken);
+            return _fileDiffCache.GetCommitFileDiffAsync(
+                repositoryId,
+                hash,
+                path,
+                viewMode,
+                ignoreWhitespace,
+                cancellationToken);
         }
 
         public Task<bool> HasCommitFileDiffAsync(
@@ -118,9 +125,16 @@ namespace ExpressThat.LovelyGit.Services.Data.Repositorys
             string hash,
             string path,
             CommitDiffViewMode viewMode,
+            bool ignoreWhitespace,
             CancellationToken cancellationToken)
         {
-            return _fileDiffCache.HasCommitFileDiffAsync(repositoryId, hash, path, viewMode, cancellationToken);
+            return _fileDiffCache.HasCommitFileDiffAsync(
+                repositoryId,
+                hash,
+                path,
+                viewMode,
+                ignoreWhitespace,
+                cancellationToken);
         }
 
         public Task SaveCommitFileDiffAsync(
@@ -128,9 +142,16 @@ namespace ExpressThat.LovelyGit.Services.Data.Repositorys
             string hash,
             string path,
             CommitFileDiffResponse response,
+            bool ignoreWhitespace,
             CancellationToken cancellationToken)
         {
-            return _fileDiffCache.SaveCommitFileDiffAsync(repositoryId, hash, path, response, cancellationToken);
+            return _fileDiffCache.SaveCommitFileDiffAsync(
+                repositoryId,
+                hash,
+                path,
+                response,
+                ignoreWhitespace,
+                cancellationToken);
         }
 
         public Task ClearCommitFileDiffsAsync(

@@ -10,4 +10,5 @@ public record GetCommitFileDiffCommandArguments
     public string CommitHash { get; set; } = string.Empty;
     public string Path { get; set; } = string.Empty;
     public CommitDiffViewMode ViewMode { get; set; } = CommitDiffViewMode.SideBySide;
+    public bool IgnoreWhitespace { get; set; }
 }

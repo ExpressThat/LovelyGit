@@ -122,10 +122,11 @@ internal sealed partial class CommitFileDiffCacheRepository
         string hash,
         string path,
         CommitDiffViewMode viewMode,
+        bool ignoreWhitespace,
         BLite.Core.Transactions.ITransaction transaction,
         CancellationToken cancellationToken)
     {
-        var id = MakeDiffId(repositoryId, hash, path, viewMode);
+        var id = MakeDiffId(repositoryId, hash, path, viewMode, ignoreWhitespace);
         if (await _gitRepoCache.CommitFileDiffs.FindByIdAsync(id, cancellationToken).ConfigureAwait(false) != null)
         {
             await _gitRepoCache.CommitFileDiffs.DeleteAsync(id, transaction, cancellationToken).ConfigureAwait(false);
@@ -136,9 +137,11 @@ internal sealed partial class CommitFileDiffCacheRepository
         Guid repositoryId,
         string hash,
         string path,
-        CommitDiffViewMode viewMode)
+        CommitDiffViewMode viewMode,
+        bool ignoreWhitespace)
     {
-        return $"{repositoryId:N}:{hash}:{viewMode}:{Uri.EscapeDataString(path)}";
+        var whitespaceMode = ignoreWhitespace ? "ignore-ws" : "exact";
+        return $"{repositoryId:N}:{hash}:{viewMode}:{whitespaceMode}:{Uri.EscapeDataString(path)}";
     }
 
     private static string MakeLineId(

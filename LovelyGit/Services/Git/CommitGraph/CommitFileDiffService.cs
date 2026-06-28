@@ -100,9 +100,16 @@ internal sealed partial class CommitFileDiffService : IDisposable
         string commitHash,
         string path,
         CommitDiffViewMode viewMode,
+        bool ignoreWhitespace,
         CancellationToken cancellationToken)
     {
-        var cached = await TryGetCachedDiffAsync(repositoryId, commitHash, path, viewMode, cancellationToken)
+        var cached = await TryGetCachedDiffAsync(
+                repositoryId,
+                commitHash,
+                path,
+                viewMode,
+                ignoreWhitespace,
+                cancellationToken)
             .ConfigureAwait(false);
         if (cached != null)
         {
@@ -115,6 +122,7 @@ internal sealed partial class CommitFileDiffService : IDisposable
                 commitHash,
                 path,
                 viewMode,
+                ignoreWhitespace,
                 cancellationToken)
             .ConfigureAwait(false);
     }

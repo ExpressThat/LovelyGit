@@ -183,6 +183,9 @@ namespace ExpressThat.LovelyGit.Services.Data.Models.Git.CommitGraph
         [Column("viewmode")]
         public string ViewMode { get; set; } = string.Empty;
 
+        [Column("ignorewhitespace")]
+        public bool IgnoreWhitespace { get; set; }
+
         [Column("status")]
         public string Status { get; set; } = string.Empty;
 
@@ -213,6 +216,9 @@ namespace ExpressThat.LovelyGit.Services.Data.Models.Git.CommitGraph
 
         [Column("viewmode")]
         public string ViewMode { get; set; } = string.Empty;
+
+        [Column("ignorewhitespace")]
+        public bool IgnoreWhitespace { get; set; }
 
         [Column("diffid")]
         public string DiffId { get; set; } = string.Empty;

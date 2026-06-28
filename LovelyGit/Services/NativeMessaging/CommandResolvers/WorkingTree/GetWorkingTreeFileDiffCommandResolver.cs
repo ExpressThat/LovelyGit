@@ -57,6 +57,7 @@ internal sealed class GetWorkingTreeFileDiffCommandResolver : CommandResponder<G
                     command.Arguments.Path,
                     command.Arguments.Group,
                     command.Arguments.ViewMode,
+                    command.Arguments.IgnoreWhitespace,
                     CancellationToken.None)
                 .ConfigureAwait(false);
             return new CommandResponse<CommitFileDiffResponse>

@@ -125,6 +125,7 @@ internal sealed partial class WorkingTreeChangeService
         string path,
         string status,
         CommitDiffViewMode viewMode,
+        bool ignoreWhitespace,
         byte[] oldBytes,
         byte[] newBytes)
     {
@@ -149,8 +150,8 @@ internal sealed partial class WorkingTreeChangeService
             : null;
 
         return viewMode == CommitDiffViewMode.SideBySide
-            ? BuildSideBySideResponse(commitHash, path, status, oldText, newText, language)
-            : BuildCombinedResponse(commitHash, path, status, oldText, newText, language);
+            ? BuildSideBySideResponse(commitHash, path, status, oldText, newText, language, ignoreWhitespace)
+            : BuildCombinedResponse(commitHash, path, status, oldText, newText, language, ignoreWhitespace);
     }
 
 }

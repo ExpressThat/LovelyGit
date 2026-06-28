@@ -64,6 +64,7 @@ internal class GetCommitFileDiffCommandResolver : CommandResponder<GetCommitFile
                     command.Arguments.CommitHash,
                     command.Arguments.Path,
                     command.Arguments.ViewMode,
+                    command.Arguments.IgnoreWhitespace,
                     CancellationToken.None)
                 .ConfigureAwait(false);
 

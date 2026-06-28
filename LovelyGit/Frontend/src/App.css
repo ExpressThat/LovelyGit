@@ -63,6 +63,25 @@
 	background: color-mix(in oklch, var(--muted-foreground) 65%, transparent);
 }
 
+@layer components {
+	@media (max-width: 900px) {
+		.diff-toolbar-button {
+			width: 1.75rem;
+			justify-content: center;
+			padding-inline: 0;
+		}
+
+		.diff-toolbar-label,
+		.diff-toolbar-context-label {
+			display: none;
+		}
+
+		.diff-toolbar-control {
+			margin-left: 0.25rem;
+		}
+	}
+}
+
 @theme inline {
 	--font-heading: var(--font-sans);
 	--font-sans: "Inter Variable", sans-serif;
