@@ -172,7 +172,14 @@ internal sealed partial class CommitGraphPageService : IDisposable
         if (_activeGraphs.Remove(repositoryId, out var completedGraph))
         {
             completedGraph.Dispose();
+            CollectDisposedGraphCaches();
         }
+    }
+
+    private static void CollectDisposedGraphCaches()
+    {
+        GC.Collect(2, GCCollectionMode.Aggressive, blocking: true, compacting: false);
+        GC.WaitForPendingFinalizers();
     }
 
     private sealed class ActiveGraphCacheWork : IDisposable

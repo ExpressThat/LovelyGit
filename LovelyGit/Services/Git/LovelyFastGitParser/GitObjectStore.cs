@@ -3,7 +3,7 @@ using ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser.Packs;
 
 namespace ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser;
 
-internal sealed class GitObjectStore
+internal sealed class GitObjectStore : IDisposable
 {
     private const int ObjectCacheSize = 512;
 
@@ -164,5 +164,13 @@ internal sealed class GitObjectStore
         }
 
         throw new InvalidDataException($"Unsupported Git object type: {System.Text.Encoding.ASCII.GetString(value)}");
+    }
+
+    public void Dispose()
+    {
+        _objectCache.Clear();
+        Volatile.Write(ref _packIndexes, null);
+        _packIndexesLock.Dispose();
+        _packReader.Dispose();
     }
 }

@@ -12,6 +12,7 @@ internal sealed partial class LovelyGitRepository : IDisposable
     private readonly Dictionary<GitObjectId, List<string>> _tagNamesByCommit;
     private readonly Dictionary<GitObjectId, List<GitCommitRef>> _refsByCommit;
     private readonly IReadOnlyList<string> _remotePrefixes;
+    private bool _disposed;
 
     private LovelyGitRepository(
         string gitDirectory,
@@ -229,6 +230,18 @@ internal sealed partial class LovelyGitRepository : IDisposable
 
     public void Dispose()
     {
+        if (_disposed)
+        {
+            return;
+        }
+
+        _commitCache.Clear();
+        _refsByFullName.Clear();
+        _branchNamesByCommit.Clear();
+        _tagNamesByCommit.Clear();
+        _refsByCommit.Clear();
+        _objectStore.Dispose();
+        _disposed = true;
     }
 
 }

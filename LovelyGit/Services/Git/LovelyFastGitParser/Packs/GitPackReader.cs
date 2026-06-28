@@ -3,7 +3,7 @@ using ICSharpCode.SharpZipLib.Zip.Compression;
 
 namespace ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser.Packs;
 
-internal sealed class GitPackReader
+internal sealed class GitPackReader : IDisposable
 {
     private const int PackOffsetCacheSize = 2048;
 
@@ -82,6 +82,11 @@ internal sealed class GitPackReader
     {
         _packOffsetCache.Set(key, objectData);
         return objectData;
+    }
+
+    public void Dispose()
+    {
+        _packOffsetCache.Clear();
     }
 
     private static ulong ReadVariableSize(Stream stream, int first)

@@ -54,5 +54,14 @@ internal sealed class LruCache<TKey, TValue>
         }
     }
 
+    public void Clear()
+    {
+        lock (_gate)
+        {
+            _map.Clear();
+            _order.Clear();
+        }
+    }
+
     private readonly record struct Entry(TKey Key, TValue Value);
 }
