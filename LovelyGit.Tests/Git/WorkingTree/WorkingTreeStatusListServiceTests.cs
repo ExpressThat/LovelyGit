@@ -27,6 +27,15 @@ public sealed class WorkingTreeStatusListServiceTests
         Assert.Equal("old.txt", file.OldPath);
     }
 
+    [Fact]
+    public void CountPorcelainRecords_CountsEveryLaunchSummaryRecord()
+    {
+        var count = WorkingTreeSummaryService.CountPorcelainRecords(
+            " M changed.txt\0?? new/a.txt\0?? new/b.txt\0R  renamed.txt\0old.txt\0".AsSpan());
+
+        Assert.Equal(4, count);
+    }
+
     private static void AssertStatus(
         WorkingTreeChangedFile file,
         string path,

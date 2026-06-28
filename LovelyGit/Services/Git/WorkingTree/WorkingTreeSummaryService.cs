@@ -22,7 +22,7 @@ internal sealed class WorkingTreeSummaryService
             .ConfigureAwait(false);
         var result = await _gitCliService
             .ExecuteBufferedAsync(
-                ["--no-optional-locks", "status", "--porcelain=v1", "-z"],
+                ["--no-optional-locks", "status", "--porcelain=v1", "-z", "--untracked-files=all"],
                 repositoryPaths.WorkTreeDirectory,
                 validateExitCode: false,
                 cancellationToken)
@@ -42,7 +42,7 @@ internal sealed class WorkingTreeSummaryService
         };
     }
 
-    private static int CountPorcelainRecords(ReadOnlySpan<char> output)
+    internal static int CountPorcelainRecords(ReadOnlySpan<char> output)
     {
         var count = 0;
         var offset = 0;
