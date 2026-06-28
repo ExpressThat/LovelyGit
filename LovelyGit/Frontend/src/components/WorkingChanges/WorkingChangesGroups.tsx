@@ -39,6 +39,7 @@ export function WorkingChangesGroups({
 				}
 				files={stagedFiles}
 				isActionDisabled={isBusy || selectedStagedFiles.length === 0}
+				isBusy={isBusy}
 				onAction={() =>
 					onIndexCommand("UnstageWorkingTreeFiles", selectedStagedFiles, false)
 				}
@@ -64,6 +65,7 @@ export function WorkingChangesGroups({
 				files={workingFiles}
 				hideGroupLabel
 				isActionDisabled={isBusy || selectedWorkingFiles.length === 0}
+				isBusy={isBusy}
 				isDestructiveActionDisabled={
 					isBusy || selectedWorkingFiles.length === 0
 				}
@@ -71,6 +73,7 @@ export function WorkingChangesGroups({
 					onIndexCommand("StageWorkingTreeFiles", selectedWorkingFiles, false)
 				}
 				onDestructiveAction={() => onDiscardSelected(selectedWorkingFiles)}
+				onFileDestructiveAction={(file) => onDiscardSelected([file])}
 				onFileAction={(file) =>
 					onIndexCommand("StageWorkingTreeFiles", [file], false)
 				}
@@ -81,6 +84,7 @@ export function WorkingChangesGroups({
 			/>
 			<ChangeGroup
 				files={unmergedFiles}
+				isBusy={isBusy}
 				onSelectFile={onSelectFile}
 				title="Unmerged"
 			/>

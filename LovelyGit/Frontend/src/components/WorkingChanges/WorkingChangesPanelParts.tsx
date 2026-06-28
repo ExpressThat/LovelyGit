@@ -85,9 +85,11 @@ export function ChangeGroup({
 	files,
 	hideGroupLabel = false,
 	isActionDisabled = true,
+	isBusy = false,
 	isDestructiveActionDisabled = true,
 	onAction,
 	onDestructiveAction,
+	onFileDestructiveAction,
 	onFileAction,
 	onSelectFile,
 	onToggleSelected,
@@ -99,9 +101,11 @@ export function ChangeGroup({
 	files: WorkingTreeChangedFile[];
 	hideGroupLabel?: boolean;
 	isActionDisabled?: boolean;
+	isBusy?: boolean;
 	isDestructiveActionDisabled?: boolean;
 	onAction?: () => void;
 	onDestructiveAction?: () => void;
+	onFileDestructiveAction?: (file: WorkingTreeChangedFile) => void;
 	onFileAction?: (file: WorkingTreeChangedFile) => void;
 	onSelectFile: (file: WorkingTreeChangedFile) => void;
 	onToggleSelected?: (file: WorkingTreeChangedFile) => void;
@@ -146,9 +150,15 @@ export function ChangeGroup({
 					<ChangedFileRow
 						file={file}
 						hideGroupLabel={hideGroupLabel}
+						isBusy={isBusy}
 						isSelected={selectedKeys?.has(fileKey(file)) ?? false}
 						key={`${file.group}:${file.status}:${file.path}`}
 						onAction={onFileAction ? () => onFileAction(file) : undefined}
+						onDestructiveAction={
+							onFileDestructiveAction
+								? () => onFileDestructiveAction(file)
+								: undefined
+						}
 						rowActionLabel={singleFileActionLabel(title)}
 						onSelect={() => onSelectFile(file)}
 						onToggleSelected={
