@@ -45,6 +45,12 @@ internal sealed class GitObjectStore : IDisposable
         throw new FileNotFoundException($"Git object was not found: {id}");
     }
 
+    public void ClearObjectCaches()
+    {
+        _objectCache.Clear();
+        _packReader.ClearObjectCache();
+    }
+
     private async Task<GitObjectData?> TryReadLooseObjectAsync(GitObjectId id, CancellationToken cancellationToken)
     {
         var value = id.Value;

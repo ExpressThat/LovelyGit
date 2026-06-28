@@ -64,6 +64,7 @@ public sealed class CommitGraphManager : IDisposable
 
         var session = await OpenTraversalSessionAsync(cursor, cancellationToken).ConfigureAwait(false);
         var response = await ReadRowsAsync(session, limit, collectRows: true, cancellationToken).ConfigureAwait(false);
+        _repository.ClearObjectCaches();
 
         if (!response.HasMore)
         {
@@ -172,12 +173,20 @@ public sealed class CommitGraphManager : IDisposable
         CommitGraphCursorState cursor,
         CancellationToken cancellationToken)
     {
-        if (cursor.RepositoryId == _repositoryId && _session != null)
+        if (cursor.RepositoryId == _repositoryId
+            && _session != null
+            && _session.Offset == cursor.Offset)
         {
             return _session;
         }
 
         _session = await CreateTraversalSessionAsync(cancellationToken).ConfigureAwait(false);
+        if (cursor.RepositoryId == _repositoryId && cursor.Offset > 0)
+        {
+            await ReadRowsAsync(_session, cursor.Offset, collectRows: false, cancellationToken)
+                .ConfigureAwait(false);
+        }
+
         return _session;
     }
 

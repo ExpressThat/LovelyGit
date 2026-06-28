@@ -11,11 +11,14 @@
 - Confirm the WebView2 target is available with `Invoke-WebRequest -UseBasicParsing http://127.0.0.1:9333/json`; the target title should be `LovelyGit` and the URL should be `http://localhost:5000/`.
 - Attach CMG to the running WebView2 app before driving it so CMG installs page diagnostics automatically:
   `C:/CMG/CMG.exe browser app attach --port 9333`
-- Drive the attached app with CMG using the selected app target, for example `C:/CMG/CMG.exe browser control tabs list`, `C:/CMG/CMG.exe browser control script --file artifacts/lovelygit-app-graph.cmgscript --gif artifacts/lovelygit-app-graph.gif`, or `C:/CMG/CMG.exe browser control script --inline "screenshotPage output=\"artifacts/app.png\""`.
+- Drive the attached app with CMG using the selected app target when available, for example `C:/CMG/CMG.exe browser control tabs list`, `C:/CMG/CMG.exe browser control script --file artifacts/lovelygit-app-graph.cmgscript --gif artifacts/lovelygit-app-graph.gif`, or `C:/CMG/CMG.exe browser control script --inline "screenshotPage output=\"artifacts/app.png\""`. If the selected app target is not honored by the current shell session, use the explicit debug-port form for every command, for example `C:/CMG/CMG.exe browser --port 9333 control tabs list`.
 - CMG now arms console and page-error diagnostics automatically when `browser launch`, `browser app launch`, or `browser app attach` succeeds. Do not require `captureConsole` or `capturePageErrors` for new workflows; they are deprecated compatibility aliases that only ensure capture is installed and do not clear existing captured entries.
 - After risky UI actions, inspect captured diagnostics before gating:
   `C:/CMG/CMG.exe browser control events pageErrors listPageErrors`
   `C:/CMG/CMG.exe browser control events console listConsole --level error`
+- When using the explicit debug-port form, keep that form for diagnostics too:
+  `C:/CMG/CMG.exe browser --port 9333 control events pageErrors listPageErrors`
+  `C:/CMG/CMG.exe browser --port 9333 control events console listConsole --level error`
 - To diagnose a crash after an interaction, positive waits can still print one matching diagnostic:
   `C:/CMG/CMG.exe browser control events pageErrors wait "." --match regex --timeout 1000`
   `C:/CMG/CMG.exe browser control events console wait "." --level error --match regex --timeout 1000`

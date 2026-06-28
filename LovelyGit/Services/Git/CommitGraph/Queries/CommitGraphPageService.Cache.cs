@@ -1,5 +1,6 @@
 using ExpressThat.LovelyGit.Services.Data.Models;
 using ExpressThat.LovelyGit.Services.Data.Repositorys;
+using System.Runtime;
 
 namespace ExpressThat.LovelyGit.Services.Git.CommitGraph.Queries;
 
@@ -134,6 +135,7 @@ internal sealed partial class CommitGraphPageService : IDisposable
     {
         if (_activeGraphs.TryGetValue(repositoryId, out var graph))
         {
+            CancelScheduledGraphClose(repositoryId);
             return new CommitGraphOpenResult(true, graph, null);
         }
 
@@ -178,11 +180,19 @@ internal sealed partial class CommitGraphPageService : IDisposable
 
     private static void CollectDisposedGraphCaches()
     {
-        GC.Collect(2, GCCollectionMode.Aggressive, blocking: true, compacting: false);
+        GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce;
+        GC.Collect(2, GCCollectionMode.Aggressive, blocking: true, compacting: true);
         GC.WaitForPendingFinalizers();
     }
 
-    private sealed class ActiveGraphCacheWork : IDisposable
+    private interface IActiveGraphWork : IDisposable
+    {
+        CancellationTokenSource CancellationTokenSource { get; }
+
+        Task Task { get; set; }
+    }
+
+    private sealed class ActiveGraphCacheWork : IActiveGraphWork
     {
         public CancellationTokenSource CancellationTokenSource { get; } = new();
 

@@ -84,9 +84,14 @@ internal sealed class GitPackReader : IDisposable
         return objectData;
     }
 
-    public void Dispose()
+    public void ClearObjectCache()
     {
         _packOffsetCache.Clear();
+    }
+
+    public void Dispose()
+    {
+        ClearObjectCache();
     }
 
     private static ulong ReadVariableSize(Stream stream, int first)

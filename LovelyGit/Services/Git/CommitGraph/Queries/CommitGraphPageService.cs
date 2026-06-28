@@ -13,6 +13,7 @@ internal sealed partial class CommitGraphPageService : IDisposable
     private readonly object _cacheWorkLock = new();
     private readonly Dictionary<Guid, CommitGraphManager> _activeGraphs = new();
     private readonly Dictionary<Guid, ActiveGraphCacheWork> _activeCacheWork = new();
+    private readonly Dictionary<Guid, ActiveGraphCloseWork> _activeGraphCloseWork = new();
     private readonly Dictionary<Guid, int> _cacheGenerations = new();
     private readonly HashSet<Guid> _repositoriesLoadedThisProcess = new();
     private Guid? _activeRepositoryId;
@@ -77,7 +78,11 @@ internal sealed partial class CommitGraphPageService : IDisposable
 
             StartCacheAndPreloadDetails(foundRepo.Id, foundRepo.Path, response, cacheGeneration);
 
-            if (!response.HasMore)
+            if (response.HasMore)
+            {
+                ScheduleGraphClose(foundRepo.Id);
+            }
+            else
             {
                 CloseGraph(foundRepo.Id);
             }
@@ -92,11 +97,13 @@ internal sealed partial class CommitGraphPageService : IDisposable
 
     public void Dispose()
     {
-        List<ActiveGraphCacheWork> cacheWork;
+        List<IActiveGraphWork> cacheWork;
         lock (_cacheWorkLock)
         {
-            cacheWork = _activeCacheWork.Values.ToList();
+            cacheWork = _activeCacheWork.Values.Cast<IActiveGraphWork>().ToList();
             _activeCacheWork.Clear();
+            cacheWork.AddRange(_activeGraphCloseWork.Values);
+            _activeGraphCloseWork.Clear();
         }
 
         foreach (var work in cacheWork)
@@ -127,6 +134,7 @@ internal sealed partial class CommitGraphPageService : IDisposable
 
     private async Task ResetRepositoryGraphAsync(Guid repositoryId, CancellationToken cancellationToken)
     {
+        CancelScheduledGraphClose(repositoryId);
         AdvanceCacheGeneration(repositoryId);
         await CancelCacheAndPreloadDetailsAsync(repositoryId, cancellationToken).ConfigureAwait(false);
         await _commitDetailsPreloadService.CancelActiveAsync(cancellationToken).ConfigureAwait(false);
