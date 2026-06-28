@@ -42,6 +42,15 @@ export function DiffContent({
 	onUnstageLine?: (line: CommitFileDiffLine) => void;
 	wrapLines: boolean;
 }) {
+	if (diff.isTruncated) {
+		return (
+			<div className="m-4 rounded-md border bg-card p-4 text-sm text-muted-foreground">
+				{diff.truncationMessage ||
+					"Diff skipped because the file is too large."}
+			</div>
+		);
+	}
+
 	if (diff.isBinary) {
 		return (
 			<div className="m-4 rounded-md border bg-card p-4 text-sm text-muted-foreground">

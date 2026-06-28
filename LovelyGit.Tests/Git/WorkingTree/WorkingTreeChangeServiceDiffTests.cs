@@ -40,6 +40,33 @@ public sealed class WorkingTreeChangeServiceDiffTests
         Assert.False(whitespaceIgnoredDiff.HasDifferences);
     }
 
+    [Fact]
+    public async Task GetFileDiffAsync_UntrackedFileDoesNotReadIndex()
+    {
+        using var repository = TemporaryGitRepository.Create();
+        var service = new WorkingTreeChangeService();
+        await File.WriteAllTextAsync(
+            Path.Combine(repository.Path, "new-file.txt"),
+            "new content\n",
+            CancellationToken.None);
+        await File.WriteAllTextAsync(
+            Path.Combine(repository.GitDirectory, "index"),
+            "not a git index",
+            CancellationToken.None);
+
+        var diff = await service.GetFileDiffAsync(
+            repository.Path,
+            "new-file.txt",
+            WorkingTreeChangeGroup.Untracked,
+            CommitDiffViewMode.Combined,
+            ignoreWhitespace: false,
+            CancellationToken.None);
+
+        Assert.Equal("Added", diff.Status);
+        Assert.True(diff.HasDifferences);
+        Assert.Contains(diff.Lines, line => line.Text == "new content");
+    }
+
     private sealed class TemporaryGitRepository : IDisposable
     {
         private readonly DirectoryInfo _directory;
@@ -51,6 +78,8 @@ public sealed class WorkingTreeChangeServiceDiffTests
         }
 
         public string Path { get; }
+
+        public string GitDirectory => System.IO.Path.Combine(Path, ".git");
 
         public static TemporaryGitRepository Create()
         {

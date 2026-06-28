@@ -175,14 +175,7 @@ internal sealed partial class CommitFileDiffService : IDisposable
                     cancellationToken)
                 .ConfigureAwait(false);
 
-            return await TryGetCachedDiffAsync(
-                    repositoryId,
-                    commitHash,
-                    path,
-                    viewMode,
-                    ignoreWhitespace,
-                    cancellationToken)
-                .ConfigureAwait(false) ?? response;
+            return response;
         }
         finally
         {
@@ -237,14 +230,7 @@ internal sealed partial class CommitFileDiffService : IDisposable
                     cancellationToken)
                 .ConfigureAwait(false);
 
-            return await TryGetCachedDiffAsync(
-                    repositoryId,
-                    commitHash,
-                    path,
-                    viewMode,
-                    ignoreWhitespace,
-                    cancellationToken)
-                .ConfigureAwait(false) ?? response;
+            return response;
         }
         finally
         {

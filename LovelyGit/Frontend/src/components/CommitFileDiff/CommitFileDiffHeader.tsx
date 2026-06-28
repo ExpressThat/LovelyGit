@@ -1,16 +1,7 @@
-import {
-	Columns2,
-	FileText,
-	ListCollapse,
-	Minus,
-	Pilcrow,
-	Plus,
-	Rows3,
-	WrapText,
-	X,
-} from "lucide-react";
+import { X } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import type { CommitChangedFile } from "@/generated/types";
-import { setSetting, useSetting } from "@/lib/settings/settingsStore";
+import { DiffToolbarControls } from "./DiffToolbarControls";
 
 export function CommitFileDiffHeader({
 	file,
@@ -19,12 +10,6 @@ export function CommitFileDiffHeader({
 	file: CommitChangedFile;
 	onClose: () => void;
 }) {
-	const viewMode = useSetting("CommitDiffViewMode");
-	const contextLines = useSetting("CommitDiffContextLines");
-	const lineDisplayMode = useSetting("CommitDiffLineDisplayMode");
-	const wrapLines = useSetting("CommitDiffWrapLines");
-	const ignoreWhitespace = useSetting("CommitDiffIgnoreWhitespace");
-
 	return (
 		<header className="shrink-0 border-b bg-popover text-popover-foreground">
 			<div className="flex h-10 items-center gap-2 px-3">
@@ -40,136 +25,18 @@ export function CommitFileDiffHeader({
 						+{file.additions} -{file.deletions}
 					</span>
 				</div>
-				<button
+				<Button
 					aria-label="Close diff"
-					className="inline-flex size-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+					size="icon-sm"
 					onClick={onClose}
 					type="button"
+					variant="ghost"
 				>
 					<X aria-hidden="true" size={16} />
-				</button>
+				</Button>
 			</div>
-			<div className="diff-toolbar flex h-10 items-center justify-center border-t bg-card/60 px-3">
-				<div className="inline-flex shrink-0 rounded-md border bg-background p-0.5">
-					<ModeButton
-						icon={<Columns2 aria-hidden="true" size={14} />}
-						isActive={viewMode === "SideBySide"}
-						label="Side by side"
-						onClick={() => void setSetting("CommitDiffViewMode", "SideBySide")}
-					/>
-					<ModeButton
-						icon={<Rows3 aria-hidden="true" size={14} />}
-						isActive={viewMode === "Combined"}
-						label="Combined"
-						onClick={() => void setSetting("CommitDiffViewMode", "Combined")}
-					/>
-				</div>
-				<div className="diff-toolbar-control ml-2 inline-flex shrink-0 rounded-md border bg-background p-0.5">
-					<ModeButton
-						icon={<ListCollapse aria-hidden="true" size={14} />}
-						isActive={lineDisplayMode === "Changes"}
-						label="Changes"
-						onClick={() =>
-							void setSetting("CommitDiffLineDisplayMode", "Changes")
-						}
-					/>
-					<ModeButton
-						icon={<FileText aria-hidden="true" size={14} />}
-						isActive={lineDisplayMode === "FullFile"}
-						label="Full file"
-						onClick={() =>
-							void setSetting("CommitDiffLineDisplayMode", "FullFile")
-						}
-					/>
-				</div>
-				{lineDisplayMode === "Changes" ? (
-					<ContextLinesControl contextLines={contextLines} />
-				) : null}
-				<div className="diff-toolbar-control ml-2 inline-flex shrink-0 rounded-md border bg-background p-0.5">
-					<ModeButton
-						icon={<WrapText aria-hidden="true" size={14} />}
-						isActive={wrapLines}
-						label="Wrap lines"
-						onClick={() => void setSetting("CommitDiffWrapLines", !wrapLines)}
-					/>
-					<ModeButton
-						icon={<Pilcrow aria-hidden="true" size={14} />}
-						isActive={ignoreWhitespace}
-						label="Ignore whitespace"
-						onClick={() =>
-							void setSetting("CommitDiffIgnoreWhitespace", !ignoreWhitespace)
-						}
-					/>
-				</div>
-			</div>
+			<DiffToolbarControls />
 		</header>
-	);
-}
-
-export function ContextLinesControl({
-	contextLines,
-}: {
-	contextLines: number;
-}) {
-	const updateContextLines = (value: number) => {
-		const nextValue = Math.max(0, Math.min(99, Math.trunc(value)));
-		void setSetting("CommitDiffContextLines", nextValue);
-	};
-
-	return (
-		<div className="diff-toolbar-control ml-2 inline-flex h-8 shrink-0 items-center gap-1 rounded-md border bg-background px-2 text-xs text-muted-foreground">
-			<span className="diff-toolbar-context-label">Context</span>
-			<div className="ml-1 inline-flex h-6 overflow-hidden rounded border bg-card text-foreground">
-				<button
-					aria-label="Decrease context lines"
-					className="inline-flex w-6 items-center justify-center hover:bg-accent hover:text-accent-foreground disabled:pointer-events-none disabled:opacity-35"
-					disabled={contextLines <= 0}
-					onClick={() => updateContextLines(contextLines - 1)}
-					type="button"
-				>
-					<Minus aria-hidden="true" size={12} />
-				</button>
-				<div className="flex min-w-7 items-center justify-center border-x px-1 font-mono text-xs">
-					{contextLines}
-				</div>
-				<button
-					aria-label="Increase context lines"
-					className="inline-flex w-6 items-center justify-center hover:bg-accent hover:text-accent-foreground disabled:pointer-events-none disabled:opacity-35"
-					disabled={contextLines >= 99}
-					onClick={() => updateContextLines(contextLines + 1)}
-					type="button"
-				>
-					<Plus aria-hidden="true" size={12} />
-				</button>
-			</div>
-		</div>
-	);
-}
-
-function ModeButton({
-	icon,
-	isActive,
-	label,
-	onClick,
-}: {
-	icon: React.ReactNode;
-	isActive: boolean;
-	label: string;
-	onClick: () => void;
-}) {
-	return (
-		<button
-			aria-label={label}
-			className={`diff-toolbar-button inline-flex h-7 items-center gap-1 rounded px-2 text-xs text-muted-foreground hover:bg-accent hover:text-accent-foreground ${
-				isActive ? "bg-accent font-semibold text-accent-foreground" : ""
-			}`}
-			onClick={onClick}
-			title={label}
-			type="button"
-		>
-			{icon}
-			<span className="diff-toolbar-label">{label}</span>
-		</button>
 	);
 }
 

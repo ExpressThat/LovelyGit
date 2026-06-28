@@ -21,6 +21,8 @@ public record CommitFileDiffResponse
     public CommitDiffViewMode ViewMode { get; set; }
     public bool IsBinary { get; set; }
     public bool HasDifferences { get; set; }
+    public bool IsTruncated { get; set; }
+    public string TruncationMessage { get; set; } = string.Empty;
     public List<CommitFileDiffLine> Lines { get; set; } = new();
 }
 

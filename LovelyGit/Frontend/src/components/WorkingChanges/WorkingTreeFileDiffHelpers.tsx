@@ -65,33 +65,6 @@ export function isChangedLine(line: CommitFileDiffLine) {
 	);
 }
 
-export function ModeButton({
-	icon,
-	isActive,
-	label,
-	onClick,
-}: {
-	icon: React.ReactNode;
-	isActive: boolean;
-	label: string;
-	onClick: () => void;
-}) {
-	return (
-		<button
-			aria-label={label}
-			className={`diff-toolbar-button inline-flex h-7 items-center gap-1 rounded px-2 text-xs text-muted-foreground hover:bg-accent hover:text-accent-foreground ${
-				isActive ? "bg-accent font-semibold text-accent-foreground" : ""
-			}`}
-			onClick={onClick}
-			title={label}
-			type="button"
-		>
-			{icon}
-			<span className="diff-toolbar-label">{label}</span>
-		</button>
-	);
-}
-
 export function LoadingDiff() {
 	return (
 		<div className="space-y-2 p-4">

@@ -116,6 +116,7 @@ export function StashActionControl({
 								Stash message
 							</label>
 							<Input
+								aria-label="Stash message"
 								autoFocus
 								disabled={isStashing}
 								id={messageId}
@@ -130,6 +131,7 @@ export function StashActionControl({
 							htmlFor={excludeUntrackedId}
 						>
 							<Checkbox
+								aria-label="Exclude untracked files"
 								checked={excludeUntracked}
 								disabled={isStashing}
 								id={excludeUntrackedId}

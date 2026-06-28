@@ -7,6 +7,7 @@ using DiffPlex;
 using DiffPlex.DiffBuilder;
 using DiffPlex.DiffBuilder.Model;
 using ExpressThat.LovelyGit.Services.Git.CommitGraph.Models;
+using ExpressThat.LovelyGit.Services.Git.Diffing;
 using ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser;
 using ExpressThat.LovelyGit.Services.Git.WorkingTree.Models;
 
@@ -145,6 +146,17 @@ internal sealed partial class WorkingTreeChangeService
 
         var oldText = System.Text.Encoding.UTF8.GetString(oldBytes);
         var newText = System.Text.Encoding.UTF8.GetString(newBytes);
+        if (DiffInputGuard.ShouldTruncate(oldText, newText))
+        {
+            return DiffInputGuard.BuildTruncatedResponse(
+                commitHash,
+                path,
+                status,
+                viewMode,
+                oldText,
+                newText);
+        }
+
         var language = oldText.Length + newText.Length <= MaxSyntaxHighlightedCharacters
             ? ResolveLanguage(path)
             : null;

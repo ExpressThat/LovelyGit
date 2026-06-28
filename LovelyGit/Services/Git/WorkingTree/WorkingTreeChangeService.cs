@@ -78,6 +78,17 @@ internal sealed partial class WorkingTreeChangeService
     {
         path = NormalizePath(path);
         using var repository = await LovelyGitRepository.OpenAsync(repositoryPath, cancellationToken).ConfigureAwait(false);
+        if (group == WorkingTreeChangeGroup.Untracked)
+        {
+            return await BuildUntrackedFileDiffAsync(
+                    repository.WorkTreeDirectory,
+                    path,
+                    viewMode,
+                    ignoreWhitespace,
+                    cancellationToken)
+                .ConfigureAwait(false);
+        }
+
         var indexEntries = await new GitIndexReader()
             .ReadAsync(repository.GitDirectory, repository.ObjectFormat, cancellationToken)
             .ConfigureAwait(false);
@@ -122,40 +133,37 @@ internal sealed partial class WorkingTreeChangeService
             newBytes = readBytes ?? Array.Empty<byte>();
             status = File.Exists(worktreePath) ? "Modified" : "Deleted";
         }
-        else if (group == WorkingTreeChangeGroup.Untracked)
-        {
-            var worktreePath = Path.Combine(repository.WorkTreeDirectory, FromGitPath(path));
-            if (indexByPath.TryGetValue(path, out var indexEntry))
-            {
-                oldBytes = await TryReadBlobBytesAsync(repository, indexEntry.ObjectId, indexEntry.Mode, cancellationToken).ConfigureAwait(false) ?? Array.Empty<byte>();
-                var readBytes = File.Exists(worktreePath)
-                    ? await TryReadWorktreeFileBytesAsync(worktreePath, cancellationToken).ConfigureAwait(false)
-                    : null;
-                if (File.Exists(worktreePath) && readBytes == null)
-                {
-                    return BuildUnreadableFileDiff("WORKTREE", path, "Modified", viewMode);
-                }
-
-                newBytes = readBytes ?? Array.Empty<byte>();
-                status = File.Exists(worktreePath) ? "Modified" : "Deleted";
-                return BuildDiffResponse("WORKTREE", path, status, viewMode, ignoreWhitespace, oldBytes, newBytes);
-            }
-
-            var untrackedBytes = await TryReadWorktreeFileBytesAsync(worktreePath, cancellationToken).ConfigureAwait(false);
-            if (untrackedBytes == null)
-            {
-                return BuildUnreadableFileDiff("WORKTREE", path, "Added", viewMode);
-            }
-
-            newBytes = untrackedBytes;
-            status = "Added";
-        }
         else
         {
             throw new InvalidOperationException("Unmerged file diffs are not available yet.");
         }
 
         return BuildDiffResponse("WORKTREE", path, status, viewMode, ignoreWhitespace, oldBytes, newBytes);
+    }
+
+    private static async Task<CommitFileDiffResponse> BuildUntrackedFileDiffAsync(
+        string workTreeDirectory,
+        string path,
+        CommitDiffViewMode viewMode,
+        bool ignoreWhitespace,
+        CancellationToken cancellationToken)
+    {
+        var worktreePath = Path.Combine(workTreeDirectory, FromGitPath(path));
+        var untrackedBytes = await TryReadWorktreeFileBytesAsync(worktreePath, cancellationToken)
+            .ConfigureAwait(false);
+        if (untrackedBytes == null)
+        {
+            return BuildUnreadableFileDiff("WORKTREE", path, "Added", viewMode);
+        }
+
+        return BuildDiffResponse(
+            "WORKTREE",
+            path,
+            "Added",
+            viewMode,
+            ignoreWhitespace,
+            Array.Empty<byte>(),
+            untrackedBytes);
     }
 
 }

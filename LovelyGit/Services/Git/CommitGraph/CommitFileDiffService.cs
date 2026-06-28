@@ -103,6 +103,18 @@ internal sealed partial class CommitFileDiffService : IDisposable
         bool ignoreWhitespace,
         CancellationToken cancellationToken)
     {
+        if (ignoreWhitespace)
+        {
+            return await BuildCommitFileDiffAsync(
+                    repositoryPath,
+                    commitHash,
+                    path,
+                    viewMode,
+                    ignoreWhitespace,
+                    cancellationToken)
+                .ConfigureAwait(false);
+        }
+
         var cached = await TryGetCachedDiffAsync(
                 repositoryId,
                 commitHash,
