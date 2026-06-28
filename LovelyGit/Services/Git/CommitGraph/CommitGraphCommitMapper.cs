@@ -37,6 +37,9 @@ internal static class CommitGraphCommitMapper
                         GitRefKind.Stash => CommitRefKind.Stash,
                         _ => CommitRefKind.Local,
                     },
+                    RemoteUrl = reference.Kind == GitRefKind.Tag
+                        ? RemoteCommitUrlBuilder.BuildTag(remoteUrl, reference.Name)
+                        : null,
                 })
                 .ToList(),
             RemoteUrl = RemoteCommitUrlBuilder.Build(remoteUrl, hash),

@@ -30,6 +30,38 @@ internal static class RemoteCommitUrlBuilder
             : NormalizeRemoteUrl(remoteUrl.Trim());
     }
 
+    public static string? BuildTag(string? remoteUrl, string tagName)
+    {
+        if (string.IsNullOrWhiteSpace(remoteUrl) || string.IsNullOrWhiteSpace(tagName))
+        {
+            return null;
+        }
+
+        var webUrl = BuildRepository(remoteUrl);
+        if (webUrl == null)
+        {
+            return null;
+        }
+
+        var escapedTag = Uri.EscapeDataString(tagName);
+        if (webUrl.Contains("github", StringComparison.OrdinalIgnoreCase))
+        {
+            return webUrl + "/releases/tag/" + escapedTag;
+        }
+
+        if (webUrl.Contains("gitlab", StringComparison.OrdinalIgnoreCase))
+        {
+            return webUrl + "/-/tags/" + escapedTag;
+        }
+
+        if (webUrl.Contains("bitbucket", StringComparison.OrdinalIgnoreCase))
+        {
+            return webUrl + "/src/" + escapedTag;
+        }
+
+        return webUrl + "/tree/" + escapedTag;
+    }
+
     private static string? NormalizeRemoteUrl(string remoteUrl)
     {
         if (remoteUrl.EndsWith(".git", StringComparison.OrdinalIgnoreCase))

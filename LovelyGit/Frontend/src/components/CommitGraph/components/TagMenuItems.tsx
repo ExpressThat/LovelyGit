@@ -1,4 +1,11 @@
-import { Copy, GitBranch, GitCommitHorizontal, Trash2 } from "lucide-react";
+import {
+	Copy,
+	ExternalLink,
+	GitBranch,
+	GitCommitHorizontal,
+	Trash2,
+} from "lucide-react";
+import { toast } from "sonner";
 import { ContextMenuItem } from "@/components/ui/context-menu";
 import { copyToClipboard } from "../utils/clipboard";
 
@@ -10,6 +17,7 @@ export function TagMenuItems({
 	onCreateBranch,
 	onDelete,
 	tagName,
+	tagRemoteUrl,
 }: {
 	canCheckoutTag: boolean;
 	canCreateBranch: boolean;
@@ -18,6 +26,7 @@ export function TagMenuItems({
 	onCreateBranch: () => void;
 	onDelete: () => void;
 	tagName: string;
+	tagRemoteUrl?: string | null;
 }) {
 	return (
 		<>
@@ -39,6 +48,20 @@ export function TagMenuItems({
 				<Copy />
 				Copy tag name
 			</ContextMenuItem>
+			{tagRemoteUrl ? (
+				<>
+					<ContextMenuItem
+						onClick={() => void copyToClipboard(tagRemoteUrl, "Remote tag URL")}
+					>
+						<Copy />
+						Copy remote tag URL
+					</ContextMenuItem>
+					<ContextMenuItem onClick={() => openRemoteTag(tagRemoteUrl)}>
+						<ExternalLink />
+						Open tag on remote
+					</ContextMenuItem>
+				</>
+			) : null}
 			{canDeleteTag ? (
 				<ContextMenuItem onClick={onDelete} variant="destructive">
 					<Trash2 />
@@ -47,4 +70,9 @@ export function TagMenuItems({
 			) : null}
 		</>
 	);
+}
+
+function openRemoteTag(remoteUrl: string) {
+	window.open(remoteUrl, "_blank", "noopener,noreferrer");
+	toast.success("Opened tag on remote");
 }

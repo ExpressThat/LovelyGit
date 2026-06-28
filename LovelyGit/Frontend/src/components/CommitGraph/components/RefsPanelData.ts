@@ -111,6 +111,10 @@ export function refPanelItemToRefInfo(item: RefPanelItem): CommitRefInfo {
 	return {
 		kind: item.kind,
 		name: item.name,
+		remoteUrl:
+			item.row.commit.refs.find(
+				(ref) => ref.kind === item.kind && ref.name === item.name,
+			)?.remoteUrl ?? null,
 	};
 }
 

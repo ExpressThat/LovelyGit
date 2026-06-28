@@ -29,6 +29,21 @@ public sealed class RemoteCommitUrlBuilderTests
     }
 
     [Theory]
+    [InlineData("https://github.com/example/repo.git", "v1.0.0", "https://github.com/example/repo/releases/tag/v1.0.0")]
+    [InlineData("ssh://git@gitlab.com/example/repo.git", "release/test", "https://gitlab.com/example/repo/-/tags/release%2Ftest")]
+    [InlineData("https://bitbucket.org/example/repo", "v2", "https://bitbucket.org/example/repo/src/v2")]
+    [InlineData("https://dev.azure.com/org/project/_git/repo", "v3", "https://dev.azure.com/org/project/_git/repo/tree/v3")]
+    public void BuildTag_ReturnsProviderTagUrl(
+        string remoteUrl,
+        string tagName,
+        string expected)
+    {
+        var result = RemoteCommitUrlBuilder.BuildTag(remoteUrl, tagName);
+
+        Assert.Equal(expected, result);
+    }
+
+    [Theory]
     [InlineData("")]
     [InlineData("not-a-web-url")]
     [InlineData("ftp://example/repo")]

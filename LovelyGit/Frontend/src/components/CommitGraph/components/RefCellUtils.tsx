@@ -67,8 +67,9 @@ export function buildLegacyRefs(
 		...branches.map((name) => ({
 			kind: inferLegacyBranchKind(name, localBranchNames, remotePrefixes),
 			name,
+			remoteUrl: null,
 		})),
-		...tags.map((name) => ({ kind: "Tag" as const, name })),
+		...tags.map((name) => ({ kind: "Tag" as const, name, remoteUrl: null })),
 	];
 }
 

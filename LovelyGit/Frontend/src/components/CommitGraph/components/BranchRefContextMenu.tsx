@@ -95,6 +95,7 @@ export function BranchRefContextMenu({
 							onCreateBranch={() => setIsCreateBranchFromTagOpen(true)}
 							onDelete={() => setIsDeleteTagOpen(true)}
 							tagName={refInfo.name}
+							tagRemoteUrl={refInfo.remoteUrl}
 						/>
 					) : null}
 					{isLocalBranch ? (

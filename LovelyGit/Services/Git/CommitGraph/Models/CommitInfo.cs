@@ -19,6 +19,7 @@ namespace ExpressThat.LovelyGit.Services.Git.CommitGraph.Models
     {
         public string Name { get; set; } = string.Empty;
         public CommitRefKind Kind { get; set; }
+        public string? RemoteUrl { get; set; }
     }
 
     [TypeSharp]

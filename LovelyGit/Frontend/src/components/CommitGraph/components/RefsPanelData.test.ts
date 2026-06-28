@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import type { CommitGraphRow, CommitInfo } from "@/generated/types";
+import type {
+	CommitGraphRow,
+	CommitInfo,
+	CommitRefInfo,
+} from "@/generated/types";
 import {
 	buildRefPanelSections,
 	filterRefPanelSections,
@@ -13,11 +17,11 @@ describe("buildRefPanelSections", () => {
 			remotePrefixes: ["origin"],
 			rows: [
 				row("a", [
-					{ kind: "Remote", name: "origin/main" },
-					{ kind: "Local", name: "main" },
-					{ kind: "Tag", name: "v1" },
+					ref("Remote", "origin/main"),
+					ref("Local", "main"),
+					ref("Tag", "v1"),
 				]),
-				row("b", [{ kind: "Local", name: "feature/x" }]),
+				row("b", [ref("Local", "feature/x")]),
 			],
 		});
 
@@ -53,10 +57,10 @@ describe("buildRefPanelSections", () => {
 			remotePrefixes: ["origin"],
 			rows: [
 				row("abc1234", [
-					{ kind: "Local", name: "main" },
-					{ kind: "Remote", name: "origin/release/canary" },
+					ref("Local", "main"),
+					ref("Remote", "origin/release/canary"),
 				]),
-				row("def5678", [{ kind: "Tag", name: "v1.0.0" }]),
+				row("def5678", [ref("Tag", "v1.0.0")]),
 			],
 		});
 
@@ -73,12 +77,17 @@ describe("buildRefPanelSections", () => {
 		const sections = buildRefPanelSections({
 			currentBranchName: null,
 			remotePrefixes: ["origin"],
-			rows: [row("abc1234", [{ kind: "Remote", name: "origin/main" }])],
+			rows: [
+				row("abc1234", [
+					ref("Tag", "v1", "https://github.com/example/repo/releases/tag/v1"),
+				]),
+			],
 		});
 
 		expect(refPanelItemToRefInfo(sections[0].items[0])).toEqual({
-			kind: "Remote",
-			name: "origin/main",
+			kind: "Tag",
+			name: "v1",
+			remoteUrl: "https://github.com/example/repo/releases/tag/v1",
 		});
 	});
 });
@@ -95,6 +104,14 @@ function row(hash: string, refs: CommitGraphRow["commit"]["refs"]) {
 		lane: 0,
 		rowIndex: 0,
 	} satisfies CommitGraphRow;
+}
+
+function ref(
+	kind: CommitRefInfo["kind"],
+	name: string,
+	remoteUrl: string | null = null,
+) {
+	return { kind, name, remoteUrl } satisfies CommitRefInfo;
 }
 
 function legacyRow(hash: string, branches: string[], tags: string[]) {
