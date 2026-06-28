@@ -68,14 +68,21 @@ export function ConflictToolbar({
 	onMarkResolved,
 	onUseOurs,
 	onUseTheirs,
+	oursLabel,
 	path,
+	theirsLabel,
 }: {
 	disabled: boolean;
 	onMarkResolved: () => void;
 	onUseOurs: () => void;
 	onUseTheirs: () => void;
+	oursLabel: string;
 	path: string | null;
+	theirsLabel: string;
 }) {
+	const useOursLabel = `Use ${oursLabel}`;
+	const useTheirsLabel = `Use ${theirsLabel}`;
+
 	return (
 		<div className="flex items-center justify-between border-b px-3 py-2">
 			<div className="flex min-w-0 items-center gap-2 text-sm">
@@ -84,24 +91,24 @@ export function ConflictToolbar({
 			</div>
 			<div className="flex items-center gap-2">
 				<Button
-					aria-label="Use our version"
+					aria-label={useOursLabel}
 					disabled={disabled}
 					onClick={onUseOurs}
 					size="sm"
-					title="Use our version"
+					title={useOursLabel}
 					variant="outline"
 				>
-					Use ours
+					Use current
 				</Button>
 				<Button
-					aria-label="Use their version"
+					aria-label={useTheirsLabel}
 					disabled={disabled}
 					onClick={onUseTheirs}
 					size="sm"
-					title="Use their version"
+					title={useTheirsLabel}
 					variant="outline"
 				>
-					Use theirs
+					Use incoming
 				</Button>
 				<Button
 					aria-label="Mark file resolved"

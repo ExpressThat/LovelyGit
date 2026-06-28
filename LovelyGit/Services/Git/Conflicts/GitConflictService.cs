@@ -24,6 +24,8 @@ internal sealed class GitConflictService
         using var repository = await LovelyGitRepository
             .OpenAsync(repositoryPath, cancellationToken)
             .ConfigureAwait(false);
+        var labels = await GitConflictSideLabelService.BuildAsync(repository, operation, cancellationToken)
+            .ConfigureAwait(false);
         var indexEntries = await new GitIndexReader()
             .ReadAsync(repository.GitDirectory, repository.ObjectFormat, cancellationToken)
             .ConfigureAwait(false);
@@ -39,6 +41,8 @@ internal sealed class GitConflictService
         return new GitConflictStateResponse
         {
             Operation = operation,
+            OursLabel = labels.Ours,
+            TheirsLabel = labels.Theirs,
             ConflictedFiles = conflicted,
             ResolvedFiles = BuildResolvedFiles(commitMessage, conflictedPaths),
             CommitMessage = commitMessage,
@@ -148,4 +152,5 @@ internal sealed class GitConflictService
 
     private static string FromGitPath(string path) =>
         path.Replace('/', Path.DirectorySeparatorChar);
+
 }

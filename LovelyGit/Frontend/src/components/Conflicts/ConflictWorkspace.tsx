@@ -157,9 +157,15 @@ export function ConflictWorkspace({
 						onMarkResolved={() => void resolveFile("MarkResolved")}
 						onUseOurs={() => void resolveFile("UseOurs")}
 						onUseTheirs={() => void resolveFile("UseTheirs")}
+						oursLabel={state.oursLabel}
 						path={selectedFile?.path ?? null}
+						theirsLabel={state.theirsLabel}
 					/>
-					<ConflictContent state={contentState} />
+					<ConflictContent
+						oursLabel={state.oursLabel}
+						state={contentState}
+						theirsLabel={state.theirsLabel}
+					/>
 				</div>
 			</div>
 		</section>

@@ -7,7 +7,15 @@ export type ContentState =
 	| { status: "loaded"; content: GitConflictFileContentResponse }
 	| { status: "error"; content: null; message: string };
 
-export function ConflictContent({ state }: { state: ContentState }) {
+export function ConflictContent({
+	oursLabel,
+	state,
+	theirsLabel,
+}: {
+	oursLabel: string;
+	state: ContentState;
+	theirsLabel: string;
+}) {
 	if (state.status === "loading") {
 		return (
 			<div className="p-4 text-muted-foreground text-sm">Loading file.</div>
@@ -30,12 +38,12 @@ export function ConflictContent({ state }: { state: ContentState }) {
 		<div className="flex min-h-0 flex-1 overflow-hidden">
 			<ConflictCodePane
 				lines={state.content.oursLines}
-				title="Ours"
+				title={oursLabel}
 				tone="ours"
 			/>
 			<ConflictCodePane
 				lines={state.content.theirsLines}
-				title="Theirs"
+				title={theirsLabel}
 				tone="theirs"
 			/>
 			<ConflictCodePane

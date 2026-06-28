@@ -17,10 +17,37 @@ public sealed class GitConflictServiceTests
         var state = await service.GetStateAsync(repository.Path, CancellationToken.None);
 
         Assert.Equal(GitOperationKind.Merge, state.Operation.Kind);
+        Assert.StartsWith("Current: ", state.OursLabel, StringComparison.Ordinal);
+        Assert.Equal("Incoming: feature", state.TheirsLabel);
         var file = Assert.Single(state.ConflictedFiles);
         Assert.Equal("conflict.ts", file.Path);
         Assert.Equal(1, file.ConflictCount);
         Assert.Contains("Merge branch", state.CommitMessage);
+    }
+
+    [Fact]
+    public async Task GetStateAsync_ReturnsRebaseSideLabels()
+    {
+        using var directory = TemporaryDirectory.Create("lovelygit-rebase-conflict-");
+        await RunGitAsync(directory.Path, true, "init");
+        await RunGitAsync(directory.Path, true, "config", "user.email", "test@example.com");
+        await RunGitAsync(directory.Path, true, "config", "user.name", "Test User");
+        await RunGitAsync(directory.Path, true, "commit", "--allow-empty", "-m", "base");
+        var rebaseDirectory = System.IO.Path.Combine(directory.Path, ".git", "rebase-merge");
+        Directory.CreateDirectory(rebaseDirectory);
+        await File.WriteAllTextAsync(
+            System.IO.Path.Combine(rebaseDirectory, "head-name"),
+            "refs/heads/feature");
+        await File.WriteAllTextAsync(
+            System.IO.Path.Combine(rebaseDirectory, "onto_name"),
+            "refs/heads/main");
+        var service = new GitConflictService(new GitOperationStateService());
+
+        var state = await service.GetStateAsync(directory.Path, CancellationToken.None);
+
+        Assert.Equal(GitOperationKind.Rebase, state.Operation.Kind);
+        Assert.Equal("Onto: main", state.OursLabel);
+        Assert.Equal("Replaying: feature", state.TheirsLabel);
     }
 
     [Fact]

@@ -8,6 +8,8 @@ namespace ExpressThat.LovelyGit.Services.Git.Conflicts;
 public sealed record GitConflictStateResponse
 {
     public GitOperationState Operation { get; init; } = new();
+    public string OursLabel { get; init; } = "Current version";
+    public string TheirsLabel { get; init; } = "Incoming version";
     public List<GitConflictFile> ConflictedFiles { get; init; } = new();
     public List<GitConflictFile> ResolvedFiles { get; init; } = new();
     public string CommitMessage { get; init; } = string.Empty;
