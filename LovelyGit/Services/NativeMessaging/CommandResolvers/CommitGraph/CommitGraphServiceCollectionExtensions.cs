@@ -13,6 +13,7 @@ internal static class CommitGraphServiceCollectionExtensions
         services.AddSingleton<CommitDetailsService>();
         services.AddSingleton<CommitFileDiffService>();
         services.AddSingleton<CommitPatchService>();
+        services.AddSingleton<RepositoryRefsService>();
         services.AddSingleton<CommitDetailsPreloadService>();
         services.AddSingleton<CommitGraphPageService>();
         services.AddSingleton<ICommandResponder, CommitGraphCommandResolver>();
@@ -20,6 +21,7 @@ internal static class CommitGraphServiceCollectionExtensions
         services.AddSingleton<ICommandResponder, GetCommitDetailsCommandResolver>();
         services.AddSingleton<ICommandResponder, GetCommitFileDiffCommandResolver>();
         services.AddSingleton<ICommandResponder, GetCommitPatchCommandResolver>();
+        services.AddSingleton<ICommandResponder, GetRepositoryRefsCommandResolver>();
 
         return services;
     }

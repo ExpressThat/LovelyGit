@@ -9,4 +9,10 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Commit
         public string? Cursor { get; set; }
         public int Limit { get; set; }
     }
+
+    [TypeSharp]
+    public record GetRepositoryRefsCommandArguments
+    {
+        public Guid KnownRepositoryId { get; set; }
+    }
 }

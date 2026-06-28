@@ -42,6 +42,8 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging
         OpenRepositoryTerminal,
         [NativeMessageContract(typeof(CommitGraphCommandArguments), typeof(CommitGraphResponse))]
         CommitGraph,
+        [NativeMessageContract(typeof(GetRepositoryRefsCommandArguments), typeof(RepositoryRefsResponse))]
+        GetRepositoryRefs,
         [NativeMessageContract(typeof(GetCommitDetailsCommandArguments), typeof(CommitDetailsResponse))]
         GetCommitDetails,
         [NativeMessageContract(typeof(GetCommitFileDiffCommandArguments), typeof(CommitFileDiffResponse))]

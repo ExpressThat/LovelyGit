@@ -3,6 +3,7 @@ import type {
 	CommitGraphRow,
 	CommitInfo,
 	CommitRefInfo,
+	RepositoryRefItem,
 } from "@/generated/types";
 import {
 	buildRefPanelSections,
@@ -73,6 +74,33 @@ describe("buildRefPanelSections", () => {
 		expect(filterRefPanelSections(sections, "missing")).toEqual([]);
 	});
 
+	it("uses complete repository refs before graph rows are loaded", () => {
+		const sections = buildRefPanelSections({
+			currentBranchName: "feature/x",
+			remotePrefixes: ["origin"],
+			refs: [
+				repositoryRef("Local", "feature/x", "abc1234"),
+				repositoryRef("Remote", "origin/main", "def5678"),
+				repositoryRef("Tag", "v1", "fed4321", "https://example.test/v1"),
+			],
+			rows: [],
+		});
+
+		expect(sections.map((section) => section.label)).toEqual([
+			"Branches",
+			"Remote Branches",
+			"Tags",
+		]);
+		expect(sections[0].items[0]).toMatchObject({
+			isCurrent: true,
+			name: "feature/x",
+			row: null,
+		});
+		expect(refPanelItemToRefInfo(sections[2].items[0]).remoteUrl).toBe(
+			"https://example.test/v1",
+		);
+	});
+
 	it("maps sidebar items back to commit ref info for menus", () => {
 		const sections = buildRefPanelSections({
 			currentBranchName: null,
@@ -112,6 +140,15 @@ function ref(
 	remoteUrl: string | null = null,
 ) {
 	return { kind, name, remoteUrl } satisfies CommitRefInfo;
+}
+
+function repositoryRef(
+	kind: CommitRefInfo["kind"],
+	name: string,
+	commitHash: string,
+	remoteUrl: string | null = null,
+) {
+	return { commitHash, kind, name, remoteUrl } satisfies RepositoryRefItem;
 }
 
 function legacyRow(hash: string, branches: string[], tags: string[]) {

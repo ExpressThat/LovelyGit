@@ -2,6 +2,7 @@ import type {
 	CommitGraphRow,
 	CommitRefInfo,
 	CommitRefKind,
+	RepositoryRefItem,
 } from "@/generated/types";
 import {
 	buildLegacyRefs,
@@ -15,7 +16,8 @@ export type RefPanelItem = {
 	kind: CommitRefKind;
 	label: string;
 	name: string;
-	row: CommitGraphRow;
+	remoteUrl: string | null;
+	row: CommitGraphRow | null;
 };
 
 export type RefPanelSection = {
@@ -36,15 +38,29 @@ const sectionOrder: CommitRefKind[] = ["Local", "Remote", "Tag", "Stash"];
 
 export function buildRefPanelSections({
 	currentBranchName,
+	refs,
 	remotePrefixes,
 	rows,
 }: {
 	currentBranchName: string | null;
+	refs?: RepositoryRefItem[] | null;
 	remotePrefixes: string[];
 	rows: Array<CommitGraphRow | null>;
 }): RefPanelSection[] {
-	const byKind = new Map<CommitRefKind, RefPanelItem[]>();
-	const seen = new Set<string>();
+	const itemsByKey = new Map<string, RefPanelItem>();
+	const rowsByHash = new Map(
+		rows.flatMap((row) => (row ? [[row.commit.hash, row] as const] : [])),
+	);
+
+	for (const ref of refs ?? []) {
+		addRefItem(itemsByKey, {
+			commitHash: ref.commitHash,
+			currentBranchName,
+			ref,
+			remotePrefixes,
+			row: rowsByHash.get(ref.commitHash) ?? null,
+		});
+	}
 
 	for (const row of rows) {
 		if (!row) {
@@ -52,26 +68,29 @@ export function buildRefPanelSections({
 		}
 
 		for (const ref of rowRefs(row, remotePrefixes)) {
-			const label = refLabelForRemotes(ref.name, remotePrefixes);
-			const key = `${ref.kind}:${ref.name}:${row.commit.hash}`;
-			if (seen.has(key)) {
+			const key = refKey(ref.kind, ref.name, row.commit.hash);
+			const existing = itemsByKey.get(key);
+			if (existing) {
+				existing.row ??= row;
 				continue;
 			}
 
-			seen.add(key);
-			const items = byKind.get(ref.kind) ?? [];
-			items.push({
+			addRefItem(itemsByKey, {
 				commitHash: row.commit.hash,
-				isCurrent: ref.kind === "Local" && ref.name === currentBranchName,
-				kind: ref.kind,
-				label,
-				name: ref.name,
+				currentBranchName,
+				ref: {
+					commitHash: row.commit.hash,
+					kind: ref.kind,
+					name: ref.name,
+					remoteUrl: ref.remoteUrl,
+				},
+				remotePrefixes,
 				row,
 			});
-			byKind.set(ref.kind, items);
 		}
 	}
 
+	const byKind = groupItemsByKind(itemsByKey.values());
 	return sectionOrder
 		.map((kind) => ({
 			count: byKind.get(kind)?.length ?? 0,
@@ -111,11 +130,50 @@ export function refPanelItemToRefInfo(item: RefPanelItem): CommitRefInfo {
 	return {
 		kind: item.kind,
 		name: item.name,
-		remoteUrl:
-			item.row.commit.refs.find(
-				(ref) => ref.kind === item.kind && ref.name === item.name,
-			)?.remoteUrl ?? null,
+		remoteUrl: item.remoteUrl,
 	};
+}
+
+function addRefItem(
+	items: Map<string, RefPanelItem>,
+	input: {
+		commitHash: string;
+		currentBranchName: string | null;
+		ref: RepositoryRefItem;
+		remotePrefixes: string[];
+		row: CommitGraphRow | null;
+	},
+) {
+	const key = refKey(input.ref.kind, input.ref.name, input.commitHash);
+	if (items.has(key)) {
+		return;
+	}
+
+	items.set(key, {
+		commitHash: input.commitHash,
+		isCurrent:
+			input.ref.kind === "Local" && input.ref.name === input.currentBranchName,
+		kind: input.ref.kind,
+		label: refLabelForRemotes(input.ref.name, input.remotePrefixes),
+		name: input.ref.name,
+		remoteUrl: input.ref.remoteUrl,
+		row: input.row,
+	});
+}
+
+function refKey(kind: CommitRefKind, name: string, commitHash: string) {
+	return `${kind}:${name}:${commitHash}`;
+}
+
+function groupItemsByKind(items: Iterable<RefPanelItem>) {
+	const byKind = new Map<CommitRefKind, RefPanelItem[]>();
+	for (const item of items) {
+		const sectionItems = byKind.get(item.kind) ?? [];
+		sectionItems.push(item);
+		byKind.set(item.kind, sectionItems);
+	}
+
+	return byKind;
 }
 
 function rowRefs(

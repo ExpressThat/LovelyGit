@@ -2,7 +2,7 @@ import { ChevronLeft, ChevronRight, Search, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import type { CommitGraphRow } from "@/generated/types";
+import type { CommitGraphRow, RepositoryRefsResponse } from "@/generated/types";
 import { setSetting, useSetting } from "@/lib/settings/settingsStore";
 import { shortHash } from "../utils/format";
 import { BranchRefContextMenu } from "./BranchRefContextMenu";
@@ -22,6 +22,7 @@ export function RefsPanel({
 	onSelectCommit,
 	remotePrefixes,
 	repositoryId,
+	repositoryRefs,
 	rows,
 }: {
 	currentBranchName: string | null;
@@ -29,6 +30,7 @@ export function RefsPanel({
 	onSelectCommit: (row: CommitGraphRow) => void;
 	remotePrefixes: string[];
 	repositoryId: string | null;
+	repositoryRefs: RepositoryRefsResponse | null;
 	rows: Array<CommitGraphRow | null>;
 }) {
 	const isOpen = useSetting("CommitGraphRefsPanelOpen");
@@ -36,11 +38,13 @@ export function RefsPanel({
 	const sections = useMemo(
 		() =>
 			buildRefPanelSections({
-				currentBranchName,
-				remotePrefixes,
+				currentBranchName:
+					repositoryRefs?.currentBranchName ?? currentBranchName,
+				refs: repositoryRefs?.refs,
+				remotePrefixes: repositoryRefs?.remotePrefixes ?? remotePrefixes,
 				rows,
 			}),
-		[currentBranchName, remotePrefixes, rows],
+		[currentBranchName, remotePrefixes, repositoryRefs, rows],
 	);
 	const filteredSections = useMemo(
 		() => filterRefPanelSections(sections, query),
@@ -134,7 +138,7 @@ function RefsEmptyState({ hasQuery }: { hasQuery: boolean }) {
 		<p className="px-1 py-2 text-xs text-muted-foreground">
 			{hasQuery
 				? "No refs match this filter."
-				: "Refs appear as graph pages load."}
+				: "Branches, tags, and stashes appear here."}
 		</p>
 	);
 }
@@ -187,11 +191,19 @@ function RefPanelRow({
 	onSelectCommit: (row: CommitGraphRow) => void;
 	repositoryId: string | null;
 }) {
+	const row = item.row;
 	const button = (
 		<Button
+			aria-disabled={!row}
 			className="h-7 min-w-0 justify-start gap-2 px-2 font-normal"
-			onClick={() => onSelectCommit(item.row)}
-			title={`${item.name} at ${shortHash(item.commitHash)}`}
+			onClick={() => {
+				if (row) onSelectCommit(row);
+			}}
+			title={
+				row
+					? `${item.name} at ${shortHash(item.commitHash)}`
+					: `${item.name} at ${shortHash(item.commitHash)}. Load this commit in the graph to select it.`
+			}
 			variant={item.isCurrent ? "secondary" : "ghost"}
 		>
 			<RefIcon kind={item.kind} />

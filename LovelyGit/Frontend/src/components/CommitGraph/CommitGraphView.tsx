@@ -15,6 +15,7 @@ import {
 	ROW_HEIGHT,
 } from "./constants";
 import { useCommitGraphData } from "./hooks/useCommitGraphData";
+import { useRepositoryRefs } from "./hooks/useRepositoryRefs";
 import { resolveWidths } from "./utils/columns";
 
 export function CommitGraphView({
@@ -48,6 +49,7 @@ export function CommitGraphView({
 		rows,
 		totalRows,
 	} = useCommitGraphData(refreshToken);
+	const repositoryRefs = useRepositoryRefs(repositoryId, refreshToken);
 
 	useEffect(() => {
 		const node = viewportRef.current;
@@ -159,6 +161,7 @@ export function CommitGraphView({
 					onSelectCommit={onSelectCommit}
 					remotePrefixes={remotePrefixes}
 					repositoryId={repositoryId}
+					repositoryRefs={repositoryRefs.refs}
 					rows={rows}
 				/>
 				<div ref={viewportRef} className="flex h-full min-w-0 flex-1 flex-col">
