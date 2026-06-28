@@ -15,9 +15,10 @@ internal static class CommitGraphCommitMapper
             message = commit.Body?.Trim() ?? string.Empty;
         }
 
+        var hash = commit.Hash.ToString();
         return new CommitInfo
         {
-            Hash = commit.Hash.ToString(),
+            Hash = hash,
             Parents = parents,
             Author = string.IsNullOrWhiteSpace(commit.AuthorName) ? "unknown" : commit.AuthorName,
             Email = commit.AuthorEmail,
@@ -37,7 +38,8 @@ internal static class CommitGraphCommitMapper
                     },
                 })
                 .ToList(),
-            RemoteUrl = RemoteCommitUrlBuilder.Build(remoteUrl, commit.Hash.ToString()),
+            RemoteUrl = RemoteCommitUrlBuilder.Build(remoteUrl, hash),
+            RemoteRepositoryUrl = RemoteCommitUrlBuilder.BuildRepository(remoteUrl),
             Stats = null,
         };
     }

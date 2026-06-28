@@ -18,6 +18,7 @@ export function CommitRowLinkMenuItems({
 	subject: string;
 }) {
 	const remoteUrl = row.commit.remoteUrl;
+	const remoteRepositoryUrl = row.commit.remoteRepositoryUrl;
 	return (
 		<>
 			<ContextMenuSeparator />
@@ -59,6 +60,27 @@ export function CommitRowLinkMenuItems({
 					</ContextMenuItem>
 				</>
 			) : null}
+			{remoteRepositoryUrl ? (
+				<>
+					<ContextMenuItem
+						onClick={() =>
+							void copyToClipboard(
+								remoteRepositoryUrl,
+								"Remote repository URL",
+							)
+						}
+					>
+						<Copy />
+						Copy remote repository URL
+					</ContextMenuItem>
+					<ContextMenuItem
+						onClick={() => openRemoteRepository(remoteRepositoryUrl)}
+					>
+						<ExternalLink />
+						Open repository on remote
+					</ContextMenuItem>
+				</>
+			) : null}
 			{refs.length > 0 ? (
 				<>
 					<ContextMenuSeparator />
@@ -87,4 +109,9 @@ export function CommitRowLinkMenuItems({
 function openRemoteCommit(remoteUrl: string) {
 	window.open(remoteUrl, "_blank", "noopener,noreferrer");
 	toast.success("Opened commit on remote");
+}
+
+function openRemoteRepository(remoteUrl: string) {
+	window.open(remoteUrl, "_blank", "noopener,noreferrer");
+	toast.success("Opened repository on remote");
 }

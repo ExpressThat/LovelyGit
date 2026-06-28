@@ -18,6 +18,17 @@ public sealed class RemoteCommitUrlBuilderTests
     }
 
     [Theory]
+    [InlineData("https://github.com/example/repo.git", "https://github.com/example/repo")]
+    [InlineData("git@github.com:example/repo.git", "https://github.com/example/repo")]
+    [InlineData("ssh://git@gitlab.com/example/repo.git", "https://gitlab.com/example/repo")]
+    public void BuildRepository_ReturnsProviderRepositoryUrl(string remoteUrl, string expected)
+    {
+        var result = RemoteCommitUrlBuilder.BuildRepository(remoteUrl);
+
+        Assert.Equal(expected, result);
+    }
+
+    [Theory]
     [InlineData("")]
     [InlineData("not-a-web-url")]
     [InlineData("ftp://example/repo")]

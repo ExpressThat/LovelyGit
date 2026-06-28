@@ -9,7 +9,7 @@ internal static class RemoteCommitUrlBuilder
             return null;
         }
 
-        var webUrl = NormalizeRemoteUrl(remoteUrl.Trim());
+        var webUrl = BuildRepository(remoteUrl);
         if (webUrl == null)
         {
             return null;
@@ -21,6 +21,13 @@ internal static class RemoteCommitUrlBuilder
                 ? "/commits/"
                 : "/commit/";
         return webUrl + separator + Uri.EscapeDataString(commitHash);
+    }
+
+    public static string? BuildRepository(string? remoteUrl)
+    {
+        return string.IsNullOrWhiteSpace(remoteUrl)
+            ? null
+            : NormalizeRemoteUrl(remoteUrl.Trim());
     }
 
     private static string? NormalizeRemoteUrl(string remoteUrl)

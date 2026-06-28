@@ -42,7 +42,7 @@ public sealed class CommitGraphManagerCursorTests
     }
 
     [Fact]
-    public async Task GetCommitGraphPageAsync_IncludesRemoteCommitUrl()
+    public async Task GetCommitGraphPageAsync_IncludesRemoteUrls()
     {
         using var temporary = TemporaryGitRepository.Create();
         temporary.AddRemote("origin", "git@github.com:example/repo.git");
@@ -63,6 +63,7 @@ public sealed class CommitGraphManagerCursorTests
         Assert.Equal(
             $"https://github.com/example/repo/commit/{row.Commit.Hash}",
             row.Commit.RemoteUrl);
+        Assert.Equal("https://github.com/example/repo", row.Commit.RemoteRepositoryUrl);
     }
 
     private sealed class TemporaryGitRepository : IDisposable
