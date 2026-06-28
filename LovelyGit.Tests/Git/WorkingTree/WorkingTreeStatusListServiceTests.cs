@@ -1,3 +1,4 @@
+using ExpressThat.LovelyGit.Services.Git.Cli;
 using ExpressThat.LovelyGit.Services.Git.WorkingTree;
 using ExpressThat.LovelyGit.Services.Git.WorkingTree.Models;
 
@@ -5,6 +6,34 @@ namespace LovelyGit.Tests.Git.WorkingTree;
 
 public sealed class WorkingTreeStatusListServiceTests
 {
+    [Fact]
+    public async Task GetChangesAsync_NativePathFindsRootUntrackedFile()
+    {
+        using var directory = TemporaryDirectory.Create("lovelygit-status-");
+        await CreateInitialCommitAsync(directory.Path);
+        await File.WriteAllTextAsync(Path.Combine(directory.Path, "launch.tmp"), "hello");
+
+        var response = await new WorkingTreeStatusListService(new GitCliService())
+            .GetChangesAsync(directory.Path, CancellationToken.None);
+
+        var file = Assert.Single(response.Untracked);
+        AssertStatus(file, "launch.tmp", "Added", WorkingTreeChangeGroup.Untracked);
+    }
+
+    [Fact]
+    public async Task GetChangesAsync_NativePathFindsModifiedTrackedFile()
+    {
+        using var directory = TemporaryDirectory.Create("lovelygit-status-");
+        await CreateInitialCommitAsync(directory.Path);
+        await File.WriteAllTextAsync(Path.Combine(directory.Path, "file.txt"), "changed content");
+
+        var response = await new WorkingTreeStatusListService(new GitCliService())
+            .GetChangesAsync(directory.Path, CancellationToken.None);
+
+        var file = Assert.Single(response.Unstaged);
+        AssertStatus(file, "file.txt", "Modified", WorkingTreeChangeGroup.Unstaged);
+    }
+
     [Fact]
     public void ParsePorcelainStatus_GroupsCommonStatuses()
     {
@@ -45,5 +74,15 @@ public sealed class WorkingTreeStatusListServiceTests
         Assert.Equal(path, file.Path);
         Assert.Equal(status, file.Status);
         Assert.Equal(group, file.Group);
+    }
+
+    private static async Task CreateInitialCommitAsync(string path)
+    {
+        await GitTestProcess.RunAsync(path, "init");
+        await GitTestProcess.RunAsync(path, "config", "user.email", "test@example.com");
+        await GitTestProcess.RunAsync(path, "config", "user.name", "Test User");
+        await File.WriteAllTextAsync(Path.Combine(path, "file.txt"), "hello");
+        await GitTestProcess.RunAsync(path, "add", ".");
+        await GitTestProcess.RunAsync(path, "commit", "-m", "initial");
     }
 }

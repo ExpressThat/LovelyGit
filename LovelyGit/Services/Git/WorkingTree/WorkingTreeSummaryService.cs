@@ -1,46 +1,21 @@
-using ExpressThat.LovelyGit.Services.Git.Cli;
-using ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser;
 using ExpressThat.LovelyGit.Services.Git.WorkingTree.Models;
 
 namespace ExpressThat.LovelyGit.Services.Git.WorkingTree;
 
 internal sealed class WorkingTreeSummaryService
 {
-    private readonly GitCliService _gitCliService;
+    private readonly WorkingTreeStatusListService _statusListService;
 
-    public WorkingTreeSummaryService(GitCliService gitCliService)
+    public WorkingTreeSummaryService(WorkingTreeStatusListService statusListService)
     {
-        _gitCliService = gitCliService;
+        _statusListService = statusListService;
     }
 
     public async Task<WorkingTreeChangeSummaryResponse> GetSummaryAsync(
         string repositoryPath,
         CancellationToken cancellationToken)
-    {
-        var repositoryPaths = await GitRepositoryDiscovery
-            .ResolveRepositoryPathsAsync(repositoryPath, cancellationToken)
+        => await _statusListService.GetSummaryAsync(repositoryPath, cancellationToken)
             .ConfigureAwait(false);
-        var result = await _gitCliService
-            .ExecuteBufferedAsync(
-                ["--no-optional-locks", "status", "--porcelain=v1", "-z", "--untracked-files=all"],
-                repositoryPaths.WorkTreeDirectory,
-                validateExitCode: false,
-                cancellationToken)
-            .ConfigureAwait(false);
-
-        if (result.ExitCode != 0)
-        {
-            var message = FirstNonEmptyLine(result.StandardError)
-                ?? FirstNonEmptyLine(result.StandardOutput)
-                ?? "Git status failed.";
-            throw new InvalidOperationException(message);
-        }
-
-        return new WorkingTreeChangeSummaryResponse
-        {
-            TotalCount = CountPorcelainRecords(result.StandardOutput.AsSpan()),
-        };
-    }
 
     internal static int CountPorcelainRecords(ReadOnlySpan<char> output)
     {
@@ -73,19 +48,5 @@ internal sealed class WorkingTreeSummaryService
         var remaining = output[offset..];
         var nulIndex = remaining.IndexOf('\0');
         return nulIndex < 0 ? output.Length : offset + nulIndex + 1;
-    }
-
-    private static string? FirstNonEmptyLine(string text)
-    {
-        foreach (var line in text.AsSpan().EnumerateLines())
-        {
-            var trimmed = line.Trim();
-            if (!trimmed.IsEmpty)
-            {
-                return trimmed.ToString();
-            }
-        }
-
-        return null;
     }
 }

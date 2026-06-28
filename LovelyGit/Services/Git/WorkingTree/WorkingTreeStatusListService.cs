@@ -4,8 +4,10 @@ using ExpressThat.LovelyGit.Services.Git.WorkingTree.Models;
 
 namespace ExpressThat.LovelyGit.Services.Git.WorkingTree;
 
-internal sealed class WorkingTreeStatusListService
+internal sealed partial class WorkingTreeStatusListService
 {
+    private const int MaxNativeUntrackedFiles = 1_000;
+    private const int MaxNativeUntrackedDirectories = 4_000;
     private readonly GitCliService _gitCliService;
 
     public WorkingTreeStatusListService(GitCliService gitCliService)
@@ -17,83 +19,97 @@ internal sealed class WorkingTreeStatusListService
         string repositoryPath,
         CancellationToken cancellationToken)
     {
-        var paths = await GitRepositoryDiscovery
-            .ResolveRepositoryPathsAsync(repositoryPath, cancellationToken)
+        var nativeResult = await TryGetNativeChangesAsync(repositoryPath, cancellationToken)
             .ConfigureAwait(false);
-        var result = await _gitCliService
-            .ExecuteBufferedAsync(
-                ["--no-optional-locks", "status", "--porcelain=v1", "-z", "--untracked-files=all"],
-                paths.WorkTreeDirectory,
-                validateExitCode: false,
-                cancellationToken)
+        return nativeResult ?? await GetPorcelainChangesAsync(repositoryPath, cancellationToken)
             .ConfigureAwait(false);
-
-        if (result.ExitCode != 0)
-        {
-            throw new InvalidOperationException(FirstNonEmptyLine(result.StandardError)
-                ?? FirstNonEmptyLine(result.StandardOutput)
-                ?? "Git status failed.");
-        }
-
-        return ParsePorcelainStatus(result.StandardOutput.AsSpan());
     }
 
-    internal static WorkingTreeChangesResponse ParsePorcelainStatus(ReadOnlySpan<char> output)
+    private async Task<WorkingTreeChangesResponse?> TryGetNativeChangesAsync(
+        string repositoryPath,
+        CancellationToken cancellationToken)
     {
-        var response = new WorkingTreeChangesResponse();
-        var offset = 0;
-        while (offset < output.Length)
+        var repository = await LovelyGitRepository.OpenAsync(repositoryPath, cancellationToken)
+            .ConfigureAwait(false);
+        using (repository)
         {
-            if (output.Length - offset < 4)
+            var rootTracking = await new GitIndexRootTracker()
+                .ReadAsync(
+                    repository.GitDirectory,
+                    repository.ObjectFormat,
+                    cancellationToken)
+                .ConfigureAwait(false);
+            var fastResponse = new WorkingTreeChangesResponse();
+            fastResponse.Untracked.AddRange(await FindUntrackedFilesAsync(
+                    repository.WorkTreeDirectory,
+                    repository.GitDirectory,
+                    rootTracking.RootTrackedFiles,
+                    rootTracking.RootTrackedDirectories,
+                    cancellationToken,
+                    scanTrackedDirectories: false)
+                .ConfigureAwait(false));
+            if (fastResponse.Untracked.Count > 0)
             {
-                break;
+                Sort(fastResponse.Untracked);
+                return fastResponse;
             }
 
-            var x = output[offset];
-            var y = output[offset + 1];
-            offset += 3;
-            var path = ReadNulTerminated(output, ref offset);
-            var oldPath = x is 'R' or 'C' || y is 'R' or 'C'
-                ? ReadNulTerminated(output, ref offset)
-                : null;
-            AddStatus(response, x, y, path, oldPath);
-        }
+            var scanner = new GitIndexStatusScanner();
+            var fullScan = await scanner
+                .ScanAsync(
+                    repository.GitDirectory,
+                    repository.WorkTreeDirectory,
+                    repository.ObjectFormat,
+                    cancellationToken)
+                .ConfigureAwait(false);
+            if (await HasStagedChangesAsync(repository, fullScan, cancellationToken).ConfigureAwait(false))
+            {
+                return null;
+            }
 
-        Sort(response.Staged);
-        Sort(response.Unstaged);
-        Sort(response.Untracked);
-        Sort(response.Unmerged);
-        return response;
+            fullScan.Response.Untracked.AddRange(await FindUntrackedFilesAsync(
+                    repository.WorkTreeDirectory,
+                    repository.GitDirectory,
+                    fullScan.RootTrackedFiles,
+                    fullScan.RootTrackedDirectories,
+                    cancellationToken)
+                .ConfigureAwait(false));
+            Sort(fullScan.Response.Unstaged);
+            Sort(fullScan.Response.Untracked);
+            Sort(fullScan.Response.Unmerged);
+            return fullScan.Response;
+        }
     }
 
-    private static void AddStatus(
-        WorkingTreeChangesResponse response,
-        char x,
-        char y,
-        string path,
-        string? oldPath)
+    public async Task<WorkingTreeChangeSummaryResponse> GetSummaryAsync(
+        string repositoryPath,
+        CancellationToken cancellationToken)
     {
-        if (x == '?' && y == '?')
+        var changes = await GetChangesAsync(repositoryPath, cancellationToken).ConfigureAwait(false);
+        return new WorkingTreeChangeSummaryResponse
         {
-            response.Untracked.Add(Create(path, oldPath, "Added", WorkingTreeChangeGroup.Untracked));
-            return;
+            TotalCount = changes.TotalCount,
+        };
+    }
+
+    private static async Task<bool> HasStagedChangesAsync(
+        LovelyGitRepository repository,
+        GitIndexStatusScan scan,
+        CancellationToken cancellationToken)
+    {
+        if (scan.Response.Unmerged.Count > 0)
+        {
+            return false;
         }
 
-        if (IsUnmerged(x, y))
+        if (repository.HeadTarget == null)
         {
-            response.Unmerged.Add(Create(path, oldPath, "Unmerged", WorkingTreeChangeGroup.Unmerged));
-            return;
+            return scan.RootTreeId != null;
         }
 
-        if (x != ' ')
-        {
-            response.Staged.Add(Create(path, oldPath, ToStatus(x), WorkingTreeChangeGroup.Staged));
-        }
-
-        if (y != ' ')
-        {
-            response.Unstaged.Add(Create(path, oldPath, ToStatus(y), WorkingTreeChangeGroup.Unstaged));
-        }
+        var head = await repository.GetCommitAsync(repository.HeadTarget.Value, cancellationToken)
+            .ConfigureAwait(false);
+        return head.TreeHash == null || scan.RootTreeId != head.TreeHash;
     }
 
     private static WorkingTreeChangedFile Create(
@@ -109,55 +125,8 @@ internal sealed class WorkingTreeStatusListService
             Group = group,
         };
 
-    private static string ReadNulTerminated(ReadOnlySpan<char> output, ref int offset)
-    {
-        var remaining = output[offset..];
-        var nulIndex = remaining.IndexOf('\0');
-        if (nulIndex < 0)
-        {
-            offset = output.Length;
-            return remaining.ToString();
-        }
-
-        var value = remaining[..nulIndex].ToString();
-        offset += nulIndex + 1;
-        return value;
-    }
-
-    private static bool IsUnmerged(char x, char y)
-    {
-        return x == 'U'
-            || y == 'U'
-            || (x == 'A' && y == 'A')
-            || (x == 'D' && y == 'D');
-    }
-
-    private static string ToStatus(char value) =>
-        value switch
-        {
-            'A' => "Added",
-            'D' => "Deleted",
-            'R' => "Renamed",
-            'C' => "Copied",
-            _ => "Modified",
-        };
-
     private static void Sort(List<WorkingTreeChangedFile> files)
     {
         files.Sort((left, right) => string.Compare(left.Path, right.Path, StringComparison.Ordinal));
-    }
-
-    private static string? FirstNonEmptyLine(string text)
-    {
-        foreach (var line in text.AsSpan().EnumerateLines())
-        {
-            var trimmed = line.Trim();
-            if (!trimmed.IsEmpty)
-            {
-                return trimmed.ToString();
-            }
-        }
-
-        return null;
     }
 }
