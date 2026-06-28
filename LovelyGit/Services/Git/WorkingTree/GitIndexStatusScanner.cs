@@ -21,6 +21,20 @@ internal sealed partial class GitIndexStatusScanner
         }
 
         var bytes = await File.ReadAllBytesAsync(indexPath, cancellationToken).ConfigureAwait(false);
+        var length = bytes.Length;
+        var result = Scan(bytes, workTreeDirectory, objectFormat, cancellationToken, includeTrackedChanges);
+        bytes = [];
+        GitIndexMemory.ReleaseLargeBuffer(length);
+        return result;
+    }
+
+    private static GitIndexStatusScan Scan(
+        byte[] bytes,
+        string workTreeDirectory,
+        GitObjectFormat objectFormat,
+        CancellationToken cancellationToken,
+        bool includeTrackedChanges)
+    {
         if (bytes.Length < 12 || !bytes.AsSpan(0, 4).SequenceEqual("DIRC"u8))
         {
             throw new InvalidDataException("Git index header is invalid.");
@@ -231,17 +245,3 @@ internal sealed partial class GitIndexStatusScanner
             Group = group,
         };
 }
-
-internal sealed record GitIndexStatusScan(
-    WorkingTreeChangesResponse Response,
-    GitObjectId? RootTreeId,
-    HashSet<string> RootTrackedFiles,
-    HashSet<string> RootTrackedDirectories);
-
-internal sealed record GitIndexStatusEntry(
-    string Path,
-    int Stage,
-    uint FileSize,
-    DateTimeOffset ModifiedTime,
-    bool SkipWorkTree,
-    bool IntentToAdd);

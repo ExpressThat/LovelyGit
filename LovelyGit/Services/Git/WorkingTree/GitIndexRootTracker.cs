@@ -18,6 +18,18 @@ internal sealed class GitIndexRootTracker
         }
 
         var bytes = await File.ReadAllBytesAsync(indexPath, cancellationToken).ConfigureAwait(false);
+        var length = bytes.Length;
+        var result = Read(bytes, objectFormat, cancellationToken);
+        bytes = [];
+        GitIndexMemory.ReleaseLargeBuffer(length);
+        return result;
+    }
+
+    private static GitIndexRootTracking Read(
+        byte[] bytes,
+        GitObjectFormat objectFormat,
+        CancellationToken cancellationToken)
+    {
         if (bytes.Length < 12 || !bytes.AsSpan(0, 4).SequenceEqual("DIRC"u8))
         {
             throw new InvalidDataException("Git index header is invalid.");

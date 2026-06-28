@@ -50,6 +50,21 @@ public sealed class WorkingTreeStatusListServiceTests
     }
 
     [Fact]
+    public async Task GetChangesAsync_ResolvesHeadFromPackedRefs()
+    {
+        using var directory = TemporaryDirectory.Create("lovelygit-status-");
+        await CreateInitialCommitAsync(directory.Path);
+        await GitTestProcess.RunAsync(directory.Path, "pack-refs", "--all", "--prune");
+        await File.WriteAllTextAsync(Path.Combine(directory.Path, "file.txt"), "changed content");
+
+        var response = await new WorkingTreeStatusListService(new GitCliService())
+            .GetChangesAsync(directory.Path, CancellationToken.None);
+
+        var file = Assert.Single(response.Unstaged);
+        AssertStatus(file, "file.txt", "Modified", WorkingTreeChangeGroup.Unstaged);
+    }
+
+    [Fact]
     public async Task GetChangesAsync_FallsBackWhenNativeUntrackedScanIsIncomplete()
     {
         using var directory = TemporaryDirectory.Create("lovelygit-status-");

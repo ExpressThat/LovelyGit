@@ -29,64 +29,65 @@ internal sealed partial class WorkingTreeStatusListService
         string repositoryPath,
         CancellationToken cancellationToken)
     {
-        var repository = await LovelyGitRepository.OpenAsync(repositoryPath, cancellationToken)
+        var paths = await GitRepositoryDiscovery.ResolveRepositoryPathsAsync(repositoryPath, cancellationToken)
             .ConfigureAwait(false);
-        using (repository)
+        var objectFormat = await GitRepositoryDiscovery.ReadObjectFormatAsync(paths.GitDirectory, cancellationToken)
+            .ConfigureAwait(false);
+        var rootTracking = await new GitIndexRootTracker()
+            .ReadAsync(paths.GitDirectory, objectFormat, cancellationToken)
+            .ConfigureAwait(false);
+        var fastResponse = new WorkingTreeChangesResponse();
+        var rootUntracked = await FindUntrackedFilesAsync(
+                paths.WorkTreeDirectory,
+                paths.GitDirectory,
+                rootTracking.RootTrackedFiles,
+                rootTracking.RootTrackedDirectories,
+                cancellationToken,
+                scanTrackedDirectories: false)
+            .ConfigureAwait(false);
+        if (!rootUntracked.IsComplete)
         {
-            var rootTracking = await GetRootTrackingAsync(repository, cancellationToken)
-                .ConfigureAwait(false);
-            var fastResponse = new WorkingTreeChangesResponse();
-            var rootUntracked = await FindUntrackedFilesAsync(
-                    repository.WorkTreeDirectory,
-                    repository.GitDirectory,
-                    rootTracking.RootTrackedFiles,
-                    rootTracking.RootTrackedDirectories,
-                    cancellationToken,
-                    scanTrackedDirectories: false)
-                .ConfigureAwait(false);
-            if (!rootUntracked.IsComplete)
-            {
-                return null;
-            }
-
-            fastResponse.Untracked.AddRange(rootUntracked.Files);
-            if (fastResponse.Untracked.Count > 0)
-            {
-                Sort(fastResponse.Untracked);
-                return fastResponse;
-            }
-
-            var scanner = new GitIndexStatusScanner();
-            var fullScan = await scanner
-                .ScanAsync(
-                    repository.GitDirectory,
-                    repository.WorkTreeDirectory,
-                    repository.ObjectFormat,
-                    cancellationToken)
-                .ConfigureAwait(false);
-            if (await HasStagedChangesAsync(repository, fullScan, cancellationToken).ConfigureAwait(false))
-            {
-                return null;
-            }
-
-            var untracked = await FindUntrackedFilesAsync(
-                    repository.WorkTreeDirectory,
-                    repository.GitDirectory,
-                    fullScan.RootTrackedFiles,
-                    fullScan.RootTrackedDirectories,
-                    cancellationToken)
-                .ConfigureAwait(false);
-            if (!untracked.IsComplete)
-            {
-                return null;
-            }
-
-            fullScan.Response.Untracked.AddRange(untracked.Files);
-            Sort(fullScan.Response.Unstaged);
-            Sort(fullScan.Response.Untracked);
-            Sort(fullScan.Response.Unmerged);
-            return fullScan.Response;
+            return null;
         }
+
+        fastResponse.Untracked.AddRange(rootUntracked.Files);
+        if (fastResponse.Untracked.Count > 0)
+        {
+            Sort(fastResponse.Untracked);
+            return fastResponse;
+        }
+
+        var scanner = new GitIndexStatusScanner();
+        var fullScan = await scanner
+            .ScanAsync(
+                paths.GitDirectory,
+                paths.WorkTreeDirectory,
+                objectFormat,
+                cancellationToken)
+            .ConfigureAwait(false);
+        if (await HasStagedChangesAsync(paths.GitDirectory, objectFormat, fullScan, cancellationToken)
+                .ConfigureAwait(false))
+        {
+            return null;
+        }
+
+        var untracked = await FindUntrackedFilesAsync(
+                paths.WorkTreeDirectory,
+                paths.GitDirectory,
+                fullScan.RootTrackedFiles,
+                fullScan.RootTrackedDirectories,
+                cancellationToken)
+            .ConfigureAwait(false);
+        if (!untracked.IsComplete)
+        {
+            return null;
+        }
+
+        fullScan.Response.Untracked.AddRange(untracked.Files);
+        Sort(fullScan.Response.Unstaged);
+        Sort(fullScan.Response.Untracked);
+        Sort(fullScan.Response.Unmerged);
+        return fullScan.Response;
     }
 
     public async Task<WorkingTreeChangeSummaryResponse> GetSummaryAsync(
@@ -101,7 +102,8 @@ internal sealed partial class WorkingTreeStatusListService
     }
 
     private static async Task<bool> HasStagedChangesAsync(
-        LovelyGitRepository repository,
+        string gitDirectory,
+        GitObjectFormat objectFormat,
         GitIndexStatusScan scan,
         CancellationToken cancellationToken)
     {
@@ -110,50 +112,107 @@ internal sealed partial class WorkingTreeStatusListService
             return false;
         }
 
-        if (repository.HeadTarget == null)
+        var headTreeId = await ReadHeadTreeIdAsync(gitDirectory, objectFormat, cancellationToken)
+            .ConfigureAwait(false);
+        if (headTreeId == null)
         {
             return scan.RootTreeId != null;
         }
 
-        var head = await repository.GetCommitAsync(repository.HeadTarget.Value, cancellationToken)
-            .ConfigureAwait(false);
-        return head.TreeHash == null || scan.RootTreeId != head.TreeHash;
+        return scan.RootTreeId != headTreeId;
     }
 
-    private static async Task<GitIndexRootTracking> GetRootTrackingAsync(
-        LovelyGitRepository repository,
+    private static async Task<GitObjectId?> ReadHeadTreeIdAsync(
+        string gitDirectory,
+        GitObjectFormat objectFormat,
         CancellationToken cancellationToken)
     {
-        if (repository.HeadTarget == null)
-        {
-            return await new GitIndexRootTracker()
-                .ReadAsync(repository.GitDirectory, repository.ObjectFormat, cancellationToken)
-                .ConfigureAwait(false);
-        }
-
-        var head = await repository.GetCommitAsync(repository.HeadTarget.Value, cancellationToken)
+        var headTarget = await ReadHeadTargetAsync(gitDirectory, objectFormat, cancellationToken)
             .ConfigureAwait(false);
-        if (head.TreeHash == null)
+        if (headTarget == null)
         {
-            return new GitIndexRootTracking([], []);
+            return null;
         }
 
-        var files = new HashSet<string>(StringComparer.Ordinal);
-        var directories = new HashSet<string>(StringComparer.Ordinal);
-        foreach (var entry in await repository.ReadRootTreeEntriesAsync(head.TreeHash.Value, cancellationToken)
-            .ConfigureAwait(false))
+        using var objectStore = new GitObjectStore(gitDirectory, objectFormat);
+        var data = await objectStore.ReadObjectAsync(headTarget.Value, cancellationToken)
+            .ConfigureAwait(false);
+        return data.Kind == GitObjectKind.Commit
+            ? GitObjectParsers.ParseCommit(headTarget.Value, data.Data).TreeHash
+            : null;
+    }
+
+    private static async Task<GitObjectId?> ReadHeadTargetAsync(
+        string gitDirectory,
+        GitObjectFormat objectFormat,
+        CancellationToken cancellationToken)
+    {
+        var headPath = Path.Combine(gitDirectory, "HEAD");
+        if (!File.Exists(headPath))
         {
-            if (entry.IsTree)
-            {
-                directories.Add(entry.Name);
-            }
-            else
-            {
-                files.Add(entry.Name);
-            }
+            return null;
         }
 
-        return new GitIndexRootTracking(files, directories);
+        var text = (await File.ReadAllTextAsync(headPath, cancellationToken).ConfigureAwait(false)).Trim();
+        const string refPrefix = "ref:";
+        if (!text.StartsWith(refPrefix, StringComparison.OrdinalIgnoreCase))
+        {
+            return GitObjectId.TryParse(text, objectFormat, out var detachedId) ? detachedId : null;
+        }
+
+        var refName = text.AsSpan(refPrefix.Length).Trim().ToString();
+        return await ReadRefTargetAsync(gitDirectory, objectFormat, refName, cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    private static async Task<GitObjectId?> ReadRefTargetAsync(
+        string gitDirectory,
+        GitObjectFormat objectFormat,
+        string refName,
+        CancellationToken cancellationToken)
+    {
+        var looseRefPath = Path.Combine(gitDirectory, refName.Replace('/', Path.DirectorySeparatorChar));
+        if (File.Exists(looseRefPath))
+        {
+            var text = (await File.ReadAllTextAsync(looseRefPath, cancellationToken).ConfigureAwait(false)).Trim();
+            return GitObjectId.TryParse(text, objectFormat, out var id) ? id : null;
+        }
+
+        return ReadPackedRefTarget(gitDirectory, objectFormat, refName, cancellationToken);
+    }
+
+    private static GitObjectId? ReadPackedRefTarget(
+        string gitDirectory,
+        GitObjectFormat objectFormat,
+        string refName,
+        CancellationToken cancellationToken)
+    {
+        var packedRefsPath = Path.Combine(gitDirectory, "packed-refs");
+        if (!File.Exists(packedRefsPath))
+        {
+            return null;
+        }
+
+        foreach (var line in File.ReadLines(packedRefsPath))
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            if (line.Length == 0 || line[0] == '#' || line[0] == '^')
+            {
+                continue;
+            }
+
+            var spaceIndex = line.IndexOf(' ');
+            if (spaceIndex <= 0
+                || !line.AsSpan(spaceIndex + 1).SequenceEqual(refName)
+                || !GitObjectId.TryParse(line.AsSpan(0, spaceIndex), objectFormat, out var id))
+            {
+                continue;
+            }
+
+            return id;
+        }
+
+        return null;
     }
 
     private static WorkingTreeChangedFile Create(
