@@ -121,7 +121,12 @@ export function CommitRowContextMenu({
 						<Tag />
 						Create tag
 					</ContextMenuItem>
-					<CommitRowLinkMenuItems refs={refs} row={row} subject={subject} />
+					<CommitRowLinkMenuItems
+						refs={refs}
+						repositoryId={repositoryId}
+						row={row}
+						subject={subject}
+					/>
 				</ContextMenuContent>
 			</ContextMenu>
 			<CherryPickCommitDialog

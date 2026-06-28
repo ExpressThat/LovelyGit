@@ -12,12 +12,14 @@ internal static class CommitGraphServiceCollectionExtensions
         services.AddLovelyGitJsonTypeInfoResolver(CommitGraphJsonSerializerContext.Default);
         services.AddSingleton<CommitDetailsService>();
         services.AddSingleton<CommitFileDiffService>();
+        services.AddSingleton<CommitPatchService>();
         services.AddSingleton<CommitDetailsPreloadService>();
         services.AddSingleton<CommitGraphPageService>();
         services.AddSingleton<ICommandResponder, CommitGraphCommandResolver>();
         services.AddSingleton<ICommandResponder, CancelCommitDiffPreparationCommandResolver>();
         services.AddSingleton<ICommandResponder, GetCommitDetailsCommandResolver>();
         services.AddSingleton<ICommandResponder, GetCommitFileDiffCommandResolver>();
+        services.AddSingleton<ICommandResponder, GetCommitPatchCommandResolver>();
 
         return services;
     }

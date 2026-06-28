@@ -1,19 +1,23 @@
-import { Copy, ExternalLink, GitBranch, Tag } from "lucide-react";
+import { Copy, ExternalLink, FileText, GitBranch, Tag } from "lucide-react";
 import { toast } from "sonner";
 import {
 	ContextMenuItem,
 	ContextMenuSeparator,
 } from "@/components/ui/context-menu";
 import type { CommitGraphRow } from "@/generated/types";
+import { sendRequestWithResponse } from "@/lib/commands";
+import { NativeMessageType } from "@/lib/nativeMessaging";
 import { copyToClipboard } from "../utils/clipboard";
 import { shortHash } from "../utils/format";
 
 export function CommitRowLinkMenuItems({
 	refs,
+	repositoryId,
 	row,
 	subject,
 }: {
 	refs: string[];
+	repositoryId: string | null;
 	row: CommitGraphRow;
 	subject: string;
 }) {
@@ -46,6 +50,14 @@ export function CommitRowLinkMenuItems({
 				<Copy />
 				Copy message
 			</ContextMenuItem>
+			{repositoryId ? (
+				<ContextMenuItem
+					onClick={() => void copyCommitPatch(repositoryId, row.commit.hash)}
+				>
+					<FileText />
+					Copy patch
+				</ContextMenuItem>
+			) : null}
 			{remoteUrl ? (
 				<>
 					<ContextMenuItem
@@ -114,4 +126,24 @@ function openRemoteCommit(remoteUrl: string) {
 function openRemoteRepository(remoteUrl: string) {
 	window.open(remoteUrl, "_blank", "noopener,noreferrer");
 	toast.success("Opened repository on remote");
+}
+
+async function copyCommitPatch(repositoryId: string, commitHash: string) {
+	try {
+		const response = await sendRequestWithResponse({
+			commandType: NativeMessageType.GetCommitPatch,
+			arguments: {
+				repositoryId,
+				commitHash,
+			},
+		});
+		await copyToClipboard(response.patch, "Patch");
+		if (response.isTruncated) {
+			toast.warning("Patch copied, but it was truncated");
+		}
+	} catch (error) {
+		toast.error(
+			error instanceof Error ? error.message : "Failed to copy commit patch.",
+		);
+	}
 }
