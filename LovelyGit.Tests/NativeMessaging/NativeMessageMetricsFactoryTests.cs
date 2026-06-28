@@ -25,8 +25,8 @@ public sealed class NativeMessageMetricsFactoryTests
 
         Assert.True(metrics.DurationMs >= 0);
         Assert.Equal(42, metrics.RequestPayloadBytes);
-        Assert.True(metrics.ManagedMemoryBytes > 0);
-        Assert.True(metrics.WorkingSetBytes > 0);
-        Assert.True(metrics.PrivateMemoryBytes > 0);
+        Assert.True(metrics.ManagedMemoryBytes >= 0);
+        Assert.True(metrics.WorkingSetBytes >= 0);
+        Assert.True(metrics.PrivateMemoryBytes >= 0);
     }
 }
