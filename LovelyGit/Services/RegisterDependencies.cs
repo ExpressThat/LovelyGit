@@ -7,6 +7,7 @@ using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.CherryPick
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.CommitGraph;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.KnownRepository;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Merge;
+using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.OperationState;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Rebase;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Reset;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Revert;
@@ -40,6 +41,7 @@ namespace ExpressThat.LovelyGit.Services
                 .AddRebaseCommands()
                 .AddStashCommands()
                 .AddTagCommands()
+                .AddOperationStateCommands()
                 .AddKnownRepositoryCommands()
                 .AddCommitGraphCommands()
                 .AddWorkingTreeCommands()

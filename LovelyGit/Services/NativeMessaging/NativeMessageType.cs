@@ -5,6 +5,7 @@ using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.CherryPick
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.CommitGraph;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.KnownRepository;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Merge;
+using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.OperationState;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Rebase;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Reset;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Revert;
@@ -15,6 +16,7 @@ using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.WorkingTre
 using ExpressThat.LovelyGit.Services.NativeMessaging.Commands;
 using ExpressThat.LovelyGit.Services.Data.Models;
 using ExpressThat.LovelyGit.Services.Git.CommitGraph.Models;
+using ExpressThat.LovelyGit.Services.Git.OperationState;
 using ExpressThat.LovelyGit.Services.Git.WorkingTree.Models;
 using ExpressThat.LovelyGit.Services.Settings;
 using System.Text.Json;
@@ -42,6 +44,8 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging
         GetCommitFileDiff,
         [NativeMessageContract(typeof(GetCommitPatchCommandArguments), typeof(CommitPatchResponse))]
         GetCommitPatch,
+        [NativeMessageContract(typeof(GetGitOperationStateCommandArguments), typeof(GitOperationState))]
+        GetGitOperationState,
         [NativeMessageContract(typeof(GetWorkingTreeChangesCommandArguments), typeof(WorkingTreeChangeSummaryResponse))]
         GetWorkingTreeChangeSummary,
         [NativeMessageContract(typeof(GetWorkingTreeChangesCommandArguments), typeof(WorkingTreeChangesResponse))]
