@@ -34,6 +34,7 @@ internal static class CommitGraphCommitMapper
                     {
                         GitRefKind.Remote => CommitRefKind.Remote,
                         GitRefKind.Tag => CommitRefKind.Tag,
+                        GitRefKind.Stash => CommitRefKind.Stash,
                         _ => CommitRefKind.Local,
                     },
                 })

@@ -11,6 +11,7 @@ using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Rebase;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Reset;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Revert;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Settings;
+using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Stashes;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Tags;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.WorkingTree;
 using ExpressThat.LovelyGit.Services.NativeMessaging.Commands;
@@ -37,6 +38,7 @@ namespace ExpressThat.LovelyGit.Services
                 .AddResetCommands()
                 .AddMergeCommands()
                 .AddRebaseCommands()
+                .AddStashCommands()
                 .AddTagCommands()
                 .AddKnownRepositoryCommands()
                 .AddCommitGraphCommands()

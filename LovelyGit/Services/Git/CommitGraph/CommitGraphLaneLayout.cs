@@ -43,6 +43,27 @@ internal static class CommitGraphLaneLayout
         return activeLaneTargets.Count - 1;
     }
 
+    public static int AllocateLaneAfter(
+        List<string?> activeLaneTargets,
+        int reservedLane)
+    {
+        while (activeLaneTargets.Count <= reservedLane)
+        {
+            activeLaneTargets.Add(null);
+        }
+
+        for (var i = reservedLane + 1; i < activeLaneTargets.Count; i++)
+        {
+            if (activeLaneTargets[i] == null)
+            {
+                return i;
+            }
+        }
+
+        activeLaneTargets.Add(null);
+        return activeLaneTargets.Count - 1;
+    }
+
     public static void SetLaneTarget(List<string?> activeLaneTargets, int lane, string target)
     {
         while (lane >= activeLaneTargets.Count)

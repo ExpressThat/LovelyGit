@@ -39,6 +39,7 @@ export function CommitStagedForm({
 				<label className="block pr-12">
 					<span className="sr-only">Commit title</span>
 					<input
+						autoComplete="new-password"
 						className="h-8 w-full border-0 bg-transparent p-0 text-lg text-foreground outline-none placeholder:text-muted-foreground"
 						disabled={isBusy}
 						onChange={(event) => onCommitTitleChange(event.target.value)}
@@ -50,6 +51,7 @@ export function CommitStagedForm({
 				<label className="block">
 					<span className="sr-only">Commit body</span>
 					<textarea
+						autoComplete="new-password"
 						className="min-h-24 w-full resize-none border-0 bg-transparent p-0 text-sm text-muted-foreground outline-none placeholder:text-muted-foreground"
 						disabled={isBusy}
 						onChange={(event) => onCommitBodyChange(event.target.value)}

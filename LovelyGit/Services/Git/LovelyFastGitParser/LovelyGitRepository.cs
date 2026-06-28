@@ -91,6 +91,11 @@ internal sealed partial class LovelyGitRepository : IDisposable
                 AddName(tagNamesByCommit, commitTarget, displayName);
                 AddRef(refsByCommit, commitTarget, displayName, kind);
             }
+            else if (kind == GitRefKind.Stash)
+            {
+                refsByFullName[fullName] = new GitRef(displayName, rawRef.Target, kind);
+                AddRef(refsByCommit, rawRef.Target, displayName, kind);
+            }
         }
 
         return new LovelyGitRepository(
@@ -142,24 +147,26 @@ internal sealed partial class LovelyGitRepository : IDisposable
 
     public async Task<IReadOnlyList<GitCommit>> GetStartingCommitsAsync(CancellationToken cancellationToken)
     {
-        var ids = new HashSet<GitObjectId>();
-        foreach (var reference in _refsByFullName.Values)
+        var seenIds = new HashSet<GitObjectId>();
+        var orderedIds = new List<GitObjectId>();
+        foreach (var reference in _refsByFullName.Values
+                     .Where(reference => reference.Kind != GitRefKind.Tag)
+                     .OrderBy(reference => reference.Kind == GitRefKind.Stash ? 0 : 1))
         {
-            if (reference.Kind != GitRefKind.Tag)
+            if (seenIds.Add(reference.Target))
             {
-                ids.Add(reference.Target);
+                orderedIds.Add(reference.Target);
             }
         }
 
-        if (HeadTarget != null)
+        if (HeadTarget != null && seenIds.Add(HeadTarget.Value))
         {
-            ids.Add(HeadTarget.Value);
+            orderedIds.Add(HeadTarget.Value);
         }
 
-        var orderedIds = ids.ToArray();
-        var commits = new GitCommit?[orderedIds.Length];
+        var commits = new GitCommit?[orderedIds.Count];
         await Parallel.ForEachAsync(
-                Enumerable.Range(0, orderedIds.Length),
+                Enumerable.Range(0, orderedIds.Count),
                 cancellationToken,
                 async (index, itemCancellationToken) =>
                 {

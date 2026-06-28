@@ -16,10 +16,16 @@ internal static class CommitGraphRowBuilder
         var hash = commit.Hash.ToString();
         var parentList = parents is List<string> list ? list : parents.ToList();
         var incomingLanes = CommitGraphLaneLayout.FindAllLanesByTarget(activeLaneTargets, hash);
-        var activeLanesAbove = CommitGraphLaneLayout.GetActiveLanes(activeLaneTargets);
-        var currentLane = incomingLanes.Count > 0
+        var activeLanesAbove = rowIndex == 0
+            ? []
+            : CommitGraphLaneLayout.GetActiveLanes(activeLaneTargets);
+        var currentLane = ShouldLandStashLanesOnPrimaryLane(commit, incomingLanes, activeLaneTargets)
+            ? 0
+            : incomingLanes.Count > 0
             ? incomingLanes[0]
-            : CommitGraphLaneLayout.AllocateLane(activeLaneTargets);
+            : IsStashRef(commit)
+                ? CommitGraphLaneLayout.AllocateLaneAfter(activeLaneTargets, reservedLane: 0)
+                : CommitGraphLaneLayout.AllocateLane(activeLaneTargets);
 
         foreach (var lane in incomingLanes)
         {
@@ -28,7 +34,11 @@ internal static class CommitGraphRowBuilder
 
         var mainParent = parentList.Count > 0 ? parentList[0] : null;
 
-        if (!string.IsNullOrEmpty(mainParent))
+        if (!string.IsNullOrEmpty(mainParent) && IsStashRef(commit))
+        {
+            CommitGraphLaneLayout.SetLaneTarget(activeLaneTargets, currentLane, mainParent);
+        }
+        else if (!string.IsNullOrEmpty(mainParent))
         {
             CommitGraphLaneLayout.SetLaneTarget(activeLaneTargets, currentLane, mainParent);
         }
@@ -65,8 +75,24 @@ internal static class CommitGraphRowBuilder
             EdgesAbove = BuildEdgesAbove(incomingLanes, currentLane),
             EdgesBelow = BuildEdgesBelow(currentLane, mainParent, mergeParentLanes),
             IsMergeCommit = parentList.Count > 1,
-            IsBranchTip = commitInfo.Branches.Count > 0,
+            IsBranchTip = commitInfo.Branches.Count > 0 || commitInfo.Refs.Any(reference => reference.Kind == CommitRefKind.Stash),
         };
+    }
+
+    private static bool IsStashRef(GitCommit commit)
+    {
+        return commit.Refs.Any(reference => reference.Kind == GitRefKind.Stash);
+    }
+
+    private static bool ShouldLandStashLanesOnPrimaryLane(
+        GitCommit commit,
+        IReadOnlyCollection<int> incomingLanes,
+        List<string?> activeLaneTargets)
+    {
+        return !IsStashRef(commit) &&
+            incomingLanes.Count > 0 &&
+            incomingLanes.All(lane => lane > 0) &&
+            (activeLaneTargets.Count == 0 || activeLaneTargets[0] == null);
     }
 
     private static List<CommitLaneEdge> BuildEdgesAbove(IEnumerable<int> incomingLanes, int currentLane)

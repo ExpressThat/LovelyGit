@@ -77,6 +77,10 @@ function RefGroupPill({
 			</span>
 		</span>
 	);
+	if (group.primary.kind === "Stash") {
+		return pill;
+	}
+
 	return (
 		<BranchRefContextMenu
 			currentBranchName={currentBranchName}

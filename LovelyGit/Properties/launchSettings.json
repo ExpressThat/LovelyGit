@@ -8,7 +8,7 @@
       "applicationUrl": "http://localhost:5000",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
-        "LOVELYGIT_TEST_WINDOW_OFFSCREEN": "true"
+        "LOVELYGIT_TEST_WINDOW_OFFSCREEN": "false"
       }
     }
   }

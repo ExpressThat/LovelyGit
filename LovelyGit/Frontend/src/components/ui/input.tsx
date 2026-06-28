@@ -3,9 +3,15 @@ import type * as React from "react";
 
 import { cn } from "@/lib/utils";
 
-function Input({ className, type, ...props }: React.ComponentProps<"input">) {
+function Input({
+	autoComplete,
+	className,
+	type,
+	...props
+}: React.ComponentProps<"input">) {
 	return (
 		<InputPrimitive
+			autoComplete={autoComplete ?? "new-password"}
 			type={type}
 			data-slot="input"
 			className={cn(

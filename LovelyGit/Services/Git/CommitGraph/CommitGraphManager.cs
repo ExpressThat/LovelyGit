@@ -119,7 +119,7 @@ public sealed class CommitGraphManager : IDisposable
 
             var rowIndex = offset + rowCount;
             var hash = commit.Hash.ToString();
-            var parents = commit.ParentHashes.Select(parent => parent.ToString()).ToList();
+            var parents = GetGraphParents(commit);
 
             foreach (var parentHash in parents)
             {
@@ -207,7 +207,7 @@ public sealed class CommitGraphManager : IDisposable
             var hash = head.Hash.ToString();
             if (created.MarkSeen(hash))
             {
-                created.EnqueueFrontier(hash, CommitGraphCommitPriority.FromCommit(head));
+                created.EnqueueFrontier(hash, CommitGraphCommitPriority.FromCommit(head, IsStashRef(head)));
             }
         }
 
@@ -218,6 +218,22 @@ public sealed class CommitGraphManager : IDisposable
     private async Task<IReadOnlyList<GitCommit>> GetStartingCommitsAsync(CancellationToken cancellationToken)
     {
         return await _repository.GetStartingCommitsAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    private static List<string> GetGraphParents(GitCommit commit)
+    {
+        var parents = commit.ParentHashes.Select(parent => parent.ToString()).ToList();
+        if (!IsStashRef(commit) || parents.Count <= 1)
+        {
+            return parents;
+        }
+
+        return [parents[0]];
+    }
+
+    private static bool IsStashRef(GitCommit commit)
+    {
+        return commit.Refs.Any(reference => reference.Kind == GitRefKind.Stash);
     }
 
     private async Task<GitCommit?> TryGetCommitAsync(string hash, CancellationToken cancellationToken)

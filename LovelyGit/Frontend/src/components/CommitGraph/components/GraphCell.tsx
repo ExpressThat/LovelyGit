@@ -76,7 +76,7 @@ export function GraphCell({
 					<BelowEdge edge={edge} key={`${keyPrefix}-below-${edgeKey(edge)}`} />
 				))}
 
-				{renderCommitDot(layout.dotX, layout.dotColor)}
+				{renderCommitDot(layout.dotX, layout.dotColor, layout.isStash)}
 			</svg>
 		</div>
 	);
@@ -194,7 +194,7 @@ function renderLaneLine(lane: number, x: number, y1: number, y2: number) {
 	);
 }
 
-function renderCommitDot(x: number, color: string) {
+function renderCommitDot(x: number, color: string, isStash: boolean) {
 	return (
 		<>
 			<circle
@@ -203,9 +203,12 @@ function renderCommitDot(x: number, color: string) {
 				fill="var(--card)"
 				r="5.4"
 				stroke={color}
+				strokeDasharray={isStash ? "2 2" : undefined}
 				strokeWidth="2.6"
 			/>
-			<circle cx={x} cy={ROW_CENTER_Y} fill={color} r="2.2" />
+			{isStash ? null : (
+				<circle cx={x} cy={ROW_CENTER_Y} fill={color} r="2.2" />
+			)}
 		</>
 	);
 }

@@ -72,6 +72,8 @@ const defaultableActions: RemoteAction[] = [
 	},
 ];
 
+const gitMutationTimeoutMs = 120_000;
+
 const pushAction: RemoteAction = {
 	commandType: NativeMessageType.PushRepository,
 	icon: Upload,
@@ -127,13 +129,18 @@ export function RemoteActionsControl({
 		setBusyAction(action.value);
 		const toastId = toast.loading(`${action.label} in progress`);
 		try {
-			await sendRequestWithResponse({
-				commandType: action.commandType,
-				arguments: {
-					pullMode: action.pullMode,
-					repositoryId,
+			await sendRequestWithResponse(
+				{
+					commandType: action.commandType,
+					arguments: {
+						pullMode: action.pullMode,
+						repositoryId,
+					},
 				},
-			});
+				{
+					timeoutMs: gitMutationTimeoutMs,
+				},
+			);
 			toast.success(`${action.label} complete`, { id: toastId });
 		} catch (error) {
 			toast.error(

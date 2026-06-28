@@ -71,6 +71,7 @@ export function graphRowLayout(row: CommitGraphRow) {
 		curvedBelow,
 		dotColor: laneColor(row.lane),
 		dotX: xForLane(row.lane),
+		isStash: row.commit.refs.some((reference) => reference.kind === "Stash"),
 		maskEdges: [
 			...curvedAbove.map((edge) => ({ edge, direction: "above" as const })),
 			...curvedBelow.map((edge) => ({ edge, direction: "below" as const })),

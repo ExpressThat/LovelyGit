@@ -66,7 +66,48 @@ internal static class GitRefReader
             }
         }
 
+        await LoadStashReflogRefsAsync(gitDirectory, objectFormat, refs, cancellationToken)
+            .ConfigureAwait(false);
         return refs;
+    }
+
+    private static async Task LoadStashReflogRefsAsync(
+        string gitDirectory,
+        GitObjectFormat objectFormat,
+        Dictionary<string, GitRawRef> refs,
+        CancellationToken cancellationToken)
+    {
+        var stashLogPath = Path.Combine(gitDirectory, "logs", "refs", "stash");
+        if (!File.Exists(stashLogPath))
+        {
+            return;
+        }
+
+        var lines = await File.ReadAllLinesAsync(stashLogPath, cancellationToken)
+            .ConfigureAwait(false);
+        var stashIndex = 0;
+        for (var index = lines.Length - 1; index >= 0; index--)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var line = lines[index].AsSpan();
+            var firstSpace = line.IndexOf(' ');
+            if (firstSpace < 0)
+            {
+                continue;
+            }
+
+            var rest = line[(firstSpace + 1)..];
+            var secondSpace = rest.IndexOf(' ');
+            if (secondSpace < 0 ||
+                !GitObjectId.TryParse(rest[..secondSpace], objectFormat, out var id))
+            {
+                continue;
+            }
+
+            var refName = stashIndex == 0 ? "refs/stash" : $"refs/stash@{{{stashIndex}}}";
+            refs.TryAdd(refName, new GitRawRef(id, null));
+            stashIndex++;
+        }
     }
 
     public static async Task<GitObjectId?> ResolveHeadAsync(
@@ -121,8 +162,14 @@ internal static class GitRefReader
             return GitRefKind.Remote;
         }
 
-        return fullName.StartsWith("refs/tags/", StringComparison.Ordinal)
-            ? GitRefKind.Tag
+        if (fullName.StartsWith("refs/tags/", StringComparison.Ordinal))
+        {
+            return GitRefKind.Tag;
+        }
+
+        return fullName.Equals("refs/stash", StringComparison.Ordinal) ||
+               fullName.StartsWith("refs/stash@{", StringComparison.Ordinal)
+            ? GitRefKind.Stash
             : GitRefKind.Other;
     }
 
@@ -133,6 +180,9 @@ internal static class GitRefReader
             GitRefKind.Head => fullName["refs/heads/".Length..],
             GitRefKind.Remote => fullName["refs/remotes/".Length..],
             GitRefKind.Tag => fullName["refs/tags/".Length..],
+            GitRefKind.Stash => fullName.Equals("refs/stash", StringComparison.Ordinal)
+                ? "stash"
+                : fullName["refs/".Length..],
             _ => fullName,
         };
     }

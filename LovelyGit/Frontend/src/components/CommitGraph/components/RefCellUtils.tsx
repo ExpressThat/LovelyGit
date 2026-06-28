@@ -1,4 +1,4 @@
-import { Cloud, HardDrive, Tag } from "lucide-react";
+import { Archive, Cloud, HardDrive, Tag } from "lucide-react";
 import type { CommitRefInfo, CommitRefKind } from "@/generated/types";
 import { refLabel } from "../utils/format";
 
@@ -40,6 +40,10 @@ function normalizeRuntimeKind(ref: CommitRefInfo): CommitRefInfo {
 
 	if (kind === 2) {
 		return { ...ref, kind: "Tag" };
+	}
+
+	if (kind === 3) {
+		return { ...ref, kind: "Stash" };
 	}
 
 	return ref;
@@ -144,8 +148,16 @@ function normalizeGroupedRefs(refs: CommitRefInfo[]): CommitRefInfo[] {
 }
 
 function displayKey(ref: CommitRefInfo, remotePrefixes: string[]) {
+	if (ref.kind === "Stash") {
+		return "stash";
+	}
+
 	const label = refLabelForRemotes(ref.name, remotePrefixes);
-	return ref.kind === "Tag" ? `tag:${label}` : `branch:${label}`;
+	if (ref.kind === "Tag") {
+		return `tag:${label}`;
+	}
+
+	return `branch:${label}`;
 }
 
 function compareRefs(
@@ -168,7 +180,15 @@ export function uniqueKinds(refs: CommitRefInfo[]) {
 }
 
 function kindRank(kind: CommitRefKind) {
-	return kind === "Local" ? 0 : kind === "Remote" ? 1 : 2;
+	if (kind === "Local") {
+		return 0;
+	}
+
+	if (kind === "Remote") {
+		return 1;
+	}
+
+	return kind === "Tag" ? 2 : 3;
 }
 
 function inferLegacyBranchKind(
@@ -190,6 +210,10 @@ function isLikelyRemoteBranch(name: string, remotePrefixes: string[]) {
 }
 
 export function refLabelForRemotes(name: string, remotePrefixes: string[]) {
+	if (name === "stash" || name.startsWith("stash@{")) {
+		return "stash";
+	}
+
 	for (const prefix of remotePrefixes) {
 		if (name.startsWith(`${prefix}/`)) {
 			return name.slice(prefix.length + 1);
@@ -206,6 +230,10 @@ export function RefIcon({ kind }: { kind: CommitRefKind }) {
 
 	if (kind === "Tag") {
 		return <Tag aria-hidden="true" className="text-amber-400" size={11} />;
+	}
+
+	if (kind === "Stash") {
+		return <Archive aria-hidden="true" className="text-violet-400" size={11} />;
 	}
 
 	return (

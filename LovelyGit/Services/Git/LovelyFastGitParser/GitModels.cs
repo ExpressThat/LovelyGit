@@ -7,6 +7,7 @@ internal enum GitRefKind
     Head,
     Remote,
     Tag,
+    Stash,
     Other,
 }
 

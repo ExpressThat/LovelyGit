@@ -31,12 +31,18 @@ type SetMultipleSettingsInput = {
 type NativeRequestSender = (
 	commandType: NativeMessageTypesWithRequest,
 	body: NativeRequestBodies[NativeMessageTypesWithRequest],
+	timeoutMs?: number,
 ) => Promise<unknown> | undefined;
+
+type CommandOptions = {
+	timeoutMs?: number;
+};
 
 export async function sendRequestWithResponse<
 	TCommand extends NativeMessageTypesWithRequest,
 >(
 	command: CommandInput<TCommand> | SetSettingInput | SetMultipleSettingsInput,
+	options?: CommandOptions,
 ): Promise<
 	TCommand extends keyof NativeResponseBodies
 		? NativeResponseBodies[TCommand]
@@ -46,6 +52,7 @@ export async function sendRequestWithResponse<
 	const requestResult = sendNativeRequest(
 		command.commandType,
 		toNativeBody(command) as NativeRequestBodies[TCommand],
+		options?.timeoutMs,
 	);
 	const response =
 		requestResult instanceof Promise ? await requestResult : undefined;

@@ -2,12 +2,13 @@ using ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser;
 
 namespace ExpressThat.LovelyGit.Services.Git.CommitGraph;
 
-internal readonly record struct CommitGraphCommitPriority(long Seconds, string Hash)
+internal readonly record struct CommitGraphCommitPriority(long Seconds, int SortOrder, string Hash)
 {
-    public static CommitGraphCommitPriority FromCommit(GitCommit commit)
+    public static CommitGraphCommitPriority FromCommit(GitCommit commit, bool prioritize = false)
     {
         return new CommitGraphCommitPriority(
             CommitGraphCommitMapper.GetAuthorUnixTimeSeconds(commit),
+            prioritize ? 0 : 1,
             commit.Hash.ToString());
     }
 }
@@ -58,7 +59,13 @@ internal sealed class CommitGraphTraversalSession
         public int Compare(CommitGraphCommitPriority x, CommitGraphCommitPriority y)
         {
             var timeCompare = y.Seconds.CompareTo(x.Seconds);
-            return timeCompare != 0 ? timeCompare : string.CompareOrdinal(x.Hash, y.Hash);
+            if (timeCompare != 0)
+            {
+                return timeCompare;
+            }
+
+            var sortCompare = x.SortOrder.CompareTo(y.SortOrder);
+            return sortCompare != 0 ? sortCompare : string.CompareOrdinal(x.Hash, y.Hash);
         }
     }
 }

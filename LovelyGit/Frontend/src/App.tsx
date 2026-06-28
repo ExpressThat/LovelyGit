@@ -63,10 +63,15 @@ function App() {
 					onOpenWorkingChanges={() =>
 						setDetailsPanel({ kind: "workingChanges" })
 					}
+					onStashCreated={() => {
+						setCommitGraphRefreshToken((token) => token + 1);
+						void workingTreeChanges.reload();
+					}}
 					repositoryId={currentGitRepositoryId}
 					selectedCommitHash={
 						detailsPanel?.kind === "commit" ? detailsPanel.commitHash : null
 					}
+					workingChangesKnown={workingTreeChanges.isSummaryLoaded}
 					workingChangesCount={workingTreeChanges.totalCount}
 				/>
 				<div className="flex min-h-0 flex-1 overflow-hidden">

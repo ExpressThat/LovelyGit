@@ -27,8 +27,17 @@ export function useWorkingTreeChanges(
 	const [summaryCount, setSummaryCount] = useState(0);
 	const [hasSummaryLoaded, setHasSummaryLoaded] = useState(false);
 	const summaryReloadTimerRef = useRef<number | null>(null);
+	const previousRepositoryIdRef = useRef<string | null>(repositoryId);
 
 	useEffect(() => {
+		if (previousRepositoryIdRef.current !== repositoryId) {
+			previousRepositoryIdRef.current = repositoryId;
+			setState({ status: "idle", changes: null });
+			setIsDirty(false);
+			setSummaryCount(0);
+			setHasSummaryLoaded(false);
+		}
+
 		if (!repositoryId) {
 			setState({ status: "idle", changes: null });
 			setIsDirty(false);
@@ -193,6 +202,7 @@ export function useWorkingTreeChanges(
 	return {
 		...state,
 		isDirty,
+		isSummaryLoaded: hasSummaryLoaded,
 		totalCount: state.changes?.totalCount ?? summaryCount,
 		reload: async () => {
 			if (!repositoryId) {
@@ -215,6 +225,7 @@ export function useWorkingTreeChanges(
 			});
 			setSummaryCount(changes?.totalCount ?? 0);
 			setIsDirty(false);
+			setHasSummaryLoaded(true);
 		},
 	};
 }

@@ -11,6 +11,7 @@ namespace ExpressThat.LovelyGit.Services.Git.CommitGraph.Models
         Local,
         Remote,
         Tag,
+        Stash,
     }
 
     [TypeSharp]

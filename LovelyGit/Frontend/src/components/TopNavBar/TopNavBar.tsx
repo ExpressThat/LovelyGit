@@ -2,20 +2,25 @@ import { GitCompareArrows } from "lucide-react";
 import { BranchActionControl } from "./components/BranchActionControl";
 import { RemoteActionsControl } from "./components/RemoteActionsControl";
 import { SettingsDialog } from "./components/SettingsDialog";
+import { StashActionControl } from "./components/StashActionControl";
 import { Tabs } from "./components/Tabs";
 import { ThemeSelector } from "./components/ThemeSelector";
 
 export function TopNavBar({
 	onBranchCreated,
 	onOpenWorkingChanges,
+	onStashCreated,
 	repositoryId,
 	selectedCommitHash,
+	workingChangesKnown,
 	workingChangesCount,
 }: {
 	onBranchCreated: () => void;
 	onOpenWorkingChanges: () => void;
+	onStashCreated: () => void;
 	repositoryId: string | null;
 	selectedCommitHash: string | null;
+	workingChangesKnown: boolean;
 	workingChangesCount: number;
 }) {
 	return (
@@ -28,6 +33,12 @@ export function TopNavBar({
 						onBranchCreated={onBranchCreated}
 						repositoryId={repositoryId}
 						selectedCommitHash={selectedCommitHash}
+					/>
+					<StashActionControl
+						onStashCreated={onStashCreated}
+						repositoryId={repositoryId}
+						workingChangesKnown={workingChangesKnown}
+						workingChangesCount={workingChangesCount}
 					/>
 				</div>
 				<div className="flex items-center justify-end gap-1">

@@ -9,6 +9,7 @@ using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Rebase;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Reset;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Revert;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Settings;
+using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Stashes;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Tags;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.WorkingTree;
 using ExpressThat.LovelyGit.Services.NativeMessaging.Commands;
@@ -59,6 +60,8 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging
         PullRepository,
         [NativeMessageContract(typeof(GitRemoteCommandArguments))]
         PushRepository,
+        [NativeMessageContract(typeof(StashChangesCommandArguments), typeof(EmptyCommandArguments))]
+        StashChanges,
         [NativeMessageContract(typeof(CreateBranchFromCommitCommandArguments), typeof(EmptyCommandArguments))]
         CreateBranchFromCommit,
         [NativeMessageContract(typeof(RenameBranchCommandArguments), typeof(EmptyCommandArguments))]
