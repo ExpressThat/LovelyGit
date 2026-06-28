@@ -1,5 +1,6 @@
-import { Check, Copy, X } from "lucide-react";
+import { Check, Copy, FolderOpen, X } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
+import { toast } from "sonner";
 import { copyToClipboard } from "@/components/CommitGraph/utils/clipboard";
 import {
 	ContextMenu,
@@ -11,6 +12,8 @@ import {
 	ContextMenuTrigger,
 } from "@/components/ui/context-menu";
 import type { KnownGitRepository } from "@/generated/types";
+import { sendRequestWithResponse } from "@/lib/commands";
+import { NativeMessageType } from "@/lib/nativeMessaging";
 import { cn, getPathTail } from "@/lib/utils";
 
 type RepositoryTabProps = {
@@ -42,6 +45,22 @@ export function RepositoryTab({
 	const isPendingClose = pendingCloseRepositoryId === repository.id;
 	const label = repository.name || getPathTail(repository.path ?? "") || "Repo";
 	const path = repository.path ?? "";
+
+	const revealRepository = async () => {
+		try {
+			await sendRequestWithResponse({
+				commandType: NativeMessageType.RevealKnownGitRepository,
+				arguments: { knownRepositoryId: repository.id },
+			});
+			toast.success("Repository folder opened");
+		} catch (error) {
+			toast.error(
+				error instanceof Error
+					? error.message
+					: "Could not open the repository folder",
+			);
+		}
+	};
 
 	const onMouseLeave = () => {
 		if (pendingCloseRepositoryId !== repository.id) {
@@ -157,12 +176,25 @@ export function RepositoryTab({
 				{path ? (
 					<ContextMenuItem
 						onClick={() => void copyToClipboard(path, "Repository path")}
+						title="Copy repository path"
 					>
 						<Copy />
 						Copy repository path
 					</ContextMenuItem>
 				) : null}
-				<ContextMenuItem onClick={() => setCurrentRepositoryId(repository.id)}>
+				{path ? (
+					<ContextMenuItem
+						onClick={() => void revealRepository()}
+						title="Reveal repository in file explorer"
+					>
+						<FolderOpen />
+						Reveal in file explorer
+					</ContextMenuItem>
+				) : null}
+				<ContextMenuItem
+					onClick={() => setCurrentRepositoryId(repository.id)}
+					title="Select repository"
+				>
 					<Check />
 					Select repository
 				</ContextMenuItem>
