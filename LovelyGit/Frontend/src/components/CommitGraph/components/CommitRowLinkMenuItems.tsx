@@ -76,10 +76,7 @@ export function CommitRowLinkMenuItems({
 				<>
 					<ContextMenuItem
 						onClick={() =>
-							void copyToClipboard(
-								remoteRepositoryUrl,
-								"Remote repository URL",
-							)
+							void copyToClipboard(remoteRepositoryUrl, "Remote repository URL")
 						}
 					>
 						<Copy />

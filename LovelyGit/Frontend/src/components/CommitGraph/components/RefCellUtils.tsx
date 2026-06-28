@@ -186,9 +186,7 @@ function inferLegacyBranchKind(
 }
 
 function isLikelyRemoteBranch(name: string, remotePrefixes: string[]) {
-	return remotePrefixes.some(
-		(prefix) => name.startsWith(`${prefix}/`),
-	);
+	return remotePrefixes.some((prefix) => name.startsWith(`${prefix}/`));
 }
 
 export function refLabelForRemotes(name: string, remotePrefixes: string[]) {
@@ -210,5 +208,7 @@ export function RefIcon({ kind }: { kind: CommitRefKind }) {
 		return <Tag aria-hidden="true" className="text-amber-400" size={11} />;
 	}
 
-	return <HardDrive aria-hidden="true" className="text-emerald-400" size={11} />;
+	return (
+		<HardDrive aria-hidden="true" className="text-emerald-400" size={11} />
+	);
 }

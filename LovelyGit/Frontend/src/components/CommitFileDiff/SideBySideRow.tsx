@@ -1,6 +1,12 @@
 import type { CommitFileDiffLine } from "@/generated/types";
-import { CodeCell, LineNumber, lineBackground, newSideVariant, oldSideVariant } from "./DiffLineRendering";
-import { DiffLineActionButton, type DiffLineAction } from "./DiffRows";
+import {
+	CodeCell,
+	LineNumber,
+	lineBackground,
+	newSideVariant,
+	oldSideVariant,
+} from "./DiffLineRendering";
+import { type DiffLineAction, DiffLineActionButton } from "./DiffRows";
 
 export function DiffPaneHeader({
 	hasAction = false,
@@ -12,10 +18,14 @@ export function DiffPaneHeader({
 	lineNumberLabel: string;
 }) {
 	return (
-		<div className={`grid ${hasAction ? "grid-cols-[4rem_minmax(0,1fr)_2rem]" : "grid-cols-[4rem_minmax(0,1fr)]"} border-r last:border-r-0`}>
+		<div
+			className={`grid ${hasAction ? "grid-cols-[4rem_minmax(0,1fr)_2rem]" : "grid-cols-[4rem_minmax(0,1fr)]"} border-r last:border-r-0`}
+		>
 			<div className="border-r px-2 py-1 text-right">{lineNumberLabel}</div>
 			<div className="px-2 py-1">{headerLabel}</div>
-			{hasAction ? <div className="border-l px-1 py-1 text-center">Stage</div> : null}
+			{hasAction ? (
+				<div className="border-l px-1 py-1 text-center">Stage</div>
+			) : null}
 		</div>
 	);
 }
@@ -59,8 +69,13 @@ export function SideBySideRow({
 				width={width}
 				wrapLines={wrapLines}
 			/>
-			{lineAction ? <DiffLineActionButton action={lineAction} disabled={isLineActionBusy} line={line} /> : null}
+			{lineAction ? (
+				<DiffLineActionButton
+					action={lineAction}
+					disabled={isLineActionBusy}
+					line={line}
+				/>
+			) : null}
 		</div>
 	);
 }
-

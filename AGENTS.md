@@ -4,8 +4,8 @@
 - Use CMG from `C:\CMG\CMG.exe` for visual checks of the real LovelyGit desktop app, not a plain browser-only `localhost` session.
 - Treat the shipped release skill `C:\CMG\SKILL.md` as the CMG usage contract. Do not inspect or depend on CMG source internals for normal LovelyGit testing guidance.
 - When debugging, set `WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS=--remote-debugging-port=9333` in the Debug/launch profile environment before starting LovelyGit. For this repo's `http` profile, add it beside `ASPNETCORE_ENVIRONMENT` in `LovelyGit/Properties/launchSettings.json`, or set the same variable in the IDE's debug environment UI.
-- Visual-test launches must also set `LOVELYGIT_TEST_WINDOW_OFFSCREEN=true` so the native window is placed away from the user's main monitor while CMG drives the WebView2 target.
-- Do not run visual tests with a direct foreground `dotnet run`, because its console window can steal focus and interrupt fullscreen apps. Use the helper script so the host console is suppressed, the debug app is rebuilt as `WinExe`, and the native app window is off-main-monitor:
+- Visual-test launches should keep the native LovelyGit window visible unless the user explicitly asks for an offscreen/minimized run.
+- Prefer the helper script over direct foreground `dotnet run`; it sets WebView2 remote debugging and rebuilds the debug app as `WinExe` while leaving the app window visible:
   `powershell -NoProfile -ExecutionPolicy Bypass -File C:/Projects/LovelyGit/scripts/Start-LovelyGitVisualTest.ps1 -UseDotNetRun`
 - Launch the compiled WebView2 app with remote debugging enabled through the same helper:
   `powershell -NoProfile -ExecutionPolicy Bypass -File C:/Projects/LovelyGit/scripts/Start-LovelyGitVisualTest.ps1`

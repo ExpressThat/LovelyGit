@@ -17,6 +17,7 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Workin
 [JsonSerializable(typeof(StageWorkingTreeLineCommandArguments))]
 [JsonSerializable(typeof(CommitStagedChangesCommandArguments))]
 [JsonSerializable(typeof(GitRemoteCommandArguments))]
+[JsonSerializable(typeof(GitPullMode))]
 [JsonSerializable(typeof(GetWorkingTreeFileDiffArguments))]
 [JsonSerializable(typeof(CommitDiffViewMode))]
 [JsonSerializable(typeof(CommitFileDiffSyntaxSpan))]

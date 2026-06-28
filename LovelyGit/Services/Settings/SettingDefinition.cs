@@ -52,6 +52,11 @@ namespace ExpressThat.LovelyGit.Services.Settings
             false,
             GetJsonTypeInfo<bool>());
 
+        public static readonly SettingDefinition<RemotePrimaryAction> RemotePrimaryAction = new(
+            nameof(Setting.RemotePrimaryAction),
+            Settings.RemotePrimaryAction.Fetch,
+            GetJsonTypeInfo<RemotePrimaryAction>());
+
         private static readonly IReadOnlyDictionary<Setting, ISettingDefinition> Definitions =
             new Dictionary<Setting, ISettingDefinition>
             {
@@ -61,6 +66,7 @@ namespace ExpressThat.LovelyGit.Services.Settings
                 [Setting.CommitDiffLineDisplayMode] = CommitDiffLineDisplayMode,
                 [Setting.CommitDiffContextLines] = CommitDiffContextLines,
                 [Setting.CommitDiffWrapLines] = CommitDiffWrapLines,
+                [Setting.RemotePrimaryAction] = RemotePrimaryAction,
             };
 
         public static Dictionary<Setting, ISettingDefinition> GetAllDefinitions()

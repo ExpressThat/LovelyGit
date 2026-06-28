@@ -2,7 +2,11 @@ import { useVirtualizer } from "@tanstack/react-virtual";
 import { useMemo, useRef, useState } from "react";
 import type { CommitFileDiffLine } from "@/generated/types";
 import { estimateCodeWidth } from "./DiffLineRendering";
-import { DiffChunkSeparator, getSideBySideLineAction, type DiffDisplayRow } from "./DiffRows";
+import {
+	DiffChunkSeparator,
+	type DiffDisplayRow,
+	getSideBySideLineAction,
+} from "./DiffRows";
 import { DiffPaneHeader, SideBySideRow } from "./SideBySideRow";
 
 const DIFF_OVERSCAN = 12;
@@ -31,7 +35,9 @@ export function SideBySideDiff({
 		() =>
 			estimateCodeWidth(
 				lines.flatMap((row) =>
-					row.kind === "line" ? [row.line.oldText ?? "", row.line.newText ?? ""] : [],
+					row.kind === "line"
+						? [row.line.oldText ?? "", row.line.newText ?? ""]
+						: [],
 				),
 			),
 		[lines],
@@ -72,8 +78,16 @@ export function SideBySideDiff({
 	return (
 		<div className="flex h-full min-w-0 flex-col font-mono text-[12px] leading-[18px] text-foreground">
 			<div className="grid shrink-0 grid-cols-2 border-b bg-card text-[10px] font-semibold uppercase text-muted-foreground">
-				<DiffPaneHeader hasAction={hasLineAction} headerLabel="Before" lineNumberLabel="Old" />
-				<DiffPaneHeader hasAction={hasLineAction} headerLabel="After" lineNumberLabel="New" />
+				<DiffPaneHeader
+					hasAction={hasLineAction}
+					headerLabel="Before"
+					lineNumberLabel="Old"
+				/>
+				<DiffPaneHeader
+					hasAction={hasLineAction}
+					headerLabel="After"
+					lineNumberLabel="New"
+				/>
 			</div>
 			<div
 				className="custom-scrollbar relative min-h-0 flex-1 overflow-x-hidden overflow-y-auto"
@@ -151,7 +165,12 @@ export function SideBySideDiff({
 										<SideBySideRow
 											line={line.line}
 											isLineActionBusy={isLineActionBusy}
-											lineAction={getSideBySideLineAction(line.line, "old", onStageLine, onUnstageLine)}
+											lineAction={getSideBySideLineAction(
+												line.line,
+												"old",
+												onStageLine,
+												onUnstageLine,
+											)}
 											rowHeight={item.size}
 											scrollLeft={oldScrollLeft}
 											side="old"
@@ -185,7 +204,12 @@ export function SideBySideDiff({
 										<SideBySideRow
 											line={line.line}
 											isLineActionBusy={isLineActionBusy}
-											lineAction={getSideBySideLineAction(line.line, "new", onStageLine, onUnstageLine)}
+											lineAction={getSideBySideLineAction(
+												line.line,
+												"new",
+												onStageLine,
+												onUnstageLine,
+											)}
 											rowHeight={item.size}
 											scrollLeft={newScrollLeft}
 											side="new"
@@ -220,4 +244,3 @@ export function SideBySideDiff({
 		</div>
 	);
 }
-

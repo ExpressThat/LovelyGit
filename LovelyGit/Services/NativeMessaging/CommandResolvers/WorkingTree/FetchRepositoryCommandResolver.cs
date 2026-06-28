@@ -1,26 +1,19 @@
 using System.Text.Json;
 using ExpressThat.LovelyGit.Services.NativeMessaging;
-using System.Text.Json.Serialization.Metadata;
-using ExpressThat.LovelyGit.Services.Data.Models;
 using ExpressThat.LovelyGit.Services.Data.Repositorys;
 using ExpressThat.LovelyGit.Services.Git.Cli;
 using ExpressThat.LovelyGit.Services.NativeMessaging.Commands;
 
 namespace ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.WorkingTree;
 
-internal sealed class FetchRepositoryCommandResolver : CommandResponder<GitRemoteCommandArguments>
+internal sealed class FetchRepositoryCommandResolver : GitRemoteCommandResolver
 {
     private readonly GitRemoteCommandService _gitRemoteCommandService;
-    private readonly KnownGitRepositorysRepository _knownGitRepositorysRepository;
-
-    protected override JsonTypeInfo<GitRemoteCommandArguments> ArgumentsJsonTypeInfo =>
-        WorkingTreeJsonSerializerContext.Default.GitRemoteCommandArguments;
 
     public FetchRepositoryCommandResolver(
         KnownGitRepositorysRepository knownGitRepositorysRepository,
-        GitRemoteCommandService gitRemoteCommandService)
+        GitRemoteCommandService gitRemoteCommandService) : base(knownGitRepositorysRepository)
     {
-        _knownGitRepositorysRepository = knownGitRepositorysRepository;
         _gitRemoteCommandService = gitRemoteCommandService;
     }
 
@@ -29,51 +22,11 @@ internal sealed class FetchRepositoryCommandResolver : CommandResponder<GitRemot
         return command.CommandType == NativeMessageType.FetchRepository;
     }
 
-    public override async Task<CommandResponseBase> Resolve(NativeCommand<GitRemoteCommandArguments> command)
+    protected override Task RunAsync(
+        string repositoryPath,
+        GitRemoteCommandArguments arguments,
+        CancellationToken cancellationToken)
     {
-        if (command.Arguments == null || command.Arguments.RepositoryId == Guid.Empty)
-        {
-            return Failure(command, "RepositoryId is required.");
-        }
-
-        KnownGitRepository foundRepo = await _knownGitRepositorysRepository.FindByIdAsync(command.Arguments.RepositoryId);
-        if (foundRepo == null || string.IsNullOrWhiteSpace(foundRepo.Path))
-        {
-            return Failure(command, "Known repository not found.");
-        }
-
-        try
-        {
-            await _gitRemoteCommandService.FetchAsync(foundRepo.Path, CancellationToken.None)
-                .ConfigureAwait(false);
-            return Success(command);
-        }
-        catch (Exception ex)
-        {
-            return Failure(command, ex.Message);
-        }
-    }
-
-    private static CommandResponseBase Success(NativeCommand<GitRemoteCommandArguments> command)
-    {
-        return new CommandResponseBase
-        {
-            CommandUniqueId = command.CommandUniqueId,
-            CommandType = command.CommandType,
-            IsSuccess = true,
-        };
-    }
-
-    private static CommandResponseBase Failure(
-        NativeCommand<GitRemoteCommandArguments> command,
-        string errorMessage)
-    {
-        return new CommandResponseBase
-        {
-            CommandUniqueId = command.CommandUniqueId,
-            CommandType = command.CommandType,
-            IsSuccess = false,
-            ErrorMessage = errorMessage,
-        };
+        return _gitRemoteCommandService.FetchAsync(repositoryPath, cancellationToken);
     }
 }

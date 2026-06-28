@@ -55,11 +55,15 @@ export function getSideBySideLineAction(
 	onUnstageLine?: (line: CommitFileDiffLine) => void,
 ): DiffLineAction | undefined {
 	if (line.changeType === "Deleted") {
-		return side === "old" ? getAvailableLineAction(onStageLine, onUnstageLine) : undefined;
+		return side === "old"
+			? getAvailableLineAction(onStageLine, onUnstageLine)
+			: undefined;
 	}
 
 	if (line.changeType === "Inserted" || line.changeType === "Modified") {
-		return side === "new" ? getAvailableLineAction(onStageLine, onUnstageLine) : undefined;
+		return side === "new"
+			? getAvailableLineAction(onStageLine, onUnstageLine)
+			: undefined;
 	}
 
 	return undefined;
@@ -70,7 +74,11 @@ export function getCombinedLineAction(
 	onStageLine?: (line: CommitFileDiffLine) => void,
 	onUnstageLine?: (line: CommitFileDiffLine) => void,
 ): DiffLineAction | undefined {
-	if (line.changeType !== "Deleted" && line.changeType !== "Inserted" && line.changeType !== "Modified") {
+	if (
+		line.changeType !== "Deleted" &&
+		line.changeType !== "Inserted" &&
+		line.changeType !== "Modified"
+	) {
 		return undefined;
 	}
 
@@ -142,4 +150,3 @@ function isDiffChangedLine(line: CommitFileDiffLine) {
 		line.changeType === "Modified"
 	);
 }
-

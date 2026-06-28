@@ -1,6 +1,9 @@
-import type { CommitFileDiffLine, CommitFileDiffResponse } from "@/generated/types";
+import type {
+	CommitFileDiffLine,
+	CommitFileDiffResponse,
+} from "@/generated/types";
 import { CombinedDiff } from "./CombinedDiff";
-import { getContextualDiffRows, type DiffDisplayRow } from "./DiffRows";
+import { type DiffDisplayRow, getContextualDiffRows } from "./DiffRows";
 import { SideBySideDiff } from "./SideBySideDiff";
 
 const LOADING_DIFF_ROWS = Array.from({ length: 16 }, (_, index) => ({
@@ -55,14 +58,26 @@ export function DiffContent({
 		);
 	}
 
-	const lines = lineDisplayMode === "FullFile"
-		? diff.lines.map((line): DiffDisplayRow => ({ kind: "line", line }))
-		: getContextualDiffRows(diff.lines, contextLines);
+	const lines =
+		lineDisplayMode === "FullFile"
+			? diff.lines.map((line): DiffDisplayRow => ({ kind: "line", line }))
+			: getContextualDiffRows(diff.lines, contextLines);
 
 	return diff.viewMode === "SideBySide" ? (
-		<SideBySideDiff isLineActionBusy={isLineActionBusy} lines={lines} onStageLine={onStageLine} onUnstageLine={onUnstageLine} wrapLines={wrapLines} />
+		<SideBySideDiff
+			isLineActionBusy={isLineActionBusy}
+			lines={lines}
+			onStageLine={onStageLine}
+			onUnstageLine={onUnstageLine}
+			wrapLines={wrapLines}
+		/>
 	) : (
-		<CombinedDiff isLineActionBusy={isLineActionBusy} lines={lines} onStageLine={onStageLine} onUnstageLine={onUnstageLine} wrapLines={wrapLines} />
+		<CombinedDiff
+			isLineActionBusy={isLineActionBusy}
+			lines={lines}
+			onStageLine={onStageLine}
+			onUnstageLine={onUnstageLine}
+			wrapLines={wrapLines}
+		/>
 	);
 }
-

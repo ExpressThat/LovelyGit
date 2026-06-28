@@ -1,10 +1,16 @@
-import { NativeMessageType, type NativeMessageType as NativeMessageTypeValue } from "./types";
+import {
+	NativeMessageType,
+	type NativeMessageType as NativeMessageTypeValue,
+} from "./types";
 
 type NativeMessageHandler = (payload?: string) => void;
 
 type InfiniFrameMessaging = {
 	sendMessageToHost(id: string, data?: unknown): void;
-	assignMessageReceivedHandler(messageId: string, callback: NativeMessageHandler): void;
+	assignMessageReceivedHandler(
+		messageId: string,
+		callback: NativeMessageHandler,
+	): void;
 };
 
 declare global {
@@ -19,7 +25,10 @@ export function hasNativeMessaging() {
 	return typeof window.infiniframe?.messaging?.sendMessageToHost === "function";
 }
 
-export function sendNativeMessage(messageType: NativeMessageTypeValue, request: unknown) {
+export function sendNativeMessage(
+	messageType: NativeMessageTypeValue,
+	request: unknown,
+) {
 	window.infiniframe?.messaging?.sendMessageToHost(messageType, request);
 }
 

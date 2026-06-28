@@ -1,7 +1,17 @@
-import { startTransition, useEffect, useEffectEvent, useRef, useState } from "react";
+import {
+	startTransition,
+	useEffect,
+	useEffectEvent,
+	useRef,
+	useState,
+} from "react";
 import type { CommitGraphResponse, CommitGraphRow } from "@/generated/types";
-import { sendRequestWithResponse, subscribeToServerEvent } from "@/lib/commands";
+import {
+	sendRequestWithResponse,
+	subscribeToServerEvent,
+} from "@/lib/commands";
 import { useSetting } from "@/lib/settings/settingsStore";
+
 const PAGE_SIZE = 400;
 const PREFETCH_PAGES = 1;
 type CommitGraphState = {

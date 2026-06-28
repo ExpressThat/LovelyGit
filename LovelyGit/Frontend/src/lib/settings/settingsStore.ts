@@ -1,5 +1,8 @@
 import { useRef, useSyncExternalStore } from "react";
-import { sendRequestWithResponse, sendRequestWithoutResponse } from "@/lib/commands";
+import {
+	sendRequestWithoutResponse,
+	sendRequestWithResponse,
+} from "@/lib/commands";
 import { DEFAULT_SETTINGS, type Settings, type SettingsKey } from "./Settings";
 
 type Listener = () => void;

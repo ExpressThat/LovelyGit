@@ -1,7 +1,4 @@
-import type {
-	CommitGraphRow,
-	CommitLaneEdge,
-} from "@/generated/types";
+import type { CommitGraphRow, CommitLaneEdge } from "@/generated/types";
 import {
 	GRAPH_BOTTOM_Y,
 	GRAPH_PADDING_LEFT,

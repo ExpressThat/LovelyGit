@@ -1,4 +1,7 @@
-import type { CommitChangedFile, WorkingTreeChangedFile } from "./generated/types";
+import type {
+	CommitChangedFile,
+	WorkingTreeChangedFile,
+} from "./generated/types";
 import { sendRequestWithoutResponse } from "./lib/commands";
 
 export type DetailsPanelState =

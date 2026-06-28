@@ -1,4 +1,7 @@
-import type { CommitFileDiffChangeSpan, CommitFileDiffSyntaxSpan } from "@/generated/types";
+import type {
+	CommitFileDiffChangeSpan,
+	CommitFileDiffSyntaxSpan,
+} from "@/generated/types";
 
 export function LineNumber({ value }: { value?: number | null }) {
 	return (
@@ -214,4 +217,3 @@ function syntaxClass(scope: string) {
 			return "";
 	}
 }
-

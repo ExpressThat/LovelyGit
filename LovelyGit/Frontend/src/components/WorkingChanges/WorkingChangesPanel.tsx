@@ -1,9 +1,19 @@
-import { MinusSquare, RefreshCw, SquareCheckBig } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import type { WorkingTreeChangedFile, WorkingTreeChangesResponse } from "@/generated/types";
+import type {
+	WorkingTreeChangedFile,
+	WorkingTreeChangesResponse,
+} from "@/generated/types";
 import { sendRequestWithResponse } from "@/lib/commands";
 import { CommitStagedForm } from "./CommitStagedForm";
-import { ActionButton, ChangeGroup, fileKey, selectedFiles, uniquePaths } from "./WorkingChangesPanelParts";
+import {
+	BulkIndexActions,
+	ChangeGroup,
+	fileKey,
+	selectedFiles,
+	uniquePaths,
+	WorkingChangesHeader,
+	WorkingChangesSkeleton,
+} from "./WorkingChangesPanelParts";
 export function WorkingChangesPanel({
 	changes,
 	error,
@@ -21,8 +31,12 @@ export function WorkingChangesPanel({
 	onSelectFile: (file: WorkingTreeChangedFile) => void;
 	repositoryId: string;
 }) {
-	const workingFiles = changes ? [...changes.unstaged, ...changes.untracked] : [];
-	const [selectedKeys, setSelectedKeys] = useState<Set<string>>(() => new Set());
+	const workingFiles = changes
+		? [...changes.unstaged, ...changes.untracked]
+		: [];
+	const [selectedKeys, setSelectedKeys] = useState<Set<string>>(
+		() => new Set(),
+	);
 	const [actionError, setActionError] = useState<string | null>(null);
 	const [isMutating, setIsMutating] = useState(false);
 	const [commitTitle, setCommitTitle] = useState("");
@@ -40,7 +54,10 @@ export function WorkingChangesPanel({
 			),
 		[changes],
 	);
-	const selectedStagedFiles = selectedFiles(changes?.staged ?? [], selectedKeys);
+	const selectedStagedFiles = selectedFiles(
+		changes?.staged ?? [],
+		selectedKeys,
+	);
 	const selectedWorkingFiles = selectedFiles(workingFiles, selectedKeys);
 	const isBusy = isMutating || isCommitting;
 	useEffect(() => {
@@ -81,7 +98,11 @@ export function WorkingChangesPanel({
 		}
 	};
 	const commitStagedChanges = async () => {
-		if (!changes || changes.staged.length === 0 || commitTitle.trim().length === 0) {
+		if (
+			!changes ||
+			changes.staged.length === 0 ||
+			commitTitle.trim().length === 0
+		) {
 			return;
 		}
 		setIsCommitting(true);
@@ -122,49 +143,27 @@ export function WorkingChangesPanel({
 		});
 	};
 	if (!changes && isLoading) {
-		return (
-			<div className="space-y-3 p-4">
-				<div className="h-4 w-36 animate-pulse rounded bg-muted" />
-				<div className="h-24 animate-pulse rounded bg-muted" />
-				<div className="h-32 animate-pulse rounded bg-muted" />
-			</div>
-		);
+		return <WorkingChangesSkeleton />;
 	}
 	return (
 		<div className="space-y-4 p-4 text-left text-sm">
-			<div className="flex items-center justify-between gap-3">
-				<div>
-					<div className="font-semibold text-foreground">
-						{changes?.totalCount ?? 0} changed files
-					</div>
-					<div className="text-xs text-muted-foreground">
-						Staged, working tree, and unmerged
-					</div>
-				</div>
-				<button
-					aria-label="Refresh working changes"
-					className="inline-flex size-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-					onClick={onRefresh}
-					type="button"
-				>
-					<RefreshCw aria-hidden="true" className={isLoading ? "animate-spin" : ""} size={14} />
-				</button>
-			</div>
+			<WorkingChangesHeader
+				isLoading={isLoading}
+				onRefresh={onRefresh}
+				totalCount={changes?.totalCount ?? 0}
+			/>
 			{changes && changes.totalCount > 0 ? (
-				<div className="flex flex-wrap gap-2">
-					<ActionButton
-						disabled={isBusy || workingFiles.length === 0}
-						icon={<SquareCheckBig aria-hidden="true" size={14} />}
-						label="Stage all"
-						onClick={() => void runIndexCommand("StageWorkingTreeFiles", [], true)}
-					/>
-					<ActionButton
-						disabled={isBusy || changes.staged.length === 0}
-						icon={<MinusSquare aria-hidden="true" size={14} />}
-						label="Unstage all"
-						onClick={() => void runIndexCommand("UnstageWorkingTreeFiles", [], true)}
-					/>
-				</div>
+				<BulkIndexActions
+					canStage={workingFiles.length > 0}
+					canUnstage={changes.staged.length > 0}
+					isBusy={isBusy}
+					onStageAll={() =>
+						void runIndexCommand("StageWorkingTreeFiles", [], true)
+					}
+					onUnstageAll={() =>
+						void runIndexCommand("UnstageWorkingTreeFiles", [], true)
+					}
+				/>
 			) : null}
 			{error || actionError ? (
 				<div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
@@ -236,7 +235,11 @@ export function WorkingChangesPanel({
 						selectedKeys={selectedKeys}
 						title="Changes"
 					/>
-					<ChangeGroup title="Unmerged" files={changes.unmerged} onSelectFile={onSelectFile} />
+					<ChangeGroup
+						title="Unmerged"
+						files={changes.unmerged}
+						onSelectFile={onSelectFile}
+					/>
 				</>
 			) : null}
 		</div>

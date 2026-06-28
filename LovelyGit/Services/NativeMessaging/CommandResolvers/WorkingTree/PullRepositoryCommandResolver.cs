@@ -6,11 +6,11 @@ using ExpressThat.LovelyGit.Services.NativeMessaging.Commands;
 
 namespace ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.WorkingTree;
 
-internal sealed class PushRepositoryCommandResolver : GitRemoteCommandResolver
+internal sealed class PullRepositoryCommandResolver : GitRemoteCommandResolver
 {
     private readonly GitRemoteCommandService _gitRemoteCommandService;
 
-    public PushRepositoryCommandResolver(
+    public PullRepositoryCommandResolver(
         KnownGitRepositorysRepository knownGitRepositorysRepository,
         GitRemoteCommandService gitRemoteCommandService) : base(knownGitRepositorysRepository)
     {
@@ -19,7 +19,7 @@ internal sealed class PushRepositoryCommandResolver : GitRemoteCommandResolver
 
     public override bool CanRespondTo(NativeCommand<JsonElement> command)
     {
-        return command.CommandType == NativeMessageType.PushRepository;
+        return command.CommandType == NativeMessageType.PullRepository;
     }
 
     protected override Task RunAsync(
@@ -27,6 +27,9 @@ internal sealed class PushRepositoryCommandResolver : GitRemoteCommandResolver
         GitRemoteCommandArguments arguments,
         CancellationToken cancellationToken)
     {
-        return _gitRemoteCommandService.PushAsync(repositoryPath, cancellationToken);
+        return _gitRemoteCommandService.PullAsync(
+            repositoryPath,
+            arguments.PullMode,
+            cancellationToken);
     }
 }

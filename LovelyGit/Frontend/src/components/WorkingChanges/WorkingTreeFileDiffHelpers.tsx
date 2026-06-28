@@ -1,5 +1,23 @@
 import type { CommitFileDiffLine } from "@/generated/types";
 
+const loadingDiffRows = [
+	{ key: "row-a", width: 72 },
+	{ key: "row-b", width: 96 },
+	{ key: "row-c", width: 96 },
+	{ key: "row-d", width: 72 },
+	{ key: "row-e", width: 96 },
+	{ key: "row-f", width: 96 },
+	{ key: "row-g", width: 72 },
+	{ key: "row-h", width: 96 },
+	{ key: "row-i", width: 96 },
+	{ key: "row-j", width: 72 },
+	{ key: "row-k", width: 96 },
+	{ key: "row-l", width: 96 },
+	{ key: "row-m", width: 72 },
+	{ key: "row-n", width: 96 },
+	{ key: "row-o", width: 96 },
+	{ key: "row-p", width: 72 },
+];
 
 export function canStageLines(group: string) {
 	return group === "Unstaged" || group === "Untracked";
@@ -25,7 +43,10 @@ export function workingNewText(line: CommitFileDiffLine) {
 	return line.changeType === "Inserted" ? line.text : "";
 }
 
-export function isSameDiffLine(left: CommitFileDiffLine, right: CommitFileDiffLine) {
+export function isSameDiffLine(
+	left: CommitFileDiffLine,
+	right: CommitFileDiffLine,
+) {
 	return (
 		left.changeType === right.changeType &&
 		left.oldLineNumber === right.oldLineNumber &&
@@ -74,11 +95,11 @@ export function ModeButton({
 export function LoadingDiff() {
 	return (
 		<div className="space-y-2 p-4">
-			{Array.from({ length: 16 }, (_, index) => (
+			{loadingDiffRows.map((row) => (
 				<div
 					className="h-5 animate-pulse rounded bg-muted"
-					key={`working-loading-diff-row-${index}`}
-					style={{ width: `${index % 3 === 0 ? 72 : 96}%` }}
+					key={`working-loading-diff-${row.key}`}
+					style={{ width: `${row.width}%` }}
 				/>
 			))}
 		</div>

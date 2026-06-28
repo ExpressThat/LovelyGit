@@ -1,4 +1,5 @@
 using ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser;
+using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.WorkingTree;
 
 namespace ExpressThat.LovelyGit.Services.Git.Cli;
 
@@ -14,6 +15,20 @@ internal sealed class GitRemoteCommandService
     public Task FetchAsync(string repositoryPath, CancellationToken cancellationToken)
     {
         return RunRemoteCommandAsync(repositoryPath, ["fetch"], cancellationToken);
+    }
+
+    public Task PullAsync(
+        string repositoryPath,
+        GitPullMode mode,
+        CancellationToken cancellationToken)
+    {
+        IReadOnlyList<string> arguments = mode switch
+        {
+            GitPullMode.Rebase => ["pull", "--rebase"],
+            GitPullMode.FastForwardOnly => ["pull", "--ff-only"],
+            _ => ["pull"],
+        };
+        return RunRemoteCommandAsync(repositoryPath, arguments, cancellationToken);
     }
 
     public Task PushAsync(string repositoryPath, CancellationToken cancellationToken)

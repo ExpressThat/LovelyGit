@@ -24,6 +24,7 @@ internal static class WorkingTreeServiceCollectionExtensions
         services.AddSingleton<ICommandResponder, UnstageWorkingTreeLineCommandResolver>();
         services.AddSingleton<ICommandResponder, CommitStagedChangesCommandResolver>();
         services.AddSingleton<ICommandResponder, FetchRepositoryCommandResolver>();
+        services.AddSingleton<ICommandResponder, PullRepositoryCommandResolver>();
         services.AddSingleton<ICommandResponder, PushRepositoryCommandResolver>();
 
         return services;

@@ -1,13 +1,4 @@
-import {
-	Columns2,
-	FileText,
-	ListCollapse,
-	Minus,
-	Plus,
-	Rows3,
-	Settings,
-	WrapText,
-} from "lucide-react";
+import { FileText, GitPullRequestArrow, Settings } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,15 +9,11 @@ import {
 	DialogTitle,
 	DialogTrigger,
 } from "@/components/ui/dialog";
-import type { CommitDiffViewMode } from "@/generated/types";
-import type { CommitDiffLineDisplayMode } from "@/generated/types";
-import { setSetting, useSetting } from "@/lib/settings/settingsStore";
-import {
-	SegmentedButton,
-	SegmentedControl,
-	SettingGroup,
-} from "./SettingsControls";
-type SettingsCategory = "fileDiffView";
+import { FileDiffViewSettings } from "./FileDiffViewSettings";
+import { RemoteOperationSettings } from "./RemoteOperationSettings";
+
+type SettingsCategory = "fileDiffView" | "remoteOperations";
+
 const categories: Array<{
 	description: string;
 	icon: typeof FileText;
@@ -39,7 +26,14 @@ const categories: Array<{
 		id: "fileDiffView",
 		label: "File Diff View",
 	},
+	{
+		description: "Fetch, pull, rebase, and push defaults",
+		icon: GitPullRequestArrow,
+		id: "remoteOperations",
+		label: "Remote Operations",
+	},
 ];
+
 export function SettingsDialog() {
 	const [open, setOpen] = useState(false);
 	const [activeCategory, setActiveCategory] =
@@ -78,13 +72,19 @@ export function SettingsDialog() {
 						))}
 					</nav>
 					<section className="custom-scrollbar min-h-0 overflow-y-auto p-5">
-						{activeCategory === "fileDiffView" ? <FileDiffViewSettings /> : null}
+						{activeCategory === "fileDiffView" ? (
+							<FileDiffViewSettings />
+						) : null}
+						{activeCategory === "remoteOperations" ? (
+							<RemoteOperationSettings />
+						) : null}
 					</section>
 				</div>
 			</DialogContent>
 		</Dialog>
 	);
 }
+
 function CategoryButton({
 	category,
 	isActive,
@@ -111,118 +111,4 @@ function CategoryButton({
 			</span>
 		</Button>
 	);
-}
-function FileDiffViewSettings() {
-	const viewMode = useSetting("CommitDiffViewMode");
-	const lineDisplayMode = useSetting("CommitDiffLineDisplayMode");
-	const contextLines = useSetting("CommitDiffContextLines");
-	const wrapLines = useSetting("CommitDiffWrapLines");
-	return (
-		<div className="space-y-5">
-			<SettingGroup
-				description="Choose how file changes are arranged."
-				title="Layout"
-			>
-				<SegmentedControl>
-					<SegmentedButton
-						icon={<Columns2 aria-hidden="true" className="size-4" />}
-						isActive={viewMode === "SideBySide"}
-						label="Side by side"
-						onClick={() =>
-							void setSetting(
-								"CommitDiffViewMode",
-								"SideBySide" satisfies CommitDiffViewMode,
-							)
-						}
-					/>
-					<SegmentedButton
-						icon={<Rows3 aria-hidden="true" className="size-4" />}
-						isActive={viewMode === "Combined"}
-						label="Combined"
-						onClick={() =>
-							void setSetting(
-								"CommitDiffViewMode",
-								"Combined" satisfies CommitDiffViewMode,
-							)
-						}
-					/>
-				</SegmentedControl>
-			</SettingGroup>
-			<SettingGroup
-				description="Switch between changed hunks and the whole file."
-				title="Line Display"
-			>
-				<SegmentedControl>
-					<SegmentedButton
-						icon={<ListCollapse aria-hidden="true" className="size-4" />}
-						isActive={lineDisplayMode === "Changes"}
-						label="Changes"
-						onClick={() =>
-							void setSetting(
-								"CommitDiffLineDisplayMode",
-								"Changes" satisfies CommitDiffLineDisplayMode,
-							)
-						}
-					/>
-					<SegmentedButton
-						icon={<FileText aria-hidden="true" className="size-4" />}
-						isActive={lineDisplayMode === "FullFile"}
-						label="Full file"
-						onClick={() =>
-							void setSetting(
-								"CommitDiffLineDisplayMode",
-								"FullFile" satisfies CommitDiffLineDisplayMode,
-							)
-						}
-					/>
-				</SegmentedControl>
-			</SettingGroup>
-			<SettingGroup
-				description="Set how many unchanged lines surround each change."
-				title="Context Lines"
-			>
-				<div className="inline-flex h-9 overflow-hidden rounded-lg border bg-background">
-					<Button
-						aria-label="Decrease context lines"
-						className="h-full rounded-none border-0"
-						disabled={contextLines <= 0}
-						onClick={() => updateContextLines(contextLines - 1)}
-						size="icon-sm"
-						variant="ghost"
-					>
-						<Minus aria-hidden="true" className="size-4" />
-					</Button>
-					<div className="flex min-w-12 items-center justify-center border-x px-3 font-mono text-sm">
-						{contextLines}
-					</div>
-					<Button
-						aria-label="Increase context lines"
-						className="h-full rounded-none border-0"
-						disabled={contextLines >= 99}
-						onClick={() => updateContextLines(contextLines + 1)}
-						size="icon-sm"
-						variant="ghost"
-					>
-						<Plus aria-hidden="true" className="size-4" />
-					</Button>
-				</div>
-			</SettingGroup>
-			<SettingGroup
-				description="Wrap long diff lines inside the viewport."
-				title="Line Wrapping"
-			>
-				<Button
-					onClick={() => void setSetting("CommitDiffWrapLines", !wrapLines)}
-					variant={wrapLines ? "secondary" : "outline"}
-				>
-					<WrapText aria-hidden="true" className="size-4" />
-					{wrapLines ? "Wrapping on" : "Wrapping off"}
-				</Button>
-			</SettingGroup>
-		</div>
-	);
-}
-function updateContextLines(value: number) {
-	const nextValue = Math.max(0, Math.min(99, Math.trunc(value)));
-	void setSetting("CommitDiffContextLines", nextValue);
 }

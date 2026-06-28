@@ -13,7 +13,8 @@ namespace ExpressThat.LovelyGit.Services.Settings
         CommitDiffViewMode,
         CommitDiffLineDisplayMode,
         CommitDiffContextLines,
-        CommitDiffWrapLines
+        CommitDiffWrapLines,
+        RemotePrimaryAction
     }
 
     [TypeSharp]
@@ -33,6 +34,18 @@ namespace ExpressThat.LovelyGit.Services.Settings
     {
         Changes,
         FullFile
+    }
+
+    [TypeSharp]
+    [Union]
+    [JsonConverter(typeof(JsonStringEnumConverter<RemotePrimaryAction>))]
+    public enum RemotePrimaryAction
+    {
+        Fetch,
+        Pull,
+        PullRebase,
+        PullFastForwardOnly,
+        Push
     }
 
 }

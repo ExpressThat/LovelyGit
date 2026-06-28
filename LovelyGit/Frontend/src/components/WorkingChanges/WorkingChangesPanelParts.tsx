@@ -1,6 +1,83 @@
-import { Check, File, FilePlus2, FileQuestion, FileX2, GitPullRequestArrow } from "lucide-react";
+import { MinusSquare, RefreshCw, SquareCheckBig } from "lucide-react";
 import type { ReactNode } from "react";
 import type { WorkingTreeChangedFile } from "@/generated/types";
+import { ChangedFileRow } from "./WorkingChangedFileRow";
+
+export function WorkingChangesSkeleton() {
+	return (
+		<div className="space-y-3 p-4">
+			<div className="h-4 w-36 animate-pulse rounded bg-muted" />
+			<div className="h-24 animate-pulse rounded bg-muted" />
+			<div className="h-32 animate-pulse rounded bg-muted" />
+		</div>
+	);
+}
+
+export function WorkingChangesHeader({
+	isLoading,
+	onRefresh,
+	totalCount,
+}: {
+	isLoading: boolean;
+	onRefresh: () => Promise<void> | void;
+	totalCount: number;
+}) {
+	return (
+		<div className="flex items-center justify-between gap-3">
+			<div>
+				<div className="font-semibold text-foreground">
+					{totalCount} changed files
+				</div>
+				<div className="text-xs text-muted-foreground">
+					Staged, working tree, and unmerged
+				</div>
+			</div>
+			<button
+				aria-label="Refresh working changes"
+				className="inline-flex size-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+				onClick={onRefresh}
+				type="button"
+			>
+				<RefreshCw
+					aria-hidden="true"
+					className={isLoading ? "animate-spin" : ""}
+					size={14}
+				/>
+			</button>
+		</div>
+	);
+}
+
+export function BulkIndexActions({
+	canStage,
+	canUnstage,
+	isBusy,
+	onStageAll,
+	onUnstageAll,
+}: {
+	canStage: boolean;
+	canUnstage: boolean;
+	isBusy: boolean;
+	onStageAll: () => void;
+	onUnstageAll: () => void;
+}) {
+	return (
+		<div className="flex flex-wrap gap-2">
+			<ActionButton
+				disabled={isBusy || !canStage}
+				icon={<SquareCheckBig aria-hidden="true" size={14} />}
+				label="Stage all"
+				onClick={onStageAll}
+			/>
+			<ActionButton
+				disabled={isBusy || !canUnstage}
+				icon={<MinusSquare aria-hidden="true" size={14} />}
+				label="Unstage all"
+				onClick={onUnstageAll}
+			/>
+		</div>
+	);
+}
 
 export function ChangeGroup({
 	actionLabel,
@@ -56,98 +133,13 @@ export function ChangeGroup({
 						onAction={onFileAction ? () => onFileAction(file) : undefined}
 						rowActionLabel={singleFileActionLabel(title)}
 						onSelect={() => onSelectFile(file)}
-						onToggleSelected={onToggleSelected ? () => onToggleSelected(file) : undefined}
+						onToggleSelected={
+							onToggleSelected ? () => onToggleSelected(file) : undefined
+						}
 					/>
 				))}
 			</div>
 		</section>
-	);
-}
-
-function ChangedFileRow({
-	file,
-	hideGroupLabel = false,
-	isSelected = false,
-	onAction,
-	onSelect,
-	onToggleSelected,
-	rowActionLabel,
-}: {
-	file: WorkingTreeChangedFile;
-	hideGroupLabel?: boolean;
-	isSelected?: boolean;
-	onAction?: () => void;
-	onSelect: () => void;
-	onToggleSelected?: () => void;
-	rowActionLabel?: string;
-}) {
-	const Icon = statusIcon(file.status, file.group);
-	const handleRowClick = () => {
-		onToggleSelected?.();
-		onSelect();
-	};
-
-	return (
-		<button
-			className="group/file-row flex min-h-9 w-full items-center gap-2 border-b py-1.5 text-left hover:bg-accent/60 last:border-b-0"
-			onClick={handleRowClick}
-			type="button"
-		>
-			{onToggleSelected ? (
-				<span
-					aria-checked={isSelected}
-					aria-label={`Select ${file.path}`}
-					className={`inline-flex size-4 shrink-0 items-center justify-center rounded border transition-colors ${
-						isSelected
-							? "border-sky-400 bg-sky-500 text-white shadow-[0_0_0_1px_rgba(56,189,248,0.35)]"
-							: "border-muted-foreground/60 bg-background text-transparent"
-					}`}
-					onClick={(event) => {
-						event.stopPropagation();
-						onToggleSelected();
-					}}
-					role="checkbox"
-				>
-					<Check aria-hidden="true" size={12} strokeWidth={3} />
-				</span>
-			) : null}
-			<Icon aria-hidden="true" className={statusColor(file.status, file.group)} size={15} />
-			<div className="min-w-0 flex-1 text-left">
-				<div className="truncate font-mono text-xs text-foreground" title={file.path}>
-					{file.path}
-				</div>
-				<div className="text-[10px] uppercase text-muted-foreground">
-					{hideGroupLabel ? file.status : `${file.group} ${file.status}`}
-					{file.isBinary ? " binary" : ""}
-				</div>
-			</div>
-			<div className="shrink-0 font-mono text-xs">
-				<span className="text-emerald-600 dark:text-emerald-400">+{file.additions}</span>{" "}
-				<span className="text-red-600 dark:text-red-400">-{file.deletions}</span>
-			</div>
-			{onAction && rowActionLabel ? (
-				<span
-					className="mr-1 hidden h-6 shrink-0 items-center rounded border bg-background px-2 text-[10px] font-semibold uppercase text-muted-foreground hover:bg-accent hover:text-accent-foreground group-hover/file-row:inline-flex"
-					onClick={(event) => {
-						event.stopPropagation();
-						onAction();
-					}}
-					onKeyDown={(event) => {
-						if (event.key !== "Enter" && event.key !== " ") {
-							return;
-						}
-
-						event.preventDefault();
-						event.stopPropagation();
-						onAction();
-					}}
-					role="button"
-					tabIndex={0}
-				>
-					{rowActionLabel}
-				</span>
-			) : null}
-		</button>
 	);
 }
 
@@ -175,7 +167,10 @@ export function ActionButton({
 	);
 }
 
-export function selectedFiles(files: WorkingTreeChangedFile[], selectedKeys: Set<string>) {
+export function selectedFiles(
+	files: WorkingTreeChangedFile[],
+	selectedKeys: Set<string>,
+) {
 	return files.filter((file) => selectedKeys.has(fileKey(file)));
 }
 
@@ -197,34 +192,4 @@ function singleFileActionLabel(groupTitle: string) {
 	}
 
 	return undefined;
-}
-
-function statusIcon(status: string, group: string) {
-	if (group === "Unmerged") {
-		return GitPullRequestArrow;
-	}
-	switch (status) {
-		case "Added":
-			return FilePlus2;
-		case "Deleted":
-			return FileX2;
-		case "Unmerged":
-			return FileQuestion;
-		default:
-			return File;
-	}
-}
-
-function statusColor(status: string, group: string) {
-	if (group === "Unmerged") {
-		return "shrink-0 text-violet-600 dark:text-violet-400";
-	}
-	switch (status) {
-		case "Added":
-			return "shrink-0 text-emerald-600 dark:text-emerald-400";
-		case "Deleted":
-			return "shrink-0 text-red-600 dark:text-red-400";
-		default:
-			return "shrink-0 text-amber-600 dark:text-amber-400";
-	}
 }

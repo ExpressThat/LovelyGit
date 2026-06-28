@@ -2,6 +2,7 @@ import type {
 	AppTheme,
 	CommitDiffLineDisplayMode,
 	CommitDiffViewMode,
+	RemotePrimaryAction,
 } from "@/generated/types";
 
 export type Settings = {
@@ -10,6 +11,7 @@ export type Settings = {
 	CommitDiffViewMode: CommitDiffViewMode;
 	CommitDiffWrapLines: boolean;
 	CurrentGitRepositoryId: string | null;
+	RemotePrimaryAction: RemotePrimaryAction;
 	Theme: AppTheme;
 };
 export type SettingsKey = keyof Settings;
@@ -20,5 +22,6 @@ export const DEFAULT_SETTINGS: Settings = {
 	CommitDiffViewMode: "SideBySide",
 	CommitDiffWrapLines: false,
 	CurrentGitRepositoryId: null,
+	RemotePrimaryAction: "Fetch",
 	Theme: "System",
 };

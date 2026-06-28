@@ -1,13 +1,13 @@
 import {
 	NativeMessageType as GeneratedNativeMessageType,
 	NativeMessageTypesWithRequest as GeneratedNativeMessageTypesWithRequest,
-	NativeMessageTypesWithResponse as GeneratedNativeMessageTypesWithResponse,
-	type NativeMessageType as GeneratedNativeMessageTypeValue,
 	type NativeMessageTypesWithRequest as GeneratedNativeMessageTypesWithRequestValue,
+	NativeMessageTypesWithResponse as GeneratedNativeMessageTypesWithResponse,
+	type NativeMessageTypesWithResponse as GeneratedNativeMessageTypesWithResponseValue,
+	type NativeMessageType as GeneratedNativeMessageTypeValue,
 	type NativeMessageTypesWithRequestAndResponse,
 	type NativeMessageTypesWithRequestWithoutResponse,
 	type NativeMessageTypesWithResponseWithoutRequest,
-	type NativeMessageTypesWithResponse as GeneratedNativeMessageTypesWithResponseValue,
 	type NativeRequestBodies,
 	type NativeResponseBodies,
 } from "@/generated/native-message-contracts";
@@ -36,16 +36,12 @@ export type {
 
 export type NativeMessageRequest<
 	TMessageType extends NativeMessageTypesWithRequest,
-> =
-	GeneratedNativeMessageRequest<NativeRequestBodies[TMessageType]>;
+> = GeneratedNativeMessageRequest<NativeRequestBodies[TMessageType]>;
 
 export type NativeMessageResponse<
 	TMessageType extends NativeMessageTypesWithResponse,
-> =
-	GeneratedNativeMessageResponse<NativeResponseBodies[TMessageType]>;
+> = GeneratedNativeMessageResponse<NativeResponseBodies[TMessageType]>;
 
 export type NativeSubscriber<
 	TMessageType extends NativeMessageTypesWithResponse,
-> = (
-	response: NativeMessageResponse<TMessageType>,
-) => void;
+> = (response: NativeMessageResponse<TMessageType>) => void;

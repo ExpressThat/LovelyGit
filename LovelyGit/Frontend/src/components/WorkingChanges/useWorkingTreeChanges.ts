@@ -8,10 +8,17 @@ import {
 type WorkingTreeChangesState =
 	| { status: "idle"; changes: null }
 	| { status: "loading"; changes: WorkingTreeChangesResponse | null }
-	| { status: "error"; changes: WorkingTreeChangesResponse | null; message: string }
+	| {
+			status: "error";
+			changes: WorkingTreeChangesResponse | null;
+			message: string;
+	  }
 	| { status: "loaded"; changes: WorkingTreeChangesResponse };
 
-export function useWorkingTreeChanges(repositoryId: string | null, enabled: boolean) {
+export function useWorkingTreeChanges(
+	repositoryId: string | null,
+	enabled: boolean,
+) {
 	const [state, setState] = useState<WorkingTreeChangesState>({
 		status: "idle",
 		changes: null,
@@ -69,14 +76,13 @@ export function useWorkingTreeChanges(repositoryId: string | null, enabled: bool
 				if (isActive) {
 					setState({
 						status: "loaded",
-						changes:
-							changes ?? {
-								staged: [],
-								unstaged: [],
-								untracked: [],
-								unmerged: [],
-								totalCount: 0,
-							},
+						changes: changes ?? {
+							staged: [],
+							unstaged: [],
+							untracked: [],
+							unmerged: [],
+							totalCount: 0,
+						},
 					});
 					setSummaryCount(changes?.totalCount ?? 0);
 					setIsDirty(false);
@@ -90,7 +96,7 @@ export function useWorkingTreeChanges(repositoryId: string | null, enabled: bool
 						message:
 							error instanceof Error
 								? error.message
-						: "Failed to load working changes.",
+								: "Failed to load working changes.",
 					}));
 				}
 			} finally {
@@ -116,7 +122,7 @@ export function useWorkingTreeChanges(repositoryId: string | null, enabled: bool
 			isActive = false;
 			unsubscribe();
 		};
-	}, [repositoryId, enabled]);
+	}, [repositoryId, enabled, hasSummaryLoaded, summaryCount, isDirty]);
 
 	useEffect(() => {
 		if (!repositoryId || enabled) {
@@ -199,14 +205,13 @@ export function useWorkingTreeChanges(repositoryId: string | null, enabled: bool
 			});
 			setState({
 				status: "loaded",
-				changes:
-					changes ?? {
-						staged: [],
-						unstaged: [],
-						untracked: [],
-						unmerged: [],
-						totalCount: 0,
-					},
+				changes: changes ?? {
+					staged: [],
+					unstaged: [],
+					untracked: [],
+					unmerged: [],
+					totalCount: 0,
+				},
 			});
 			setSummaryCount(changes?.totalCount ?? 0);
 			setIsDirty(false);
