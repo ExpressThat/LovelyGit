@@ -1,16 +1,21 @@
 import { GitCompareArrows } from "lucide-react";
+import { BranchActionControl } from "./components/BranchActionControl";
 import { RemoteActionsControl } from "./components/RemoteActionsControl";
 import { SettingsDialog } from "./components/SettingsDialog";
 import { Tabs } from "./components/Tabs";
 import { ThemeSelector } from "./components/ThemeSelector";
 
 export function TopNavBar({
+	onBranchCreated,
 	onOpenWorkingChanges,
 	repositoryId,
+	selectedCommitHash,
 	workingChangesCount,
 }: {
+	onBranchCreated: () => void;
 	onOpenWorkingChanges: () => void;
 	repositoryId: string | null;
+	selectedCommitHash: string | null;
 	workingChangesCount: number;
 }) {
 	return (
@@ -19,6 +24,11 @@ export function TopNavBar({
 			<div className="flex h-10 w-full items-center justify-between gap-2 border-b bg-card px-2">
 				<div className="flex items-center gap-1">
 					<RemoteActionsControl repositoryId={repositoryId} />
+					<BranchActionControl
+						onBranchCreated={onBranchCreated}
+						repositoryId={repositoryId}
+						selectedCommitHash={selectedCommitHash}
+					/>
 				</div>
 				<div className="flex items-center justify-end gap-1">
 					<button

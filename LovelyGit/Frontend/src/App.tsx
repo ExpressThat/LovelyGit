@@ -57,10 +57,16 @@ function App() {
 		<RepositoryProvider>
 			<main className="app-shell">
 				<TopNavBar
+					onBranchCreated={() =>
+						setCommitGraphRefreshToken((token) => token + 1)
+					}
 					onOpenWorkingChanges={() =>
 						setDetailsPanel({ kind: "workingChanges" })
 					}
 					repositoryId={currentGitRepositoryId}
+					selectedCommitHash={
+						detailsPanel?.kind === "commit" ? detailsPanel.commitHash : null
+					}
 					workingChangesCount={workingTreeChanges.totalCount}
 				/>
 				<div className="flex min-h-0 flex-1 overflow-hidden">
