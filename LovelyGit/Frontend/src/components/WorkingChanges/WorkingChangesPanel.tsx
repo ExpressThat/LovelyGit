@@ -1,16 +1,20 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import type {
 	WorkingTreeChangedFile,
 	WorkingTreeChangesResponse,
 } from "@/generated/types";
-import { sendRequestWithResponse } from "@/lib/commands";
 import { CommitStagedForm } from "./CommitStagedForm";
 import { DiscardWorkingTreeChangesDialog } from "./DiscardWorkingTreeChangesDialog";
+import { useWorkingChangesPanelActions } from "./useWorkingChangesPanelActions";
+import { WorkingChangesFilterBar } from "./WorkingChangesFilterBar";
+import {
+	countWorkingChanges,
+	filterWorkingChanges,
+	type WorkingChangesFilterGroup,
+} from "./WorkingChangesFilterUtils";
 import { WorkingChangesGroups } from "./WorkingChangesGroups";
 import {
 	BulkIndexActions,
-	fileKey,
-	uniquePaths,
 	WorkingChangesHeader,
 	WorkingChangesSkeleton,
 } from "./WorkingChangesPanelParts";
@@ -34,139 +38,47 @@ export function WorkingChangesPanel({
 	const workingFiles = changes
 		? [...changes.unstaged, ...changes.untracked]
 		: [];
-	const [selectedKeys, setSelectedKeys] = useState<Set<string>>(
-		() => new Set(),
-	);
-	const [actionError, setActionError] = useState<string | null>(null);
-	const [isMutating, setIsMutating] = useState(false);
-	const [commitTitle, setCommitTitle] = useState("");
-	const [commitBody, setCommitBody] = useState("");
-	const [isCommitting, setIsCommitting] = useState(false);
-	const [discardFiles, setDiscardFiles] = useState<WorkingTreeChangedFile[]>(
-		[],
-	);
-	const fileKeys = useMemo(
+	const [filterQuery, setFilterQuery] = useState("");
+	const [filterGroup, setFilterGroup] =
+		useState<WorkingChangesFilterGroup>("All");
+	const filteredChanges = useMemo(
 		() =>
-			new Set(
-				[
-					...(changes?.staged ?? []),
-					...(changes?.unstaged ?? []),
-					...(changes?.untracked ?? []),
-					...(changes?.unmerged ?? []),
-				].map(fileKey),
-			),
-		[changes],
+			changes
+				? filterWorkingChanges(changes, {
+						group: filterGroup,
+						query: filterQuery,
+					})
+				: null,
+		[changes, filterGroup, filterQuery],
 	);
-	const isBusy = isMutating || isCommitting;
-	useEffect(() => {
-		setSelectedKeys((current) => {
-			const next = new Set([...current].filter((key) => fileKeys.has(key)));
-			return next.size === current.size ? current : next;
-		});
-	}, [fileKeys]);
-	const runIndexCommand = async (
-		commandType: "StageWorkingTreeFiles" | "UnstageWorkingTreeFiles",
-		files: WorkingTreeChangedFile[],
-		includeAll: boolean,
-	) => {
-		if (!includeAll && files.length === 0) {
-			return;
-		}
-		setIsMutating(true);
-		setActionError(null);
-		try {
-			await sendRequestWithResponse({
-				commandType,
-				arguments: {
-					includeAll,
-					paths: includeAll ? [] : uniquePaths(files),
-					repositoryId,
-				},
-			});
-			setSelectedKeys(new Set());
-			await onRefresh();
-		} catch (mutationError) {
-			setActionError(
-				mutationError instanceof Error
-					? mutationError.message
-					: "Failed to update the index.",
-			);
-		} finally {
-			setIsMutating(false);
-		}
-	};
-	const commitStagedChanges = async () => {
-		if (
-			!changes ||
-			changes.staged.length === 0 ||
-			commitTitle.trim().length === 0
-		) {
-			return;
-		}
-		setIsCommitting(true);
-		setActionError(null);
-		try {
-			await sendRequestWithResponse({
-				commandType: "CommitStagedChanges",
-				arguments: {
-					body: commitBody,
-					repositoryId,
-					title: commitTitle,
-				},
-			});
-			setCommitTitle("");
-			setCommitBody("");
-			setSelectedKeys(new Set());
-			await onCommitSuccess();
-		} catch (commitError) {
-			setActionError(
-				commitError instanceof Error
-					? commitError.message
-					: "Failed to commit staged changes.",
-			);
-		} finally {
-			setIsCommitting(false);
-		}
-	};
-	const discardWorkingChanges = async () => {
-		if (discardFiles.length === 0) {
-			return;
-		}
-		setIsMutating(true);
-		setActionError(null);
-		try {
-			await sendRequestWithResponse({
-				commandType: "DiscardWorkingTreeChanges",
-				arguments: {
-					files: discardFiles,
-					repositoryId,
-				},
-			});
-			setDiscardFiles([]);
-			setSelectedKeys(new Set());
-			await onRefresh();
-		} catch (discardError) {
-			setActionError(
-				discardError instanceof Error
-					? discardError.message
-					: "Failed to discard selected changes.",
-			);
-		} finally {
-			setIsMutating(false);
-		}
-	};
-	const toggleSelected = (file: WorkingTreeChangedFile) => {
-		const key = fileKey(file);
-		setSelectedKeys((current) => {
-			const next = new Set(current);
-			if (next.has(key)) {
-				next.delete(key);
-			} else {
-				next.add(key);
-			}
-			return next;
-		});
-	};
+	const filteredCount = filteredChanges
+		? countWorkingChanges(filteredChanges)
+		: 0;
+	const filteredWorkingFiles = filteredChanges
+		? [...filteredChanges.unstaged, ...filteredChanges.untracked]
+		: [];
+	const {
+		actionError,
+		commitBody,
+		commitStagedChanges,
+		commitTitle,
+		discardFiles,
+		discardWorkingChanges,
+		isBusy,
+		isCommitting,
+		isMutating,
+		runIndexCommand,
+		selectedKeys,
+		setCommitBody,
+		setCommitTitle,
+		setDiscardFiles,
+		toggleSelected,
+	} = useWorkingChangesPanelActions({
+		changes,
+		onCommitSuccess,
+		onRefresh,
+		repositoryId,
+	});
 	if (!changes && isLoading) {
 		return <WorkingChangesSkeleton />;
 	}
@@ -190,6 +102,16 @@ export function WorkingChangesPanel({
 					}
 				/>
 			) : null}
+			{changes && changes.totalCount > 0 ? (
+				<WorkingChangesFilterBar
+					group={filterGroup}
+					matchedCount={filteredCount}
+					onGroupChange={setFilterGroup}
+					onQueryChange={setFilterQuery}
+					query={filterQuery}
+					totalCount={changes.totalCount}
+				/>
+			) : null}
 			{error || actionError ? (
 				<div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
 					{actionError ?? error}
@@ -211,21 +133,27 @@ export function WorkingChangesPanel({
 					onCommitTitleChange={setCommitTitle}
 				/>
 			) : null}
-			{changes ? (
+			{filteredChanges ? (
 				<>
-					<WorkingChangesGroups
-						isBusy={isBusy}
-						onDiscardSelected={setDiscardFiles}
-						onIndexCommand={(commandType, files, includeAll) =>
-							void runIndexCommand(commandType, files, includeAll)
-						}
-						onSelectFile={onSelectFile}
-						onToggleSelected={toggleSelected}
-						selectedKeys={selectedKeys}
-						stagedFiles={changes.staged}
-						unmergedFiles={changes.unmerged}
-						workingFiles={workingFiles}
-					/>
+					{filteredCount > 0 ? (
+						<WorkingChangesGroups
+							isBusy={isBusy}
+							onDiscardSelected={setDiscardFiles}
+							onIndexCommand={(commandType, files, includeAll) =>
+								void runIndexCommand(commandType, files, includeAll)
+							}
+							onSelectFile={onSelectFile}
+							onToggleSelected={toggleSelected}
+							selectedKeys={selectedKeys}
+							stagedFiles={filteredChanges.staged}
+							unmergedFiles={filteredChanges.unmerged}
+							workingFiles={filteredWorkingFiles}
+						/>
+					) : (
+						<div className="rounded-md border bg-card p-4 text-sm text-muted-foreground">
+							No changes match this filter.
+						</div>
+					)}
 					<DiscardWorkingTreeChangesDialog
 						files={discardFiles}
 						isDiscarding={isMutating}
