@@ -4,7 +4,10 @@ import {
 	applyObservedWorkingTreeChanges,
 	countObservedNewPaths,
 } from "./OptimisticWorkingTreeChanges";
-import { loadWorkingTreeChanges } from "./WorkingTreeChangesRequests";
+import {
+	loadWorkingTreeChangeSummary,
+	loadWorkingTreeChanges,
+} from "./WorkingTreeChangesRequests";
 import type { WorkingTreeChangesState } from "./WorkingTreeChangesState";
 
 export function useWorkingTreeChanges(
@@ -141,7 +144,7 @@ export function useWorkingTreeChanges(
 
 		let isLoading = false;
 		let reloadAgain = false;
-		const loadChanges = async () => {
+		const loadSummary = async () => {
 			if (isLoading) {
 				reloadAgain = true;
 				return;
@@ -149,13 +152,9 @@ export function useWorkingTreeChanges(
 
 			isLoading = true;
 			try {
-				const loadedChanges = await loadWorkingTreeChanges(repositoryId);
+				const totalCount = await loadWorkingTreeChangeSummary(repositoryId);
 				if (previousRepositoryIdRef.current === repositoryId) {
-					setState({
-						status: "loaded",
-						changes: loadedChanges,
-					});
-					setSummaryCount(loadedChanges.totalCount);
+					setSummaryCount(totalCount);
 					setIsDirty(false);
 					setHasSummaryLoaded(true);
 				}
@@ -180,11 +179,11 @@ export function useWorkingTreeChanges(
 
 			summaryReloadTimerRef.current = window.setTimeout(() => {
 				summaryReloadTimerRef.current = null;
-				void loadChanges();
+				void loadSummary();
 			}, 150);
 		};
 
-		void loadChanges();
+		void loadSummary();
 		const unsubscribe = subscribeToServerEvent(
 			"WorkingTreeChanged",
 			(event) => {

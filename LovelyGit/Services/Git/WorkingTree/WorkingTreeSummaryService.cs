@@ -1,21 +1,45 @@
+using ExpressThat.LovelyGit.Services.Git.Cli;
+using ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser;
 using ExpressThat.LovelyGit.Services.Git.WorkingTree.Models;
 
 namespace ExpressThat.LovelyGit.Services.Git.WorkingTree;
 
 internal sealed class WorkingTreeSummaryService
 {
-    private readonly WorkingTreeStatusListService _statusListService;
+    private readonly GitCliService _gitCliService;
 
-    public WorkingTreeSummaryService(WorkingTreeStatusListService statusListService)
+    public WorkingTreeSummaryService(GitCliService gitCliService)
     {
-        _statusListService = statusListService;
+        _gitCliService = gitCliService;
     }
 
     public async Task<WorkingTreeChangeSummaryResponse> GetSummaryAsync(
         string repositoryPath,
         CancellationToken cancellationToken)
-        => await _statusListService.GetSummaryAsync(repositoryPath, cancellationToken)
+    {
+        var paths = await GitRepositoryDiscovery
+            .ResolveRepositoryPathsAsync(repositoryPath, cancellationToken)
             .ConfigureAwait(false);
+        var result = await _gitCliService
+            .ExecuteBufferedAsync(
+                ["--no-optional-locks", "status", "--porcelain=v1", "-z", "--untracked-files=all"],
+                paths.WorkTreeDirectory,
+                validateExitCode: false,
+                cancellationToken)
+            .ConfigureAwait(false);
+
+        if (result.ExitCode != 0)
+        {
+            throw new InvalidOperationException(FirstNonEmptyLine(result.StandardError)
+                ?? FirstNonEmptyLine(result.StandardOutput)
+                ?? "Git status summary failed.");
+        }
+
+        return new WorkingTreeChangeSummaryResponse
+        {
+            TotalCount = CountPorcelainRecords(result.StandardOutput.AsSpan()),
+        };
+    }
 
     internal static int CountPorcelainRecords(ReadOnlySpan<char> output)
     {
@@ -48,5 +72,19 @@ internal sealed class WorkingTreeSummaryService
         var remaining = output[offset..];
         var nulIndex = remaining.IndexOf('\0');
         return nulIndex < 0 ? output.Length : offset + nulIndex + 1;
+    }
+
+    private static string? FirstNonEmptyLine(string text)
+    {
+        foreach (var line in text.AsSpan().EnumerateLines())
+        {
+            var trimmed = line.Trim();
+            if (!trimmed.IsEmpty)
+            {
+                return trimmed.ToString();
+            }
+        }
+
+        return null;
     }
 }

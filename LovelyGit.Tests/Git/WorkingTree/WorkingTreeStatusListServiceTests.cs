@@ -122,6 +122,20 @@ public sealed class WorkingTreeStatusListServiceTests
         Assert.Equal(4, count);
     }
 
+    [Fact]
+    public async Task GetSummaryAsync_CountsChangesWithoutLoadingFileLists()
+    {
+        using var directory = TemporaryDirectory.Create("lovelygit-status-summary-");
+        await CreateInitialCommitAsync(directory.Path);
+        await File.WriteAllTextAsync(Path.Combine(directory.Path, "file.txt"), "changed content");
+        await File.WriteAllTextAsync(Path.Combine(directory.Path, "new.txt"), "new content");
+
+        var response = await new WorkingTreeSummaryService(new GitCliService())
+            .GetSummaryAsync(directory.Path, CancellationToken.None);
+
+        Assert.Equal(2, response.TotalCount);
+    }
+
     private static void AssertStatus(
         WorkingTreeChangedFile file,
         string path,
