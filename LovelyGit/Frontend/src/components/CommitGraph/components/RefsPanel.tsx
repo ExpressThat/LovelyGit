@@ -5,22 +5,29 @@ import { Input } from "@/components/ui/input";
 import type { CommitGraphRow } from "@/generated/types";
 import { setSetting, useSetting } from "@/lib/settings/settingsStore";
 import { shortHash } from "../utils/format";
+import { BranchRefContextMenu } from "./BranchRefContextMenu";
 import { RefIcon } from "./RefCellUtils";
 import {
 	buildRefPanelSections,
 	filterRefPanelSections,
+	type RefPanelItem,
 	type RefPanelSection,
+	refPanelItemToRefInfo,
 } from "./RefsPanelData";
 
 export function RefsPanel({
 	currentBranchName,
+	onRefsChanged,
 	onSelectCommit,
 	remotePrefixes,
+	repositoryId,
 	rows,
 }: {
 	currentBranchName: string | null;
+	onRefsChanged: () => void;
 	onSelectCommit: (row: CommitGraphRow) => void;
 	remotePrefixes: string[];
+	repositoryId: string | null;
 	rows: Array<CommitGraphRow | null>;
 }) {
 	const isOpen = useSetting("CommitGraphRefsPanelOpen");
@@ -105,8 +112,11 @@ export function RefsPanel({
 				{filteredSections.length > 0 ? (
 					filteredSections.map((section) => (
 						<RefSection
+							currentBranchName={currentBranchName}
 							key={section.kind}
+							onRefsChanged={onRefsChanged}
 							onSelectCommit={onSelectCommit}
+							repositoryId={repositoryId}
 							section={section}
 						/>
 					))
@@ -129,10 +139,16 @@ function RefsEmptyState({ hasQuery }: { hasQuery: boolean }) {
 }
 
 function RefSection({
+	currentBranchName,
+	onRefsChanged,
 	onSelectCommit,
+	repositoryId,
 	section,
 }: {
+	currentBranchName: string | null;
+	onRefsChanged: () => void;
 	onSelectCommit: (row: CommitGraphRow) => void;
+	repositoryId: string | null;
 	section: RefPanelSection;
 }) {
 	return (
@@ -143,23 +159,60 @@ function RefSection({
 			</div>
 			<div className="grid gap-1">
 				{section.items.map((item) => (
-					<Button
-						className="h-7 min-w-0 justify-start gap-2 px-2 font-normal"
+					<RefPanelRow
+						currentBranchName={currentBranchName}
+						item={item}
 						key={`${item.kind}:${item.name}:${item.commitHash}`}
-						onClick={() => onSelectCommit(item.row)}
-						title={`${item.name} at ${shortHash(item.commitHash)}`}
-						variant={item.isCurrent ? "secondary" : "ghost"}
-					>
-						<RefIcon kind={item.kind} />
-						<span className="min-w-0 flex-1 truncate text-left">
-							{item.label}
-						</span>
-						<span className="font-mono text-[10px] text-muted-foreground">
-							{shortHash(item.commitHash)}
-						</span>
-					</Button>
+						onRefsChanged={onRefsChanged}
+						onSelectCommit={onSelectCommit}
+						repositoryId={repositoryId}
+					/>
 				))}
 			</div>
 		</section>
+	);
+}
+
+function RefPanelRow({
+	currentBranchName,
+	item,
+	onRefsChanged,
+	onSelectCommit,
+	repositoryId,
+}: {
+	currentBranchName: string | null;
+	item: RefPanelItem;
+	onRefsChanged: () => void;
+	onSelectCommit: (row: CommitGraphRow) => void;
+	repositoryId: string | null;
+}) {
+	const button = (
+		<Button
+			className="h-7 min-w-0 justify-start gap-2 px-2 font-normal"
+			onClick={() => onSelectCommit(item.row)}
+			title={`${item.name} at ${shortHash(item.commitHash)}`}
+			variant={item.isCurrent ? "secondary" : "ghost"}
+		>
+			<RefIcon kind={item.kind} />
+			<span className="min-w-0 flex-1 truncate text-left">{item.label}</span>
+			<span className="font-mono text-[10px] text-muted-foreground">
+				{shortHash(item.commitHash)}
+			</span>
+		</Button>
+	);
+
+	if (item.kind === "Stash") {
+		return button;
+	}
+
+	return (
+		<BranchRefContextMenu
+			currentBranchName={currentBranchName}
+			onRefsChanged={onRefsChanged}
+			refInfo={refPanelItemToRefInfo(item)}
+			repositoryId={repositoryId}
+		>
+			{button}
+		</BranchRefContextMenu>
 	);
 }

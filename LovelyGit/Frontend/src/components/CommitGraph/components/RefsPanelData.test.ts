@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import type { CommitGraphRow, CommitInfo } from "@/generated/types";
-import { buildRefPanelSections, filterRefPanelSections } from "./RefsPanelData";
+import {
+	buildRefPanelSections,
+	filterRefPanelSections,
+	refPanelItemToRefInfo,
+} from "./RefsPanelData";
 
 describe("buildRefPanelSections", () => {
 	it("groups loaded refs by kind and puts the current branch first", () => {
@@ -63,6 +67,19 @@ describe("buildRefPanelSections", () => {
 			"v1.0.0",
 		);
 		expect(filterRefPanelSections(sections, "missing")).toEqual([]);
+	});
+
+	it("maps sidebar items back to commit ref info for menus", () => {
+		const sections = buildRefPanelSections({
+			currentBranchName: null,
+			remotePrefixes: ["origin"],
+			rows: [row("abc1234", [{ kind: "Remote", name: "origin/main" }])],
+		});
+
+		expect(refPanelItemToRefInfo(sections[0].items[0])).toEqual({
+			kind: "Remote",
+			name: "origin/main",
+		});
 	});
 });
 

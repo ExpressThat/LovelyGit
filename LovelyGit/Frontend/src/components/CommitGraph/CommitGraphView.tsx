@@ -155,8 +155,10 @@ export function CommitGraphView({
 			<div className="flex h-full w-full min-w-0">
 				<RefsPanel
 					currentBranchName={currentBranchName}
+					onRefsChanged={onRefsChanged}
 					onSelectCommit={onSelectCommit}
 					remotePrefixes={remotePrefixes}
+					repositoryId={repositoryId}
 					rows={rows}
 				/>
 				<div ref={viewportRef} className="flex h-full min-w-0 flex-1 flex-col">

@@ -107,6 +107,13 @@ export function filterRefPanelSections(
 		.filter((section) => section.count > 0);
 }
 
+export function refPanelItemToRefInfo(item: RefPanelItem): CommitRefInfo {
+	return {
+		kind: item.kind,
+		name: item.name,
+	};
+}
+
 function rowRefs(
 	row: CommitGraphRow,
 	remotePrefixes: string[],
