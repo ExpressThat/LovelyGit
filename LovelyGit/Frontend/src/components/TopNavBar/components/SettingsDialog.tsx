@@ -27,7 +27,7 @@ const categories: Array<{
 	label: string;
 }> = [
 	{
-		description: "Diff layout, context, and line wrapping",
+		description: "Diff layout, context, whitespace, and line wrapping",
 		icon: FileText,
 		id: "fileDiffView",
 		label: "File Diff View",

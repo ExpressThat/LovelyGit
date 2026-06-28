@@ -8,6 +8,7 @@ import {
 	WrapText,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import type {
 	CommitDiffLineDisplayMode,
 	CommitDiffViewMode,
@@ -24,6 +25,7 @@ export function FileDiffViewSettings() {
 	const lineDisplayMode = useSetting("CommitDiffLineDisplayMode");
 	const contextLines = useSetting("CommitDiffContextLines");
 	const wrapLines = useSetting("CommitDiffWrapLines");
+	const ignoreWhitespace = useSetting("CommitDiffIgnoreWhitespace");
 	return (
 		<div className="space-y-5">
 			<SettingGroup
@@ -125,6 +127,36 @@ export function FileDiffViewSettings() {
 					<WrapText aria-hidden="true" className="size-4" />
 					{wrapLines ? "Wrapping on" : "Wrapping off"}
 				</Button>
+			</SettingGroup>
+			<SettingGroup
+				description="Hide whitespace-only edits when comparing file content."
+				title="Whitespace"
+			>
+				<div className="flex max-w-xl items-center justify-between gap-4 rounded-md border bg-background px-3 py-2">
+					<span className="min-w-0">
+						<span
+							className="block text-sm font-medium"
+							id="commit-diff-ignore-whitespace-label"
+						>
+							Ignore whitespace-only changes
+						</span>
+						<span
+							className="block text-xs text-muted-foreground"
+							id="commit-diff-ignore-whitespace-description"
+						>
+							Applies to commit and working-tree file diffs.
+						</span>
+					</span>
+					<Switch
+						aria-describedby="commit-diff-ignore-whitespace-description"
+						aria-label="Ignore whitespace-only changes"
+						checked={ignoreWhitespace}
+						id="commit-diff-ignore-whitespace"
+						onCheckedChange={(checked) =>
+							void setSetting("CommitDiffIgnoreWhitespace", checked)
+						}
+					/>
+				</div>
 			</SettingGroup>
 		</div>
 	);
