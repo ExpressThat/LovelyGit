@@ -3,6 +3,7 @@ using System.Text;
 using CliWrap;
 using ExpressThat.LovelyGit.Services.Git.Cli;
 using ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser;
+using ExpressThat.LovelyGit.Services.Git.WorkingTree.Models;
 
 namespace ExpressThat.LovelyGit.Services.Git.WorkingTree;
 
@@ -74,6 +75,63 @@ internal sealed partial class WorkingTreeIndexService
             .WithStandardInputPipe(PipeSource.Create((stream, token) => WritePathspecsAsync(stream, normalizedPaths, token)))
             .ExecuteAsync(cancellationToken)
             .ConfigureAwait(false);
+    }
+
+    public async Task DiscardChangesAsync(
+        string repositoryPath,
+        IReadOnlyList<WorkingTreeChangedFile> files,
+        CancellationToken cancellationToken)
+    {
+        if (files.Count == 0)
+        {
+            throw new InvalidOperationException("Select at least one file to discard.");
+        }
+
+        var trackedPaths = files
+            .Where(file => file.Group == WorkingTreeChangeGroup.Unstaged)
+            .Select(file => file.Path)
+            .ToArray();
+        var untrackedPaths = files
+            .Where(file => file.Group == WorkingTreeChangeGroup.Untracked)
+            .Select(file => file.Path)
+            .ToArray();
+
+        if (trackedPaths.Length + untrackedPaths.Length != files.Count)
+        {
+            throw new InvalidOperationException("Only unstaged and untracked files can be discarded.");
+        }
+
+        var repositoryPaths = await GitRepositoryDiscovery
+            .ResolveRepositoryPathsAsync(repositoryPath, cancellationToken)
+            .ConfigureAwait(false);
+
+        if (trackedPaths.Length > 0)
+        {
+            await _gitCliService
+                .CreateCommand(
+                    ["restore", "--worktree", "--pathspec-from-file=-", "--pathspec-file-nul"],
+                    repositoryPaths.WorkTreeDirectory)
+                .WithStandardInputPipe(PipeSource.Create((stream, token) =>
+                    WritePathspecsAsync(stream, NormalizeSelectedPaths(trackedPaths), token)))
+                .ExecuteAsync(cancellationToken)
+                .ConfigureAwait(false);
+        }
+
+        if (untrackedPaths.Length > 0)
+        {
+            var cleanArguments = new List<string>(untrackedPaths.Length + 3)
+            {
+                "clean",
+                "-f",
+                "--",
+            };
+            cleanArguments.AddRange(NormalizeSelectedPaths(untrackedPaths));
+
+            await _gitCliService
+                .CreateCommand(cleanArguments, repositoryPaths.WorkTreeDirectory)
+                .ExecuteAsync(cancellationToken)
+                .ConfigureAwait(false);
+        }
     }
 
     public async Task StageLineAsync(

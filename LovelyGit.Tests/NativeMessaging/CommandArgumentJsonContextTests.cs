@@ -7,6 +7,8 @@ using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Rebase;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Reset;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Revert;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Tags;
+using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.WorkingTree;
+using ExpressThat.LovelyGit.Services.Git.WorkingTree.Models;
 
 namespace LovelyGit.Tests.NativeMessaging;
 
@@ -108,6 +110,32 @@ public sealed class CommandArgumentJsonContextTests
                     Assert.Equal(RepositoryId, arguments.RepositoryId);
                     Assert.Equal("abc123", arguments.CommitHash);
                     Assert.Equal(GitResetMode.Hard, arguments.ResetMode);
+                }
+            },
+            {
+                $$"""
+                {
+                  "repositoryId": "{{RepositoryId}}",
+                  "files": [
+                    {
+                      "path": "README.md",
+                      "status": "Modified",
+                      "group": "Unstaged",
+                      "additions": 1,
+                      "deletions": 0,
+                      "isBinary": false
+                    }
+                  ]
+                }
+                """,
+                WorkingTreeJsonSerializerContext.Default.DiscardWorkingTreeChangesCommandArguments,
+                value =>
+                {
+                    var arguments = Assert.IsType<DiscardWorkingTreeChangesCommandArguments>(value);
+                    Assert.Equal(RepositoryId, arguments.RepositoryId);
+                    var file = Assert.Single(arguments.Files);
+                    Assert.Equal("README.md", file.Path);
+                    Assert.Equal(WorkingTreeChangeGroup.Unstaged, file.Group);
                 }
             },
         };

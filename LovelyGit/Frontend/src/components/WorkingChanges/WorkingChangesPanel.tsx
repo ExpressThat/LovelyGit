@@ -5,11 +5,11 @@ import type {
 } from "@/generated/types";
 import { sendRequestWithResponse } from "@/lib/commands";
 import { CommitStagedForm } from "./CommitStagedForm";
+import { DiscardWorkingTreeChangesDialog } from "./DiscardWorkingTreeChangesDialog";
+import { WorkingChangesGroups } from "./WorkingChangesGroups";
 import {
 	BulkIndexActions,
-	ChangeGroup,
 	fileKey,
-	selectedFiles,
 	uniquePaths,
 	WorkingChangesHeader,
 	WorkingChangesSkeleton,
@@ -42,6 +42,9 @@ export function WorkingChangesPanel({
 	const [commitTitle, setCommitTitle] = useState("");
 	const [commitBody, setCommitBody] = useState("");
 	const [isCommitting, setIsCommitting] = useState(false);
+	const [discardFiles, setDiscardFiles] = useState<WorkingTreeChangedFile[]>(
+		[],
+	);
 	const fileKeys = useMemo(
 		() =>
 			new Set(
@@ -54,11 +57,6 @@ export function WorkingChangesPanel({
 			),
 		[changes],
 	);
-	const selectedStagedFiles = selectedFiles(
-		changes?.staged ?? [],
-		selectedKeys,
-	);
-	const selectedWorkingFiles = selectedFiles(workingFiles, selectedKeys);
 	const isBusy = isMutating || isCommitting;
 	useEffect(() => {
 		setSelectedKeys((current) => {
@@ -130,6 +128,33 @@ export function WorkingChangesPanel({
 			setIsCommitting(false);
 		}
 	};
+	const discardWorkingChanges = async () => {
+		if (discardFiles.length === 0) {
+			return;
+		}
+		setIsMutating(true);
+		setActionError(null);
+		try {
+			await sendRequestWithResponse({
+				commandType: "DiscardWorkingTreeChanges",
+				arguments: {
+					files: discardFiles,
+					repositoryId,
+				},
+			});
+			setDiscardFiles([]);
+			setSelectedKeys(new Set());
+			await onRefresh();
+		} catch (discardError) {
+			setActionError(
+				discardError instanceof Error
+					? discardError.message
+					: "Failed to discard selected changes.",
+			);
+		} finally {
+			setIsMutating(false);
+		}
+	};
 	const toggleSelected = (file: WorkingTreeChangedFile) => {
 		const key = fileKey(file);
 		setSelectedKeys((current) => {
@@ -188,57 +213,29 @@ export function WorkingChangesPanel({
 			) : null}
 			{changes ? (
 				<>
-					<ChangeGroup
-						actionLabel={
-							selectedStagedFiles.length > 0
-								? `Unstage selected (${selectedStagedFiles.length})`
-								: "Unstage selected"
-						}
-						files={changes.staged}
-						isActionDisabled={isBusy || selectedStagedFiles.length === 0}
-						onAction={() =>
-							void runIndexCommand(
-								"UnstageWorkingTreeFiles",
-								selectedStagedFiles,
-								false,
-							)
-						}
-						onFileAction={(file) =>
-							void runIndexCommand("UnstageWorkingTreeFiles", [file], false)
+					<WorkingChangesGroups
+						isBusy={isBusy}
+						onDiscardSelected={setDiscardFiles}
+						onIndexCommand={(commandType, files, includeAll) =>
+							void runIndexCommand(commandType, files, includeAll)
 						}
 						onSelectFile={onSelectFile}
 						onToggleSelected={toggleSelected}
 						selectedKeys={selectedKeys}
-						title="Staged"
+						stagedFiles={changes.staged}
+						unmergedFiles={changes.unmerged}
+						workingFiles={workingFiles}
 					/>
-					<ChangeGroup
-						actionLabel={
-							selectedWorkingFiles.length > 0
-								? `Stage selected (${selectedWorkingFiles.length})`
-								: "Stage selected"
-						}
-						hideGroupLabel
-						files={workingFiles}
-						isActionDisabled={isBusy || selectedWorkingFiles.length === 0}
-						onAction={() =>
-							void runIndexCommand(
-								"StageWorkingTreeFiles",
-								selectedWorkingFiles,
-								false,
-							)
-						}
-						onFileAction={(file) =>
-							void runIndexCommand("StageWorkingTreeFiles", [file], false)
-						}
-						onSelectFile={onSelectFile}
-						onToggleSelected={toggleSelected}
-						selectedKeys={selectedKeys}
-						title="Changes"
-					/>
-					<ChangeGroup
-						title="Unmerged"
-						files={changes.unmerged}
-						onSelectFile={onSelectFile}
+					<DiscardWorkingTreeChangesDialog
+						files={discardFiles}
+						isDiscarding={isMutating}
+						isOpen={discardFiles.length > 0}
+						onConfirm={() => void discardWorkingChanges()}
+						onOpenChange={(isOpen) => {
+							if (!isOpen && !isMutating) {
+								setDiscardFiles([]);
+							}
+						}}
 					/>
 				</>
 			) : null}

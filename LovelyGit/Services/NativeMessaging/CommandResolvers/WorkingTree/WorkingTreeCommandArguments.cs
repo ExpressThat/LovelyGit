@@ -1,4 +1,5 @@
 using ExpressThat.LovelyGit.Services.TypeGeneration;
+using ExpressThat.LovelyGit.Services.Git.WorkingTree.Models;
 
 namespace ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.WorkingTree;
 
@@ -14,6 +15,13 @@ public record UpdateWorkingTreeIndexCommandArguments
     public Guid RepositoryId { get; set; }
     public bool IncludeAll { get; set; }
     public List<string> Paths { get; set; } = new();
+}
+
+[TypeSharp]
+public record DiscardWorkingTreeChangesCommandArguments
+{
+    public Guid RepositoryId { get; set; }
+    public List<WorkingTreeChangedFile> Files { get; set; } = new();
 }
 
 [TypeSharp]

@@ -48,6 +48,8 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging
         StageWorkingTreeFiles,
         [NativeMessageContract(typeof(UpdateWorkingTreeIndexCommandArguments))]
         UnstageWorkingTreeFiles,
+        [NativeMessageContract(typeof(DiscardWorkingTreeChangesCommandArguments))]
+        DiscardWorkingTreeChanges,
         [NativeMessageContract(typeof(StageWorkingTreeLineCommandArguments))]
         StageWorkingTreeLine,
         [NativeMessageContract(typeof(StageWorkingTreeLineCommandArguments))]

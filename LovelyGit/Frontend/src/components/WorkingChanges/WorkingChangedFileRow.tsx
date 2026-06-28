@@ -1,11 +1,11 @@
 import {
-	Check,
 	File,
 	FilePlus2,
 	FileQuestion,
 	FileX2,
 	GitPullRequestArrow,
 } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import type { WorkingTreeChangedFile } from "@/generated/types";
 
 export function ChangedFileRow({
@@ -34,21 +34,14 @@ export function ChangedFileRow({
 	return (
 		<div className="group/file-row flex min-h-9 w-full items-center gap-2 border-b text-left hover:bg-accent/60 last:border-b-0">
 			{onToggleSelected ? (
-				<label
-					aria-label={`Select ${file.path}`}
-					className="ml-0 inline-flex size-5 shrink-0 items-center justify-center"
-				>
-					<input
+				<div className="ml-1 inline-flex size-5 shrink-0 items-center justify-center">
+					<Checkbox
+						aria-label={`Select ${file.path}`}
 						checked={isSelected}
-						className="peer sr-only"
-						onChange={onToggleSelected}
 						onClick={(event) => event.stopPropagation()}
-						type="checkbox"
+						onCheckedChange={onToggleSelected}
 					/>
-					<span className="inline-flex size-4 items-center justify-center rounded border border-muted-foreground/60 bg-background text-transparent transition-colors peer-checked:border-sky-400 peer-checked:bg-sky-500 peer-checked:text-white peer-checked:shadow-[0_0_0_1px_rgba(56,189,248,0.35)] peer-focus-visible:ring-2 peer-focus-visible:ring-ring">
-						<Check aria-hidden="true" size={12} strokeWidth={3} />
-					</span>
-				</label>
+				</div>
 			) : null}
 			<button
 				className="flex min-w-0 flex-1 items-center gap-2 py-1.5 text-left"
