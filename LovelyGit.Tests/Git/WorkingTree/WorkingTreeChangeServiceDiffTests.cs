@@ -1,7 +1,6 @@
 using DiffPlex.DiffBuilder.Model;
 using ExpressThat.LovelyGit.Services.Git.Cli;
 using ExpressThat.LovelyGit.Services.Git.CommitGraph.Models;
-using ExpressThat.LovelyGit.Services.Git.Diffing;
 using ExpressThat.LovelyGit.Services.Git.WorkingTree;
 using ExpressThat.LovelyGit.Services.Git.WorkingTree.Models;
 
@@ -66,54 +65,6 @@ public sealed class WorkingTreeChangeServiceDiffTests
         Assert.Equal("Added", diff.Status);
         Assert.True(diff.HasDifferences);
         Assert.Contains(diff.Lines, line => line.Text == "new content");
-    }
-
-    [Fact]
-    public async Task GetFileDiffAsync_LargeUntrackedFileReturnsTruncatedDiff()
-    {
-        using var repository = TemporaryGitRepository.Create();
-        var service = new WorkingTreeChangeService();
-        await File.WriteAllTextAsync(
-            Path.Combine(repository.Path, "large-new.txt"),
-            new string('n', DiffInputGuard.MaxDiffInputBytes + 1),
-            CancellationToken.None);
-
-        var diff = await service.GetFileDiffAsync(
-            repository.Path,
-            "large-new.txt",
-            WorkingTreeChangeGroup.Untracked,
-            CommitDiffViewMode.Combined,
-            ignoreWhitespace: false,
-            CancellationToken.None);
-
-        Assert.Equal("Added", diff.Status);
-        Assert.True(diff.IsTruncated);
-        Assert.Empty(diff.Lines);
-        Assert.Contains("bytes", diff.TruncationMessage);
-    }
-
-    [Fact]
-    public async Task GetFileDiffAsync_LargeModifiedFileReturnsTruncatedDiff()
-    {
-        using var repository = TemporaryGitRepository.Create();
-        var service = new WorkingTreeChangeService();
-        await File.WriteAllTextAsync(
-            Path.Combine(repository.Path, "tracked.txt"),
-            new string('m', DiffInputGuard.MaxDiffInputBytes + 1),
-            CancellationToken.None);
-
-        var diff = await service.GetFileDiffAsync(
-            repository.Path,
-            "tracked.txt",
-            WorkingTreeChangeGroup.Unstaged,
-            CommitDiffViewMode.SideBySide,
-            ignoreWhitespace: false,
-            CancellationToken.None);
-
-        Assert.Equal("Modified", diff.Status);
-        Assert.Equal(CommitDiffViewMode.SideBySide, diff.ViewMode);
-        Assert.True(diff.IsTruncated);
-        Assert.Empty(diff.Lines);
     }
 
     [Fact]

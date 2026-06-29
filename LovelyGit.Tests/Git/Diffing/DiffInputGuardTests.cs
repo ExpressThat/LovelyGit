@@ -14,16 +14,6 @@ public sealed class DiffInputGuardTests
     }
 
     [Fact]
-    public void ShouldTruncateBytes_ReturnsTrueWhenByteLimitIsExceeded()
-    {
-        var shouldTruncate = DiffInputGuard.ShouldTruncateBytes(
-            DiffInputGuard.MaxDiffInputBytes,
-            1);
-
-        Assert.True(shouldTruncate);
-    }
-
-    [Fact]
     public void ShouldTruncate_ReturnsTrueWhenCharacterLimitIsExceeded()
     {
         var oversizedText = new string('a', DiffInputGuard.MaxDiffInputCharacters + 1);

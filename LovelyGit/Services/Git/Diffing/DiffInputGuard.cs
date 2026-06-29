@@ -4,14 +4,8 @@ namespace ExpressThat.LovelyGit.Services.Git.Diffing;
 
 internal static class DiffInputGuard
 {
-    public const int MaxDiffInputBytes = 300_000;
     public const int MaxDiffInputCharacters = 300_000;
     public const int MaxDiffInputLines = 20_000;
-
-    public static bool ShouldTruncateBytes(long oldByteCount, long newByteCount)
-    {
-        return oldByteCount + newByteCount > MaxDiffInputBytes;
-    }
 
     public static bool ShouldTruncate(string oldText, string newText)
     {
@@ -41,28 +35,6 @@ internal static class DiffInputGuard
         };
     }
 
-    public static CommitFileDiffResponse BuildTruncatedResponse(
-        string commitHash,
-        string path,
-        string status,
-        CommitDiffViewMode viewMode,
-        long oldByteCount,
-        long newByteCount)
-    {
-        return new CommitFileDiffResponse
-        {
-            CommitHash = commitHash,
-            Path = path,
-            Status = status,
-            ViewMode = viewMode,
-            IsBinary = false,
-            HasDifferences = true,
-            IsTruncated = true,
-            TruncationMessage =
-                $"Diff skipped because the file is too large ({DescribeBytes(oldByteCount, newByteCount)}).",
-        };
-    }
-
     private static int CountLines(string text)
     {
         if (text.Length == 0)
@@ -87,10 +59,5 @@ internal static class DiffInputGuard
         var totalCharacters = oldText.Length + newText.Length;
         var totalLines = CountLines(oldText) + CountLines(newText);
         return $"{totalLines:N0} lines, {totalCharacters:N0} characters";
-    }
-
-    private static string DescribeBytes(long oldByteCount, long newByteCount)
-    {
-        return $"{oldByteCount + newByteCount:N0} bytes";
     }
 }

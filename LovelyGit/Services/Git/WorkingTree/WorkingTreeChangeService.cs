@@ -7,7 +7,6 @@ using DiffPlex;
 using DiffPlex.DiffBuilder;
 using DiffPlex.DiffBuilder.Model;
 using ExpressThat.LovelyGit.Services.Git.CommitGraph.Models;
-using ExpressThat.LovelyGit.Services.Git.Diffing;
 using ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser;
 using ExpressThat.LovelyGit.Services.Git.WorkingTree.Models;
 
@@ -106,11 +105,6 @@ internal sealed partial class WorkingTreeChangeService
             var headFiles = await ReadHeadFilesAsync(repository, cancellationToken).ConfigureAwait(false);
             headFiles.TryGetValue(path, out var headFile);
             indexByPath.TryGetValue(path, out var indexEntry);
-            if (indexEntry != null && IsOversizedDiffInput(0, indexEntry.FileSize))
-            {
-                return BuildLargeFileDiff(path, headFile == null ? "Added" : "Modified", viewMode, 0, indexEntry.FileSize);
-            }
-
             oldBytes = headFile == null
                 ? Array.Empty<byte>()
                 : await TryReadBlobBytesAsync(repository, headFile.ObjectId, headFile.Mode, cancellationToken).ConfigureAwait(false) ?? Array.Empty<byte>();
@@ -128,23 +122,16 @@ internal sealed partial class WorkingTreeChangeService
 
             oldBytes = await TryReadBlobBytesAsync(repository, indexEntry.ObjectId, indexEntry.Mode, cancellationToken).ConfigureAwait(false) ?? Array.Empty<byte>();
             var worktreePath = Path.Combine(repository.WorkTreeDirectory, FromGitPath(path));
-            var worktreeInfo = new FileInfo(worktreePath);
-            if (worktreeInfo.Exists
-                && IsOversizedDiffInput(indexEntry.FileSize, worktreeInfo.Length))
-            {
-                return BuildLargeFileDiff(path, "Modified", viewMode, indexEntry.FileSize, worktreeInfo.Length);
-            }
-
-            var readBytes = worktreeInfo.Exists
+            var readBytes = File.Exists(worktreePath)
                 ? await TryReadWorktreeFileBytesAsync(worktreePath, cancellationToken).ConfigureAwait(false)
                 : null;
-            if (worktreeInfo.Exists && readBytes == null)
+            if (File.Exists(worktreePath) && readBytes == null)
             {
                 return BuildUnreadableFileDiff("WORKTREE", path, "Modified", viewMode);
             }
 
             newBytes = readBytes ?? Array.Empty<byte>();
-            status = worktreeInfo.Exists ? "Modified" : "Deleted";
+            status = File.Exists(worktreePath) ? "Modified" : "Deleted";
         }
         else
         {
@@ -162,12 +149,6 @@ internal sealed partial class WorkingTreeChangeService
         CancellationToken cancellationToken)
     {
         var worktreePath = Path.Combine(workTreeDirectory, FromGitPath(path));
-        var worktreeInfo = new FileInfo(worktreePath);
-        if (worktreeInfo.Exists && IsOversizedDiffInput(0, worktreeInfo.Length))
-        {
-            return BuildLargeFileDiff(path, "Added", viewMode, 0, worktreeInfo.Length);
-        }
-
         var untrackedBytes = await TryReadWorktreeFileBytesAsync(worktreePath, cancellationToken)
             .ConfigureAwait(false);
         if (untrackedBytes == null)
@@ -184,22 +165,5 @@ internal sealed partial class WorkingTreeChangeService
             Array.Empty<byte>(),
             untrackedBytes);
     }
-
-    private static bool IsOversizedDiffInput(long oldByteCount, long newByteCount) =>
-        DiffInputGuard.ShouldTruncateBytes(oldByteCount, newByteCount);
-
-    private static CommitFileDiffResponse BuildLargeFileDiff(
-        string path,
-        string status,
-        CommitDiffViewMode viewMode,
-        long oldByteCount,
-        long newByteCount) =>
-        DiffInputGuard.BuildTruncatedResponse(
-            "WORKTREE",
-            path,
-            status,
-            viewMode,
-            oldByteCount,
-            newByteCount);
 
 }
