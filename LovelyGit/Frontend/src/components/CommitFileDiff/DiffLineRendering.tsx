@@ -117,9 +117,9 @@ function findCoveringSyntaxSpan(
 	offset: number,
 	spans: CommitFileDiffSyntaxSpan[],
 ) {
-	return spans.find(
-		(span) => offset >= span.start && offset < span.start + span.length,
-	);
+	return spans
+		.filter((span) => offset >= span.start && offset < span.start + span.length)
+		.sort((left, right) => left.length - right.length)[0];
 }
 
 function findCoveringChangeSpan(

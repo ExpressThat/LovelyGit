@@ -67,6 +67,36 @@ public sealed class WorkingTreeChangeServiceDiffTests
         Assert.Contains(diff.Lines, line => line.Text == "new content");
     }
 
+    [Fact]
+    public async Task GetFileDiffAsync_TypeScriptSyntaxSpansUseTokenOffsets()
+    {
+        using var repository = TemporaryGitRepository.Create();
+        var service = new WorkingTreeChangeService();
+        await File.WriteAllTextAsync(
+            Path.Combine(repository.Path, "syntax.ts"),
+            "describe(\"LovelyGit syntax\", () => {\n});\n",
+            CancellationToken.None);
+
+        var diff = await service.GetFileDiffAsync(
+            repository.Path,
+            "syntax.ts",
+            WorkingTreeChangeGroup.Untracked,
+            CommitDiffViewMode.Combined,
+            ignoreWhitespace: false,
+            CancellationToken.None);
+        var line = Assert.Single(diff.Lines, line => line.Text.StartsWith("describe", StringComparison.Ordinal));
+
+        Assert.DoesNotContain(
+            line.SyntaxSpans,
+            span => span.Scope == "String"
+                && span.Start <= 0
+                && span.Start + span.Length >= "describe".Length);
+        Assert.Contains(
+            line.SyntaxSpans,
+            span => span.Scope == "String"
+                && line.Text.Substring(span.Start, span.Length).Contains("LovelyGit syntax", StringComparison.Ordinal));
+    }
+
     private sealed class TemporaryGitRepository : IDisposable
     {
         private readonly DirectoryInfo _directory;

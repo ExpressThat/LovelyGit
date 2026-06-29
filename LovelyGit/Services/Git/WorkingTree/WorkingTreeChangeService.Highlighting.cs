@@ -66,7 +66,7 @@ internal sealed partial class WorkingTreeChangeService
         }
 
         var spans = new List<CommitFileDiffSyntaxSpan>();
-        var offset = 0;
+        var cursor = 0;
         var repository = new LanguageRepository(new Dictionary<string, ILanguage>(StringComparer.OrdinalIgnoreCase));
         var compiler = new LanguageCompiler(
             new Dictionary<string, CompiledLanguage>(StringComparer.OrdinalIgnoreCase),
@@ -76,17 +76,23 @@ internal sealed partial class WorkingTreeChangeService
         {
             parser.Parse(text, language, (chunk, scopes) =>
             {
+                var chunkStart = text.IndexOf(chunk, cursor, StringComparison.Ordinal);
+                if (chunkStart < 0)
+                {
+                    chunkStart = cursor;
+                }
+
                 foreach (var scope in scopes)
                 {
                     spans.Add(new CommitFileDiffSyntaxSpan
                     {
-                        Start = offset + scope.Index,
+                        Start = chunkStart + scope.Index,
                         Length = scope.Length,
                         Scope = scope.Name,
                     });
                 }
 
-                offset += chunk.Length;
+                cursor = Math.Min(text.Length, chunkStart + chunk.Length);
             });
         }
         catch

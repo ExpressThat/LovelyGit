@@ -1,7 +1,4 @@
 using ColorCode;
-using ColorCode.Common;
-using ColorCode.Compilation;
-using ColorCode.Parsing;
 using DiffPlex;
 using DiffPlex.DiffBuilder;
 using DiffPlex.DiffBuilder.Model;
@@ -172,47 +169,6 @@ internal sealed partial class CommitFileDiffService : IDisposable
             }
 
             offset += pieceText.Length;
-        }
-
-        return spans;
-    }
-
-    private static List<CommitFileDiffSyntaxSpan> BuildSyntaxSpans(string text, ILanguage? language)
-    {
-        if (language == null
-            || string.IsNullOrEmpty(text)
-            || text.Length > MaxSyntaxHighlightedLineLength)
-        {
-            return new List<CommitFileDiffSyntaxSpan>();
-        }
-
-        var spans = new List<CommitFileDiffSyntaxSpan>();
-        var offset = 0;
-        var repository = new LanguageRepository(new Dictionary<string, ILanguage>(StringComparer.OrdinalIgnoreCase));
-        var compiler = new LanguageCompiler(
-            new Dictionary<string, CompiledLanguage>(StringComparer.OrdinalIgnoreCase),
-            new ReaderWriterLockSlim());
-        var parser = new LanguageParser(compiler, repository);
-        try
-        {
-            parser.Parse(text, language, (chunk, scopes) =>
-            {
-                foreach (var scope in scopes)
-                {
-                    spans.Add(new CommitFileDiffSyntaxSpan
-                    {
-                        Start = offset + scope.Index,
-                        Length = scope.Length,
-                        Scope = scope.Name,
-                    });
-                }
-
-                offset += chunk.Length;
-            });
-        }
-        catch
-        {
-            return new List<CommitFileDiffSyntaxSpan>();
         }
 
         return spans;
