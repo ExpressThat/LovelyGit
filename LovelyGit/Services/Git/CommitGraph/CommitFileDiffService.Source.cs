@@ -188,6 +188,11 @@ internal sealed partial class CommitFileDiffService : IDisposable
         bool ignoreWhitespace)
     {
         var model = new SideBySideDiffBuilder(new Differ()).BuildDiffModel(oldText, newText, ignoreWhitespace);
+        var syntaxSpanBuilder = SyntaxSpanBuilder.Create(
+            language,
+            oldText.Length + newText.Length,
+            MaxSyntaxHighlightedCharacters,
+            MaxSyntaxHighlightedLineLength);
         var lineCount = Math.Max(model.OldText.Lines.Count, model.NewText.Lines.Count);
         var lines = new List<CommitFileDiffLine>(lineCount);
         for (var index = 0; index < lineCount; index++)
@@ -204,8 +209,8 @@ internal sealed partial class CommitFileDiffService : IDisposable
                 OldText = oldLineText,
                 NewText = newLineText,
                 ChangeType = GetSideBySideChangeType(oldLine, newLine),
-                OldSyntaxSpans = BuildSyntaxSpans(oldLineText, language),
-                NewSyntaxSpans = BuildSyntaxSpans(newLineText, language),
+                OldSyntaxSpans = BuildSyntaxSpans(oldLineText, syntaxSpanBuilder),
+                NewSyntaxSpans = BuildSyntaxSpans(newLineText, syntaxSpanBuilder),
                 OldChangeSpans = BuildChangeSpans(oldLine),
                 NewChangeSpans = BuildChangeSpans(newLine),
             });

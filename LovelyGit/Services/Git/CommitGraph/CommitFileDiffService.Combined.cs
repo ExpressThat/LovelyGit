@@ -3,6 +3,7 @@ using DiffPlex;
 using DiffPlex.DiffBuilder;
 using DiffPlex.DiffBuilder.Model;
 using ExpressThat.LovelyGit.Services.Git.CommitGraph.Models;
+using ExpressThat.LovelyGit.Services.Git.Diffing;
 
 namespace ExpressThat.LovelyGit.Services.Git.CommitGraph;
 
@@ -18,6 +19,11 @@ internal sealed partial class CommitFileDiffService
         bool ignoreWhitespace)
     {
         var model = new InlineDiffBuilder(new Differ()).BuildDiffModel(oldText, newText, ignoreWhitespace);
+        var syntaxSpanBuilder = SyntaxSpanBuilder.Create(
+            language,
+            oldText.Length + newText.Length,
+            MaxSyntaxHighlightedCharacters,
+            MaxSyntaxHighlightedLineLength);
         var oldLineNumber = 1;
         var newLineNumber = 1;
         var lines = new List<CommitFileDiffLine>(model.Lines.Count);
@@ -48,7 +54,7 @@ internal sealed partial class CommitFileDiffService
                 NewLineNumber = newLine,
                 Text = line.Text,
                 ChangeType = changeType,
-                SyntaxSpans = BuildSyntaxSpans(line.Text, language),
+                SyntaxSpans = BuildSyntaxSpans(line.Text, syntaxSpanBuilder),
                 ChangeSpans = BuildChangeSpans(line),
             });
         }

@@ -7,6 +7,7 @@ using DiffPlex;
 using DiffPlex.DiffBuilder;
 using DiffPlex.DiffBuilder.Model;
 using ExpressThat.LovelyGit.Services.Git.CommitGraph.Models;
+using ExpressThat.LovelyGit.Services.Git.Diffing;
 using ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser;
 using ExpressThat.LovelyGit.Services.Git.WorkingTree.Models;
 
@@ -24,6 +25,11 @@ internal sealed partial class WorkingTreeChangeService
         bool ignoreWhitespace)
     {
         var model = new SideBySideDiffBuilder(new Differ()).BuildDiffModel(oldText, newText, ignoreWhitespace);
+        var syntaxSpanBuilder = SyntaxSpanBuilder.Create(
+            language,
+            oldText.Length + newText.Length,
+            MaxSyntaxHighlightedCharacters,
+            MaxSyntaxHighlightedLineLength);
         var lineCount = Math.Max(model.OldText.Lines.Count, model.NewText.Lines.Count);
         var lines = new List<CommitFileDiffLine>(lineCount);
         for (var index = 0; index < lineCount; index++)
@@ -39,8 +45,8 @@ internal sealed partial class WorkingTreeChangeService
                 OldText = oldLineText,
                 NewText = newLineText,
                 ChangeType = GetSideBySideChangeType(oldLine, newLine),
-                OldSyntaxSpans = BuildSyntaxSpans(oldLineText, language),
-                NewSyntaxSpans = BuildSyntaxSpans(newLineText, language),
+                OldSyntaxSpans = BuildSyntaxSpans(oldLineText, syntaxSpanBuilder),
+                NewSyntaxSpans = BuildSyntaxSpans(newLineText, syntaxSpanBuilder),
                 OldChangeSpans = BuildChangeSpans(oldLine),
                 NewChangeSpans = BuildChangeSpans(newLine),
             });
@@ -85,6 +91,11 @@ internal sealed partial class WorkingTreeChangeService
         bool ignoreWhitespace)
     {
         var model = new InlineDiffBuilder(new Differ()).BuildDiffModel(oldText, newText, ignoreWhitespace);
+        var syntaxSpanBuilder = SyntaxSpanBuilder.Create(
+            language,
+            oldText.Length + newText.Length,
+            MaxSyntaxHighlightedCharacters,
+            MaxSyntaxHighlightedLineLength);
         var oldLineNumber = 1;
         var newLineNumber = 1;
         var lines = new List<CommitFileDiffLine>(model.Lines.Count);
@@ -112,7 +123,7 @@ internal sealed partial class WorkingTreeChangeService
                 NewLineNumber = newLine,
                 Text = line.Text,
                 ChangeType = line.Type.ToString(),
-                SyntaxSpans = BuildSyntaxSpans(line.Text, language),
+                SyntaxSpans = BuildSyntaxSpans(line.Text, syntaxSpanBuilder),
                 ChangeSpans = BuildChangeSpans(line),
             });
         }
