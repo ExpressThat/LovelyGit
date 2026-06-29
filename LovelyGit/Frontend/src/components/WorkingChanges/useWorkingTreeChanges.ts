@@ -3,6 +3,7 @@ import { subscribeToServerEvent } from "@/lib/commands";
 import {
 	applyObservedWorkingTreeChanges,
 	countObservedNewPaths,
+	shouldApplyObservedWorkingTreeChanges,
 } from "./OptimisticWorkingTreeChanges";
 import {
 	loadWorkingTreeChangeSummary,
@@ -97,33 +98,34 @@ export function useWorkingTreeChanges(
 			"WorkingTreeChanged",
 			(event) => {
 				setIsDirty(true);
-				const hasObservedChanges = (event.observedChanges?.length ?? 0) > 0;
-				setState((current) => {
-					const newPathCount = countObservedNewPaths(
-						current.changes,
-						event.observedChanges,
-					);
-					const changes = applyObservedWorkingTreeChanges(
-						current.changes,
-						event.observedChanges,
-					);
-					if (!changes) {
-						return current;
-					}
+				const applyObserved = shouldApplyObservedWorkingTreeChanges(
+					event.observedChanges,
+				);
+				if (applyObserved) {
+					setState((current) => {
+						const newPathCount = countObservedNewPaths(
+							current.changes,
+							event.observedChanges,
+						);
+						const changes = applyObservedWorkingTreeChanges(
+							current.changes,
+							event.observedChanges,
+						);
+						if (!changes) {
+							return current;
+						}
 
-					setSummaryCount((count) => count + newPathCount);
-					return { status: "loaded", changes };
-				});
+						setSummaryCount((count) => count + newPathCount);
+						return { status: "loaded", changes };
+					});
+				}
 				if (reconcileTimer != null) {
 					window.clearTimeout(reconcileTimer);
 				}
 
-				reconcileTimer = hasObservedChanges
-					? window.setTimeout(() => void load(), 1500)
-					: null;
-				if (!hasObservedChanges) {
-					void load();
-				}
+				reconcileTimer = applyObserved
+					? window.setTimeout(() => void load(), 500)
+					: window.setTimeout(() => void load(), 0);
 			},
 		);
 
@@ -194,18 +196,20 @@ export function useWorkingTreeChanges(
 			"WorkingTreeChanged",
 			(event) => {
 				setIsDirty(true);
-				setState((current) => {
-					const changes = applyObservedWorkingTreeChanges(
-						current.changes,
-						event.observedChanges,
-					);
-					if (!changes) {
-						return current;
-					}
+				if (shouldApplyObservedWorkingTreeChanges(event.observedChanges)) {
+					setState((current) => {
+						const changes = applyObservedWorkingTreeChanges(
+							current.changes,
+							event.observedChanges,
+						);
+						if (!changes) {
+							return current;
+						}
 
-					setSummaryCount(changes.totalCount);
-					return { status: "loaded", changes };
-				});
+						setSummaryCount(changes.totalCount);
+						return { status: "loaded", changes };
+					});
+				}
 				scheduleChangesLoad();
 			},
 		);

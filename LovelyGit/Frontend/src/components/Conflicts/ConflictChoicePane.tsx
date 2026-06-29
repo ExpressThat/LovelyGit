@@ -1,12 +1,13 @@
 import { Check } from "lucide-react";
+import type { RefObject, UIEventHandler } from "react";
 import { Button } from "@/components/ui/button";
 import type { GitConflictTextLine } from "@/generated/types";
+import { ConflictCodeScroller } from "./ConflictCodeScroller";
 import {
 	type ConflictChoice,
 	type ConflictHunk,
 	findTextSequenceRange,
 } from "./ConflictHunks";
-import { ConflictRenderedLine } from "./ConflictRenderedLine";
 
 type Side = Exclude<ConflictChoice, null>;
 
@@ -16,6 +17,8 @@ export function ConflictChoicePane({
 	hunks,
 	lines,
 	onChoose,
+	onScroll,
+	scrollContainerRef,
 	side,
 	title,
 }: {
@@ -24,6 +27,8 @@ export function ConflictChoicePane({
 	hunks: ConflictHunk[];
 	lines: GitConflictTextLine[];
 	onChoose: (index: number, choice: Side) => void;
+	onScroll?: UIEventHandler<HTMLElement>;
+	scrollContainerRef: RefObject<HTMLElement | null>;
 	side: Side;
 	title: string;
 }) {
@@ -41,45 +46,48 @@ export function ConflictChoicePane({
 			>
 				{title}
 			</header>
-			<div className="min-h-0 flex-1 overflow-auto font-mono text-[12px] leading-5">
-				{lines.map((line, lineIndex) => {
-					const hunkIndex = ranges.findIndex(
-						(range) =>
-							range && lineIndex >= range.start && lineIndex <= range.end,
-					);
-					const isStart = ranges[hunkIndex]?.start === lineIndex;
+			<ConflictCodeScroller
+				ariaLabel={`${side === "current" ? "Current" : "Incoming"} conflict preview`}
+				lineClassName={(_, lineIndex) => {
+					const hunkIndex = hunkIndexForLine(ranges, lineIndex);
 					const isChosen = hunkIndex >= 0 && choices[hunkIndex] === side;
 					const isActive = hunkIndex === activeHunkIndex;
+					return hunkClass(isActive, isChosen, side);
+				}}
+				lines={lines}
+				onScroll={onScroll}
+				renderAction={(_, lineIndex) => {
+					const hunkIndex = hunkIndexForLine(ranges, lineIndex);
+					const isStart = ranges[hunkIndex]?.start === lineIndex;
+					const isChosen = hunkIndex >= 0 && choices[hunkIndex] === side;
+					if (!isStart) return null;
 					return (
-						<div
-							className={`grid grid-cols-[64px_minmax(0,1fr)] ${hunkClass(isActive, isChosen, side)}`}
-							key={line.lineNumber}
+						<Button
+							className="absolute top-0 right-2 h-5 gap-1 px-2 text-[11px]"
+							onClick={() => onChoose(hunkIndex, side)}
+							size="xs"
+							type="button"
+							variant={isChosen ? "default" : "outline"}
 						>
-							<div className="select-none border-r bg-card/45 px-2 text-right text-muted-foreground">
-								{line.lineNumber}
-							</div>
-							<pre className="relative min-w-max bg-transparent px-2 whitespace-pre">
-								{isStart ? (
-									<Button
-										className="absolute top-0 right-2 h-5 gap-1 px-2 text-[11px]"
-										onClick={() => onChoose(hunkIndex, side)}
-										size="xs"
-										type="button"
-										variant={isChosen ? "default" : "outline"}
-									>
-										{isChosen ? (
-											<Check className="size-3" aria-hidden="true" />
-										) : null}
-										Use hunk
-									</Button>
-								) : null}
-								<ConflictRenderedLine line={line} />
-							</pre>
-						</div>
+							{isChosen ? (
+								<Check className="size-3" aria-hidden="true" />
+							) : null}
+							Use hunk
+						</Button>
 					);
-				})}
-			</div>
+				}}
+				scrollContainerRef={scrollContainerRef}
+			/>
 		</section>
+	);
+}
+
+function hunkIndexForLine(
+	ranges: ({ start: number; end: number } | null)[],
+	lineIndex: number,
+) {
+	return ranges.findIndex(
+		(range) => range && lineIndex >= range.start && lineIndex <= range.end,
 	);
 }
 

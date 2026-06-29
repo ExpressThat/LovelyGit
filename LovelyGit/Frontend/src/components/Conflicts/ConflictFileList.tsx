@@ -56,7 +56,10 @@ export function ConflictFileList({
 						title={`Resolved Files (${resolvedFiles.length})`}
 					/>
 				</TabsContent>
-				<TabsContent className="min-h-0 overflow-auto p-2" value="Tree">
+				<TabsContent
+					className="custom-scrollbar min-h-0 overflow-auto p-2"
+					value="Tree"
+				>
 					<FileTreeGroup
 						files={conflictedFiles}
 						icon="conflict"
@@ -97,7 +100,7 @@ function FileGroup({
 				<Icon className="size-4" />
 				{title}
 			</h2>
-			<div className="max-h-full overflow-auto p-2">
+			<div className="custom-scrollbar max-h-full overflow-auto p-2">
 				{files.length > 0 ? (
 					files.map((file) => (
 						<FileButton

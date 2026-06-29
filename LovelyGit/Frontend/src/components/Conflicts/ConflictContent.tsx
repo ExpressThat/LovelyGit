@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { type UIEvent, useEffect, useMemo, useRef, useState } from "react";
 import type { GitConflictFileContentResponse } from "@/generated/types";
 import { ConflictChoicePane } from "./ConflictChoicePane";
 import {
@@ -9,6 +9,7 @@ import {
 	textFromConflictLines,
 } from "./ConflictHunks";
 import { ConflictResultEditor } from "./ConflictResultEditor";
+import { copyScrollPosition } from "./ConflictScrollSync";
 
 export type ContentState =
 	| { status: "idle"; content: null; message?: string }
@@ -78,6 +79,11 @@ function LoadedConflictContent({
 	);
 	const [choices, setChoices] = useState<ConflictChoice[]>([]);
 	const [activeHunkIndex, setActiveHunkIndex] = useState(0);
+	const currentPaneScrollRef = useRef<HTMLElement | null>(null);
+	const incomingPaneScrollRef = useRef<HTMLElement | null>(null);
+	const resultPaneScrollRef = useRef<HTMLElement | null>(null);
+	const isSyncingScrollRef = useRef(false);
+	const syncingSourceRef = useRef<HTMLElement | null>(null);
 
 	useEffect(() => {
 		const defaultChoices = hunks.map(() => "current" as const);
@@ -105,16 +111,42 @@ function LoadedConflictContent({
 		hunks,
 		choices,
 	);
+	const syncChoicePaneScroll =
+		(source: "current" | "incoming" | "result") =>
+		(event: UIEvent<HTMLElement>) => {
+			if (
+				isSyncingScrollRef.current &&
+				syncingSourceRef.current !== event.currentTarget
+			) {
+				return;
+			}
+			const targets = [
+				source === "current" ? null : currentPaneScrollRef.current,
+				source === "incoming" ? null : incomingPaneScrollRef.current,
+				source === "result" ? null : resultPaneScrollRef.current,
+			];
+			isSyncingScrollRef.current = true;
+			syncingSourceRef.current = event.currentTarget;
+			for (const target of targets) {
+				copyScrollPosition(event.currentTarget, target);
+			}
+			window.requestAnimationFrame(() => {
+				isSyncingScrollRef.current = false;
+				syncingSourceRef.current = null;
+			});
+		};
 
 	return (
 		<div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-			<div className="grid min-h-[35%] flex-none grid-cols-1 overflow-hidden xl:grid-cols-2">
+			<div className="grid min-h-0 flex-1 grid-cols-1 overflow-hidden xl:grid-cols-2">
 				<ConflictChoicePane
 					activeHunkIndex={activeHunkIndex}
 					choices={choices}
 					hunks={hunks}
 					lines={content.oursLines}
 					onChoose={chooseHunk}
+					onScroll={syncChoicePaneScroll("current")}
+					scrollContainerRef={currentPaneScrollRef}
 					side="current"
 					title={oursLabel}
 				/>
@@ -124,6 +156,8 @@ function LoadedConflictContent({
 					hunks={hunks}
 					lines={content.theirsLines}
 					onChoose={chooseHunk}
+					onScroll={syncChoicePaneScroll("incoming")}
+					scrollContainerRef={incomingPaneScrollRef}
 					side="incoming"
 					title={theirsLabel}
 				/>
@@ -136,6 +170,8 @@ function LoadedConflictContent({
 					setActiveHunkIndex((index) => Math.min(hunks.length - 1, index + 1))
 				}
 				onPrevious={() => setActiveHunkIndex((index) => Math.max(0, index - 1))}
+				onScroll={syncChoicePaneScroll("result")}
+				scrollContainerRef={resultPaneScrollRef}
 				lines={resultLines}
 				value={resultText}
 			/>

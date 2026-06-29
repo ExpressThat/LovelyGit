@@ -1,7 +1,8 @@
 import { ChevronDown, ChevronUp, PencilLine } from "lucide-react";
+import type { RefObject, UIEventHandler } from "react";
 import { Button } from "@/components/ui/button";
 import type { GitConflictTextLine } from "@/generated/types";
-import { ConflictRenderedLine } from "./ConflictRenderedLine";
+import { ConflictCodeScroller } from "./ConflictCodeScroller";
 
 export function ConflictResultEditor({
 	activeIndex,
@@ -10,6 +11,8 @@ export function ConflictResultEditor({
 	onChange,
 	onNext,
 	onPrevious,
+	onScroll,
+	scrollContainerRef,
 	value,
 }: {
 	activeIndex: number;
@@ -18,6 +21,8 @@ export function ConflictResultEditor({
 	onChange: (value: string) => void;
 	onNext: () => void;
 	onPrevious: () => void;
+	onScroll?: UIEventHandler<HTMLElement>;
+	scrollContainerRef: RefObject<HTMLElement | null>;
 	value: string;
 }) {
 	return (
@@ -45,21 +50,12 @@ export function ConflictResultEditor({
 				/>
 			</header>
 			<div className="grid min-h-0 flex-1 grid-rows-[1fr_auto] overflow-hidden">
-				<div className="overflow-auto font-mono text-[12px] leading-5">
-					{lines.map((line) => (
-						<div
-							className="grid grid-cols-[64px_minmax(0,1fr)]"
-							key={line.lineNumber}
-						>
-							<div className="select-none border-r bg-card/45 px-2 text-right text-muted-foreground">
-								{line.lineNumber}
-							</div>
-							<pre className="min-w-max bg-transparent px-2 whitespace-pre">
-								<ConflictRenderedLine line={line} />
-							</pre>
-						</div>
-					))}
-				</div>
+				<ConflictCodeScroller
+					ariaLabel="Conflict result preview"
+					lines={lines}
+					onScroll={onScroll}
+					scrollContainerRef={scrollContainerRef}
+				/>
 				<details className="border-t bg-card/20">
 					<summary className="cursor-pointer px-3 py-2 text-muted-foreground text-xs">
 						Manual edit

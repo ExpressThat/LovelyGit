@@ -3,6 +3,8 @@ import type {
 	WorkingTreeChangesResponse,
 } from "@/generated/types";
 
+const maxOptimisticObservedChanges = 25;
+
 export function applyObservedWorkingTreeChanges(
 	current: WorkingTreeChangesResponse | null,
 	observedChanges: WorkingTreeChangedFile[] | null | undefined,
@@ -29,6 +31,16 @@ export function applyObservedWorkingTreeChanges(
 	sortGroup(next.untracked);
 	sortGroup(next.unmerged);
 	return withTotalCount(next);
+}
+
+export function shouldApplyObservedWorkingTreeChanges(
+	observedChanges: WorkingTreeChangedFile[] | null | undefined,
+) {
+	return Boolean(
+		observedChanges &&
+			observedChanges.length > 0 &&
+			observedChanges.length <= maxOptimisticObservedChanges,
+	);
 }
 
 export function createEmptyWorkingTreeChanges(): WorkingTreeChangesResponse {

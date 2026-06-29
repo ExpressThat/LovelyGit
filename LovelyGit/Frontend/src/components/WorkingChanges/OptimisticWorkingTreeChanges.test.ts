@@ -6,6 +6,7 @@ import type {
 import {
 	applyObservedWorkingTreeChanges,
 	countObservedNewPaths,
+	shouldApplyObservedWorkingTreeChanges,
 } from "./OptimisticWorkingTreeChanges";
 
 describe("applyObservedWorkingTreeChanges", () => {
@@ -53,6 +54,24 @@ describe("countObservedNewPaths", () => {
 				file("new.txt", "Added", "Untracked"),
 			]),
 		).toBe(1);
+	});
+});
+
+describe("shouldApplyObservedWorkingTreeChanges", () => {
+	it("applies small event batches optimistically", () => {
+		expect(
+			shouldApplyObservedWorkingTreeChanges([
+				file("small.txt", "Modified", "Unstaged"),
+			]),
+		).toBe(true);
+	});
+
+	it("skips large event batches until an authoritative reload", () => {
+		const files = Array.from({ length: 26 }, (_, index) =>
+			file(`large-${index}.txt`, "Added", "Untracked"),
+		);
+
+		expect(shouldApplyObservedWorkingTreeChanges(files)).toBe(false);
 	});
 });
 
