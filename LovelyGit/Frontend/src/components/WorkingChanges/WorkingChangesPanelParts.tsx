@@ -1,7 +1,6 @@
 import { MinusSquare, RefreshCw, SquareCheckBig } from "lucide-react";
 import type { ReactNode } from "react";
 import type { WorkingTreeChangedFile } from "@/generated/types";
-import { ChangedFileRow } from "./WorkingChangedFileRow";
 
 export function WorkingChangesSkeleton() {
 	return (
@@ -79,101 +78,6 @@ export function BulkIndexActions({
 	);
 }
 
-export function ChangeGroup({
-	actionLabel,
-	destructiveActionLabel,
-	files,
-	hideGroupLabel = false,
-	isActionDisabled = true,
-	isBusy = false,
-	isDestructiveActionDisabled = true,
-	onAction,
-	onDestructiveAction,
-	onFileDestructiveAction,
-	onFileAction,
-	onSelectFile,
-	onToggleSelected,
-	repositoryId,
-	selectedKeys,
-	title,
-}: {
-	actionLabel?: string;
-	destructiveActionLabel?: string;
-	files: WorkingTreeChangedFile[];
-	hideGroupLabel?: boolean;
-	isActionDisabled?: boolean;
-	isBusy?: boolean;
-	isDestructiveActionDisabled?: boolean;
-	onAction?: () => void;
-	onDestructiveAction?: () => void;
-	onFileDestructiveAction?: (file: WorkingTreeChangedFile) => void;
-	onFileAction?: (file: WorkingTreeChangedFile) => void;
-	onSelectFile: (file: WorkingTreeChangedFile) => void;
-	onToggleSelected?: (file: WorkingTreeChangedFile) => void;
-	repositoryId: string;
-	selectedKeys?: Set<string>;
-	title: string;
-}) {
-	if (files.length === 0) {
-		return null;
-	}
-
-	return (
-		<section className="space-y-1">
-			<div className="flex items-center justify-between gap-2">
-				<h3 className="text-[10px] font-semibold uppercase text-muted-foreground">
-					{title} ({files.length})
-				</h3>
-				<div className="flex items-center gap-1">
-					{onDestructiveAction && destructiveActionLabel ? (
-						<button
-							className="inline-flex h-6 items-center rounded px-2 text-[10px] font-semibold uppercase text-destructive hover:bg-destructive/10 disabled:pointer-events-none disabled:opacity-40"
-							disabled={isDestructiveActionDisabled}
-							onClick={onDestructiveAction}
-							type="button"
-						>
-							{destructiveActionLabel}
-						</button>
-					) : null}
-					{onAction && actionLabel ? (
-						<button
-							className="inline-flex h-6 items-center rounded px-2 text-[10px] font-semibold uppercase text-muted-foreground hover:bg-accent hover:text-accent-foreground disabled:pointer-events-none disabled:opacity-40"
-							disabled={isActionDisabled}
-							onClick={onAction}
-							type="button"
-						>
-							{actionLabel}
-						</button>
-					) : null}
-				</div>
-			</div>
-			<div className="border-y">
-				{files.map((file) => (
-					<ChangedFileRow
-						file={file}
-						hideGroupLabel={hideGroupLabel}
-						isBusy={isBusy}
-						isSelected={selectedKeys?.has(fileKey(file)) ?? false}
-						key={`${file.group}:${file.status}:${file.path}`}
-						onAction={onFileAction ? () => onFileAction(file) : undefined}
-						onDestructiveAction={
-							onFileDestructiveAction
-								? () => onFileDestructiveAction(file)
-								: undefined
-						}
-						repositoryId={repositoryId}
-						rowActionLabel={singleFileActionLabel(title)}
-						onSelect={() => onSelectFile(file)}
-						onToggleSelected={
-							onToggleSelected ? () => onToggleSelected(file) : undefined
-						}
-					/>
-				))}
-			</div>
-		</section>
-	);
-}
-
 export function ActionButton({
 	disabled,
 	icon,
@@ -211,16 +115,4 @@ export function uniquePaths(files: WorkingTreeChangedFile[]) {
 
 export function fileKey(file: WorkingTreeChangedFile) {
 	return `${file.group}:${file.status}:${file.path}`;
-}
-
-function singleFileActionLabel(groupTitle: string) {
-	if (groupTitle === "Staged") {
-		return "Unstage";
-	}
-
-	if (groupTitle === "Changes") {
-		return "Stage";
-	}
-
-	return undefined;
 }

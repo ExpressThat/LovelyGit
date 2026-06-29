@@ -1,5 +1,21 @@
+import { useVirtualizer } from "@tanstack/react-virtual";
+import { useMemo, useRef } from "react";
 import type { WorkingTreeChangedFile } from "@/generated/types";
-import { ChangeGroup, selectedFiles } from "./WorkingChangesPanelParts";
+import { ChangedFileRow } from "./WorkingChangedFileRow";
+import {
+	buildWorkingChangesGroups,
+	buildWorkingChangesVirtualRows,
+	type WorkingChangesGroupConfig,
+} from "./WorkingChangesGroupRows";
+import { fileKey } from "./WorkingChangesPanelParts";
+
+const HEADER_HEIGHT = 32;
+const ROW_HEIGHT = 38;
+const MAX_VISIBLE_ROWS = 12;
+
+export function getWorkingChangesVirtualListHeight(rowCount: number) {
+	return Math.min(rowCount, MAX_VISIBLE_ROWS) * ROW_HEIGHT + HEADER_HEIGHT;
+}
 
 export function WorkingChangesGroups({
 	isBusy,
@@ -28,71 +44,139 @@ export function WorkingChangesGroups({
 	workingFiles: WorkingTreeChangedFile[];
 	unmergedFiles: WorkingTreeChangedFile[];
 }) {
-	const selectedStagedFiles = selectedFiles(stagedFiles, selectedKeys);
-	const selectedWorkingFiles = selectedFiles(workingFiles, selectedKeys);
+	const parentRef = useRef<HTMLDivElement>(null);
+	const groups = useMemo(
+		() =>
+			buildWorkingChangesGroups({
+				isBusy,
+				onDiscardSelected,
+				onIndexCommand,
+				onToggleSelected,
+				selectedKeys,
+				stagedFiles,
+				unmergedFiles,
+				workingFiles,
+			}),
+		[
+			isBusy,
+			onDiscardSelected,
+			onIndexCommand,
+			onToggleSelected,
+			selectedKeys,
+			stagedFiles,
+			unmergedFiles,
+			workingFiles,
+		],
+	);
+	const rows = useMemo(() => buildWorkingChangesVirtualRows(groups), [groups]);
+	const virtualizer = useVirtualizer({
+		count: rows.length,
+		estimateSize: (index) =>
+			rows[index]?.type === "header" ? HEADER_HEIGHT : ROW_HEIGHT,
+		getScrollElement: () => parentRef.current,
+		overscan: 8,
+	});
+	const virtualRows = virtualizer.getVirtualItems();
+
+	if (rows.length === 0) {
+		return null;
+	}
 
 	return (
-		<>
-			<ChangeGroup
-				actionLabel={
-					selectedStagedFiles.length > 0
-						? `Unstage selected (${selectedStagedFiles.length})`
-						: "Unstage selected"
-				}
-				files={stagedFiles}
-				isActionDisabled={isBusy || selectedStagedFiles.length === 0}
-				isBusy={isBusy}
-				onAction={() =>
-					onIndexCommand("UnstageWorkingTreeFiles", selectedStagedFiles, false)
-				}
-				onFileAction={(file) =>
-					onIndexCommand("UnstageWorkingTreeFiles", [file], false)
-				}
-				onSelectFile={onSelectFile}
-				onToggleSelected={onToggleSelected}
-				repositoryId={repositoryId}
-				selectedKeys={selectedKeys}
-				title="Staged"
-			/>
-			<ChangeGroup
-				actionLabel={
-					selectedWorkingFiles.length > 0
-						? `Stage selected (${selectedWorkingFiles.length})`
-						: "Stage selected"
-				}
-				destructiveActionLabel={
-					selectedWorkingFiles.length > 0
-						? `Discard selected (${selectedWorkingFiles.length})`
-						: "Discard selected"
-				}
-				files={workingFiles}
-				hideGroupLabel
-				isActionDisabled={isBusy || selectedWorkingFiles.length === 0}
-				isBusy={isBusy}
-				isDestructiveActionDisabled={
-					isBusy || selectedWorkingFiles.length === 0
-				}
-				onAction={() =>
-					onIndexCommand("StageWorkingTreeFiles", selectedWorkingFiles, false)
-				}
-				onDestructiveAction={() => onDiscardSelected(selectedWorkingFiles)}
-				onFileDestructiveAction={(file) => onDiscardSelected([file])}
-				onFileAction={(file) =>
-					onIndexCommand("StageWorkingTreeFiles", [file], false)
-				}
-				onSelectFile={onSelectFile}
-				onToggleSelected={onToggleSelected}
-				repositoryId={repositoryId}
-				selectedKeys={selectedKeys}
-				title="Changes"
-			/>
-			<ChangeGroup
-				files={unmergedFiles}
-				isBusy={isBusy}
-				onSelectFile={onSelectFile}
-				repositoryId={repositoryId}
-				title="Unmerged"
-			/>
-		</>
+		<div
+			className="custom-scrollbar overflow-y-auto"
+			ref={parentRef}
+			style={{ height: `${getWorkingChangesVirtualListHeight(rows.length)}px` }}
+		>
+			<div
+				className="relative"
+				style={{ height: `${virtualizer.getTotalSize()}px` }}
+			>
+				{virtualRows.map((virtualRow) => {
+					const row = rows[virtualRow.index];
+					if (!row) {
+						return null;
+					}
+
+					return (
+						<div
+							className="absolute left-0 right-0"
+							key={row.id}
+							ref={virtualizer.measureElement}
+							style={{ transform: `translateY(${virtualRow.start}px)` }}
+						>
+							{row.type === "header" ? (
+								<GroupHeader group={row.group} />
+							) : (
+								<ChangedFileRow
+									file={row.file}
+									hideGroupLabel={row.group.hideGroupLabel}
+									isBusy={isBusy}
+									isSelected={selectedKeys.has(fileKey(row.file))}
+									onAction={
+										row.group.onFileAction
+											? () => row.group.onFileAction?.(row.file)
+											: undefined
+									}
+									onDestructiveAction={
+										row.group.onFileDestructiveAction
+											? () => row.group.onFileDestructiveAction?.(row.file)
+											: undefined
+									}
+									onSelect={() => onSelectFile(row.file)}
+									onToggleSelected={
+										row.group.onToggleSelected
+											? () => row.group.onToggleSelected?.(row.file)
+											: undefined
+									}
+									repositoryId={repositoryId}
+									rowActionLabel={singleFileActionLabel(row.group.title)}
+								/>
+							)}
+						</div>
+					);
+				})}
+			</div>
+		</div>
 	);
+}
+
+function GroupHeader({ group }: { group: WorkingChangesGroupConfig }) {
+	return (
+		<div className="flex h-8 items-center justify-between gap-2">
+			<h3 className="text-[10px] font-semibold uppercase text-muted-foreground">
+				{group.title} ({group.files.length})
+			</h3>
+			<div className="flex items-center gap-1">
+				{group.onDestructiveAction && group.destructiveActionLabel ? (
+					<button
+						className="inline-flex h-6 items-center rounded px-2 text-[10px] font-semibold uppercase text-destructive hover:bg-destructive/10 disabled:pointer-events-none disabled:opacity-40"
+						disabled={group.isDestructiveActionDisabled}
+						onClick={group.onDestructiveAction}
+						type="button"
+					>
+						{group.destructiveActionLabel}
+					</button>
+				) : null}
+				{group.onAction && group.actionLabel ? (
+					<button
+						className="inline-flex h-6 items-center rounded px-2 text-[10px] font-semibold uppercase text-muted-foreground hover:bg-accent hover:text-accent-foreground disabled:pointer-events-none disabled:opacity-40"
+						disabled={group.isActionDisabled}
+						onClick={group.onAction}
+						type="button"
+					>
+						{group.actionLabel}
+					</button>
+				) : null}
+			</div>
+		</div>
+	);
+}
+
+function singleFileActionLabel(groupTitle: string) {
+	if (groupTitle === "Staged") {
+		return "Unstage";
+	}
+
+	return groupTitle === "Changes" ? "Stage" : undefined;
 }

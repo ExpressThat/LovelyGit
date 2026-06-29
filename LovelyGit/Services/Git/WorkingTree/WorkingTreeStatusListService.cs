@@ -57,6 +57,13 @@ internal sealed partial class WorkingTreeStatusListService
             return fastResponse;
         }
 
+        if (WorkingTreeStatusScanPolicy.ShouldUseCompleteFallbackForDeepUntrackedScan(
+                rootTracking.RootTrackedDirectories.Count,
+                rootTracking.TrackedEntryCount))
+        {
+            return null;
+        }
+
         var scanner = new GitIndexStatusScanner();
         var fullScan = await scanner
             .ScanAsync(

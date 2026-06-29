@@ -14,7 +14,7 @@ internal sealed class GitIndexRootTracker
         var indexPath = Path.Combine(gitDirectory, "index");
         if (!File.Exists(indexPath))
         {
-            return new GitIndexRootTracking([], []);
+            return new GitIndexRootTracking([], [], 0);
         }
 
         var bytes = await File.ReadAllBytesAsync(indexPath, cancellationToken).ConfigureAwait(false);
@@ -67,7 +67,7 @@ internal sealed class GitIndexRootTracker
             AddRoot(path.Replace('\\', '/'), files, directories);
         }
 
-        return new GitIndexRootTracking(files, directories);
+        return new GitIndexRootTracking(files, directories, count);
     }
 
     private static string ReadVersion4Path(byte[] bytes, ref int offset, string previousPath)
@@ -141,4 +141,5 @@ internal sealed class GitIndexRootTracker
 
 internal sealed record GitIndexRootTracking(
     HashSet<string> RootTrackedFiles,
-    HashSet<string> RootTrackedDirectories);
+    HashSet<string> RootTrackedDirectories,
+    uint TrackedEntryCount);
