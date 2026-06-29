@@ -1,4 +1,4 @@
-import { File, FilePlus2, FileX2, GitBranch } from "lucide-react";
+import { GitBranch } from "lucide-react";
 import { useEffect, useState } from "react";
 import type {
 	CommitChangedFile,
@@ -6,6 +6,7 @@ import type {
 } from "@/generated/types";
 import { sendRequestWithResponse } from "@/lib/commands";
 import { formatDate, shortHash } from "../CommitGraph/utils/format";
+import { CommitDetailsChangedFilesList } from "./CommitDetailsChangedFilesList";
 import { CommitDetailsCopyButtons } from "./CommitDetailsCopyButtons";
 
 type CommitDetailsState =
@@ -139,15 +140,10 @@ export function CommitDetails({
 				</section>
 			) : null}
 
-			<section className="space-y-1">
-				{details.changedFiles.map((file) => (
-					<ChangedFileRow
-						file={file}
-						key={`${file.status}:${file.path}`}
-						onSelect={() => onSelectFile(file)}
-					/>
-				))}
-			</section>
+			<CommitDetailsChangedFilesList
+				files={details.changedFiles}
+				onSelectFile={onSelectFile}
+			/>
 		</div>
 	);
 }
@@ -161,69 +157,4 @@ function Stat({ label, value }: { label: string; value: number | string }) {
 			<div className="mt-1 font-mono text-sm text-foreground">{value}</div>
 		</div>
 	);
-}
-
-function ChangedFileRow({
-	file,
-	onSelect,
-}: {
-	file: CommitChangedFile;
-	onSelect: () => void;
-}) {
-	const Icon = statusIcon(file.status);
-
-	return (
-		<button
-			className="flex min-h-9 w-full items-center gap-2 border-b py-1.5 text-left hover:bg-accent/60 last:border-b-0"
-			onClick={onSelect}
-			type="button"
-		>
-			<Icon aria-hidden="true" className={statusColor(file.status)} size={15} />
-			<div className="min-w-0 flex-1">
-				<div
-					className="truncate font-mono text-xs text-foreground"
-					title={file.path}
-				>
-					{file.path}
-				</div>
-				<div className="text-[10px] uppercase text-muted-foreground">
-					{file.status}
-					{file.isBinary ? " binary" : ""}
-				</div>
-			</div>
-			<div className="shrink-0 font-mono text-xs">
-				<span className="text-emerald-600 dark:text-emerald-400">
-					+{file.additions}
-				</span>{" "}
-				<span className="text-red-600 dark:text-red-400">
-					-{file.deletions}
-				</span>
-			</div>
-		</button>
-	);
-}
-
-function statusIcon(status: string) {
-	switch (status) {
-		case "Added":
-			return FilePlus2;
-		case "Deleted":
-			return FileX2;
-		default:
-			return File;
-	}
-}
-
-function statusColor(status: string) {
-	switch (status) {
-		case "Added":
-			return "shrink-0 text-emerald-600 dark:text-emerald-400";
-		case "Deleted":
-			return "shrink-0 text-red-600 dark:text-red-400";
-		case "Modified":
-		case "TypeChanged":
-			return "shrink-0 text-amber-600 dark:text-amber-400";
-		default:
-			return "shrink-0 text-muted-foreground";
-	}
 }

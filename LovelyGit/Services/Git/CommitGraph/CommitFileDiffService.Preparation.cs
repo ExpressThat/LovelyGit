@@ -31,18 +31,18 @@ internal sealed partial class CommitFileDiffService : IDisposable
                     .ConfigureAwait(false);
             }
 
-            await Parallel.ForEachAsync(changedFiles, cancellationToken, async (file, fileCancellationToken) =>
+            foreach (var file in CommitFileDiffPreparationPolicy.SelectFiles(changedFiles))
             {
-                fileCancellationToken.ThrowIfCancellationRequested();
+                cancellationToken.ThrowIfCancellationRequested();
 
                 await SaveMissingViewModesAsync(
                         repositoryId,
                         repositoryPath,
                         commitHash,
                         file.Path,
-                        fileCancellationToken)
+                        cancellationToken)
                     .ConfigureAwait(false);
-            }).ConfigureAwait(false);
+            }
         }
         catch (OperationCanceledException)
         {
