@@ -130,6 +130,17 @@ internal sealed partial class WorkingTreeChangeService
         byte[] oldBytes,
         byte[] newBytes)
     {
+        if (DiffInputGuard.ShouldTruncateBytes(oldBytes.LongLength, newBytes.LongLength))
+        {
+            return DiffInputGuard.BuildTruncatedResponse(
+                commitHash,
+                path,
+                status,
+                viewMode,
+                oldBytes.LongLength,
+                newBytes.LongLength);
+        }
+
         var isBinary = IsBinary(oldBytes) || IsBinary(newBytes);
         if (isBinary)
         {
