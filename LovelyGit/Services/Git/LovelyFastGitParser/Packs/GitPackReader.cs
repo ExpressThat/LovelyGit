@@ -5,10 +5,12 @@ namespace ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser.Packs;
 
 internal sealed class GitPackReader : IDisposable
 {
-    private const int PackOffsetCacheSize = 2048;
+    private const int PackOffsetCacheSize = 512;
+    private const int PackOffsetCacheBytes = 16 * 1024 * 1024;
 
     private readonly GitObjectFormat _objectFormat;
-    private readonly LruCache<PackObjectKey, GitObjectData> _packOffsetCache = new(PackOffsetCacheSize);
+    private readonly LruCache<PackObjectKey, GitObjectData> _packOffsetCache =
+        new(PackOffsetCacheSize, PackOffsetCacheBytes, ObjectWeight);
 
     public GitPackReader(GitObjectFormat objectFormat)
     {
@@ -205,6 +207,11 @@ internal sealed class GitPackReader : IDisposable
             ArrayPool<byte>.Shared.Return(input);
             ArrayPool<byte>.Shared.Return(output);
         }
+    }
+
+    private static long ObjectWeight(GitObjectData data)
+    {
+        return data.Data.LongLength;
     }
 
     private readonly record struct PackObjectKey(string PackPath, long Offset);

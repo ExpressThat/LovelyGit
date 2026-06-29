@@ -9,6 +9,23 @@ namespace LovelyGit.Tests.Git.Conflicts;
 public sealed class GitConflictServiceTests
 {
     [Fact]
+    public async Task GetStateAsync_DoesNotReadIndexWhenNoOperationIsActive()
+    {
+        using var directory = TemporaryDirectory.Create("lovelygit-no-conflict-");
+        await RunGitAsync(directory.Path, true, "init");
+        await File.WriteAllTextAsync(
+            System.IO.Path.Combine(directory.Path, ".git", "index"),
+            "not a valid index");
+        var service = new GitConflictService(new GitOperationStateService());
+
+        var state = await service.GetStateAsync(directory.Path, CancellationToken.None);
+
+        Assert.Equal(GitOperationKind.None, state.Operation.Kind);
+        Assert.Empty(state.ConflictedFiles);
+        Assert.Empty(state.ResolvedFiles);
+    }
+
+    [Fact]
     public async Task GetStateAsync_ReturnsConflictedFiles()
     {
         using var repository = await ConflictRepository.CreateAsync();

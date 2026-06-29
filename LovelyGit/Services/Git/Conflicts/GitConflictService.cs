@@ -20,6 +20,13 @@ internal sealed class GitConflictService
         var operation = await _operationStateService
             .GetStateAsync(repositoryPath, cancellationToken)
             .ConfigureAwait(false);
+        if (operation.Kind == GitOperationKind.None)
+        {
+            return new GitConflictStateResponse
+            {
+                Operation = operation,
+            };
+        }
 
         using var repository = await LovelyGitRepository
             .OpenAsync(repositoryPath, cancellationToken)

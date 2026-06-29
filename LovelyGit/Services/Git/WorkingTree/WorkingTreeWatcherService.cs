@@ -20,6 +20,7 @@ internal sealed partial class WorkingTreeWatcherService : IDisposable
     private readonly KnownGitRepositorysRepository _knownGitRepositorysRepository;
     private readonly object _lock = new();
     private readonly List<FileSystemWatcher> _watchers = new();
+    private readonly HashSet<string> _watchedWorkTreePaths = new(StringComparer.OrdinalIgnoreCase);
     private CancellationTokenSource? _debounceCancellation;
     private CancellationTokenSource? _graphDebounceCancellation;
     private CancellationTokenSource? _workTreePollCancellation;
@@ -99,7 +100,7 @@ internal sealed partial class WorkingTreeWatcherService : IDisposable
 
         var commitGraphSnapshot = ComputeCommitGraphSnapshot(paths.GitDirectory);
 
-        var watchWorkTreeRecursively = ShouldWatchWorkTreeRecursively(paths.WorkTreeDirectory);
+        var workTreeWatchRoots = GetWorkTreeWatchRoots(paths.WorkTreeDirectory);
         lock (_lock)
         {
             ThrowIfDisposed();
@@ -112,7 +113,7 @@ internal sealed partial class WorkingTreeWatcherService : IDisposable
             _commitGraphSnapshot = commitGraphSnapshot;
             _workTreeSnapshot = null;
 
-            AddWatcher(paths.WorkTreeDirectory, "*", watchWorkTreeRecursively);
+            AddWorkTreeWatchers(workTreeWatchRoots);
             AddWatcher(paths.GitDirectory, "*", includeSubdirectories: false);
             var refsPath = Path.Combine(paths.GitDirectory, "refs");
             if (Directory.Exists(refsPath))
@@ -126,10 +127,6 @@ internal sealed partial class WorkingTreeWatcherService : IDisposable
                 AddWatcher(infoPath, "exclude", includeSubdirectories: false);
             }
 
-            if (!watchWorkTreeRecursively)
-            {
-                StartLargeWorkTreePollingCore();
-            }
         }
 
         _ = RefreshIgnoreMatcherAsync();

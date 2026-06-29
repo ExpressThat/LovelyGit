@@ -6,11 +6,13 @@ namespace ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser;
 internal sealed class GitObjectStore : IDisposable
 {
     private const int ObjectCacheSize = 512;
+    private const int ObjectCacheBytes = 16 * 1024 * 1024;
 
     private readonly string _gitDirectory;
     private readonly GitObjectFormat _objectFormat;
     private readonly GitPackReader _packReader;
-    private readonly LruCache<GitObjectId, GitObjectData> _objectCache = new(ObjectCacheSize);
+    private readonly LruCache<GitObjectId, GitObjectData> _objectCache =
+        new(ObjectCacheSize, ObjectCacheBytes, ObjectWeight);
     private readonly SemaphoreSlim _packIndexesLock = new(1, 1);
     private List<GitPackIndex>? _packIndexes;
 
@@ -170,6 +172,11 @@ internal sealed class GitObjectStore : IDisposable
         }
 
         throw new InvalidDataException($"Unsupported Git object type: {System.Text.Encoding.ASCII.GetString(value)}");
+    }
+
+    private static long ObjectWeight(GitObjectData data)
+    {
+        return data.Data.LongLength;
     }
 
     public void Dispose()

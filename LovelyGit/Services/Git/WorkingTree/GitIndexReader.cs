@@ -24,6 +24,7 @@ internal sealed partial class GitIndexReader
         }
 
         var bytes = await ReadIndexBytesAsync(indexPath, cancellationToken).ConfigureAwait(false);
+        var length = bytes.Length;
         if (bytes.Length < 12 || !bytes.AsSpan(0, 4).SequenceEqual("DIRC"u8))
         {
             throw new InvalidDataException("Git index header is invalid.");
@@ -139,6 +140,8 @@ internal sealed partial class GitIndexReader
         }
 
         var rootTreeId = TryReadCacheTreeRootId(bytes, offset, hashLength, objectFormat);
+        bytes = [];
+        GitIndexMemory.ReleaseLargeBuffer(length);
         return new GitIndexSnapshot(entries, rootTreeId);
     }
 
@@ -152,9 +155,7 @@ internal sealed partial class GitIndexReader
             try
             {
                 await using var file = File.Open(indexPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
-                using var output = new MemoryStream(file.Length <= int.MaxValue ? (int)file.Length : 0);
-                await file.CopyToAsync(output, cancellationToken).ConfigureAwait(false);
-                return output.ToArray();
+                return await ReadFileBytesAsync(file, cancellationToken).ConfigureAwait(false);
             }
             catch (Exception exception) when (
                 attempt < attempts - 1
@@ -166,9 +167,21 @@ internal sealed partial class GitIndexReader
         }
 
         await using var fallback = File.Open(indexPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
-        using var fallbackOutput = new MemoryStream(fallback.Length <= int.MaxValue ? (int)fallback.Length : 0);
-        await fallback.CopyToAsync(fallbackOutput, cancellationToken).ConfigureAwait(false);
-        return fallbackOutput.ToArray();
+        return await ReadFileBytesAsync(fallback, cancellationToken).ConfigureAwait(false);
+    }
+
+    private static async Task<byte[]> ReadFileBytesAsync(
+        FileStream file,
+        CancellationToken cancellationToken)
+    {
+        if (file.Length > int.MaxValue)
+        {
+            throw new InvalidDataException("Git index is too large.");
+        }
+
+        var bytes = new byte[(int)file.Length];
+        await file.ReadExactlyAsync(bytes, cancellationToken).ConfigureAwait(false);
+        return bytes;
     }
 
     private static int ReadIndexVarInt(byte[] bytes, ref int offset)

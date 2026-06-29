@@ -205,6 +205,7 @@ internal sealed partial class WorkingTreeWatcherService : IDisposable
         }
 
         _watchers.Clear();
+        _watchedWorkTreePaths.Clear();
         _activeRepositoryId = null;
         _activeRepositoryPath = null;
         _activeGitDirectory = null;

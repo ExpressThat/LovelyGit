@@ -6,33 +6,44 @@ namespace LovelyGit.Tests.Git.WorkingTree;
 public sealed class WorkingTreeWatcherServicePolicyTests
 {
     [Fact]
-    public void ShouldWatchWorkTreeRecursively_ReturnsFalseForMissingDirectory()
+    public void GetWorkTreeWatchRoots_ReturnsEmptyForMissingDirectory()
     {
         var path = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
 
-        Assert.False(WorkingTreeWatcherService.ShouldWatchWorkTreeRecursively(path));
+        Assert.Empty(WorkingTreeWatcherService.GetWorkTreeWatchRoots(path));
     }
 
     [Fact]
-    public void ShouldWatchWorkTreeRecursively_ReturnsTrueForSmallDirectory()
+    public void GetWorkTreeWatchRoots_ReturnsSingleRecursiveRootForSmallDirectory()
     {
         using var directory = TemporaryDirectory.Create("lovelygit-watch-small-");
         Directory.CreateDirectory(Path.Combine(directory.Path, "src"));
         Directory.CreateDirectory(Path.Combine(directory.Path, "tests"));
 
-        Assert.True(WorkingTreeWatcherService.ShouldWatchWorkTreeRecursively(directory.Path));
+        var root = Assert.Single(WorkingTreeWatcherService.GetWorkTreeWatchRoots(directory.Path));
+        Assert.Equal(directory.Path, root.Path);
+        Assert.True(root.IncludeSubdirectories);
     }
 
     [Fact]
-    public void ShouldWatchWorkTreeRecursively_ReturnsTrueForLargeDirectory()
+    public void GetWorkTreeWatchRoots_SplitsLargeDirectoryByTopLevelFolders()
     {
         using var directory = TemporaryDirectory.Create("lovelygit-watch-large-");
+        Directory.CreateDirectory(Path.Combine(directory.Path, ".git"));
         for (var index = 0; index < 2001; index++)
         {
             Directory.CreateDirectory(Path.Combine(directory.Path, $"d{index}"));
         }
 
-        Assert.True(WorkingTreeWatcherService.ShouldWatchWorkTreeRecursively(directory.Path));
+        var roots = WorkingTreeWatcherService.GetWorkTreeWatchRoots(directory.Path);
+
+        Assert.Equal(2002, roots.Count);
+        Assert.Contains(roots, root =>
+            root.Path == directory.Path && !root.IncludeSubdirectories);
+        Assert.Contains(roots, root =>
+            root.Path == Path.Combine(directory.Path, "d2000") && root.IncludeSubdirectories);
+        Assert.DoesNotContain(roots, root =>
+            root.Path == Path.Combine(directory.Path, ".git"));
     }
 
     [Fact]

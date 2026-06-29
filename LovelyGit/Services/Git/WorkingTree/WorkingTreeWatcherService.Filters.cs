@@ -35,6 +35,17 @@ internal sealed partial class WorkingTreeWatcherService : IDisposable
         _watchers.Add(watcher);
     }
 
+    private void AddWorkTreeWatchers(IReadOnlyList<WorkTreeWatchRoot> watchRoots)
+    {
+        foreach (var watchRoot in watchRoots)
+        {
+            if (_watchedWorkTreePaths.Add(watchRoot.Path))
+            {
+                AddWatcher(watchRoot.Path, "*", watchRoot.IncludeSubdirectories);
+            }
+        }
+    }
+
     private void OnFileChanged(object sender, FileSystemEventArgs eventArgs)
     {
         if (IsRelevantGitMetadataPath(eventArgs.FullPath))
@@ -65,7 +76,36 @@ internal sealed partial class WorkingTreeWatcherService : IDisposable
             return;
         }
 
+        TryAddCreatedWorkTreeDirectoryWatcher(eventArgs.FullPath);
         QueueInvalidation(CreateObservedChange(eventArgs));
+    }
+
+    private void TryAddCreatedWorkTreeDirectoryWatcher(string path)
+    {
+        string? workTreeDirectory;
+        lock (_lock)
+        {
+            workTreeDirectory = _activeWorkTreeDirectory;
+        }
+
+        if (string.IsNullOrEmpty(workTreeDirectory)
+            || !Directory.Exists(path)
+            || Path.GetDirectoryName(path) is not { } parent
+            || !string.Equals(parent, workTreeDirectory, StringComparison.OrdinalIgnoreCase)
+            || !ShouldWatchAsWorkTreeRoot(path))
+        {
+            return;
+        }
+
+        lock (_lock)
+        {
+            if (_disposed || !_watchedWorkTreePaths.Add(path))
+            {
+                return;
+            }
+
+            AddWatcher(path, "*", includeSubdirectories: true);
+        }
     }
 
     private WorkingTreeChangedFile? CreateObservedChange(FileSystemEventArgs eventArgs)

@@ -4,13 +4,23 @@ internal sealed class LruCache<TKey, TValue>
     where TKey : notnull
 {
     private readonly int _capacity;
+    private readonly long _maxWeight;
+    private readonly Func<TValue, long> _weightSelector;
     private readonly object _gate = new();
     private readonly Dictionary<TKey, LinkedListNode<Entry>> _map = new();
     private readonly LinkedList<Entry> _order = new();
+    private long _currentWeight;
 
     public LruCache(int capacity)
+        : this(capacity, Math.Max(1, capacity), _ => 1)
+    {
+    }
+
+    public LruCache(int capacity, long maxWeight, Func<TValue, long> weightSelector)
     {
         _capacity = Math.Max(1, capacity);
+        _maxWeight = Math.Max(1, maxWeight);
+        _weightSelector = weightSelector;
     }
 
     public bool TryGet(TKey key, out TValue value)
@@ -34,23 +44,30 @@ internal sealed class LruCache<TKey, TValue>
     {
         lock (_gate)
         {
-            if (_map.TryGetValue(key, out var existing))
+            var weight = Math.Max(1, _weightSelector(value));
+            if (weight > _maxWeight)
             {
-                existing.Value = new Entry(key, value);
-                _order.Remove(existing);
-                _order.AddFirst(existing);
+                Remove(key);
                 return;
             }
 
-            var node = new LinkedListNode<Entry>(new Entry(key, value));
+            if (_map.TryGetValue(key, out var existing))
+            {
+                _currentWeight -= existing.Value.Weight;
+                existing.Value = new Entry(key, value, weight);
+                _currentWeight += weight;
+                _order.Remove(existing);
+                _order.AddFirst(existing);
+                Trim();
+                return;
+            }
+
+            var node = new LinkedListNode<Entry>(new Entry(key, value, weight));
             _map.Add(key, node);
             _order.AddFirst(node);
+            _currentWeight += weight;
 
-            while (_map.Count > _capacity && _order.Last is { } last)
-            {
-                _map.Remove(last.Value.Key);
-                _order.RemoveLast();
-            }
+            Trim();
         }
     }
 
@@ -60,8 +77,30 @@ internal sealed class LruCache<TKey, TValue>
         {
             _map.Clear();
             _order.Clear();
+            _currentWeight = 0;
         }
     }
 
-    private readonly record struct Entry(TKey Key, TValue Value);
+    private void Trim()
+    {
+        while (
+            (_map.Count > _capacity || _currentWeight > _maxWeight)
+            && _order.Last is { } last)
+        {
+            Remove(last.Value.Key);
+        }
+    }
+
+    private void Remove(TKey key)
+    {
+        if (!_map.Remove(key, out var node))
+        {
+            return;
+        }
+
+        _currentWeight -= node.Value.Weight;
+        _order.Remove(node);
+    }
+
+    private readonly record struct Entry(TKey Key, TValue Value, long Weight);
 }
