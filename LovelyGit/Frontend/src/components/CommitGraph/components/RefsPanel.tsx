@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import type { CommitGraphRow, RepositoryRefsResponse } from "@/generated/types";
 import { setSetting, useSetting } from "@/lib/settings/settingsStore";
 import { buildRefPanelSections, filterRefPanelSections } from "./RefsPanelData";
-import { RefSection } from "./RefsPanelSections";
+import { RefsPanelList } from "./RefsPanelList";
 import { filterWorktrees, WorktreeSection } from "./WorktreeSection";
 
 export function RefsPanel({
@@ -109,28 +109,27 @@ export function RefsPanel({
 					) : null}
 				</div>
 			</div>
-			<div className="custom-scrollbar min-h-0 flex-1 overflow-y-auto p-2">
-				{filteredSections.length > 0 || filteredWorktrees.length > 0 ? (
-					<>
+			{filteredSections.length > 0 || filteredWorktrees.length > 0 ? (
+				<>
+					<div className="custom-scrollbar max-h-36 overflow-y-auto p-2 pb-0">
 						<WorktreeSection
 							query={query}
 							worktrees={repositoryRefs?.worktrees ?? []}
 						/>
-						{filteredSections.map((section) => (
-							<RefSection
-								currentBranchName={currentBranchName}
-								key={section.kind}
-								onRefsChanged={onRefsChanged}
-								onSelectCommit={onSelectCommit}
-								repositoryId={repositoryId}
-								section={section}
-							/>
-						))}
-					</>
-				) : (
+					</div>
+					<RefsPanelList
+						currentBranchName={currentBranchName}
+						onRefsChanged={onRefsChanged}
+						onSelectCommit={onSelectCommit}
+						repositoryId={repositoryId}
+						sections={filteredSections}
+					/>
+				</>
+			) : (
+				<div className="p-2">
 					<RefsEmptyState hasQuery={query.trim().length > 0} />
-				)}
-			</div>
+				</div>
+			)}
 		</aside>
 	);
 }

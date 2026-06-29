@@ -42,7 +42,7 @@ export function RefSection({
 	);
 }
 
-function RefPanelRow({
+export function RefPanelRow({
 	currentBranchName,
 	item,
 	onRefsChanged,
