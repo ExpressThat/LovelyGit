@@ -1,59 +1,64 @@
 using System.Buffers;
+using System.Text;
 
 namespace LovelyGit.DiffBenchmarks;
 
-internal ref partial struct DirectDiffJsonSpanWriter
+internal ref partial struct DirectDiffJsonUtf8SpanWriter
 {
     private static readonly SearchValues<char> EscapeCharacters =
         SearchValues.Create(DiffJsonEscapeCharacters.Values);
 
     private void Row(int? oldNumber, int? newNumber, scoped ReadOnlySpan<char> oldText, bool hasOld, scoped ReadOnlySpan<char> newText, bool hasNew, string changeType, CommitDiffViewMode viewMode)
     {
-        Raw('{');
-        Number("oldLineNumber", oldNumber, hasPrevious: false);
-        Number("newLineNumber", newNumber, oldNumber.HasValue);
+        Raw('[');
+        NumberOrNull(oldNumber);
+        Raw(',');
+        NumberOrNull(newNumber);
+        Raw(',');
+        Raw(ChangeTypeCode(changeType));
+        Raw(',');
         if (viewMode == CommitDiffViewMode.SideBySide)
         {
-            SideBySideText(oldText, hasOld, newText, hasNew, oldNumber.HasValue || newNumber.HasValue);
+            SideBySideText(oldText, hasOld, newText, hasNew);
         }
         else
         {
-            Text("text", hasNew ? newText : oldText, oldNumber.HasValue || newNumber.HasValue);
+            Escaped(hasNew ? newText : oldText);
         }
 
-        Property("changeType", changeType, hasPrevious: true);
-        Raw('}');
+        Raw(']');
     }
 
     private void Unchanged(int oldNumber, int newNumber, scoped ReadOnlySpan<char> line)
     {
-        Raw('{');
-        Raw("\"oldLineNumber\":");
+        Raw('[');
         NumberValue(oldNumber);
-        Raw(",\"newLineNumber\":");
+        Raw(',');
         NumberValue(newNumber);
-        Raw(",\"text\":");
+        Raw(",0,");
         Escaped(line);
-        Raw(",\"changeType\":\"Unchanged\"}");
+        Raw(']');
     }
 
-    private void SideBySideText(scoped ReadOnlySpan<char> oldText, bool hasOld, scoped ReadOnlySpan<char> newText, bool hasNew, bool hasPrevious)
+    private void SideBySideText(scoped ReadOnlySpan<char> oldText, bool hasOld, scoped ReadOnlySpan<char> newText, bool hasNew)
     {
-        if (!hasOld && !hasNew)
-        {
-            Text("text", newText, hasPrevious: true);
-            return;
-        }
-
         if (hasOld)
         {
-            Text("oldText", oldText, hasPrevious);
-            hasPrevious = true;
+            Escaped(oldText);
+        }
+        else
+        {
+            Raw("null");
         }
 
+        Raw(',');
         if (hasNew)
         {
-            Text("newText", newText, hasPrevious);
+            Escaped(newText);
+        }
+        else
+        {
+            Raw("null");
         }
     }
 
@@ -77,6 +82,17 @@ internal ref partial struct DirectDiffJsonSpanWriter
         Raw(name);
         Raw("\":");
         NumberValue(value.Value);
+    }
+
+    private void NumberOrNull(int? value)
+    {
+        if (value.HasValue)
+        {
+            NumberValue(value.Value);
+            return;
+        }
+
+        Raw("null");
     }
 
     private void Property(string name, string value, bool hasPrevious = false) => Text(name, value, hasPrevious);
@@ -107,12 +123,12 @@ internal ref partial struct DirectDiffJsonSpanWriter
             var offset = value[start..].IndexOfAny(EscapeCharacters);
             if (offset < 0)
             {
-                Raw(value[start..]);
+                RawUtf8(value[start..]);
                 break;
             }
 
             var index = start + offset;
-            Raw(value[start..index]);
+            RawUtf8(value[start..index]);
             EscapedChar(value[index]);
             start = index + 1;
         }
@@ -146,17 +162,9 @@ internal ref partial struct DirectDiffJsonSpanWriter
                 Raw("\\t");
                 break;
             default:
-                if (ch < ' ')
-                {
-                    Raw("\\u00");
-                    Raw(Hex(ch >> 4));
-                    Raw(Hex(ch));
-                }
-                else
-                {
-                    Raw(ch);
-                }
-
+                Raw("\\u00");
+                Raw(Hex(ch >> 4));
+                Raw(Hex(ch));
                 break;
         }
     }
@@ -167,7 +175,7 @@ internal ref partial struct DirectDiffJsonSpanWriter
         var target = remaining[..written];
         for (var index = written - 1; index >= 0; index--)
         {
-            target[index] = (char)('0' + value % 10);
+            target[index] = (byte)('0' + value % 10);
             value /= 10;
         }
 
@@ -185,9 +193,14 @@ internal ref partial struct DirectDiffJsonSpanWriter
         value < 100000000 ? 8 :
         value < 1000000000 ? 9 : 10;
 
-    private void Raw(char value) { remaining[0] = value; Advance(1); }
-    private void Raw(scoped ReadOnlySpan<char> value) { value.CopyTo(remaining); Advance(value.Length); }
-    private void Raw(string value) { value.AsSpan().CopyTo(remaining); Advance(value.Length); }
-    private void Advance(int count) => remaining = remaining[count..];
+    private static char ChangeTypeCode(string value) =>
+        value[0] switch
+        {
+            'I' => '1',
+            'D' => '2',
+            'M' => '3',
+            _ => '0',
+        };
+
     private static char Hex(int value) => (char)(value < 10 ? '0' + value : 'a' + value - 10);
 }

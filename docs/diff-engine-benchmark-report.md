@@ -1,6 +1,6 @@
 # Diff Engine Benchmark Report
 
-Generated: 2026-06-29T08:03:41.2312380+01:00
+Generated: 2026-06-29T08:46:10.9848571+01:00
 Iterations: 1
 Per-run timeout: 5000 ms
 Synthetic line counts: 10, 100, 1,000, 10,000, 100,000, 1,000,000
@@ -34,96 +34,108 @@ Runtime: Native AOT published `win-x64` benchmark binary
 
 | Scenario | Lines | View | Candidate | Diff ms | Serialize ms | Payload | Memory | Rows |
 |---|---:|---|---|---:|---:|---:|---:|---:|
-| added | 10 | Combined | LovelyGit Prototype | 0.003 | 0.022 | 904 | 5,103,616 | 10 |
-| added | 10 | SideBySide | LovelyGit Prototype | 0.004 | 0.023 | 936 | 5,279,744 | 10 |
-| added | 100 | Combined | LovelyGit Prototype | 0.003 | 0.031 | 7,385 | 13,262,848 | 100 |
-| added | 100 | SideBySide | LovelyGit Prototype | 0.003 | 0.027 | 7,687 | 5,304,320 | 100 |
-| added | 1,000 | Combined | LovelyGit Prototype | 0.003 | 0.117 | 73,086 | 5,304,320 | 1,000 |
-| added | 1,000 | SideBySide | LovelyGit Prototype | 0.003 | 0.11 | 76,088 | 5,304,320 | 1,000 |
-| added | 10,000 | Combined | LovelyGit Prototype | 0.003 | 0.737 | 739,087 | 5,304,320 | 10,000 |
-| added | 10,000 | SideBySide | LovelyGit Prototype | 0.003 | 0.778 | 769,089 | 5,304,320 | 10,000 |
-| added | 100,000 | Combined | LovelyGit Prototype | 0.003 | 8.537 | 7,489,088 | 58,396,672 | 100,000 |
-| added | 100,000 | SideBySide | LovelyGit Prototype | 0.003 | 8.362 | 7,789,090 | 65,843,200 | 100,000 |
-| added | 1,000,000 | Combined | LovelyGit Prototype | 0.003 | 82.865 | 75,889,089 | 528,420,864 | 1,000,000 |
-| added | 1,000,000 | SideBySide | LovelyGit Prototype | 0.003 | 85.464 | 78,889,091 | 619,118,592 | 1,000,000 |
-| chromium-actions-xml-edit | 57,018 | Combined | LovelyGit Prototype | 0.003 | 6.135 | 6,602,059 | 312,430,592 | 57,020 |
-| chromium-actions-xml-edit | 57,018 | SideBySide | LovelyGit Prototype | 0.003 | 6.545 | 6,602,048 | 349,671,424 | 57,018 |
-| chromium-cpp-simdutf-edit | 71,113 | Combined | LovelyGit Prototype | 0.003 | 8.315 | 8,607,770 | 314,298,368 | 71,115 |
-| chromium-cpp-simdutf-edit | 71,113 | SideBySide | LovelyGit Prototype | 0.003 | 7.907 | 8,607,759 | 337,182,720 | 71,113 |
-| chromium-gn-xnnpack-edit | 66,699 | Combined | LovelyGit Prototype | 0.003 | 8.225 | 7,413,238 | 314,425,344 | 66,701 |
-| chromium-gn-xnnpack-edit | 66,699 | SideBySide | LovelyGit Prototype | 0.003 | 8.223 | 7,413,252 | 321,851,392 | 66,699 |
-| chromium-header-normalization-edit | 138,073 | Combined | LovelyGit Prototype | 0.003 | 27.046 | 19,545,597 | 297,283,584 | 138,075 |
-| chromium-header-normalization-edit | 138,073 | SideBySide | LovelyGit Prototype | 0.003 | 26.47 | 19,545,586 | 309,567,488 | 138,073 |
-| chromium-js-pdf-worker-edit | 56,199 | Combined | LovelyGit Prototype | 0.003 | 6.738 | 6,132,628 | 322,936,832 | 56,201 |
-| chromium-js-pdf-worker-edit | 56,199 | SideBySide | LovelyGit Prototype | 0.003 | 7.416 | 6,132,617 | 313,344,000 | 56,199 |
-| chromium-json-manifest-edit | 922,640 | Combined | LovelyGit Prototype | 0.002 | 104.702 | 96,335,385 | 687,415,296 | 922,642 |
-| chromium-json-manifest-edit | 922,640 | SideBySide | LovelyGit Prototype | 0.004 | 103.723 | 96,335,374 | 599,678,976 | 922,640 |
-| chromium-luci-cfg-edit | 139,072 | Combined | LovelyGit Prototype | 0.003 | 17.442 | 16,910,996 | 334,774,272 | 139,074 |
-| chromium-luci-cfg-edit | 139,072 | SideBySide | LovelyGit Prototype | 0.003 | 17.106 | 16,910,985 | 334,757,888 | 139,072 |
-| chromium-xml-cdata-edit | 156,982 | Combined | LovelyGit Prototype | 0.003 | 18.553 | 24,458,914 | 342,519,808 | 156,984 |
-| chromium-xml-cdata-edit | 156,982 | SideBySide | LovelyGit Prototype | 0.002 | 18.504 | 24,458,903 | 331,177,984 | 156,982 |
-| deleted | 10 | Combined | LovelyGit Prototype | 0.004 | 0.021 | 884 | 5,304,320 | 10 |
-| deleted | 10 | SideBySide | LovelyGit Prototype | 0.003 | 0.021 | 916 | 5,103,616 | 10 |
-| deleted | 100 | Combined | LovelyGit Prototype | 0.003 | 0.027 | 7,185 | 5,304,320 | 100 |
-| deleted | 100 | SideBySide | LovelyGit Prototype | 0.003 | 0.023 | 7,487 | 5,304,320 | 100 |
-| deleted | 1,000 | Combined | LovelyGit Prototype | 0.003 | 0.105 | 71,086 | 5,308,416 | 1,000 |
-| deleted | 1,000 | SideBySide | LovelyGit Prototype | 0.003 | 0.106 | 74,088 | 4,878,336 | 1,000 |
-| deleted | 10,000 | Combined | LovelyGit Prototype | 0.003 | 0.907 | 719,087 | 5,304,320 | 10,000 |
-| deleted | 10,000 | SideBySide | LovelyGit Prototype | 0.003 | 0.782 | 749,089 | 5,308,416 | 10,000 |
-| deleted | 100,000 | Combined | LovelyGit Prototype | 0.003 | 8.549 | 7,289,088 | 56,619,008 | 100,000 |
-| deleted | 100,000 | SideBySide | LovelyGit Prototype | 0.003 | 8.506 | 7,589,090 | 58,261,504 | 100,000 |
-| deleted | 1,000,000 | Combined | LovelyGit Prototype | 0.003 | 83.591 | 73,889,089 | 537,894,912 | 1,000,000 |
-| deleted | 1,000,000 | SideBySide | LovelyGit Prototype | 0.002 | 84.828 | 76,889,091 | 608,354,304 | 1,000,000 |
-| lovelygit-billion-synthetic | 1,000,000,000 | Combined | LovelyGit Prototype | 0.003 | 0.007 | 107,777,777,998 | 5,328,896 | 1,000,000,000 |
-| lovelygit-billion-synthetic | 1,000,000,000 | SideBySide | LovelyGit Prototype | 0.002 | 0.008 | 107,777,778,000 | 5,406,720 | 1,000,000,000 |
-| modified-bottom | 10 | Combined | LovelyGit Prototype | 0.003 | 0.022 | 1,133 | 4,820,992 | 11 |
-| modified-bottom | 10 | SideBySide | LovelyGit Prototype | 0.003 | 0.02 | 1,116 | 5,304,320 | 10 |
-| modified-bottom | 100 | Combined | LovelyGit Prototype | 0.003 | 0.029 | 9,325 | 5,308,416 | 101 |
-| modified-bottom | 100 | SideBySide | LovelyGit Prototype | 0.003 | 0.028 | 9,308 | 4,820,992 | 100 |
-| modified-bottom | 1,000 | Combined | LovelyGit Prototype | 0.003 | 0.112 | 93,027 | 4,820,992 | 1,001 |
-| modified-bottom | 1,000 | SideBySide | LovelyGit Prototype | 0.003 | 0.108 | 93,010 | 5,304,320 | 1,000 |
-| modified-bottom | 10,000 | Combined | LovelyGit Prototype | 0.003 | 0.835 | 948,029 | 5,300,224 | 10,001 |
-| modified-bottom | 10,000 | SideBySide | LovelyGit Prototype | 0.003 | 0.838 | 948,012 | 4,849,664 | 10,000 |
-| modified-bottom | 100,000 | Combined | LovelyGit Prototype | 0.003 | 8.715 | 9,678,031 | 67,428,352 | 100,001 |
-| modified-bottom | 100,000 | SideBySide | LovelyGit Prototype | 0.003 | 8.619 | 9,678,014 | 23,498,752 | 100,000 |
-| modified-bottom | 1,000,000 | Combined | LovelyGit Prototype | 0.003 | 91.918 | 98,778,033 | 618,876,928 | 1,000,001 |
-| modified-bottom | 1,000,000 | SideBySide | LovelyGit Prototype | 0.002 | 90.575 | 98,778,016 | 686,653,440 | 1,000,000 |
-| modified-middle | 10 | Combined | LovelyGit Prototype | 0.003 | 0.021 | 1,133 | 4,820,992 | 11 |
-| modified-middle | 10 | SideBySide | LovelyGit Prototype | 0.003 | 0.021 | 1,116 | 5,304,320 | 10 |
-| modified-middle | 100 | Combined | LovelyGit Prototype | 0.003 | 0.031 | 9,325 | 5,939,200 | 101 |
-| modified-middle | 100 | SideBySide | LovelyGit Prototype | 0.003 | 0.031 | 9,308 | 5,697,536 | 100 |
-| modified-middle | 1,000 | Combined | LovelyGit Prototype | 0.002 | 0.109 | 93,027 | 5,304,320 | 1,001 |
-| modified-middle | 1,000 | SideBySide | LovelyGit Prototype | 0.003 | 0.11 | 93,010 | 5,308,416 | 1,000 |
-| modified-middle | 10,000 | Combined | LovelyGit Prototype | 0.003 | 0.855 | 948,029 | 5,304,320 | 10,001 |
-| modified-middle | 10,000 | SideBySide | LovelyGit Prototype | 0.003 | 0.819 | 948,012 | 5,308,416 | 10,000 |
-| modified-middle | 100,000 | Combined | LovelyGit Prototype | 0.003 | 8.543 | 9,678,031 | 76,111,872 | 100,001 |
-| modified-middle | 100,000 | SideBySide | LovelyGit Prototype | 0.003 | 9.114 | 9,678,014 | 76,492,800 | 100,000 |
-| modified-middle | 1,000,000 | Combined | LovelyGit Prototype | 0.003 | 92.961 | 98,778,033 | 652,619,776 | 1,000,001 |
-| modified-middle | 1,000,000 | SideBySide | LovelyGit Prototype | 0.003 | 88.933 | 98,778,016 | 679,149,568 | 1,000,000 |
-| modified-top | 10 | Combined | LovelyGit Prototype | 0.003 | 0.023 | 1,130 | 4,820,992 | 11 |
-| modified-top | 10 | SideBySide | LovelyGit Prototype | 0.003 | 0.025 | 1,113 | 4,820,992 | 10 |
-| modified-top | 100 | Combined | LovelyGit Prototype | 0.003 | 0.028 | 9,322 | 5,939,200 | 101 |
-| modified-top | 100 | SideBySide | LovelyGit Prototype | 0.003 | 0.03 | 9,305 | 11,554,816 | 100 |
-| modified-top | 1,000 | Combined | LovelyGit Prototype | 0.003 | 0.111 | 93,024 | 5,304,320 | 1,001 |
-| modified-top | 1,000 | SideBySide | LovelyGit Prototype | 0.003 | 0.117 | 93,007 | 5,300,224 | 1,000 |
-| modified-top | 10,000 | Combined | LovelyGit Prototype | 0.003 | 0.854 | 948,026 | 5,304,320 | 10,001 |
-| modified-top | 10,000 | SideBySide | LovelyGit Prototype | 0.003 | 0.89 | 948,009 | 5,304,320 | 10,000 |
-| modified-top | 100,000 | Combined | LovelyGit Prototype | 0.003 | 8.98 | 9,678,028 | 53,747,712 | 100,001 |
-| modified-top | 100,000 | SideBySide | LovelyGit Prototype | 0.003 | 9.203 | 9,678,011 | 66,027,520 | 100,000 |
-| modified-top | 1,000,000 | Combined | LovelyGit Prototype | 0.003 | 91.114 | 98,778,030 | 668,307,456 | 1,000,001 |
-| modified-top | 1,000,000 | SideBySide | LovelyGit Prototype | 0.002 | 91.643 | 98,778,013 | 674,598,912 | 1,000,000 |
-| repeated | 10 | Combined | LovelyGit Prototype | 0.003 | 0.02 | 1,054 | 5,308,416 | 11 |
-| repeated | 10 | SideBySide | LovelyGit Prototype | 0.003 | 0.021 | 1,037 | 5,304,320 | 10 |
-| repeated | 100 | Combined | LovelyGit Prototype | 0.003 | 0.035 | 8,586 | 5,304,320 | 101 |
-| repeated | 100 | SideBySide | LovelyGit Prototype | 0.003 | 0.03 | 8,569 | 5,304,320 | 100 |
-| repeated | 1,000 | Combined | LovelyGit Prototype | 0.003 | 0.109 | 86,087 | 4,820,992 | 1,010 |
-| repeated | 1,000 | SideBySide | LovelyGit Prototype | 0.003 | 0.112 | 85,899 | 5,304,320 | 1,000 |
-| repeated | 10,000 | Combined | LovelyGit Prototype | 0.003 | 0.726 | 879,169 | 5,304,320 | 10,100 |
-| repeated | 10,000 | SideBySide | LovelyGit Prototype | 0.003 | 0.747 | 877,271 | 5,304,320 | 10,000 |
-| repeated | 100,000 | Combined | LovelyGit Prototype | 0.003 | 9.065 | 8,990,871 | 25,522,176 | 101,000 |
-| repeated | 100,000 | SideBySide | LovelyGit Prototype | 0.003 | 9.118 | 8,971,873 | 40,861,696 | 100,000 |
-| repeated | 1,000,000 | Combined | LovelyGit Prototype | 0.002 | 94.011 | 91,916,873 | 621,592,576 | 1,010,000 |
-| repeated | 1,000,000 | SideBySide | LovelyGit Prototype | 0.003 | 91.286 | 91,726,875 | 608,546,816 | 1,000,000 |
+| added | 10 | Combined | LovelyGit Prototype | 0.003 | 0.016 | 528 | 5,083,136 | 10 |
+| added | 10 | SideBySide | LovelyGit Prototype | 0.004 | 0.02 | 580 | 4,857,856 | 10 |
+| added | 100 | Combined | LovelyGit Prototype | 0.002 | 0.022 | 3,409 | 12,877,824 | 100 |
+| added | 100 | SideBySide | LovelyGit Prototype | 0.004 | 0.026 | 3,911 | 5,021,696 | 100 |
+| added | 1,000 | Combined | LovelyGit Prototype | 0.004 | 0.076 | 33,110 | 4,866,048 | 1,000 |
+| added | 1,000 | SideBySide | LovelyGit Prototype | 0.004 | 0.077 | 38,112 | 4,890,624 | 1,000 |
+| added | 10,000 | Combined | LovelyGit Prototype | 0.004 | 0.677 | 339,111 | 5,218,304 | 10,000 |
+| added | 10,000 | SideBySide | LovelyGit Prototype | 0.003 | 0.594 | 389,113 | 5,160,960 | 10,000 |
+| added | 100,000 | Combined | LovelyGit Prototype | 0.003 | 4.799 | 3,489,112 | 79,011,840 | 100,000 |
+| added | 100,000 | SideBySide | LovelyGit Prototype | 0.003 | 5.605 | 3,989,114 | 85,319,680 | 100,000 |
+| added | 1,000,000 | Combined | LovelyGit Prototype | 0.003 | 49.562 | 35,889,113 | 541,589,504 | 1,000,000 |
+| added | 1,000,000 | SideBySide | LovelyGit Prototype | 0.004 | 57.087 | 40,889,115 | 556,064,768 | 1,000,000 |
+| chromium-actions-xml-edit | 57,018 | Combined | LovelyGit Prototype | 0.004 | 5.868 | 3,066,933 | 329,302,016 | 57,020 |
+| chromium-actions-xml-edit | 57,018 | SideBySide | LovelyGit Prototype | 0.004 | 6.188 | 3,066,931 | 345,292,800 | 57,018 |
+| chromium-cpp-simdutf-edit | 71,113 | Combined | LovelyGit Prototype | 0.003 | 7.859 | 4,198,754 | 323,100,672 | 71,115 |
+| chromium-cpp-simdutf-edit | 71,113 | SideBySide | LovelyGit Prototype | 0.003 | 7.725 | 4,198,752 | 295,530,496 | 71,113 |
+| chromium-gn-xnnpack-edit | 66,699 | Combined | LovelyGit Prototype | 0.004 | 5.537 | 3,277,890 | 299,921,408 | 66,701 |
+| chromium-gn-xnnpack-edit | 66,699 | SideBySide | LovelyGit Prototype | 0.004 | 6.292 | 3,277,912 | 297,607,168 | 66,699 |
+| chromium-header-normalization-edit | 138,073 | Combined | LovelyGit Prototype | 0.004 | 29.671 | 10,985,061 | 279,932,928 | 138,075 |
+| chromium-header-normalization-edit | 138,073 | SideBySide | LovelyGit Prototype | 0.004 | 29.746 | 10,985,059 | 362,250,240 | 138,073 |
+| chromium-js-pdf-worker-edit | 56,199 | Combined | LovelyGit Prototype | 0.006 | 5.531 | 2,648,280 | 324,874,240 | 56,201 |
+| chromium-js-pdf-worker-edit | 56,199 | SideBySide | LovelyGit Prototype | 0.004 | 5.886 | 2,648,278 | 344,256,512 | 56,199 |
+| chromium-json-manifest-edit | 922,640 | Combined | LovelyGit Prototype | 0.004 | 70.423 | 39,131,695 | 625,729,536 | 922,642 |
+| chromium-json-manifest-edit | 922,640 | SideBySide | LovelyGit Prototype | 0.004 | 71.975 | 39,131,693 | 598,716,416 | 922,640 |
+| chromium-luci-cfg-edit | 139,072 | Combined | LovelyGit Prototype | 0.004 | 12.524 | 8,288,522 | 297,762,816 | 139,074 |
+| chromium-luci-cfg-edit | 139,072 | SideBySide | LovelyGit Prototype | 0.004 | 12.624 | 8,288,520 | 330,162,176 | 139,072 |
+| chromium-xml-cdata-edit | 156,982 | Combined | LovelyGit Prototype | 0.004 | 15.362 | 14,726,082 | 332,308,480 | 156,984 |
+| chromium-xml-cdata-edit | 156,982 | SideBySide | LovelyGit Prototype | 0.003 | 15.41 | 14,726,080 | 371,273,728 | 156,982 |
+| deleted | 10 | Combined | LovelyGit Prototype | 0.004 | 0.016 | 518 | 5,349,376 | 10 |
+| deleted | 10 | SideBySide | LovelyGit Prototype | 0.003 | 0.017 | 570 | 4,866,048 | 10 |
+| deleted | 100 | Combined | LovelyGit Prototype | 0.003 | 0.022 | 3,309 | 5,353,472 | 100 |
+| deleted | 100 | SideBySide | LovelyGit Prototype | 0.004 | 0.026 | 3,811 | 11,657,216 | 100 |
+| deleted | 1,000 | Combined | LovelyGit Prototype | 0.003 | 0.069 | 32,110 | 11,698,176 | 1,000 |
+| deleted | 1,000 | SideBySide | LovelyGit Prototype | 0.004 | 0.08 | 37,112 | 4,866,048 | 1,000 |
+| deleted | 10,000 | Combined | LovelyGit Prototype | 0.003 | 0.516 | 329,111 | 5,353,472 | 10,000 |
+| deleted | 10,000 | SideBySide | LovelyGit Prototype | 0.003 | 0.563 | 379,113 | 5,349,376 | 10,000 |
+| deleted | 100,000 | Combined | LovelyGit Prototype | 0.004 | 5.28 | 3,389,112 | 83,484,672 | 100,000 |
+| deleted | 100,000 | SideBySide | LovelyGit Prototype | 0.004 | 5.4 | 3,889,114 | 77,295,616 | 100,000 |
+| deleted | 1,000,000 | Combined | LovelyGit Prototype | 0.004 | 50.25 | 34,889,113 | 549,773,312 | 1,000,000 |
+| deleted | 1,000,000 | SideBySide | LovelyGit Prototype | 0.004 | 52.167 | 39,889,115 | 541,593,600 | 1,000,000 |
+| lovelygit-billion-synthetic | 1,000,000,000 | Combined | LovelyGit Prototype | 0.003 | 0.009 | 107,777,777,998 | 5,095,424 | 1,000,000,000 |
+| lovelygit-billion-synthetic | 1,000,000,000 | SideBySide | LovelyGit Prototype | 0.003 | 0.008 | 107,777,778,000 | 5,373,952 | 1,000,000,000 |
+| modified-bottom | 10 | Combined | LovelyGit Prototype | 0.004 | 0.018 | 520 | 5,349,376 | 11 |
+| modified-bottom | 10 | SideBySide | LovelyGit Prototype | 0.003 | 0.018 | 508 | 4,890,624 | 10 |
+| modified-bottom | 100 | Combined | LovelyGit Prototype | 0.003 | 0.027 | 3,132 | 4,866,048 | 101 |
+| modified-bottom | 100 | SideBySide | LovelyGit Prototype | 0.003 | 0.026 | 3,120 | 5,283,840 | 100 |
+| modified-bottom | 1,000 | Combined | LovelyGit Prototype | 0.004 | 0.112 | 31,034 | 5,353,472 | 1,001 |
+| modified-bottom | 1,000 | SideBySide | LovelyGit Prototype | 0.004 | 0.181 | 31,022 | 14,155,776 | 1,000 |
+| modified-bottom | 10,000 | Combined | LovelyGit Prototype | 0.004 | 0.593 | 328,036 | 4,866,048 | 10,001 |
+| modified-bottom | 10,000 | SideBySide | LovelyGit Prototype | 0.003 | 0.584 | 328,024 | 5,349,376 | 10,000 |
+| modified-bottom | 100,000 | Combined | LovelyGit Prototype | 0.003 | 5.849 | 3,478,038 | 77,283,328 | 100,001 |
+| modified-bottom | 100,000 | SideBySide | LovelyGit Prototype | 0.003 | 6.037 | 3,478,026 | 77,316,096 | 100,000 |
+| modified-bottom | 1,000,000 | Combined | LovelyGit Prototype | 0.004 | 60.013 | 36,778,040 | 547,463,168 | 1,000,001 |
+| modified-bottom | 1,000,000 | SideBySide | LovelyGit Prototype | 0.004 | 59.727 | 36,778,028 | 555,999,232 | 1,000,000 |
+| modified-middle | 10 | Combined | LovelyGit Prototype | 0.003 | 0.019 | 520 | 4,894,720 | 11 |
+| modified-middle | 10 | SideBySide | LovelyGit Prototype | 0.004 | 0.018 | 508 | 4,866,048 | 10 |
+| modified-middle | 100 | Combined | LovelyGit Prototype | 0.004 | 0.028 | 3,132 | 5,349,376 | 101 |
+| modified-middle | 100 | SideBySide | LovelyGit Prototype | 0.004 | 0.027 | 3,120 | 8,011,776 | 100 |
+| modified-middle | 1,000 | Combined | LovelyGit Prototype | 0.004 | 0.087 | 31,034 | 5,349,376 | 1,001 |
+| modified-middle | 1,000 | SideBySide | LovelyGit Prototype | 0.003 | 0.08 | 31,022 | 5,349,376 | 1,000 |
+| modified-middle | 10,000 | Combined | LovelyGit Prototype | 0.003 | 0.6 | 328,036 | 5,353,472 | 10,001 |
+| modified-middle | 10,000 | SideBySide | LovelyGit Prototype | 0.004 | 0.807 | 328,024 | 5,349,376 | 10,000 |
+| modified-middle | 100,000 | Combined | LovelyGit Prototype | 0.005 | 5.968 | 3,478,038 | 62,697,472 | 100,001 |
+| modified-middle | 100,000 | SideBySide | LovelyGit Prototype | 0.003 | 6.3 | 3,478,026 | 77,352,960 | 100,000 |
+| modified-middle | 1,000,000 | Combined | LovelyGit Prototype | 0.003 | 59.141 | 36,778,040 | 555,954,176 | 1,000,001 |
+| modified-middle | 1,000,000 | SideBySide | LovelyGit Prototype | 0.003 | 58.284 | 36,778,028 | 547,090,432 | 1,000,000 |
+| modified-top | 10 | Combined | LovelyGit Prototype | 0.004 | 0.018 | 517 | 4,866,048 | 11 |
+| modified-top | 10 | SideBySide | LovelyGit Prototype | 0.004 | 0.019 | 505 | 13,254,656 | 10 |
+| modified-top | 100 | Combined | LovelyGit Prototype | 0.004 | 0.029 | 3,129 | 10,117,120 | 101 |
+| modified-top | 100 | SideBySide | LovelyGit Prototype | 0.004 | 0.043 | 3,117 | 13,344,768 | 100 |
+| modified-top | 1,000 | Combined | LovelyGit Prototype | 0.004 | 0.081 | 31,031 | 5,349,376 | 1,001 |
+| modified-top | 1,000 | SideBySide | LovelyGit Prototype | 0.004 | 0.078 | 31,019 | 5,349,376 | 1,000 |
+| modified-top | 10,000 | Combined | LovelyGit Prototype | 0.004 | 0.565 | 328,033 | 5,353,472 | 10,001 |
+| modified-top | 10,000 | SideBySide | LovelyGit Prototype | 0.003 | 0.603 | 328,021 | 4,866,048 | 10,000 |
+| modified-top | 100,000 | Combined | LovelyGit Prototype | 0.004 | 5.695 | 3,478,035 | 64,131,072 | 100,001 |
+| modified-top | 100,000 | SideBySide | LovelyGit Prototype | 0.004 | 5.828 | 3,478,023 | 67,796,992 | 100,000 |
+| modified-top | 1,000,000 | Combined | LovelyGit Prototype | 0.004 | 58.713 | 36,778,037 | 541,569,024 | 1,000,001 |
+| modified-top | 1,000,000 | SideBySide | LovelyGit Prototype | 0.004 | 58.576 | 36,778,025 | 537,448,448 | 1,000,000 |
+| repeated | 10 | Combined | LovelyGit Prototype | 0.003 | 0.018 | 441 | 5,148,672 | 11 |
+| repeated | 10 | SideBySide | LovelyGit Prototype | 0.002 | 0.016 | 429 | 5,427,200 | 10 |
+| repeated | 100 | Combined | LovelyGit Prototype | 0.004 | 0.028 | 2,393 | 5,132,288 | 101 |
+| repeated | 100 | SideBySide | LovelyGit Prototype | 0.006 | 0.037 | 2,381 | 4,866,048 | 100 |
+| repeated | 1,000 | Combined | LovelyGit Prototype | 0.003 | 0.081 | 23,941 | 11,710,464 | 1,010 |
+| repeated | 1,000 | SideBySide | LovelyGit Prototype | 0.003 | 0.092 | 23,803 | 8,454,144 | 1,000 |
+| repeated | 10,000 | Combined | LovelyGit Prototype | 0.004 | 0.582 | 257,493 | 5,353,472 | 10,100 |
+| repeated | 10,000 | SideBySide | LovelyGit Prototype | 0.003 | 0.565 | 256,095 | 5,353,472 | 10,000 |
+| repeated | 100,000 | Combined | LovelyGit Prototype | 0.004 | 5.895 | 2,773,895 | 72,384,512 | 101,000 |
+| repeated | 100,000 | SideBySide | LovelyGit Prototype | 0.004 | 5.839 | 2,759,897 | 77,303,808 | 100,000 |
+| repeated | 1,000,000 | Combined | LovelyGit Prototype | 0.004 | 61.699 | 29,746,897 | 552,681,472 | 1,010,000 |
+| repeated | 1,000,000 | SideBySide | LovelyGit Prototype | 0.003 | 58.539 | 29,606,899 | 561,512,448 | 1,000,000 |
+| unicode-modified | 10 | Combined | LovelyGit Prototype | 0.004 | 0.018 | 495 | 5,353,472 | 11 |
+| unicode-modified | 10 | SideBySide | LovelyGit Prototype | 0.003 | 0.019 | 483 | 5,349,376 | 10 |
+| unicode-modified | 100 | Combined | LovelyGit Prototype | 0.003 | 0.03 | 2,928 | 5,349,376 | 101 |
+| unicode-modified | 100 | SideBySide | LovelyGit Prototype | 0.004 | 0.026 | 2,916 | 5,349,376 | 100 |
+| unicode-modified | 1,000 | Combined | LovelyGit Prototype | 0.004 | 0.09 | 29,931 | 5,070,848 | 1,001 |
+| unicode-modified | 1,000 | SideBySide | LovelyGit Prototype | 0.004 | 0.092 | 29,919 | 5,349,376 | 1,000 |
+| unicode-modified | 10,000 | Combined | LovelyGit Prototype | 0.004 | 0.65 | 326,934 | 21,381,120 | 10,001 |
+| unicode-modified | 10,000 | SideBySide | LovelyGit Prototype | 0.004 | 0.639 | 326,922 | 5,349,376 | 10,000 |
+| unicode-modified | 100,000 | Combined | LovelyGit Prototype | 0.004 | 6.724 | 3,566,937 | 83,410,944 | 100,001 |
+| unicode-modified | 100,000 | SideBySide | LovelyGit Prototype | 0.003 | 6.581 | 3,566,925 | 70,041,600 | 100,000 |
+| unicode-modified | 1,000,000 | Combined | LovelyGit Prototype | 0.004 | 65.903 | 38,666,940 | 551,755,776 | 1,000,001 |
+| unicode-modified | 1,000,000 | SideBySide | LovelyGit Prototype | 0.003 | 66.519 | 38,666,928 | 547,573,760 | 1,000,000 |
 
 ## Scenario: added
 
@@ -189,18 +201,18 @@ Runtime: Native AOT published `win-x64` benchmark binary
 | Git CLI | 100,000 | SideBySide | Measured | 98.605 | 18.972 | 10,778,182 | 101,601,280 | 100,002 | new file |
 | Git CLI | 1,000,000 | Combined | Measured | 488.926 | 170.441 | 111,778,192 | 800,354,304 | 1,000,002 | new file |
 | Git CLI | 1,000,000 | SideBySide | Measured | 503.113 | 176.455 | 109,778,188 | 695,865,344 | 1,000,002 | new file |
-| LovelyGit Prototype | 10 | Combined | Measured | 0.003 | 0.022 | 904 | 5,103,616 | 10 | new file |
-| LovelyGit Prototype | 10 | SideBySide | Measured | 0.004 | 0.023 | 936 | 5,279,744 | 10 | new file |
-| LovelyGit Prototype | 100 | Combined | Measured | 0.003 | 0.031 | 7,385 | 13,262,848 | 100 | new file |
-| LovelyGit Prototype | 100 | SideBySide | Measured | 0.003 | 0.027 | 7,687 | 5,304,320 | 100 | new file |
-| LovelyGit Prototype | 1,000 | Combined | Measured | 0.003 | 0.117 | 73,086 | 5,304,320 | 1,000 | new file |
-| LovelyGit Prototype | 1,000 | SideBySide | Measured | 0.003 | 0.11 | 76,088 | 5,304,320 | 1,000 | new file |
-| LovelyGit Prototype | 10,000 | Combined | Measured | 0.003 | 0.737 | 739,087 | 5,304,320 | 10,000 | new file |
-| LovelyGit Prototype | 10,000 | SideBySide | Measured | 0.003 | 0.778 | 769,089 | 5,304,320 | 10,000 | new file |
-| LovelyGit Prototype | 100,000 | Combined | Measured | 0.003 | 8.537 | 7,489,088 | 58,396,672 | 100,000 | new file |
-| LovelyGit Prototype | 100,000 | SideBySide | Measured | 0.003 | 8.362 | 7,789,090 | 65,843,200 | 100,000 | new file |
-| LovelyGit Prototype | 1,000,000 | Combined | Measured | 0.003 | 82.865 | 75,889,089 | 528,420,864 | 1,000,000 | new file |
-| LovelyGit Prototype | 1,000,000 | SideBySide | Measured | 0.003 | 85.464 | 78,889,091 | 619,118,592 | 1,000,000 | new file |
+| LovelyGit Prototype | 10 | Combined | Measured | 0.003 | 0.016 | 528 | 5,083,136 | 10 | new file |
+| LovelyGit Prototype | 10 | SideBySide | Measured | 0.004 | 0.02 | 580 | 4,857,856 | 10 | new file |
+| LovelyGit Prototype | 100 | Combined | Measured | 0.002 | 0.022 | 3,409 | 12,877,824 | 100 | new file |
+| LovelyGit Prototype | 100 | SideBySide | Measured | 0.004 | 0.026 | 3,911 | 5,021,696 | 100 | new file |
+| LovelyGit Prototype | 1,000 | Combined | Measured | 0.004 | 0.076 | 33,110 | 4,866,048 | 1,000 | new file |
+| LovelyGit Prototype | 1,000 | SideBySide | Measured | 0.004 | 0.077 | 38,112 | 4,890,624 | 1,000 | new file |
+| LovelyGit Prototype | 10,000 | Combined | Measured | 0.004 | 0.677 | 339,111 | 5,218,304 | 10,000 | new file |
+| LovelyGit Prototype | 10,000 | SideBySide | Measured | 0.003 | 0.594 | 389,113 | 5,160,960 | 10,000 | new file |
+| LovelyGit Prototype | 100,000 | Combined | Measured | 0.003 | 4.799 | 3,489,112 | 79,011,840 | 100,000 | new file |
+| LovelyGit Prototype | 100,000 | SideBySide | Measured | 0.003 | 5.605 | 3,989,114 | 85,319,680 | 100,000 | new file |
+| LovelyGit Prototype | 1,000,000 | Combined | Measured | 0.003 | 49.562 | 35,889,113 | 541,589,504 | 1,000,000 | new file |
+| LovelyGit Prototype | 1,000,000 | SideBySide | Measured | 0.004 | 57.087 | 40,889,115 | 556,064,768 | 1,000,000 | new file |
 | MyersDiff | 10 | Combined | Measured | 0.015 | 0.366 | 1,395 | 5,296,128 | 10 | new file |
 | MyersDiff | 10 | SideBySide | Measured | 0.02 | 0.35 | 1,395 | 5,296,128 | 10 | new file |
 | MyersDiff | 100 | Combined | Measured | 0.025 | 0.377 | 12,466 | 5,300,224 | 100 | new file |
@@ -264,8 +276,8 @@ Runtime: Native AOT published `win-x64` benchmark binary
 | DiffPlex | 57,018 | SideBySide | Measured | 20.442 | 23.523 | 11,487,714 | 322,904,064 | 57,019 | real Chromium file: tools\metrics\actions\actions.xml |
 | Git CLI | 57,018 | Combined | Measured | 71.987 | 0.307 | 2,650 | 294,383,616 | 24 | real Chromium file: tools\metrics\actions\actions.xml |
 | Git CLI | 57,018 | SideBySide | Measured | 77.591 | 0.3 | 2,602 | 294,301,696 | 24 | real Chromium file: tools\metrics\actions\actions.xml |
-| LovelyGit Prototype | 57,018 | Combined | Measured | 0.003 | 6.135 | 6,602,059 | 312,430,592 | 57,020 | real Chromium file: tools\metrics\actions\actions.xml |
-| LovelyGit Prototype | 57,018 | SideBySide | Measured | 0.003 | 6.545 | 6,602,048 | 349,671,424 | 57,018 | real Chromium file: tools\metrics\actions\actions.xml |
+| LovelyGit Prototype | 57,018 | Combined | Measured | 0.004 | 5.868 | 3,066,933 | 329,302,016 | 57,020 | real Chromium file: tools\metrics\actions\actions.xml |
+| LovelyGit Prototype | 57,018 | SideBySide | Measured | 0.004 | 6.188 | 3,066,931 | 345,292,800 | 57,018 | real Chromium file: tools\metrics\actions\actions.xml |
 | MyersDiff | 57,018 | Combined | Measured | 10.47 | 16.293 | 8,954,574 | 355,565,568 | 57,020 | real Chromium file: tools\metrics\actions\actions.xml |
 | MyersDiff | 57,018 | SideBySide | Measured | 9.835 | 23.372 | 11,487,823 | 322,449,408 | 57,020 | real Chromium file: tools\metrics\actions\actions.xml |
 | NGitDiff Histogram | 57,018 | Combined | Measured | 26.01 | 17.038 | 8,954,583 | 297,218,048 | 57,020 | real Chromium file: tools\metrics\actions\actions.xml |
@@ -289,8 +301,8 @@ Runtime: Native AOT published `win-x64` benchmark binary
 | DiffPlex | 71,113 | SideBySide | Measured | 30.947 | 19.365 | 13,838,704 | 333,647,872 | 71,114 | real Chromium file: third_party\simdutf\simdutf.cpp |
 | Git CLI | 71,113 | Combined | Measured | 84.631 | 0.308 | 2,650 | 338,644,992 | 24 | real Chromium file: third_party\simdutf\simdutf.cpp |
 | Git CLI | 71,113 | SideBySide | Measured | 83.198 | 0.311 | 2,602 | 338,063,360 | 24 | real Chromium file: third_party\simdutf\simdutf.cpp |
-| LovelyGit Prototype | 71,113 | Combined | Measured | 0.003 | 8.315 | 8,607,770 | 314,298,368 | 71,115 | real Chromium file: third_party\simdutf\simdutf.cpp |
-| LovelyGit Prototype | 71,113 | SideBySide | Measured | 0.003 | 7.907 | 8,607,759 | 337,182,720 | 71,113 | real Chromium file: third_party\simdutf\simdutf.cpp |
+| LovelyGit Prototype | 71,113 | Combined | Measured | 0.003 | 7.859 | 4,198,754 | 323,100,672 | 71,115 | real Chromium file: third_party\simdutf\simdutf.cpp |
+| LovelyGit Prototype | 71,113 | SideBySide | Measured | 0.003 | 7.725 | 4,198,752 | 295,530,496 | 71,113 | real Chromium file: third_party\simdutf\simdutf.cpp |
 | MyersDiff | 71,113 | Combined | Measured | 13.199 | 15.431 | 10,926,459 | 346,660,864 | 71,115 | real Chromium file: third_party\simdutf\simdutf.cpp |
 | MyersDiff | 71,113 | SideBySide | Measured | 12.279 | 17.821 | 13,838,813 | 345,706,496 | 71,115 | real Chromium file: third_party\simdutf\simdutf.cpp |
 | NGitDiff Histogram | 71,113 | Combined | Measured | 51.493 | 18.674 | 10,926,468 | 348,327,936 | 71,115 | real Chromium file: third_party\simdutf\simdutf.cpp |
@@ -314,8 +326,8 @@ Runtime: Native AOT published `win-x64` benchmark binary
 | DiffPlex | 66,699 | SideBySide | Measured | 21.485 | 21.073 | 11,959,149 | 307,470,336 | 66,700 | real Chromium file: third_party\xnnpack\BUILD.gn |
 | Git CLI | 66,699 | Combined | Measured | 75.969 | 0.285 | 2,650 | 308,465,664 | 24 | real Chromium file: third_party\xnnpack\BUILD.gn |
 | Git CLI | 66,699 | SideBySide | Measured | 69.951 | 0.302 | 2,602 | 307,478,528 | 24 | real Chromium file: third_party\xnnpack\BUILD.gn |
-| LovelyGit Prototype | 66,699 | Combined | Measured | 0.003 | 8.225 | 7,413,238 | 314,425,344 | 66,701 | real Chromium file: third_party\xnnpack\BUILD.gn |
-| LovelyGit Prototype | 66,699 | SideBySide | Measured | 0.003 | 8.223 | 7,413,252 | 321,851,392 | 66,699 | real Chromium file: third_party\xnnpack\BUILD.gn |
+| LovelyGit Prototype | 66,699 | Combined | Measured | 0.004 | 5.537 | 3,277,890 | 299,921,408 | 66,701 | real Chromium file: third_party\xnnpack\BUILD.gn |
+| LovelyGit Prototype | 66,699 | SideBySide | Measured | 0.004 | 6.292 | 3,277,912 | 297,607,168 | 66,699 | real Chromium file: third_party\xnnpack\BUILD.gn |
 | MyersDiff | 66,699 | Combined | Measured | 10.33 | 16.318 | 9,737,334 | 313,757,696 | 66,701 | real Chromium file: third_party\xnnpack\BUILD.gn |
 | MyersDiff | 66,699 | SideBySide | Measured | 10.542 | 20.365 | 11,959,258 | 311,328,768 | 66,701 | real Chromium file: third_party\xnnpack\BUILD.gn |
 | NGitDiff Histogram | 66,699 | Combined | Measured | 43.057 | 17.385 | 9,737,343 | 345,796,608 | 66,701 | real Chromium file: third_party\xnnpack\BUILD.gn |
@@ -339,8 +351,8 @@ Runtime: Native AOT published `win-x64` benchmark binary
 | DiffPlex | 138,073 | SideBySide | Measured | 107.103 | 48.371 | 33,278,280 | 293,335,040 | 138,074 | real Chromium file: third_party\sentencepiece\src\src\normalization_rule.h |
 | Git CLI | 138,073 | Combined | Measured | 147.192 | 0.321 | 2,650 | 286,339,072 | 24 | real Chromium file: third_party\sentencepiece\src\src\normalization_rule.h |
 | Git CLI | 138,073 | SideBySide | Measured | 136.419 | 0.298 | 2,602 | 293,859,328 | 24 | real Chromium file: third_party\sentencepiece\src\src\normalization_rule.h |
-| LovelyGit Prototype | 138,073 | Combined | Measured | 0.003 | 27.046 | 19,545,597 | 297,283,584 | 138,075 | real Chromium file: third_party\sentencepiece\src\src\normalization_rule.h |
-| LovelyGit Prototype | 138,073 | SideBySide | Measured | 0.003 | 26.47 | 19,545,586 | 309,567,488 | 138,073 | real Chromium file: third_party\sentencepiece\src\src\normalization_rule.h |
+| LovelyGit Prototype | 138,073 | Combined | Measured | 0.004 | 29.671 | 10,985,061 | 279,932,928 | 138,075 | real Chromium file: third_party\sentencepiece\src\src\normalization_rule.h |
+| LovelyGit Prototype | 138,073 | SideBySide | Measured | 0.004 | 29.746 | 10,985,059 | 362,250,240 | 138,073 | real Chromium file: third_party\sentencepiece\src\src\normalization_rule.h |
 | MyersDiff | 138,073 | Combined | Measured | 24.576 | 36.021 | 24,467,544 | 334,688,256 | 138,075 | real Chromium file: third_party\sentencepiece\src\src\normalization_rule.h |
 | MyersDiff | 138,073 | SideBySide | Measured | 25.528 | 45.072 | 33,278,389 | 299,659,264 | 138,075 | real Chromium file: third_party\sentencepiece\src\src\normalization_rule.h |
 | NGitDiff Histogram | 138,073 | Combined | Measured | 115.228 | 37.763 | 24,467,553 | 311,414,784 | 138,075 | real Chromium file: third_party\sentencepiece\src\src\normalization_rule.h |
@@ -364,8 +376,8 @@ Runtime: Native AOT published `win-x64` benchmark binary
 | DiffPlex | 56,199 | SideBySide | Measured | 19.861 | 17.271 | 9,794,454 | 322,777,088 | 56,200 | real Chromium file: third_party\wpt_tools\wpt\tools\third_party\pdf_js\pdf.worker.js |
 | Git CLI | 56,199 | Combined | Measured | 68.527 | 0.282 | 2,650 | 319,877,120 | 24 | real Chromium file: third_party\wpt_tools\wpt\tools\third_party\pdf_js\pdf.worker.js |
 | Git CLI | 56,199 | SideBySide | Measured | 69.824 | 0.304 | 2,602 | 322,424,832 | 24 | real Chromium file: third_party\wpt_tools\wpt\tools\third_party\pdf_js\pdf.worker.js |
-| LovelyGit Prototype | 56,199 | Combined | Measured | 0.003 | 6.738 | 6,132,628 | 322,936,832 | 56,201 | real Chromium file: third_party\wpt_tools\wpt\tools\third_party\pdf_js\pdf.worker.js |
-| LovelyGit Prototype | 56,199 | SideBySide | Measured | 0.003 | 7.416 | 6,132,617 | 313,344,000 | 56,199 | real Chromium file: third_party\wpt_tools\wpt\tools\third_party\pdf_js\pdf.worker.js |
+| LovelyGit Prototype | 56,199 | Combined | Measured | 0.006 | 5.531 | 2,648,280 | 324,874,240 | 56,201 | real Chromium file: third_party\wpt_tools\wpt\tools\third_party\pdf_js\pdf.worker.js |
+| LovelyGit Prototype | 56,199 | SideBySide | Measured | 0.004 | 5.886 | 2,648,278 | 344,256,512 | 56,199 | real Chromium file: third_party\wpt_tools\wpt\tools\third_party\pdf_js\pdf.worker.js |
 | MyersDiff | 56,199 | Combined | Measured | 6.44 | 13.446 | 8,061,664 | 300,613,632 | 56,201 | real Chromium file: third_party\wpt_tools\wpt\tools\third_party\pdf_js\pdf.worker.js |
 | MyersDiff | 56,199 | SideBySide | Measured | 6.634 | 17.551 | 9,794,563 | 328,343,552 | 56,201 | real Chromium file: third_party\wpt_tools\wpt\tools\third_party\pdf_js\pdf.worker.js |
 | NGitDiff Histogram | 56,199 | Combined | Measured | 24.058 | 13.205 | 8,061,673 | 318,201,856 | 56,201 | real Chromium file: third_party\wpt_tools\wpt\tools\third_party\pdf_js\pdf.worker.js |
@@ -389,8 +401,8 @@ Runtime: Native AOT published `win-x64` benchmark binary
 | DiffPlex | 922,640 | SideBySide | Measured | 553.098 | 273.049 | 147,649,972 | 1,257,021,440 | 922,641 | real Chromium file: third_party\blink\web_tests\external\WPT_BASE_MANIFEST_8.json |
 | Git CLI | 922,640 | Combined | Measured | 335.991 | 0.319 | 2,650 | 612,421,632 | 24 | real Chromium file: third_party\blink\web_tests\external\WPT_BASE_MANIFEST_8.json |
 | Git CLI | 922,640 | SideBySide | Measured | 332.791 | 0.307 | 2,602 | 607,350,784 | 24 | real Chromium file: third_party\blink\web_tests\external\WPT_BASE_MANIFEST_8.json |
-| LovelyGit Prototype | 922,640 | Combined | Measured | 0.002 | 104.702 | 96,335,385 | 687,415,296 | 922,642 | real Chromium file: third_party\blink\web_tests\external\WPT_BASE_MANIFEST_8.json |
-| LovelyGit Prototype | 922,640 | SideBySide | Measured | 0.004 | 103.723 | 96,335,374 | 599,678,976 | 922,640 | real Chromium file: third_party\blink\web_tests\external\WPT_BASE_MANIFEST_8.json |
+| LovelyGit Prototype | 922,640 | Combined | Measured | 0.004 | 70.423 | 39,131,695 | 625,729,536 | 922,642 | real Chromium file: third_party\blink\web_tests\external\WPT_BASE_MANIFEST_8.json |
+| LovelyGit Prototype | 922,640 | SideBySide | Measured | 0.004 | 71.975 | 39,131,693 | 598,716,416 | 922,640 | real Chromium file: third_party\blink\web_tests\external\WPT_BASE_MANIFEST_8.json |
 | MyersDiff | 922,640 | Combined | Measured | 323.437 | 202.947 | 126,766,008 | 1,126,014,976 | 922,642 | real Chromium file: third_party\blink\web_tests\external\WPT_BASE_MANIFEST_8.json |
 | MyersDiff | 922,640 | SideBySide | Measured | 332.152 | 280.508 | 147,650,081 | 1,235,070,976 | 922,642 | real Chromium file: third_party\blink\web_tests\external\WPT_BASE_MANIFEST_8.json |
 | NGitDiff Histogram | 922,640 | Combined | Measured | 656.24 | 199.419 | 126,766,017 | 1,095,811,072 | 922,642 | real Chromium file: third_party\blink\web_tests\external\WPT_BASE_MANIFEST_8.json |
@@ -414,8 +426,8 @@ Runtime: Native AOT published `win-x64` benchmark binary
 | DiffPlex | 139,072 | SideBySide | Measured | 84.263 | 47.744 | 28,890,006 | 334,159,872 | 139,073 | real Chromium file: infra\config\generated\luci\cr-buildbucket.cfg |
 | Git CLI | 139,072 | Combined | Measured | 132.566 | 0.299 | 2,650 | 334,778,368 | 24 | real Chromium file: infra\config\generated\luci\cr-buildbucket.cfg |
 | Git CLI | 139,072 | SideBySide | Measured | 105.024 | 0.3 | 2,602 | 283,832,320 | 24 | real Chromium file: infra\config\generated\luci\cr-buildbucket.cfg |
-| LovelyGit Prototype | 139,072 | Combined | Measured | 0.003 | 17.442 | 16,910,996 | 334,774,272 | 139,074 | real Chromium file: infra\config\generated\luci\cr-buildbucket.cfg |
-| LovelyGit Prototype | 139,072 | SideBySide | Measured | 0.003 | 17.106 | 16,910,985 | 334,757,888 | 139,072 | real Chromium file: infra\config\generated\luci\cr-buildbucket.cfg |
+| LovelyGit Prototype | 139,072 | Combined | Measured | 0.004 | 12.524 | 8,288,522 | 297,762,816 | 139,074 | real Chromium file: infra\config\generated\luci\cr-buildbucket.cfg |
+| LovelyGit Prototype | 139,072 | SideBySide | Measured | 0.004 | 12.624 | 8,288,520 | 330,162,176 | 139,072 | real Chromium file: infra\config\generated\luci\cr-buildbucket.cfg |
 | MyersDiff | 139,072 | Combined | Measured | 28.049 | 34.634 | 22,330,879 | 335,302,656 | 139,074 | real Chromium file: infra\config\generated\luci\cr-buildbucket.cfg |
 | MyersDiff | 139,072 | SideBySide | Measured | 27.344 | 45.616 | 28,890,115 | 334,336,000 | 139,074 | real Chromium file: infra\config\generated\luci\cr-buildbucket.cfg |
 | NGitDiff Histogram | 139,072 | Combined | Measured | 111.513 | 35.815 | 22,330,888 | 334,983,168 | 139,074 | real Chromium file: infra\config\generated\luci\cr-buildbucket.cfg |
@@ -439,8 +451,8 @@ Runtime: Native AOT published `win-x64` benchmark binary
 | DiffPlex | 156,982 | SideBySide | Measured | 121.631 | 48.004 | 40,513,238 | 467,324,928 | 156,983 | real Chromium file: third_party\blink\web_tests\external\wpt\xml\xslt\resources\large_CDATA.xml |
 | Git CLI | 156,982 | Combined | Measured | 175.123 | 0.299 | 2,650 | 361,385,984 | 24 | real Chromium file: third_party\blink\web_tests\external\wpt\xml\xslt\resources\large_CDATA.xml |
 | Git CLI | 156,982 | SideBySide | Measured | 151.633 | 0.3 | 2,602 | 294,985,728 | 24 | real Chromium file: third_party\blink\web_tests\external\wpt\xml\xslt\resources\large_CDATA.xml |
-| LovelyGit Prototype | 156,982 | Combined | Measured | 0.003 | 18.553 | 24,458,914 | 342,519,808 | 156,984 | real Chromium file: third_party\blink\web_tests\external\wpt\xml\xslt\resources\large_CDATA.xml |
-| LovelyGit Prototype | 156,982 | SideBySide | Measured | 0.002 | 18.504 | 24,458,903 | 331,177,984 | 156,982 | real Chromium file: third_party\blink\web_tests\external\wpt\xml\xslt\resources\large_CDATA.xml |
+| LovelyGit Prototype | 156,982 | Combined | Measured | 0.004 | 15.362 | 14,726,082 | 332,308,480 | 156,984 | real Chromium file: third_party\blink\web_tests\external\wpt\xml\xslt\resources\large_CDATA.xml |
+| LovelyGit Prototype | 156,982 | SideBySide | Measured | 0.003 | 15.41 | 14,726,080 | 371,273,728 | 156,982 | real Chromium file: third_party\blink\web_tests\external\wpt\xml\xslt\resources\large_CDATA.xml |
 | MyersDiff | 156,982 | Combined | Measured | 63.642 | 31.237 | 29,172,349 | 362,233,856 | 156,984 | real Chromium file: third_party\blink\web_tests\external\wpt\xml\xslt\resources\large_CDATA.xml |
 | MyersDiff | 156,982 | SideBySide | Measured | 55.152 | 47.474 | 40,513,347 | 455,122,944 | 156,984 | real Chromium file: third_party\blink\web_tests\external\wpt\xml\xslt\resources\large_CDATA.xml |
 | NGitDiff Histogram | 156,982 | Combined | Measured | 164.434 | 34.623 | 29,172,245 | 306,139,136 | 156,983 | real Chromium file: third_party\blink\web_tests\external\wpt\xml\xslt\resources\large_CDATA.xml |
@@ -514,18 +526,18 @@ Runtime: Native AOT published `win-x64` benchmark binary
 | Git CLI | 100,000 | SideBySide | Measured | 78.432 | 17.515 | 10,778,182 | 63,429,624 | 100,002 | deleted file |
 | Git CLI | 1,000,000 | Combined | Measured | 504.647 | 174.75 | 111,778,192 | 673,808,384 | 1,000,002 | deleted file |
 | Git CLI | 1,000,000 | SideBySide | Measured | 479.801 | 179.686 | 109,778,188 | 747,937,792 | 1,000,002 | deleted file |
-| LovelyGit Prototype | 10 | Combined | Measured | 0.004 | 0.021 | 884 | 5,304,320 | 10 | deleted file |
-| LovelyGit Prototype | 10 | SideBySide | Measured | 0.003 | 0.021 | 916 | 5,103,616 | 10 | deleted file |
-| LovelyGit Prototype | 100 | Combined | Measured | 0.003 | 0.027 | 7,185 | 5,304,320 | 100 | deleted file |
-| LovelyGit Prototype | 100 | SideBySide | Measured | 0.003 | 0.023 | 7,487 | 5,304,320 | 100 | deleted file |
-| LovelyGit Prototype | 1,000 | Combined | Measured | 0.003 | 0.105 | 71,086 | 5,308,416 | 1,000 | deleted file |
-| LovelyGit Prototype | 1,000 | SideBySide | Measured | 0.003 | 0.106 | 74,088 | 4,878,336 | 1,000 | deleted file |
-| LovelyGit Prototype | 10,000 | Combined | Measured | 0.003 | 0.907 | 719,087 | 5,304,320 | 10,000 | deleted file |
-| LovelyGit Prototype | 10,000 | SideBySide | Measured | 0.003 | 0.782 | 749,089 | 5,308,416 | 10,000 | deleted file |
-| LovelyGit Prototype | 100,000 | Combined | Measured | 0.003 | 8.549 | 7,289,088 | 56,619,008 | 100,000 | deleted file |
-| LovelyGit Prototype | 100,000 | SideBySide | Measured | 0.003 | 8.506 | 7,589,090 | 58,261,504 | 100,000 | deleted file |
-| LovelyGit Prototype | 1,000,000 | Combined | Measured | 0.003 | 83.591 | 73,889,089 | 537,894,912 | 1,000,000 | deleted file |
-| LovelyGit Prototype | 1,000,000 | SideBySide | Measured | 0.002 | 84.828 | 76,889,091 | 608,354,304 | 1,000,000 | deleted file |
+| LovelyGit Prototype | 10 | Combined | Measured | 0.004 | 0.016 | 518 | 5,349,376 | 10 | deleted file |
+| LovelyGit Prototype | 10 | SideBySide | Measured | 0.003 | 0.017 | 570 | 4,866,048 | 10 | deleted file |
+| LovelyGit Prototype | 100 | Combined | Measured | 0.003 | 0.022 | 3,309 | 5,353,472 | 100 | deleted file |
+| LovelyGit Prototype | 100 | SideBySide | Measured | 0.004 | 0.026 | 3,811 | 11,657,216 | 100 | deleted file |
+| LovelyGit Prototype | 1,000 | Combined | Measured | 0.003 | 0.069 | 32,110 | 11,698,176 | 1,000 | deleted file |
+| LovelyGit Prototype | 1,000 | SideBySide | Measured | 0.004 | 0.08 | 37,112 | 4,866,048 | 1,000 | deleted file |
+| LovelyGit Prototype | 10,000 | Combined | Measured | 0.003 | 0.516 | 329,111 | 5,353,472 | 10,000 | deleted file |
+| LovelyGit Prototype | 10,000 | SideBySide | Measured | 0.003 | 0.563 | 379,113 | 5,349,376 | 10,000 | deleted file |
+| LovelyGit Prototype | 100,000 | Combined | Measured | 0.004 | 5.28 | 3,389,112 | 83,484,672 | 100,000 | deleted file |
+| LovelyGit Prototype | 100,000 | SideBySide | Measured | 0.004 | 5.4 | 3,889,114 | 77,295,616 | 100,000 | deleted file |
+| LovelyGit Prototype | 1,000,000 | Combined | Measured | 0.004 | 50.25 | 34,889,113 | 549,773,312 | 1,000,000 | deleted file |
+| LovelyGit Prototype | 1,000,000 | SideBySide | Measured | 0.004 | 52.167 | 39,889,115 | 541,593,600 | 1,000,000 | deleted file |
 | MyersDiff | 10 | Combined | Measured | 0.012 | 0.338 | 1,375 | 5,296,128 | 10 | deleted file |
 | MyersDiff | 10 | SideBySide | Measured | 0.012 | 0.359 | 1,375 | 5,296,128 | 10 | deleted file |
 | MyersDiff | 100 | Combined | Measured | 0.027 | 0.398 | 12,266 | 5,296,128 | 100 | deleted file |
@@ -579,8 +591,8 @@ Runtime: Native AOT published `win-x64` benchmark binary
 
 | Candidate | Lines | View | Status | Diff ms | Serialize ms | Payload | Memory | Rows | Notes |
 |---|---:|---|---|---:|---:|---:|---:|---:|---|
-| LovelyGit Prototype | 1,000,000,000 | Combined | Measured | 0.003 | 0.007 | 107,777,777,998 | 5,328,896 | 1,000,000,000 | LovelyGit-only virtual one-object payload count; rows are not materialized. |
-| LovelyGit Prototype | 1,000,000,000 | SideBySide | Measured | 0.002 | 0.008 | 107,777,778,000 | 5,406,720 | 1,000,000,000 | LovelyGit-only virtual one-object payload count; rows are not materialized. |
+| LovelyGit Prototype | 1,000,000,000 | Combined | Measured | 0.003 | 0.009 | 107,777,777,998 | 5,095,424 | 1,000,000,000 | LovelyGit-only virtual one-object payload count; rows are not materialized. |
+| LovelyGit Prototype | 1,000,000,000 | SideBySide | Measured | 0.003 | 0.008 | 107,777,778,000 | 5,373,952 | 1,000,000,000 | LovelyGit-only virtual one-object payload count; rows are not materialized. |
 
 ## Scenario: modified-bottom
 
@@ -646,18 +658,18 @@ Runtime: Native AOT published `win-x64` benchmark binary
 | Git CLI | 100,000 | SideBySide | Measured | 80.121 | 0.292 | 872 | 67,596,288 | 7 | one bottom edit |
 | Git CLI | 1,000,000 | Combined | Measured | 251.702 | 0.309 | 886 | 488,886,272 | 7 | one bottom edit |
 | Git CLI | 1,000,000 | SideBySide | Measured | 262.752 | 0.283 | 872 | 488,968,192 | 7 | one bottom edit |
-| LovelyGit Prototype | 10 | Combined | Measured | 0.003 | 0.022 | 1,133 | 4,820,992 | 11 | one bottom edit |
-| LovelyGit Prototype | 10 | SideBySide | Measured | 0.003 | 0.02 | 1,116 | 5,304,320 | 10 | one bottom edit |
-| LovelyGit Prototype | 100 | Combined | Measured | 0.003 | 0.029 | 9,325 | 5,308,416 | 101 | one bottom edit |
-| LovelyGit Prototype | 100 | SideBySide | Measured | 0.003 | 0.028 | 9,308 | 4,820,992 | 100 | one bottom edit |
-| LovelyGit Prototype | 1,000 | Combined | Measured | 0.003 | 0.112 | 93,027 | 4,820,992 | 1,001 | one bottom edit |
-| LovelyGit Prototype | 1,000 | SideBySide | Measured | 0.003 | 0.108 | 93,010 | 5,304,320 | 1,000 | one bottom edit |
-| LovelyGit Prototype | 10,000 | Combined | Measured | 0.003 | 0.835 | 948,029 | 5,300,224 | 10,001 | one bottom edit |
-| LovelyGit Prototype | 10,000 | SideBySide | Measured | 0.003 | 0.838 | 948,012 | 4,849,664 | 10,000 | one bottom edit |
-| LovelyGit Prototype | 100,000 | Combined | Measured | 0.003 | 8.715 | 9,678,031 | 67,428,352 | 100,001 | one bottom edit |
-| LovelyGit Prototype | 100,000 | SideBySide | Measured | 0.003 | 8.619 | 9,678,014 | 23,498,752 | 100,000 | one bottom edit |
-| LovelyGit Prototype | 1,000,000 | Combined | Measured | 0.003 | 91.918 | 98,778,033 | 618,876,928 | 1,000,001 | one bottom edit |
-| LovelyGit Prototype | 1,000,000 | SideBySide | Measured | 0.002 | 90.575 | 98,778,016 | 686,653,440 | 1,000,000 | one bottom edit |
+| LovelyGit Prototype | 10 | Combined | Measured | 0.004 | 0.018 | 520 | 5,349,376 | 11 | one bottom edit |
+| LovelyGit Prototype | 10 | SideBySide | Measured | 0.003 | 0.018 | 508 | 4,890,624 | 10 | one bottom edit |
+| LovelyGit Prototype | 100 | Combined | Measured | 0.003 | 0.027 | 3,132 | 4,866,048 | 101 | one bottom edit |
+| LovelyGit Prototype | 100 | SideBySide | Measured | 0.003 | 0.026 | 3,120 | 5,283,840 | 100 | one bottom edit |
+| LovelyGit Prototype | 1,000 | Combined | Measured | 0.004 | 0.112 | 31,034 | 5,353,472 | 1,001 | one bottom edit |
+| LovelyGit Prototype | 1,000 | SideBySide | Measured | 0.004 | 0.181 | 31,022 | 14,155,776 | 1,000 | one bottom edit |
+| LovelyGit Prototype | 10,000 | Combined | Measured | 0.004 | 0.593 | 328,036 | 4,866,048 | 10,001 | one bottom edit |
+| LovelyGit Prototype | 10,000 | SideBySide | Measured | 0.003 | 0.584 | 328,024 | 5,349,376 | 10,000 | one bottom edit |
+| LovelyGit Prototype | 100,000 | Combined | Measured | 0.003 | 5.849 | 3,478,038 | 77,283,328 | 100,001 | one bottom edit |
+| LovelyGit Prototype | 100,000 | SideBySide | Measured | 0.003 | 6.037 | 3,478,026 | 77,316,096 | 100,000 | one bottom edit |
+| LovelyGit Prototype | 1,000,000 | Combined | Measured | 0.004 | 60.013 | 36,778,040 | 547,463,168 | 1,000,001 | one bottom edit |
+| LovelyGit Prototype | 1,000,000 | SideBySide | Measured | 0.004 | 59.727 | 36,778,028 | 555,999,232 | 1,000,000 | one bottom edit |
 | MyersDiff | 10 | Combined | Measured | 0.158 | 0.367 | 1,486 | 5,300,224 | 11 | one bottom edit |
 | MyersDiff | 10 | SideBySide | Measured | 0.148 | 0.373 | 1,612 | 5,300,224 | 11 | one bottom edit |
 | MyersDiff | 100 | Combined | Measured | 0.167 | 0.389 | 12,378 | 5,296,128 | 101 | one bottom edit |
@@ -771,18 +783,18 @@ Runtime: Native AOT published `win-x64` benchmark binary
 | Git CLI | 100,000 | SideBySide | Measured | 68.558 | 0.303 | 1,174 | 60,698,624 | 10 | one middle edit |
 | Git CLI | 1,000,000 | Combined | Measured | 251.005 | 0.299 | 1,194 | 488,808,448 | 10 | one middle edit |
 | Git CLI | 1,000,000 | SideBySide | Measured | 314.876 | 0.278 | 1,174 | 501,436,416 | 10 | one middle edit |
-| LovelyGit Prototype | 10 | Combined | Measured | 0.003 | 0.021 | 1,133 | 4,820,992 | 11 | one middle edit |
-| LovelyGit Prototype | 10 | SideBySide | Measured | 0.003 | 0.021 | 1,116 | 5,304,320 | 10 | one middle edit |
-| LovelyGit Prototype | 100 | Combined | Measured | 0.003 | 0.031 | 9,325 | 5,939,200 | 101 | one middle edit |
-| LovelyGit Prototype | 100 | SideBySide | Measured | 0.003 | 0.031 | 9,308 | 5,697,536 | 100 | one middle edit |
-| LovelyGit Prototype | 1,000 | Combined | Measured | 0.002 | 0.109 | 93,027 | 5,304,320 | 1,001 | one middle edit |
-| LovelyGit Prototype | 1,000 | SideBySide | Measured | 0.003 | 0.11 | 93,010 | 5,308,416 | 1,000 | one middle edit |
-| LovelyGit Prototype | 10,000 | Combined | Measured | 0.003 | 0.855 | 948,029 | 5,304,320 | 10,001 | one middle edit |
-| LovelyGit Prototype | 10,000 | SideBySide | Measured | 0.003 | 0.819 | 948,012 | 5,308,416 | 10,000 | one middle edit |
-| LovelyGit Prototype | 100,000 | Combined | Measured | 0.003 | 8.543 | 9,678,031 | 76,111,872 | 100,001 | one middle edit |
-| LovelyGit Prototype | 100,000 | SideBySide | Measured | 0.003 | 9.114 | 9,678,014 | 76,492,800 | 100,000 | one middle edit |
-| LovelyGit Prototype | 1,000,000 | Combined | Measured | 0.003 | 92.961 | 98,778,033 | 652,619,776 | 1,000,001 | one middle edit |
-| LovelyGit Prototype | 1,000,000 | SideBySide | Measured | 0.003 | 88.933 | 98,778,016 | 679,149,568 | 1,000,000 | one middle edit |
+| LovelyGit Prototype | 10 | Combined | Measured | 0.003 | 0.019 | 520 | 4,894,720 | 11 | one middle edit |
+| LovelyGit Prototype | 10 | SideBySide | Measured | 0.004 | 0.018 | 508 | 4,866,048 | 10 | one middle edit |
+| LovelyGit Prototype | 100 | Combined | Measured | 0.004 | 0.028 | 3,132 | 5,349,376 | 101 | one middle edit |
+| LovelyGit Prototype | 100 | SideBySide | Measured | 0.004 | 0.027 | 3,120 | 8,011,776 | 100 | one middle edit |
+| LovelyGit Prototype | 1,000 | Combined | Measured | 0.004 | 0.087 | 31,034 | 5,349,376 | 1,001 | one middle edit |
+| LovelyGit Prototype | 1,000 | SideBySide | Measured | 0.003 | 0.08 | 31,022 | 5,349,376 | 1,000 | one middle edit |
+| LovelyGit Prototype | 10,000 | Combined | Measured | 0.003 | 0.6 | 328,036 | 5,353,472 | 10,001 | one middle edit |
+| LovelyGit Prototype | 10,000 | SideBySide | Measured | 0.004 | 0.807 | 328,024 | 5,349,376 | 10,000 | one middle edit |
+| LovelyGit Prototype | 100,000 | Combined | Measured | 0.005 | 5.968 | 3,478,038 | 62,697,472 | 100,001 | one middle edit |
+| LovelyGit Prototype | 100,000 | SideBySide | Measured | 0.003 | 6.3 | 3,478,026 | 77,352,960 | 100,000 | one middle edit |
+| LovelyGit Prototype | 1,000,000 | Combined | Measured | 0.003 | 59.141 | 36,778,040 | 555,954,176 | 1,000,001 | one middle edit |
+| LovelyGit Prototype | 1,000,000 | SideBySide | Measured | 0.003 | 58.284 | 36,778,028 | 547,090,432 | 1,000,000 | one middle edit |
 | MyersDiff | 10 | Combined | Measured | 0.163 | 0.385 | 1,486 | 5,296,128 | 11 | one middle edit |
 | MyersDiff | 10 | SideBySide | Measured | 0.189 | 0.539 | 1,612 | 5,296,128 | 11 | one middle edit |
 | MyersDiff | 100 | Combined | Measured | 0.167 | 0.372 | 12,378 | 5,296,128 | 101 | one middle edit |
@@ -896,18 +908,18 @@ Runtime: Native AOT published `win-x64` benchmark binary
 | Git CLI | 100,000 | SideBySide | Measured | 67.912 | 0.292 | 872 | 53,907,456 | 7 | one top edit |
 | Git CLI | 1,000,000 | Combined | Measured | 255.36 | 0.282 | 886 | 488,890,368 | 7 | one top edit |
 | Git CLI | 1,000,000 | SideBySide | Measured | 255.621 | 0.293 | 872 | 488,910,848 | 7 | one top edit |
-| LovelyGit Prototype | 10 | Combined | Measured | 0.003 | 0.023 | 1,130 | 4,820,992 | 11 | one top edit |
-| LovelyGit Prototype | 10 | SideBySide | Measured | 0.003 | 0.025 | 1,113 | 4,820,992 | 10 | one top edit |
-| LovelyGit Prototype | 100 | Combined | Measured | 0.003 | 0.028 | 9,322 | 5,939,200 | 101 | one top edit |
-| LovelyGit Prototype | 100 | SideBySide | Measured | 0.003 | 0.03 | 9,305 | 11,554,816 | 100 | one top edit |
-| LovelyGit Prototype | 1,000 | Combined | Measured | 0.003 | 0.111 | 93,024 | 5,304,320 | 1,001 | one top edit |
-| LovelyGit Prototype | 1,000 | SideBySide | Measured | 0.003 | 0.117 | 93,007 | 5,300,224 | 1,000 | one top edit |
-| LovelyGit Prototype | 10,000 | Combined | Measured | 0.003 | 0.854 | 948,026 | 5,304,320 | 10,001 | one top edit |
-| LovelyGit Prototype | 10,000 | SideBySide | Measured | 0.003 | 0.89 | 948,009 | 5,304,320 | 10,000 | one top edit |
-| LovelyGit Prototype | 100,000 | Combined | Measured | 0.003 | 8.98 | 9,678,028 | 53,747,712 | 100,001 | one top edit |
-| LovelyGit Prototype | 100,000 | SideBySide | Measured | 0.003 | 9.203 | 9,678,011 | 66,027,520 | 100,000 | one top edit |
-| LovelyGit Prototype | 1,000,000 | Combined | Measured | 0.003 | 91.114 | 98,778,030 | 668,307,456 | 1,000,001 | one top edit |
-| LovelyGit Prototype | 1,000,000 | SideBySide | Measured | 0.002 | 91.643 | 98,778,013 | 674,598,912 | 1,000,000 | one top edit |
+| LovelyGit Prototype | 10 | Combined | Measured | 0.004 | 0.018 | 517 | 4,866,048 | 11 | one top edit |
+| LovelyGit Prototype | 10 | SideBySide | Measured | 0.004 | 0.019 | 505 | 13,254,656 | 10 | one top edit |
+| LovelyGit Prototype | 100 | Combined | Measured | 0.004 | 0.029 | 3,129 | 10,117,120 | 101 | one top edit |
+| LovelyGit Prototype | 100 | SideBySide | Measured | 0.004 | 0.043 | 3,117 | 13,344,768 | 100 | one top edit |
+| LovelyGit Prototype | 1,000 | Combined | Measured | 0.004 | 0.081 | 31,031 | 5,349,376 | 1,001 | one top edit |
+| LovelyGit Prototype | 1,000 | SideBySide | Measured | 0.004 | 0.078 | 31,019 | 5,349,376 | 1,000 | one top edit |
+| LovelyGit Prototype | 10,000 | Combined | Measured | 0.004 | 0.565 | 328,033 | 5,353,472 | 10,001 | one top edit |
+| LovelyGit Prototype | 10,000 | SideBySide | Measured | 0.003 | 0.603 | 328,021 | 4,866,048 | 10,000 | one top edit |
+| LovelyGit Prototype | 100,000 | Combined | Measured | 0.004 | 5.695 | 3,478,035 | 64,131,072 | 100,001 | one top edit |
+| LovelyGit Prototype | 100,000 | SideBySide | Measured | 0.004 | 5.828 | 3,478,023 | 67,796,992 | 100,000 | one top edit |
+| LovelyGit Prototype | 1,000,000 | Combined | Measured | 0.004 | 58.713 | 36,778,037 | 541,569,024 | 1,000,001 | one top edit |
+| LovelyGit Prototype | 1,000,000 | SideBySide | Measured | 0.004 | 58.576 | 36,778,025 | 537,448,448 | 1,000,000 | one top edit |
 | MyersDiff | 10 | Combined | Measured | 0.16 | 0.382 | 1,483 | 4,812,800 | 11 | one top edit |
 | MyersDiff | 10 | SideBySide | Measured | 0.145 | 0.443 | 1,609 | 5,300,224 | 11 | one top edit |
 | MyersDiff | 100 | Combined | Measured | 0.167 | 0.375 | 12,375 | 5,296,128 | 101 | one top edit |
@@ -1021,18 +1033,18 @@ Runtime: Native AOT published `win-x64` benchmark binary
 | Git CLI | 100,000 | SideBySide | Measured | 74.486 | 1.72 | 845,852 | 40,292,352 | 7,999 | repeated lines |
 | Git CLI | 1,000,000 | Combined | Measured | 314.173 | 12.209 | 8,777,850 | 488,853,504 | 79,999 | repeated lines |
 | Git CLI | 1,000,000 | SideBySide | Measured | 315.441 | 12.432 | 8,617,852 | 506,531,840 | 79,999 | repeated lines |
-| LovelyGit Prototype | 10 | Combined | Measured | 0.003 | 0.02 | 1,054 | 5,308,416 | 11 | repeated lines |
-| LovelyGit Prototype | 10 | SideBySide | Measured | 0.003 | 0.021 | 1,037 | 5,304,320 | 10 | repeated lines |
-| LovelyGit Prototype | 100 | Combined | Measured | 0.003 | 0.035 | 8,586 | 5,304,320 | 101 | repeated lines |
-| LovelyGit Prototype | 100 | SideBySide | Measured | 0.003 | 0.03 | 8,569 | 5,304,320 | 100 | repeated lines |
-| LovelyGit Prototype | 1,000 | Combined | Measured | 0.003 | 0.109 | 86,087 | 4,820,992 | 1,010 | repeated lines |
-| LovelyGit Prototype | 1,000 | SideBySide | Measured | 0.003 | 0.112 | 85,899 | 5,304,320 | 1,000 | repeated lines |
-| LovelyGit Prototype | 10,000 | Combined | Measured | 0.003 | 0.726 | 879,169 | 5,304,320 | 10,100 | repeated lines |
-| LovelyGit Prototype | 10,000 | SideBySide | Measured | 0.003 | 0.747 | 877,271 | 5,304,320 | 10,000 | repeated lines |
-| LovelyGit Prototype | 100,000 | Combined | Measured | 0.003 | 9.065 | 8,990,871 | 25,522,176 | 101,000 | repeated lines |
-| LovelyGit Prototype | 100,000 | SideBySide | Measured | 0.003 | 9.118 | 8,971,873 | 40,861,696 | 100,000 | repeated lines |
-| LovelyGit Prototype | 1,000,000 | Combined | Measured | 0.002 | 94.011 | 91,916,873 | 621,592,576 | 1,010,000 | repeated lines |
-| LovelyGit Prototype | 1,000,000 | SideBySide | Measured | 0.003 | 91.286 | 91,726,875 | 608,546,816 | 1,000,000 | repeated lines |
+| LovelyGit Prototype | 10 | Combined | Measured | 0.003 | 0.018 | 441 | 5,148,672 | 11 | repeated lines |
+| LovelyGit Prototype | 10 | SideBySide | Measured | 0.002 | 0.016 | 429 | 5,427,200 | 10 | repeated lines |
+| LovelyGit Prototype | 100 | Combined | Measured | 0.004 | 0.028 | 2,393 | 5,132,288 | 101 | repeated lines |
+| LovelyGit Prototype | 100 | SideBySide | Measured | 0.006 | 0.037 | 2,381 | 4,866,048 | 100 | repeated lines |
+| LovelyGit Prototype | 1,000 | Combined | Measured | 0.003 | 0.081 | 23,941 | 11,710,464 | 1,010 | repeated lines |
+| LovelyGit Prototype | 1,000 | SideBySide | Measured | 0.003 | 0.092 | 23,803 | 8,454,144 | 1,000 | repeated lines |
+| LovelyGit Prototype | 10,000 | Combined | Measured | 0.004 | 0.582 | 257,493 | 5,353,472 | 10,100 | repeated lines |
+| LovelyGit Prototype | 10,000 | SideBySide | Measured | 0.003 | 0.565 | 256,095 | 5,353,472 | 10,000 | repeated lines |
+| LovelyGit Prototype | 100,000 | Combined | Measured | 0.004 | 5.895 | 2,773,895 | 72,384,512 | 101,000 | repeated lines |
+| LovelyGit Prototype | 100,000 | SideBySide | Measured | 0.004 | 5.839 | 2,759,897 | 77,303,808 | 100,000 | repeated lines |
+| LovelyGit Prototype | 1,000,000 | Combined | Measured | 0.004 | 61.699 | 29,746,897 | 552,681,472 | 1,010,000 | repeated lines |
+| LovelyGit Prototype | 1,000,000 | SideBySide | Measured | 0.003 | 58.539 | 29,606,899 | 561,512,448 | 1,000,000 | repeated lines |
 | MyersDiff | 10 | Combined | Measured | 0.15 | 0.362 | 1,407 | 5,292,032 | 11 | repeated lines |
 | MyersDiff | 10 | SideBySide | Measured | 0.151 | 0.354 | 1,461 | 5,296,128 | 11 | repeated lines |
 | MyersDiff | 100 | Combined | Measured | 0.159 | 0.38 | 11,639 | 5,300,224 | 101 | repeated lines |
@@ -1081,6 +1093,23 @@ Runtime: Native AOT published `win-x64` benchmark binary
 | spkl.Diffs | 100,000 | SideBySide | Measured | 39.487 | 21.68 | 12,716,853 | 104,779,776 | 101,000 | repeated lines |
 | spkl.Diffs | 1,000,000 | Combined | ReusedSlow | 6549.724 | 185.666 | 122,636,855 | 822,176,992 | 1,010,000 | Reused previous ReusedSlow result: Reused previous ReusedSlow result: Reused previous Measured result: repeated lines |
 | spkl.Diffs | 1,000,000 | SideBySide | ReusedSlow | 6160.512 | 207.586 | 129,176,855 | 835,256,992 | 1,010,000 | Reused previous ReusedSlow result: Reused previous ReusedSlow result: Reused previous Measured result: repeated lines |
+
+## Scenario: unicode-modified
+
+| Candidate | Lines | View | Status | Diff ms | Serialize ms | Payload | Memory | Rows | Notes |
+|---|---:|---|---|---:|---:|---:|---:|---:|---|
+| LovelyGit Prototype | 10 | Combined | Measured | 0.004 | 0.018 | 495 | 5,353,472 | 11 | UTF-8 text with one edit |
+| LovelyGit Prototype | 10 | SideBySide | Measured | 0.003 | 0.019 | 483 | 5,349,376 | 10 | UTF-8 text with one edit |
+| LovelyGit Prototype | 100 | Combined | Measured | 0.003 | 0.03 | 2,928 | 5,349,376 | 101 | UTF-8 text with one edit |
+| LovelyGit Prototype | 100 | SideBySide | Measured | 0.004 | 0.026 | 2,916 | 5,349,376 | 100 | UTF-8 text with one edit |
+| LovelyGit Prototype | 1,000 | Combined | Measured | 0.004 | 0.09 | 29,931 | 5,070,848 | 1,001 | UTF-8 text with one edit |
+| LovelyGit Prototype | 1,000 | SideBySide | Measured | 0.004 | 0.092 | 29,919 | 5,349,376 | 1,000 | UTF-8 text with one edit |
+| LovelyGit Prototype | 10,000 | Combined | Measured | 0.004 | 0.65 | 326,934 | 21,381,120 | 10,001 | UTF-8 text with one edit |
+| LovelyGit Prototype | 10,000 | SideBySide | Measured | 0.004 | 0.639 | 326,922 | 5,349,376 | 10,000 | UTF-8 text with one edit |
+| LovelyGit Prototype | 100,000 | Combined | Measured | 0.004 | 6.724 | 3,566,937 | 83,410,944 | 100,001 | UTF-8 text with one edit |
+| LovelyGit Prototype | 100,000 | SideBySide | Measured | 0.003 | 6.581 | 3,566,925 | 70,041,600 | 100,000 | UTF-8 text with one edit |
+| LovelyGit Prototype | 1,000,000 | Combined | Measured | 0.004 | 65.903 | 38,666,940 | 551,755,776 | 1,000,001 | UTF-8 text with one edit |
+| LovelyGit Prototype | 1,000,000 | SideBySide | Measured | 0.003 | 66.519 | 38,666,928 | 547,573,760 | 1,000,000 | UTF-8 text with one edit |
 
 ## Rejected Or Reference-Only Candidates
 

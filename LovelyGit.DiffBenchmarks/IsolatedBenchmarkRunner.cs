@@ -15,7 +15,7 @@ internal static class IsolatedBenchmarkRunner
         var lovelyGitOnlyCases = candidates.Any(IsLovelyGit)
             ? new[] { VirtualBillionBenchmarkFixtures.Create() }
             : [];
-        var total = (candidates.Count * (options.LineCounts.Length * 6 + chromiumCases.Count)
+        var total = (candidates.Count * (options.LineCounts.Length * BenchmarkFixtures.CaseCountPerLineCount + chromiumCases.Count)
             + lovelyGitOnlyCases.Length) * 2;
         var index = 0;
         var logPath = ProgressLogPath(options);

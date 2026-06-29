@@ -13,10 +13,13 @@ internal static partial class LovelyGitPrototypeCandidate
             Status = "Modified",
             ViewMode = viewMode,
             HasDifferences = benchmarkCase.OldText != benchmarkCase.NewText,
-            Plan = new DiffSerializationPlan(benchmarkCase.OldText, benchmarkCase.NewText),
+            Plan = new DiffSerializationPlan(
+                benchmarkCase.OldText,
+                benchmarkCase.NewText,
+                benchmarkCase.IsAscii),
             PlannedRows = EstimateRows(benchmarkCase, viewMode),
         };
-        response.JsonFactory = () => DirectDiffJsonStringWriter.Write(response);
+        response.Utf8JsonFactory = () => DirectDiffJsonUtf8BytesWriter.Write(response);
         return response;
     }
 

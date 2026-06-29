@@ -37,12 +37,15 @@ internal static class ChromiumBenchmarkFixtures
             }
 
             var newLines = Mutate(oldLines, file.Name);
+            var oldText = string.Join('\n', oldLines);
+            var newText = string.Join('\n', newLines);
             cases.Add(new BenchmarkCase(
                 file.Name,
                 oldLines.Length,
-                string.Join('\n', oldLines),
-                string.Join('\n', newLines),
-                $"real Chromium file: {file.Path}"));
+                oldText,
+                newText,
+                $"real Chromium file: {file.Path}",
+                AsciiText.IsAscii(oldText) && AsciiText.IsAscii(newText)));
         }
 
         return cases;

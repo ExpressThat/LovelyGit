@@ -81,9 +81,15 @@ internal static class BenchmarkRunner
         diffWatch.Stop();
         var serializeWatch = Stopwatch.StartNew();
         var payloadBytes = 0L;
+        byte[]? utf8Json = null;
         if (response?.PayloadByteCountFactory is not null)
         {
             payloadBytes = response.PayloadByteCountFactory();
+        }
+        else if (response?.Utf8JsonFactory is not null)
+        {
+            utf8Json = response.Utf8JsonFactory();
+            payloadBytes = utf8Json.Length;
         }
         else
         {
@@ -91,9 +97,18 @@ internal static class BenchmarkRunner
                 ? JsonSerializer.Serialize(response, BenchmarkJsonContext.Default.CommitFileDiffResponse)
                 : response.JsonFactory();
             payloadBytes = System.Text.Encoding.UTF8.GetByteCount(json);
+            if (ShouldValidateJson())
+            {
+                JsonDocument.Parse(json).Dispose();
+            }
         }
 
         serializeWatch.Stop();
+        if (utf8Json is not null && ShouldValidateJson())
+        {
+            JsonDocument.Parse(utf8Json).Dispose();
+        }
+
         return new BenchmarkResult(
             candidate.Name,
             candidate.Category,
@@ -109,6 +124,9 @@ internal static class BenchmarkRunner
             response?.PlannedRows ?? response?.Lines.Count ?? 0,
             benchmarkCase.Notes);
     }
+
+    private static bool ShouldValidateJson() =>
+        Environment.GetEnvironmentVariable("LOVELYGIT_VALIDATE_BENCHMARK_JSON") == "1";
 
     private static BenchmarkResult TimedOut(
         BenchmarkCandidate candidate,

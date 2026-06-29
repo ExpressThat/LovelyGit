@@ -12,6 +12,7 @@ internal static class VirtualBillionBenchmarkFixtures
             LineCount,
             string.Empty,
             string.Empty,
-            "LovelyGit-only virtual one-object payload count; rows are not materialized.");
-    }
+            "LovelyGit-only virtual one-object payload count; rows are not materialized.",
+            IsAscii: true);
+}
 }

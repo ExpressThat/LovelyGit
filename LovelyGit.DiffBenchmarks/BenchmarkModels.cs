@@ -28,6 +28,8 @@ internal sealed class CommitFileDiffResponse
     [JsonIgnore]
     public Func<string>? JsonFactory { get; set; }
     [JsonIgnore]
+    public Func<byte[]>? Utf8JsonFactory { get; set; }
+    [JsonIgnore]
     public Func<long>? PayloadByteCountFactory { get; set; }
 }
 
@@ -46,11 +48,13 @@ internal sealed record BenchmarkCase(
     int LineCount,
     string OldText,
     string NewText,
-    string Notes);
+    string Notes,
+    bool IsAscii);
 
 internal sealed record DiffSerializationPlan(
     string OldText,
-    string NewText);
+    string NewText,
+    bool IsAscii);
 
 internal sealed record BenchmarkCandidate(
     string Name,
