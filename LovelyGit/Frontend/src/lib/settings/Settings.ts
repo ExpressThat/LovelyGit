@@ -2,7 +2,6 @@ import type {
 	AppTheme,
 	CommitDiffLineDisplayMode,
 	CommitDiffViewMode,
-	ConflictFileViewMode,
 	RemotePrimaryAction,
 } from "@/generated/types";
 
@@ -13,7 +12,6 @@ export type Settings = {
 	CommitDiffViewMode: CommitDiffViewMode;
 	CommitDiffWrapLines: boolean;
 	CommitGraphRefsPanelOpen: boolean;
-	ConflictFileViewMode: ConflictFileViewMode;
 	CurrentGitRepositoryId: string | null;
 	RemotePrimaryAction: RemotePrimaryAction;
 	Theme: AppTheme;
@@ -27,7 +25,6 @@ export const DEFAULT_SETTINGS: Settings = {
 	CommitDiffViewMode: "SideBySide",
 	CommitDiffWrapLines: false,
 	CommitGraphRefsPanelOpen: true,
-	ConflictFileViewMode: "Path",
 	CurrentGitRepositoryId: null,
 	RemotePrimaryAction: "Fetch",
 	Theme: "System",

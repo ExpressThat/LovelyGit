@@ -1,21 +1,10 @@
 using ExpressThat.LovelyGit.Services.Data;
 using ExpressThat.LovelyGit.Services.Dialogs;
 using ExpressThat.LovelyGit.Services.Git.Cli;
-using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Branches;
-using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Checkout;
-using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.CherryPick;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.CommitGraph;
-using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Conflicts;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.KnownRepository;
-using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Merge;
-using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.OperationState;
-using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Rebase;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Remotes;
-using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Reset;
-using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Revert;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Settings;
-using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Stashes;
-using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Tags;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.WorkingTree;
 using ExpressThat.LovelyGit.Services.NativeMessaging.Commands;
 using ExpressThat.LovelyGit.Services.Json;
@@ -34,18 +23,7 @@ namespace ExpressThat.LovelyGit.Services
                 .AddLovelyGitDialogs()
                 .AddLovelyGitGitCli()
                 .AddLovelyGitCommands()
-                .AddBranchCommands()
-                .AddCheckoutCommands()
-                .AddCherryPickCommands()
-                .AddConflictCommands()
-                .AddRevertCommands()
-                .AddResetCommands()
-                .AddMergeCommands()
-                .AddRebaseCommands()
                 .AddRemoteCommands()
-                .AddStashCommands()
-                .AddTagCommands()
-                .AddOperationStateCommands()
                 .AddKnownRepositoryCommands()
                 .AddCommitGraphCommands()
                 .AddWorkingTreeCommands()

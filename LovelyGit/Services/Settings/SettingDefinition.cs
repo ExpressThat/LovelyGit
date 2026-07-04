@@ -67,11 +67,6 @@ namespace ExpressThat.LovelyGit.Services.Settings
             Settings.RemotePrimaryAction.Fetch,
             GetJsonTypeInfo<RemotePrimaryAction>());
 
-        public static readonly SettingDefinition<ConflictFileViewMode> ConflictFileViewMode = new(
-            nameof(Setting.ConflictFileViewMode),
-            Settings.ConflictFileViewMode.Path,
-            GetJsonTypeInfo<ConflictFileViewMode>());
-
         private static readonly IReadOnlyDictionary<Setting, ISettingDefinition> Definitions =
             new Dictionary<Setting, ISettingDefinition>
             {
@@ -84,7 +79,6 @@ namespace ExpressThat.LovelyGit.Services.Settings
                 [Setting.CommitDiffIgnoreWhitespace] = CommitDiffIgnoreWhitespace,
                 [Setting.CommitGraphRefsPanelOpen] = CommitGraphRefsPanelOpen,
                 [Setting.RemotePrimaryAction] = RemotePrimaryAction,
-                [Setting.ConflictFileViewMode] = ConflictFileViewMode,
             };
 
         public static Dictionary<Setting, ISettingDefinition> GetAllDefinitions()

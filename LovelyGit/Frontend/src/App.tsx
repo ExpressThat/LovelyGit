@@ -9,8 +9,6 @@ import {
 import { CommitDetails } from "./components/CommitDetails/CommitDetails";
 import { CommitFileDiffView } from "./components/CommitFileDiff/CommitFileDiffView";
 import { CommitGraphLayer } from "./components/CommitGraph/CommitGraphLayer";
-import { ConflictWorkspace } from "./components/Conflicts/ConflictWorkspace";
-import { useConflictState } from "./components/Conflicts/useConflictState";
 import { SlidingDetailsPanel } from "./components/DetailsPanel/SlidingDetailsPanel";
 import { NewTab } from "./components/NewTab/NewTab";
 import { TopNavBar } from "./components/TopNavBar/TopNavBar";
@@ -33,20 +31,9 @@ function App() {
 		currentGitRepositoryId,
 		isWorkingChangesPanelOpen,
 	);
-	const conflictState = useConflictState(currentGitRepositoryId);
-	const isConflictWorkspaceOpen = Boolean(
-		currentGitRepositoryId &&
-			conflictState.state?.operation.isInProgress &&
-			conflictState.state.operation.kind !== "None",
-	);
 	const previousRepositoryIdRef = useRef<string | null>(currentGitRepositoryId);
 	const selectCommit = (row: CommitGraphRow) => {
 		setDetailsPanel({ commitHash: row.commit.hash, kind: "commit" });
-	};
-	const handleOperationChanged = () => {
-		setDetailsPanel(null);
-		setCommitGraphRefreshToken((token) => token + 1);
-		void workingTreeChanges.reload();
 	};
 	useEffect(() => {
 		if (previousRepositoryIdRef.current === currentGitRepositoryId) {
@@ -95,31 +82,20 @@ function App() {
 					<div className="relative min-w-0 flex-1 overflow-hidden">
 						{currentGitRepositoryId && (
 							<>
-								{isConflictWorkspaceOpen && conflictState.state ? (
-									<div className="absolute inset-0 min-w-0 overflow-hidden">
-										<ConflictWorkspace
-											onOperationChanged={handleOperationChanged}
-											onReload={conflictState.reload}
-											repositoryId={currentGitRepositoryId}
-											state={conflictState.state}
-										/>
-									</div>
-								) : (
-									<CommitGraphLayer
-										isDimmed={Boolean(
-											detailsPanel?.kind === "commit" &&
-												detailsPanel.selectedFile,
-										)}
-										onSelectCommit={selectCommit}
-										refreshToken={commitGraphRefreshToken}
-										repositoryId={currentGitRepositoryId}
-										selectedCommitHash={
-											detailsPanel?.kind === "commit"
-												? detailsPanel.commitHash
-												: null
-										}
-									/>
-								)}
+								<CommitGraphLayer
+									isDimmed={Boolean(
+										detailsPanel?.kind === "commit" &&
+											detailsPanel.selectedFile,
+									)}
+									onSelectCommit={selectCommit}
+									refreshToken={commitGraphRefreshToken}
+									repositoryId={currentGitRepositoryId}
+									selectedCommitHash={
+										detailsPanel?.kind === "commit"
+											? detailsPanel.commitHash
+											: null
+									}
+								/>
 								<AnimatePresence initial={false}>
 									{detailsPanel?.kind === "commit" &&
 									detailsPanel.selectedFile ? (

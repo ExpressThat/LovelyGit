@@ -1,6 +1,5 @@
 import { GitCompareArrows } from "lucide-react";
 import { BranchActionControl } from "./components/BranchActionControl";
-import { GitOperationStateIndicator } from "./components/GitOperationStateIndicator";
 import { RemoteActionsControl } from "./components/RemoteActionsControl";
 import { SettingsDialog } from "./components/SettingsDialog";
 import { StashActionControl } from "./components/StashActionControl";
@@ -46,7 +45,6 @@ export function TopNavBar({
 						workingChangesCount={workingChangesCount}
 					/>
 					<TerminalActionControl repositoryId={repositoryId} />
-					<GitOperationStateIndicator state={operationState.state} />
 				</div>
 				<div className="flex items-center justify-end gap-1">
 					<button

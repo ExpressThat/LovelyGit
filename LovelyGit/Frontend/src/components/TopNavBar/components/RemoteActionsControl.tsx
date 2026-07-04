@@ -1,10 +1,6 @@
 import { ChevronDown } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import {
-	showConflictWorkspaceIfNeeded,
-	showGitActionError,
-} from "@/components/Conflicts/ConflictTransition";
 import { Button } from "@/components/ui/button";
 import {
 	DropdownMenu,
@@ -16,7 +12,6 @@ import {
 import type { RemotePrimaryAction } from "@/generated/types";
 import { sendRequestWithResponse } from "@/lib/commands";
 import { gitMutationTimeoutMs } from "@/lib/gitMutationTimeout";
-import { NativeMessageType } from "@/lib/nativeMessaging";
 import { setSetting, useSetting } from "@/lib/settings/settingsStore";
 import {
 	defaultableRemoteActions,
@@ -82,16 +77,12 @@ export function RemoteActionsControl({
 			);
 			toast.success(`${action.label} complete`, { id: toastId });
 		} catch (error) {
-			if (
-				action.commandType === NativeMessageType.PullRepository &&
-				(await showConflictWorkspaceIfNeeded({
-					repositoryId,
-					toastId,
-				}))
-			) {
-				return;
-			}
-			showGitActionError(error, `${action.label} failed`, toastId);
+			toast.error(
+				error instanceof Error ? error.message : `${action.label} failed`,
+				{
+					id: toastId,
+				},
+			);
 		} finally {
 			setBusyAction(null);
 		}

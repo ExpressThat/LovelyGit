@@ -1,26 +1,13 @@
 using System.Text.Json.Serialization;
-using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Branches;
-using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Checkout;
-using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.CherryPick;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.CommitGraph;
-using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Conflicts;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.KnownRepository;
-using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Merge;
-using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.OperationState;
-using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Rebase;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Remotes;
-using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Reset;
-using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Revert;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Settings;
-using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Stashes;
-using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Tags;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.WorkingTree;
 using ExpressThat.LovelyGit.Services.NativeMessaging.Commands;
 using ExpressThat.LovelyGit.Services.Data.Models;
 using ExpressThat.LovelyGit.Services.Git.CommitGraph.Models;
-using ExpressThat.LovelyGit.Services.Git.Conflicts;
 using ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser.Remotes;
-using ExpressThat.LovelyGit.Services.Git.OperationState;
 using ExpressThat.LovelyGit.Services.Git.WorkingTree.Models;
 using ExpressThat.LovelyGit.Services.Settings;
 using System.Text.Json;
@@ -50,18 +37,6 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging
         GetCommitFileDiff,
         [NativeMessageContract(typeof(GetCommitPatchCommandArguments), typeof(CommitPatchResponse))]
         GetCommitPatch,
-        [NativeMessageContract(typeof(GetGitOperationStateCommandArguments), typeof(GitOperationState))]
-        GetGitOperationState,
-        [NativeMessageContract(typeof(GetConflictStateCommandArguments), typeof(GitConflictStateResponse))]
-        GetConflictState,
-        [NativeMessageContract(typeof(GetConflictFileContentCommandArguments), typeof(GitConflictFileContentResponse))]
-        GetConflictFileContent,
-        [NativeMessageContract(typeof(ResolveConflictFileCommandArguments), typeof(EmptyCommandArguments))]
-        ResolveConflictFile,
-        [NativeMessageContract(typeof(CompleteConflictOperationCommandArguments), typeof(EmptyCommandArguments))]
-        ContinueConflictOperation,
-        [NativeMessageContract(typeof(CompleteConflictOperationCommandArguments), typeof(EmptyCommandArguments))]
-        AbortConflictOperation,
         [NativeMessageContract(typeof(GetRepositoryRemotesCommandArguments), typeof(List<GitRemote>))]
         GetRepositoryRemotes,
         [NativeMessageContract(typeof(GetWorkingTreeChangesCommandArguments), typeof(WorkingTreeChangeSummaryResponse))]
@@ -90,56 +65,6 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging
         PullRepository,
         [NativeMessageContract(typeof(GitRemoteCommandArguments))]
         PushRepository,
-        [NativeMessageContract(typeof(StashChangesCommandArguments), typeof(EmptyCommandArguments))]
-        StashChanges,
-        [NativeMessageContract(typeof(StashReferenceCommandArguments), typeof(EmptyCommandArguments))]
-        ApplyStash,
-        [NativeMessageContract(typeof(StashReferenceCommandArguments), typeof(EmptyCommandArguments))]
-        PopStash,
-        [NativeMessageContract(typeof(StashReferenceCommandArguments), typeof(EmptyCommandArguments))]
-        DropStash,
-        [NativeMessageContract(typeof(CreateBranchFromCommitCommandArguments), typeof(EmptyCommandArguments))]
-        CreateBranchFromCommit,
-        [NativeMessageContract(typeof(CreateBranchFromTagCommandArguments), typeof(EmptyCommandArguments))]
-        CreateBranchFromTag,
-        [NativeMessageContract(typeof(RenameBranchCommandArguments), typeof(EmptyCommandArguments))]
-        RenameBranch,
-        [NativeMessageContract(typeof(DeleteBranchCommandArguments), typeof(EmptyCommandArguments))]
-        DeleteBranch,
-        [NativeMessageContract(typeof(PullBranchCommandArguments), typeof(EmptyCommandArguments))]
-        PullBranch,
-        [NativeMessageContract(typeof(PushBranchCommandArguments), typeof(EmptyCommandArguments))]
-        PushBranch,
-        [NativeMessageContract(typeof(SetBranchUpstreamCommandArguments), typeof(EmptyCommandArguments))]
-        SetBranchUpstream,
-        [NativeMessageContract(typeof(UnsetBranchUpstreamCommandArguments), typeof(EmptyCommandArguments))]
-        UnsetBranchUpstream,
-        [NativeMessageContract(typeof(MergeBranchIntoCurrentCommandArguments), typeof(EmptyCommandArguments))]
-        MergeBranchIntoCurrent,
-        [NativeMessageContract(typeof(RebaseCurrentBranchOntoBranchCommandArguments), typeof(EmptyCommandArguments))]
-        RebaseCurrentBranchOntoBranch,
-        [NativeMessageContract(typeof(CreateTagAtCommitCommandArguments), typeof(EmptyCommandArguments))]
-        CreateTagAtCommit,
-        [NativeMessageContract(typeof(DeleteTagCommandArguments), typeof(EmptyCommandArguments))]
-        DeleteTag,
-        [NativeMessageContract(typeof(PushTagCommandArguments), typeof(EmptyCommandArguments))]
-        PushTag,
-        [NativeMessageContract(typeof(CheckoutCommitDetachedCommandArguments), typeof(EmptyCommandArguments))]
-        CheckoutCommitDetached,
-        [NativeMessageContract(typeof(CheckoutBranchCommandArguments), typeof(EmptyCommandArguments))]
-        CheckoutBranch,
-        [NativeMessageContract(typeof(CheckoutRemoteBranchCommandArguments), typeof(EmptyCommandArguments))]
-        CheckoutRemoteBranch,
-        [NativeMessageContract(typeof(CheckoutTagCommandArguments), typeof(EmptyCommandArguments))]
-        CheckoutTag,
-        [NativeMessageContract(typeof(CherryPickCommitCommandArguments), typeof(EmptyCommandArguments))]
-        CherryPickCommit,
-        [NativeMessageContract(typeof(RevertCommitCommandArguments), typeof(EmptyCommandArguments))]
-        RevertCommit,
-        [NativeMessageContract(typeof(ResetCurrentBranchToCommitCommandArguments), typeof(EmptyCommandArguments))]
-        ResetCurrentBranchToCommit,
-        [NativeMessageContract(typeof(CancelCommitDiffPreparationCommandArguments))]
-        CancelCommitDiffPreparation,
         [NativeMessageContract(typeof(GetSettingsCommandArguments), typeof(JsonElement))]
         GetSetting,
         [NativeMessageContract(typeof(SetSettingsCommandArguments))]

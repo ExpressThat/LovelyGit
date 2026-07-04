@@ -1,5 +1,4 @@
 <Solution>
   <Project Path="LovelyGit/LovelyGit.csproj" />
   <Project Path="LovelyGit.BLiteGenerators/LovelyGit.BLiteGenerators.csproj" />
-  <Project Path="LovelyGit.Tests/LovelyGit.Tests.csproj" />
 </Solution>
