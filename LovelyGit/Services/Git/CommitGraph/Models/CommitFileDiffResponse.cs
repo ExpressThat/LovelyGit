@@ -23,6 +23,14 @@ public record CommitFileDiffResponse
     public bool HasDifferences { get; set; }
     public bool IsTruncated { get; set; }
     public string TruncationMessage { get; set; } = string.Empty;
+    public string VirtualText { get; set; } = null!;
+    public string VirtualTextGzipBase64 { get; set; } = null!;
+    public string VirtualTextEncoding { get; set; } = null!;
+    public string VirtualChangeType { get; set; } = null!;
+    public int VirtualLineCount { get; set; }
+    public string CompactLineSchema { get; set; } = null!;
+    public string CompactLinesGzipBase64 { get; set; } = null!;
+    public int CompactLineCount { get; set; }
     public List<CommitFileDiffLine> Lines { get; set; } = new();
 }
 

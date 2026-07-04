@@ -35,10 +35,7 @@ export function CombinedDiff({
 	const scrollerRef = useRef<HTMLDivElement | null>(null);
 	const [scrollLeft, setScrollLeft] = useState(0);
 	const contentWidth = useMemo(
-		() =>
-			estimateCodeWidth(
-				lines.map((row) => (row.kind === "line" ? (row.line.text ?? "") : "")),
-			),
+		() => estimateCodeWidth(iterCombinedText(lines)),
 		[lines],
 	);
 	const virtualizer = useVirtualizer({
@@ -146,4 +143,12 @@ export function CombinedDiff({
 			)}
 		</div>
 	);
+}
+
+function* iterCombinedText(lines: DiffDisplayRow[]) {
+	for (const row of lines) {
+		if (row.kind === "line") {
+			yield row.line.text;
+		}
+	}
 }

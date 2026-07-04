@@ -3,8 +3,12 @@ import type {
 	CommitFileDiffResponse,
 } from "@/generated/types";
 import { CombinedDiff } from "./CombinedDiff";
+import { CompactDiffContent } from "./CompactDiffContent";
+import { hasCompactLinePayload } from "./compactLinePayload";
 import { type DiffDisplayRow, getContextualDiffRows } from "./DiffRows";
 import { SideBySideDiff } from "./SideBySideDiff";
+import { VirtualTextDiff } from "./VirtualTextDiff";
+import { hasVirtualTextPayload } from "./virtualTextPayload";
 
 const LOADING_DIFF_ROWS = Array.from({ length: 16 }, (_, index) => ({
 	id: `loading-diff-row-${index}`,
@@ -56,6 +60,26 @@ export function DiffContent({
 			<div className="m-4 rounded-md border bg-card p-4 text-sm text-muted-foreground">
 				Binary file diff is not available.
 			</div>
+		);
+	}
+
+	if (hasVirtualTextPayload(diff)) {
+		return <VirtualTextDiff diff={diff} wrapLines={wrapLines} />;
+	}
+
+	if (hasCompactLinePayload(diff)) {
+		return (
+			<CompactDiffContent
+				{...{
+					contextLines,
+					diff,
+					isLineActionBusy,
+					lineDisplayMode,
+					onStageLine,
+					onUnstageLine,
+					wrapLines,
+				}}
+			/>
 		);
 	}
 

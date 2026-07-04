@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Diagnostics;
+using ExpressThat.LovelyGit.Services.Diagnostics;
 using ExpressThat.LovelyGit.Services.NativeMessaging.Commands;
 using InfiniFrame;
 using Microsoft.AspNetCore.Http.Json;
@@ -57,6 +58,9 @@ internal sealed partial class NativeMessaging : INativeMessaging
         NativeMessageType messageType,
         string? payload)
     {
+        using var trace = LovelyGitTrace.Time(
+            "native.handle",
+            $"{messageType} payload={NativeMessageMetricsFactory.CountUtf8Bytes(payload)}");
         var startedAt = Stopwatch.GetTimestamp();
         var requestPayloadBytes = NativeMessageMetricsFactory.CountUtf8Bytes(payload);
         var request = DeserializeRequest(payload);

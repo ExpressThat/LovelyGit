@@ -101,6 +101,7 @@ export function WorkingChangesGroups({
 					return (
 						<div
 							className="absolute left-0 right-0"
+							data-index={virtualRow.index}
 							key={row.id}
 							ref={virtualizer.measureElement}
 							style={{ transform: `translateY(${virtualRow.start}px)` }}

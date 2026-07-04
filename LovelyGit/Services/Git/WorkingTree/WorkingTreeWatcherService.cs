@@ -13,7 +13,6 @@ internal sealed partial class WorkingTreeWatcherService : IDisposable
     private static readonly TimeSpan WorkTreeDebounceDelay = TimeSpan.FromMilliseconds(50);
     private static readonly TimeSpan GraphDebounceDelay = TimeSpan.FromMilliseconds(200);
     private static readonly TimeSpan LargeWorkTreePollInterval = TimeSpan.FromSeconds(5);
-    private const int MaxRecursiveWorkTreeWatcherDirectories = 2000;
     private const ulong FnvOffsetBasis = 14695981039346656037;
     private const ulong FnvPrime = 1099511628211;
     private readonly INativeMessaging _nativeMessaging;

@@ -148,18 +148,19 @@ internal sealed partial class CommitFileDiffService : IDisposable
             };
         }
 
-        if (DiffInputGuard.ShouldTruncate(source.OldText, source.NewText))
+        if (DiffInputGuard.ShouldUseFastDiff(source.OldText, source.NewText))
         {
-            return DiffInputGuard.BuildTruncatedResponse(
+            return CompactDiffPayloadBuilder.CompactIfUseful(FastLineDiffBuilder.Build(
                 commitHash,
                 path,
                 source.Status,
                 viewMode,
+                ignoreWhitespace,
                 source.OldText,
-                source.NewText);
+                source.NewText));
         }
 
-        return viewMode == CommitDiffViewMode.SideBySide
+        var response = viewMode == CommitDiffViewMode.SideBySide
             ? BuildSideBySideResponse(
                 commitHash,
                 path,
@@ -176,6 +177,7 @@ internal sealed partial class CommitFileDiffService : IDisposable
                 source.NewText,
                 source.Language,
                 ignoreWhitespace);
+        return CompactDiffPayloadBuilder.CompactIfUseful(response);
     }
 
     private static CommitFileDiffResponse BuildSideBySideResponse(

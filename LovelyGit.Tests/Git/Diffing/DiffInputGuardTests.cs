@@ -6,51 +6,30 @@ namespace LovelyGit.Tests.Git.Diffing;
 public sealed class DiffInputGuardTests
 {
     [Fact]
-    public void ShouldTruncate_ReturnsFalseForSmallInputs()
+    public void ShouldUseFastDiff_ReturnsFalseForSmallInputs()
     {
-        var shouldTruncate = DiffInputGuard.ShouldTruncate("old\n", "new\n");
+        var shouldUseFastDiff = DiffInputGuard.ShouldUseFastDiff("old\n", "new\n");
 
-        Assert.False(shouldTruncate);
+        Assert.False(shouldUseFastDiff);
     }
 
     [Fact]
-    public void ShouldTruncate_ReturnsTrueWhenCharacterLimitIsExceeded()
+    public void ShouldUseFastDiff_ReturnsTrueWhenCharacterLimitIsExceeded()
     {
-        var oversizedText = new string('a', DiffInputGuard.MaxDiffInputCharacters + 1);
+        var oversizedText = new string('a', DiffInputGuard.FastDiffInputCharacters + 1);
 
-        var shouldTruncate = DiffInputGuard.ShouldTruncate(oversizedText, string.Empty);
+        var shouldUseFastDiff = DiffInputGuard.ShouldUseFastDiff(oversizedText, string.Empty);
 
-        Assert.True(shouldTruncate);
+        Assert.True(shouldUseFastDiff);
     }
 
     [Fact]
-    public void ShouldTruncate_ReturnsTrueWhenLineLimitIsExceeded()
+    public void ShouldUseFastDiff_ReturnsTrueWhenLineLimitIsExceeded()
     {
-        var oversizedText = string.Join('\n', Enumerable.Repeat("line", DiffInputGuard.MaxDiffInputLines + 1));
+        var oversizedText = string.Join('\n', Enumerable.Repeat("line", DiffInputGuard.FastDiffInputLines + 1));
 
-        var shouldTruncate = DiffInputGuard.ShouldTruncate(oversizedText, string.Empty);
+        var shouldUseFastDiff = DiffInputGuard.ShouldUseFastDiff(oversizedText, string.Empty);
 
-        Assert.True(shouldTruncate);
-    }
-
-    [Fact]
-    public void BuildTruncatedResponse_ReturnsLightweightDiffResponse()
-    {
-        var response = DiffInputGuard.BuildTruncatedResponse(
-            "abc123",
-            "large.txt",
-            "Modified",
-            CommitDiffViewMode.Combined,
-            "old",
-            "new");
-
-        Assert.Equal("abc123", response.CommitHash);
-        Assert.Equal("large.txt", response.Path);
-        Assert.Equal("Modified", response.Status);
-        Assert.Equal(CommitDiffViewMode.Combined, response.ViewMode);
-        Assert.True(response.HasDifferences);
-        Assert.True(response.IsTruncated);
-        Assert.Empty(response.Lines);
-        Assert.Contains("too large", response.TruncationMessage);
+        Assert.True(shouldUseFastDiff);
     }
 }

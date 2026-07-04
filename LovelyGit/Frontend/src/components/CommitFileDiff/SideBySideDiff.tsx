@@ -32,14 +32,7 @@ export function SideBySideDiff({
 	const [oldScrollLeft, setOldScrollLeft] = useState(0);
 	const [newScrollLeft, setNewScrollLeft] = useState(0);
 	const contentWidth = useMemo(
-		() =>
-			estimateCodeWidth(
-				lines.flatMap((row) =>
-					row.kind === "line"
-						? [row.line.oldText ?? "", row.line.newText ?? ""]
-						: [],
-				),
-			),
+		() => estimateCodeWidth(iterSideBySideText(lines)),
 		[lines],
 	);
 	const virtualizer = useVirtualizer({
@@ -243,4 +236,15 @@ export function SideBySideDiff({
 			)}
 		</div>
 	);
+}
+
+function* iterSideBySideText(lines: DiffDisplayRow[]) {
+	for (const row of lines) {
+		if (row.kind !== "line") {
+			continue;
+		}
+
+		yield row.line.oldText;
+		yield row.line.newText;
+	}
 }

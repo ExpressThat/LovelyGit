@@ -4,35 +4,13 @@ namespace ExpressThat.LovelyGit.Services.Git.Diffing;
 
 internal static class DiffInputGuard
 {
-    public const int MaxDiffInputCharacters = 300_000;
-    public const int MaxDiffInputLines = 20_000;
+    public const int FastDiffInputCharacters = 300_000;
+    public const int FastDiffInputLines = 20_000;
 
-    public static bool ShouldTruncate(string oldText, string newText)
+    public static bool ShouldUseFastDiff(string oldText, string newText)
     {
-        return oldText.Length + newText.Length > MaxDiffInputCharacters
-            || CountLines(oldText) + CountLines(newText) > MaxDiffInputLines;
-    }
-
-    public static CommitFileDiffResponse BuildTruncatedResponse(
-        string commitHash,
-        string path,
-        string status,
-        CommitDiffViewMode viewMode,
-        string oldText,
-        string newText)
-    {
-        return new CommitFileDiffResponse
-        {
-            CommitHash = commitHash,
-            Path = path,
-            Status = status,
-            ViewMode = viewMode,
-            IsBinary = false,
-            HasDifferences = true,
-            IsTruncated = true,
-            TruncationMessage =
-                $"Diff skipped because the file is too large ({DescribeInput(oldText, newText)}).",
-        };
+        return oldText.Length + newText.Length > FastDiffInputCharacters
+            || CountLines(oldText) + CountLines(newText) > FastDiffInputLines;
     }
 
     private static int CountLines(string text)
@@ -54,10 +32,4 @@ internal static class DiffInputGuard
         return count;
     }
 
-    private static string DescribeInput(string oldText, string newText)
-    {
-        var totalCharacters = oldText.Length + newText.Length;
-        var totalLines = CountLines(oldText) + CountLines(newText);
-        return $"{totalLines:N0} lines, {totalCharacters:N0} characters";
-    }
 }

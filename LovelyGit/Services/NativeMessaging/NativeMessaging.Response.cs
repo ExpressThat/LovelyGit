@@ -1,4 +1,5 @@
 using System.Text.Json;
+using ExpressThat.LovelyGit.Services.Diagnostics;
 using ExpressThat.LovelyGit.Services.NativeMessaging.Commands;
 
 namespace ExpressThat.LovelyGit.Services.NativeMessaging;
@@ -12,6 +13,9 @@ internal sealed partial class NativeMessaging
         string? error,
         NativeMessageMetrics? metrics)
     {
+        using var trace = LovelyGitTrace.Time(
+            "native.create-response",
+            $"success={success} body={body?.ValueKind.ToString() ?? "null"}");
         return JsonSerializer.SerializeToElement(
             new NativeMessageResponse<JsonElement?>(
                 messageId,
@@ -24,6 +28,9 @@ internal sealed partial class NativeMessaging
 
     private JsonElement? ExtractResult(CommandResponseBase response)
     {
+        using var trace = LovelyGitTrace.Time(
+            "native.extract-result",
+            response.GetType().Name);
         if (response is not ICommandResponseWithResult responseWithResult)
         {
             return null;

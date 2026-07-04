@@ -5,7 +5,9 @@ using ExpressThat.LovelyGit.Services.NativeMessaging.Commands;
 
 namespace ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.WorkingTree;
 
-[JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
+[JsonSourceGenerationOptions(
+    PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase,
+    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]
 [JsonSerializable(typeof(WorkingTreeChangeGroup))]
 [JsonSerializable(typeof(WorkingTreeChangedFile))]
 [JsonSerializable(typeof(WorkingTreeChangeSummaryResponse))]

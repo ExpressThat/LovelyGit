@@ -6,6 +6,7 @@ using ColorCode.Parsing;
 using DiffPlex;
 using DiffPlex.DiffBuilder;
 using DiffPlex.DiffBuilder.Model;
+using ExpressThat.LovelyGit.Services.Diagnostics;
 using ExpressThat.LovelyGit.Services.Git.CommitGraph.Models;
 using ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser;
 using ExpressThat.LovelyGit.Services.Git.WorkingTree.Models;
@@ -76,6 +77,9 @@ internal sealed partial class WorkingTreeChangeService
         bool ignoreWhitespace,
         CancellationToken cancellationToken)
     {
+        using var trace = LovelyGitTrace.Time(
+            "working-tree.file-diff",
+            $"{group} {viewMode} {path}");
         path = NormalizePath(path);
         using var repository = await LovelyGitRepository.OpenAsync(repositoryPath, cancellationToken).ConfigureAwait(false);
         if (group == WorkingTreeChangeGroup.Untracked)

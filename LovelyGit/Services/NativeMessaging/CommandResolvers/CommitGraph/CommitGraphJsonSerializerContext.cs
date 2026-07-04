@@ -4,7 +4,9 @@ using System.Text.Json.Serialization;
 
 namespace ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.CommitGraph;
 
-[JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
+[JsonSourceGenerationOptions(
+    PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase,
+    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]
 [JsonSerializable(typeof(CommitStats))]
 [JsonSerializable(typeof(CommitInfo))]
 [JsonSerializable(typeof(CommitRefInfo))]

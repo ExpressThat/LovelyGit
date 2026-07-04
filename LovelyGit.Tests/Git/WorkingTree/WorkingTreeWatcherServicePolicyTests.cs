@@ -26,7 +26,7 @@ public sealed class WorkingTreeWatcherServicePolicyTests
     }
 
     [Fact]
-    public void GetWorkTreeWatchRoots_SplitsLargeDirectoryByTopLevelFolders()
+    public void GetWorkTreeWatchRoots_UsesRecursiveRootForLargeDirectory()
     {
         using var directory = TemporaryDirectory.Create("lovelygit-watch-large-");
         Directory.CreateDirectory(Path.Combine(directory.Path, ".git"));
@@ -37,13 +37,9 @@ public sealed class WorkingTreeWatcherServicePolicyTests
 
         var roots = WorkingTreeWatcherService.GetWorkTreeWatchRoots(directory.Path);
 
-        Assert.Equal(2002, roots.Count);
-        Assert.Contains(roots, root =>
-            root.Path == directory.Path && !root.IncludeSubdirectories);
-        Assert.Contains(roots, root =>
-            root.Path == Path.Combine(directory.Path, "d2000") && root.IncludeSubdirectories);
-        Assert.DoesNotContain(roots, root =>
-            root.Path == Path.Combine(directory.Path, ".git"));
+        var root = Assert.Single(roots);
+        Assert.Equal(directory.Path, root.Path);
+        Assert.True(root.IncludeSubdirectories);
     }
 
     [Fact]

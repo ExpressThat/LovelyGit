@@ -12,6 +12,7 @@ internal static class LovelyGitJsonServiceCollectionExtensions
     {
         services.Configure<HttpJsonOptions>(options =>
         {
+            options.SerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
             options.SerializerOptions.Converters.Add(new JsonStringEnumConverter<NativeMessageType>());
             options.SerializerOptions.Converters.Add(new JsonStringEnumConverter<Setting>());
         });

@@ -6,6 +6,7 @@ using ColorCode.Parsing;
 using DiffPlex;
 using DiffPlex.DiffBuilder;
 using DiffPlex.DiffBuilder.Model;
+using ExpressThat.LovelyGit.Services.Diagnostics;
 using ExpressThat.LovelyGit.Services.Git.CommitGraph.Models;
 using ExpressThat.LovelyGit.Services.Git.Diffing;
 using ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser;
@@ -130,6 +131,9 @@ internal sealed partial class WorkingTreeChangeService
         byte[] oldBytes,
         byte[] newBytes)
     {
+        using var trace = LovelyGitTrace.Time(
+            "working-tree.build-diff-response",
+            $"{path} old={oldBytes.Length} new={newBytes.Length}");
         var isBinary = IsBinary(oldBytes) || IsBinary(newBytes);
         if (isBinary)
         {
@@ -144,26 +148,52 @@ internal sealed partial class WorkingTreeChangeService
             };
         }
 
-        var oldText = System.Text.Encoding.UTF8.GetString(oldBytes);
-        var newText = System.Text.Encoding.UTF8.GetString(newBytes);
-        if (DiffInputGuard.ShouldTruncate(oldText, newText))
+        if (oldBytes.Length == 0 && ShouldUseCompressedVirtualBytes(newBytes))
         {
-            return DiffInputGuard.BuildTruncatedResponse(
+            return FastLineDiffBuilder.BuildVirtualTextBytes(
                 commitHash,
                 path,
                 status,
                 viewMode,
+                "Inserted",
+                newBytes);
+        }
+
+        if (newBytes.Length == 0 && ShouldUseCompressedVirtualBytes(oldBytes))
+        {
+            return FastLineDiffBuilder.BuildVirtualTextBytes(
+                commitHash,
+                path,
+                status,
+                viewMode,
+                "Deleted",
+                oldBytes);
+        }
+
+        var oldText = System.Text.Encoding.UTF8.GetString(oldBytes);
+        var newText = System.Text.Encoding.UTF8.GetString(newBytes);
+        if (DiffInputGuard.ShouldUseFastDiff(oldText, newText))
+        {
+            return CompactDiffPayloadBuilder.CompactIfUseful(FastLineDiffBuilder.Build(
+                commitHash,
+                path,
+                status,
+                viewMode,
+                ignoreWhitespace,
                 oldText,
-                newText);
+                newText));
         }
 
         var language = oldText.Length + newText.Length <= MaxSyntaxHighlightedCharacters
             ? ResolveLanguage(path)
             : null;
 
-        return viewMode == CommitDiffViewMode.SideBySide
+        var response = viewMode == CommitDiffViewMode.SideBySide
             ? BuildSideBySideResponse(commitHash, path, status, oldText, newText, language, ignoreWhitespace)
             : BuildCombinedResponse(commitHash, path, status, oldText, newText, language, ignoreWhitespace);
+        return CompactDiffPayloadBuilder.CompactIfUseful(response);
     }
+
+    private static bool ShouldUseCompressedVirtualBytes(byte[] bytes) => bytes.Length >= 256_000;
 
 }

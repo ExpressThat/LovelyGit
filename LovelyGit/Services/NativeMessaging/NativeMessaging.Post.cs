@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
+using ExpressThat.LovelyGit.Services.Diagnostics;
 using InfiniFrame;
 
 namespace ExpressThat.LovelyGit.Services.NativeMessaging;
@@ -35,6 +36,9 @@ internal sealed partial class NativeMessaging
 
     private void SendPost(string id, JsonElement? data)
     {
+        using var trace = LovelyGitTrace.Time(
+            "native.send-post",
+            $"{id} data={data?.ValueKind.ToString() ?? "null"}");
         var activeWindow = GetActiveWindow();
         if (activeWindow is null)
         {
@@ -49,9 +53,13 @@ internal sealed partial class NativeMessaging
             null,
             null);
 
-        var message = JsonSerializer.Serialize(
-            envelope,
-            NativeMessagingJsonContext.Default.NativeMessageEnvelope);
+        string message;
+        using (LovelyGitTrace.Time("native.serialize-envelope", id))
+        {
+            message = JsonSerializer.Serialize(
+                envelope,
+                NativeMessagingJsonContext.Default.NativeMessageEnvelope);
+        }
 
         SendWebMessage(activeWindow, message);
     }
@@ -65,6 +73,9 @@ internal sealed partial class NativeMessaging
 
     private static void SendWebMessage(IInfiniFrameWindow activeWindow, string message)
     {
+        using var trace = LovelyGitTrace.Time(
+            "native.send-web-message",
+            $"chars={message.Length}");
         if (activeWindow.IsClosed)
         {
             return;

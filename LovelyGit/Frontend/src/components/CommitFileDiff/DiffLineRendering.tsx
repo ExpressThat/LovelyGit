@@ -20,14 +20,15 @@ export function CodeCell({
 	width,
 	wrapLines,
 }: {
-	changeSpans: CommitFileDiffChangeSpan[];
+	changeSpans?: CommitFileDiffChangeSpan[] | null;
 	scrollLeft: number;
-	spans: CommitFileDiffSyntaxSpan[];
-	text: string;
+	spans?: CommitFileDiffSyntaxSpan[] | null;
+	text?: string | null;
 	variant: "deleted" | "inserted" | "plain";
 	width: number;
 	wrapLines: boolean;
 }) {
+	const displayText = text ?? "";
 	return (
 		<div
 			className={`min-h-[18px] overflow-hidden border-r px-2 ${
@@ -44,17 +45,21 @@ export function CodeCell({
 							}
 				}
 			>
-				{renderSyntaxLine(text, spans, changeSpans, variant)}
+				{renderSyntaxLine(displayText, spans ?? [], changeSpans ?? [], variant)}
 			</div>
 		</div>
 	);
 }
 
-export function estimateCodeWidth(lines: string[]) {
-	const longestLineLength = lines.reduce(
-		(longest, line) => Math.max(longest, line.length),
-		0,
-	);
+export function estimateCodeWidth(values: Iterable<string | null | undefined>) {
+	let longestLineLength = 0;
+	for (const value of values) {
+		longestLineLength = Math.max(longestLineLength, value?.length ?? 0);
+		if (longestLineLength >= 6_617) {
+			break;
+		}
+	}
+
 	return Math.min(48_000, Math.max(1_200, longestLineLength * 7.25 + 32));
 }
 
