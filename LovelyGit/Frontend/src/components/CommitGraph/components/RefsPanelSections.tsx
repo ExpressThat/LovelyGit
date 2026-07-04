@@ -1,23 +1,14 @@
 import { Button } from "@/components/ui/button";
 import type { CommitGraphRow } from "@/generated/types";
 import { shortHash } from "../utils/format";
-import { BranchRefContextMenu } from "./BranchRefContextMenu";
 import { RefIcon } from "./RefCellUtils";
 import type { RefPanelItem, RefPanelSection } from "./RefsPanelData";
-import { refPanelItemToRefInfo } from "./RefsPanelData";
-import { StashRefContextMenu } from "./StashRefContextMenu";
 
 export function RefSection({
-	currentBranchName,
-	onRefsChanged,
 	onSelectCommit,
-	repositoryId,
 	section,
 }: {
-	currentBranchName: string | null;
-	onRefsChanged: () => void;
 	onSelectCommit: (row: CommitGraphRow) => void;
-	repositoryId: string | null;
 	section: RefPanelSection;
 }) {
 	return (
@@ -29,12 +20,9 @@ export function RefSection({
 			<div className="grid gap-1">
 				{section.items.map((item) => (
 					<RefPanelRow
-						currentBranchName={currentBranchName}
 						item={item}
 						key={`${item.kind}:${item.name}:${item.commitHash}`}
-						onRefsChanged={onRefsChanged}
 						onSelectCommit={onSelectCommit}
-						repositoryId={repositoryId}
 					/>
 				))}
 			</div>
@@ -43,20 +31,14 @@ export function RefSection({
 }
 
 export function RefPanelRow({
-	currentBranchName,
 	item,
-	onRefsChanged,
 	onSelectCommit,
-	repositoryId,
 }: {
-	currentBranchName: string | null;
 	item: RefPanelItem;
-	onRefsChanged: () => void;
 	onSelectCommit: (row: CommitGraphRow) => void;
-	repositoryId: string | null;
 }) {
 	const row = item.row;
-	const button = (
+	return (
 		<Button
 			aria-disabled={!row}
 			className="h-7 min-w-0 justify-start gap-2 px-2 font-normal"
@@ -76,28 +58,5 @@ export function RefPanelRow({
 				{shortHash(item.commitHash)}
 			</span>
 		</Button>
-	);
-
-	if (item.kind === "Stash") {
-		return (
-			<StashRefContextMenu
-				onRefsChanged={onRefsChanged}
-				refInfo={refPanelItemToRefInfo(item)}
-				repositoryId={repositoryId}
-			>
-				{button}
-			</StashRefContextMenu>
-		);
-	}
-
-	return (
-		<BranchRefContextMenu
-			currentBranchName={currentBranchName}
-			onRefsChanged={onRefsChanged}
-			refInfo={refPanelItemToRefInfo(item)}
-			repositoryId={repositoryId}
-		>
-			{button}
-		</BranchRefContextMenu>
 	);
 }

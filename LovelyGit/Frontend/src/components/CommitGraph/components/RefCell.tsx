@@ -1,5 +1,4 @@
 import type { CommitGraphRow } from "@/generated/types";
-import { BranchRefContextMenu } from "./BranchRefContextMenu";
 import {
 	buildLegacyRefs,
 	groupRefs,
@@ -9,19 +8,14 @@ import {
 	refLabelForRemotes,
 	uniqueKinds,
 } from "./RefCellUtils";
-import { StashRefContextMenu } from "./StashRefContextMenu";
 
 export function RefCell({
 	currentBranchName,
-	onRefsChanged,
 	remotePrefixes,
-	repositoryId,
 	row,
 }: {
 	currentBranchName: string | null;
-	onRefsChanged: () => void;
 	remotePrefixes: string[];
-	repositoryId: string | null;
 	row: CommitGraphRow;
 }) {
 	const refs =
@@ -38,32 +32,23 @@ export function RefCell({
 		<div className="flex min-w-0 gap-1 overflow-hidden">
 			{groups.map((group) => (
 				<RefGroupPill
-					currentBranchName={currentBranchName}
 					group={group}
 					key={group.key}
-					onRefsChanged={onRefsChanged}
 					remotePrefixes={remotePrefixes}
-					repositoryId={repositoryId}
 				/>
 			))}
 		</div>
 	);
 }
 function RefGroupPill({
-	currentBranchName,
 	group,
-	onRefsChanged,
 	remotePrefixes,
-	repositoryId,
 }: {
-	currentBranchName: string | null;
 	group: RefGroup;
-	onRefsChanged: () => void;
 	remotePrefixes: string[];
-	repositoryId: string | null;
 }) {
 	const icons = uniqueKinds(group.refs);
-	const pill = (
+	return (
 		<span
 			className="inline-flex h-[17px] max-w-[132px] shrink-0 items-center gap-1 overflow-hidden whitespace-nowrap rounded-[3px] border border-border bg-secondary px-1 text-[11px] text-secondary-foreground shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
 			title={group.primary.name}
@@ -77,27 +62,5 @@ function RefGroupPill({
 				{refLabelForRemotes(group.primary.name, remotePrefixes)}
 			</span>
 		</span>
-	);
-	if (group.primary.kind === "Stash") {
-		return (
-			<StashRefContextMenu
-				onRefsChanged={onRefsChanged}
-				refInfo={group.primary}
-				repositoryId={repositoryId}
-			>
-				{pill}
-			</StashRefContextMenu>
-		);
-	}
-
-	return (
-		<BranchRefContextMenu
-			currentBranchName={currentBranchName}
-			onRefsChanged={onRefsChanged}
-			refInfo={group.primary}
-			repositoryId={repositoryId}
-		>
-			{pill}
-		</BranchRefContextMenu>
 	);
 }

@@ -10,18 +10,14 @@ import { filterWorktrees, WorktreeSection } from "./WorktreeSection";
 
 export function RefsPanel({
 	currentBranchName,
-	onRefsChanged,
 	onSelectCommit,
 	remotePrefixes,
-	repositoryId,
 	repositoryRefs,
 	rows,
 }: {
 	currentBranchName: string | null;
-	onRefsChanged: () => void;
 	onSelectCommit: (row: CommitGraphRow) => void;
 	remotePrefixes: string[];
-	repositoryId: string | null;
 	repositoryRefs: RepositoryRefsResponse | null;
 	rows: Array<CommitGraphRow | null>;
 }) {
@@ -118,10 +114,7 @@ export function RefsPanel({
 						/>
 					</div>
 					<RefsPanelList
-						currentBranchName={currentBranchName}
-						onRefsChanged={onRefsChanged}
 						onSelectCommit={onSelectCommit}
-						repositoryId={repositoryId}
 						sections={filteredSections}
 					/>
 				</>

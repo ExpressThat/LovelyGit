@@ -3,7 +3,6 @@ import type { ReactNode } from "react";
 import type { CommitGraphRow } from "@/generated/types";
 import { AuthorCell } from "./AuthorCell";
 import { CommitMessage } from "./CommitMessage";
-import { CommitRowContextMenu } from "./CommitRowContextMenu";
 import { GraphCell } from "./GraphCell";
 import { HashCell } from "./HashCell";
 import { RefCell } from "./RefCell";
@@ -14,9 +13,7 @@ export function CommitRow({
 	graph,
 	isSelected,
 	onSelect,
-	onRefsChanged,
 	remotePrefixes,
-	repositoryId,
 	row,
 	rowIndex,
 	templateColumns,
@@ -28,9 +25,7 @@ export function CommitRow({
 	};
 	isSelected: boolean;
 	onSelect: (row: CommitGraphRow) => void;
-	onRefsChanged: () => void;
 	remotePrefixes: string[];
-	repositoryId: string | null;
 	row: CommitGraphRow | null;
 	rowIndex: number;
 	templateColumns: string;
@@ -66,7 +61,7 @@ export function CommitRow({
 		);
 	}
 
-	const content = (
+	return (
 		<button
 			className={`${rowClassName} w-full cursor-pointer border-0 p-0 text-left text-inherit focus-visible:bg-accent focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-ring`}
 			onClick={() => onSelect(row)}
@@ -76,9 +71,7 @@ export function CommitRow({
 			<Column className="px-[6px] py-[2px]">
 				<RefCell
 					currentBranchName={currentBranchName}
-					onRefsChanged={onRefsChanged}
 					remotePrefixes={remotePrefixes}
-					repositoryId={repositoryId}
 					row={row}
 				/>
 			</Column>
@@ -99,16 +92,6 @@ export function CommitRow({
 				<AuthorCell row={row} />
 			</Column>
 		</button>
-	);
-
-	return (
-		<CommitRowContextMenu
-			onRefsChanged={onRefsChanged}
-			repositoryId={repositoryId}
-			row={row}
-		>
-			{content}
-		</CommitRowContextMenu>
 	);
 }
 

@@ -23,7 +23,6 @@ export function WorkingChangesGroups({
 	onIndexCommand,
 	onSelectFile,
 	onToggleSelected,
-	repositoryId,
 	selectedKeys,
 	stagedFiles,
 	workingFiles,
@@ -38,7 +37,6 @@ export function WorkingChangesGroups({
 	) => void;
 	onSelectFile: (file: WorkingTreeChangedFile) => void;
 	onToggleSelected: (file: WorkingTreeChangedFile) => void;
-	repositoryId: string;
 	selectedKeys: Set<string>;
 	stagedFiles: WorkingTreeChangedFile[];
 	workingFiles: WorkingTreeChangedFile[];
@@ -119,18 +117,12 @@ export function WorkingChangesGroups({
 											? () => row.group.onFileAction?.(row.file)
 											: undefined
 									}
-									onDestructiveAction={
-										row.group.onFileDestructiveAction
-											? () => row.group.onFileDestructiveAction?.(row.file)
-											: undefined
-									}
 									onSelect={() => onSelectFile(row.file)}
 									onToggleSelected={
 										row.group.onToggleSelected
 											? () => row.group.onToggleSelected?.(row.file)
 											: undefined
 									}
-									repositoryId={repositoryId}
 									rowActionLabel={singleFileActionLabel(row.group.title)}
 								/>
 							)}

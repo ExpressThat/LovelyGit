@@ -1,30 +1,12 @@
 import {
-	Copy,
 	File,
 	FilePlus2,
 	FileQuestion,
 	FileX2,
-	FolderOpen,
 	GitPullRequestArrow,
-	MinusSquare,
-	Search,
-	SquareCheckBig,
-	Trash2,
 } from "lucide-react";
-import { copyToClipboard } from "@/components/CommitGraph/utils/clipboard";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-	ContextMenu,
-	ContextMenuContent,
-	ContextMenuGroup,
-	ContextMenuItem,
-	ContextMenuLabel,
-	ContextMenuSeparator,
-	ContextMenuTrigger,
-} from "@/components/ui/context-menu";
 import type { WorkingTreeChangedFile } from "@/generated/types";
-import { revealWorkingTreeFile } from "./revealWorkingTreeFile";
-import { getWorkingChangedFileRowActions } from "./WorkingChangedFileRowActions";
 
 export function ChangedFileRow({
 	file,
@@ -32,10 +14,8 @@ export function ChangedFileRow({
 	isBusy = false,
 	isSelected = false,
 	onAction,
-	onDestructiveAction,
 	onSelect,
 	onToggleSelected,
-	repositoryId,
 	rowActionLabel,
 }: {
 	file: WorkingTreeChangedFile;
@@ -43,132 +23,73 @@ export function ChangedFileRow({
 	isBusy?: boolean;
 	isSelected?: boolean;
 	onAction?: () => void;
-	onDestructiveAction?: () => void;
 	onSelect: () => void;
 	onToggleSelected?: () => void;
-	repositoryId: string;
 	rowActionLabel?: string;
 }) {
 	const Icon = statusIcon(file.status, file.group);
-	const rowActions = getWorkingChangedFileRowActions({
-		canDiscard: Boolean(onDestructiveAction),
-		canStage: rowActionLabel === "Stage" && Boolean(onAction),
-		canUnstage: rowActionLabel === "Unstage" && Boolean(onAction),
-		isBusy,
-	});
 	const handleFileClick = () => {
 		onToggleSelected?.();
 		onSelect();
 	};
 
 	return (
-		<ContextMenu>
-			<ContextMenuTrigger className="group/file-row flex min-h-9 w-full items-center gap-2 border-b text-left hover:bg-accent/60 last:border-b-0">
-				{onToggleSelected ? (
-					<div className="ml-1 inline-flex size-5 shrink-0 items-center justify-center">
-						<Checkbox
-							aria-label={`Select ${file.path}`}
-							checked={isSelected}
-							onClick={(event) => event.stopPropagation()}
-							onCheckedChange={onToggleSelected}
-						/>
+		<div className="group/file-row flex min-h-9 w-full items-center gap-2 border-b text-left hover:bg-accent/60 last:border-b-0">
+			{onToggleSelected ? (
+				<div className="ml-1 inline-flex size-5 shrink-0 items-center justify-center">
+					<Checkbox
+						aria-label={`Select ${file.path}`}
+						checked={isSelected}
+						onClick={(event) => event.stopPropagation()}
+						onCheckedChange={onToggleSelected}
+					/>
+				</div>
+			) : null}
+			<button
+				className="flex min-w-0 flex-1 items-center gap-2 py-1.5 text-left"
+				onClick={handleFileClick}
+				type="button"
+			>
+				<Icon
+					aria-hidden="true"
+					className={statusColor(file.status, file.group)}
+					size={15}
+				/>
+				<div className="min-w-0 flex-1 text-left">
+					<div
+						className="truncate font-mono text-xs text-foreground"
+						title={file.path}
+					>
+						{file.path}
 					</div>
-				) : null}
+					<div className="text-[10px] uppercase text-muted-foreground">
+						{hideGroupLabel ? file.status : `${file.group} ${file.status}`}
+						{file.isBinary ? " binary" : ""}
+					</div>
+				</div>
+				<div className="shrink-0 font-mono text-xs">
+					<span className="text-emerald-600 dark:text-emerald-400">
+						+{file.additions}
+					</span>{" "}
+					<span className="text-red-600 dark:text-red-400">
+						-{file.deletions}
+					</span>
+				</div>
+			</button>
+			{onAction && rowActionLabel ? (
 				<button
-					className="flex min-w-0 flex-1 items-center gap-2 py-1.5 text-left"
-					onClick={handleFileClick}
+					className="mr-1 hidden h-6 shrink-0 items-center rounded border bg-background px-2 text-[10px] font-semibold uppercase text-muted-foreground hover:bg-accent hover:text-accent-foreground disabled:pointer-events-none disabled:opacity-40 group-hover/file-row:inline-flex"
+					disabled={isBusy}
+					onClick={(event) => {
+						event.stopPropagation();
+						onAction();
+					}}
 					type="button"
 				>
-					<Icon
-						aria-hidden="true"
-						className={statusColor(file.status, file.group)}
-						size={15}
-					/>
-					<div className="min-w-0 flex-1 text-left">
-						<div
-							className="truncate font-mono text-xs text-foreground"
-							title={file.path}
-						>
-							{file.path}
-						</div>
-						<div className="text-[10px] uppercase text-muted-foreground">
-							{hideGroupLabel ? file.status : `${file.group} ${file.status}`}
-							{file.isBinary ? " binary" : ""}
-						</div>
-					</div>
-					<div className="shrink-0 font-mono text-xs">
-						<span className="text-emerald-600 dark:text-emerald-400">
-							+{file.additions}
-						</span>{" "}
-						<span className="text-red-600 dark:text-red-400">
-							-{file.deletions}
-						</span>
-					</div>
+					{rowActionLabel}
 				</button>
-				{onAction && rowActionLabel ? (
-					<button
-						className="mr-1 hidden h-6 shrink-0 items-center rounded border bg-background px-2 text-[10px] font-semibold uppercase text-muted-foreground hover:bg-accent hover:text-accent-foreground disabled:pointer-events-none disabled:opacity-40 group-hover/file-row:inline-flex"
-						disabled={isBusy}
-						onClick={(event) => {
-							event.stopPropagation();
-							onAction();
-						}}
-						type="button"
-					>
-						{rowActionLabel}
-					</button>
-				) : null}
-			</ContextMenuTrigger>
-			<ContextMenuContent className="w-52">
-				<ContextMenuGroup>
-					<ContextMenuLabel className="truncate font-mono">
-						{file.path}
-					</ContextMenuLabel>
-				</ContextMenuGroup>
-				<ContextMenuSeparator />
-				<ContextMenuItem onClick={onSelect} title="Open file diff">
-					<Search />
-					Open diff
-				</ContextMenuItem>
-				<ContextMenuItem
-					onClick={() => void copyToClipboard(file.path, "File path")}
-					title="Copy file path"
-				>
-					<Copy />
-					Copy path
-				</ContextMenuItem>
-				<ContextMenuItem
-					onClick={() => void revealWorkingTreeFile(repositoryId, file.path)}
-					title="Reveal file in file manager"
-				>
-					<FolderOpen />
-					Reveal file
-				</ContextMenuItem>
-				{rowActions.length > 0 ? <ContextMenuSeparator /> : null}
-				{rowActions.includes("stage") ? (
-					<ContextMenuItem onClick={onAction} title="Stage file">
-						<SquareCheckBig />
-						Stage file
-					</ContextMenuItem>
-				) : null}
-				{rowActions.includes("unstage") ? (
-					<ContextMenuItem onClick={onAction} title="Unstage file">
-						<MinusSquare />
-						Unstage file
-					</ContextMenuItem>
-				) : null}
-				{rowActions.includes("discard") ? (
-					<ContextMenuItem
-						onClick={onDestructiveAction}
-						title="Discard file"
-						variant="destructive"
-					>
-						<Trash2 />
-						Discard file
-					</ContextMenuItem>
-				) : null}
-			</ContextMenuContent>
-		</ContextMenu>
+			) : null}
+		</div>
 	);
 }
 

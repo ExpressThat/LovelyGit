@@ -9,16 +9,10 @@ type RefListRow =
 	| { id: string; item: RefPanelItem; type: "item" };
 
 export function RefsPanelList({
-	currentBranchName,
-	onRefsChanged,
 	onSelectCommit,
-	repositoryId,
 	sections,
 }: {
-	currentBranchName: string | null;
-	onRefsChanged: () => void;
 	onSelectCommit: (row: CommitGraphRow) => void;
-	repositoryId: string | null;
 	sections: RefPanelSection[];
 }) {
 	const parentRef = useRef<HTMLDivElement>(null);
@@ -55,13 +49,7 @@ export function RefsPanelList({
 							{row.type === "header" ? (
 								<RefHeader section={row.section} />
 							) : (
-								<RefPanelRow
-									currentBranchName={currentBranchName}
-									item={row.item}
-									onRefsChanged={onRefsChanged}
-									onSelectCommit={onSelectCommit}
-									repositoryId={repositoryId}
-								/>
+								<RefPanelRow item={row.item} onSelectCommit={onSelectCommit} />
 							)}
 						</div>
 					);

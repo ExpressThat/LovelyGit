@@ -110,9 +110,6 @@ function App() {
 											detailsPanel?.kind === "commit" &&
 												detailsPanel.selectedFile,
 										)}
-										onRefsChanged={() =>
-											setCommitGraphRefreshToken((token) => token + 1)
-										}
 										onSelectCommit={selectCommit}
 										refreshToken={commitGraphRefreshToken}
 										repositoryId={currentGitRepositoryId}

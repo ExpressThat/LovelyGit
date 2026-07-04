@@ -158,7 +158,6 @@ export function WorkingChangesPanel({
 							}
 							onSelectFile={onSelectFile}
 							onToggleSelected={toggleSelected}
-							repositoryId={repositoryId}
 							selectedKeys={selectedKeys}
 							stagedFiles={filteredChanges.staged}
 							unmergedFiles={filteredChanges.unmerged}

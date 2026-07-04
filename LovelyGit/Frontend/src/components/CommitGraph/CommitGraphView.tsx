@@ -20,13 +20,11 @@ import { resolveWidths } from "./utils/columns";
 
 export function CommitGraphView({
 	onSelectCommit,
-	onRefsChanged,
 	refreshToken = 0,
 	repositoryId,
 	selectedCommitHash,
 }: {
 	onSelectCommit: (row: CommitGraphRowModel) => void;
-	onRefsChanged: () => void;
 	refreshToken?: number;
 	repositoryId: string | null;
 	selectedCommitHash: string | null;
@@ -157,10 +155,8 @@ export function CommitGraphView({
 			<div className="flex h-full w-full min-w-0">
 				<RefsPanel
 					currentBranchName={currentBranchName}
-					onRefsChanged={onRefsChanged}
 					onSelectCommit={onSelectCommit}
 					remotePrefixes={remotePrefixes}
-					repositoryId={repositoryId}
 					repositoryRefs={repositoryRefs.refs}
 					rows={rows}
 				/>
@@ -204,10 +200,8 @@ export function CommitGraphView({
 											rows[item.index]?.commit.hash === selectedCommitHash
 										}
 										onSelect={onSelectCommit}
-										onRefsChanged={onRefsChanged}
 										currentBranchName={currentBranchName}
 										remotePrefixes={remotePrefixes}
-										repositoryId={repositoryId}
 										row={rows[item.index] ?? null}
 										rowIndex={item.index}
 										templateColumns={templateColumns}
