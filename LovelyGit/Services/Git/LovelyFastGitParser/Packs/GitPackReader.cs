@@ -95,7 +95,7 @@ internal sealed partial class GitPackReader : IDisposable
         _packOffsetCache.Clear();
     }
 
-    public void Dispose()
+    public void ClearPackFiles()
     {
         ClearObjectCache();
         lock (_packFilesGate)
@@ -107,6 +107,11 @@ internal sealed partial class GitPackReader : IDisposable
 
             _packFiles.Clear();
         }
+    }
+
+    public void Dispose()
+    {
+        ClearPackFiles();
     }
 
     private FileStream GetPackFile(string packPath)
@@ -122,7 +127,7 @@ internal sealed partial class GitPackReader : IDisposable
                 packPath,
                 FileMode.Open,
                 FileAccess.Read,
-                FileShare.Read,
+                FileShare.ReadWrite | FileShare.Delete,
                 bufferSize: 1,
                 FileOptions.RandomAccess);
             _packFiles.Add(packPath, file);

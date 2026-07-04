@@ -38,7 +38,7 @@ internal sealed class GitPackIndex : IDisposable
             indexPath,
             FileMode.Open,
             FileAccess.Read,
-            FileShare.Read,
+            FileShare.ReadWrite | FileShare.Delete,
             bufferSize: 1,
             FileOptions.RandomAccess);
         var header = new byte[HeaderLength];

@@ -16,6 +16,7 @@ internal sealed partial class GitObjectStore : IDisposable
     private readonly SemaphoreSlim _packIndexesLock = new(1, 1);
     private readonly object _looseObjectIndexGate = new();
     private List<GitPackIndex>? _packIndexes;
+    private readonly List<GitPackIndex> _retiredPackIndexes = [];
     private HashSet<string>? _looseObjectIds;
     private bool _looseObjectIndexLoaded;
     private bool _looseObjectIndexTooLarge;
@@ -53,7 +54,7 @@ internal sealed partial class GitObjectStore : IDisposable
             return loose;
         }
 
-        var packed = await TryReadPackedObjectAsync(id, cacheObject, cancellationToken).ConfigureAwait(false);
+        var packed = await TryReadPackedObjectAsync(id, cancellationToken).ConfigureAwait(false);
         if (packed != null)
         {
             if (cacheObject)
@@ -96,7 +97,29 @@ internal sealed partial class GitObjectStore : IDisposable
 
     private async Task<GitObjectData?> TryReadPackedObjectAsync(
         GitObjectId id,
-        bool cacheObject,
+        CancellationToken cancellationToken)
+    {
+        for (var attempt = 0; attempt < 2; attempt++)
+        {
+            var result = await TryReadPackedObjectFromCurrentIndexesAsync(id, cancellationToken).ConfigureAwait(false);
+            if (result.ObjectData != null)
+            {
+                return result.ObjectData;
+            }
+
+            if (!result.PackIndexesStale)
+            {
+                return null;
+            }
+
+            await ReloadPackIndexesAsync(cancellationToken).ConfigureAwait(false);
+        }
+
+        return null;
+    }
+
+    private async Task<PackedObjectReadResult> TryReadPackedObjectFromCurrentIndexesAsync(
+        GitObjectId id,
         CancellationToken cancellationToken)
     {
         foreach (var index in await GetPackIndexesAsync(cancellationToken).ConfigureAwait(false))
@@ -107,16 +130,23 @@ internal sealed partial class GitObjectStore : IDisposable
                 continue;
             }
 
-            return await _packReader
+            if (!File.Exists(index.PackPath))
+            {
+                return new PackedObjectReadResult(null, PackIndexesStale: true);
+            }
+
+            var objectData = await _packReader
                 .ReadObjectAtAsync(
                     index.PackPath,
                     offset.Value,
                     ReadObjectAsync,
                     cancellationToken)
                 .ConfigureAwait(false);
+
+            return new PackedObjectReadResult(objectData, PackIndexesStale: false);
         }
 
-        return null;
+        return new PackedObjectReadResult(null, PackIndexesStale: false);
     }
 
     private async Task<IReadOnlyList<GitPackIndex>> GetPackIndexesAsync(CancellationToken cancellationToken)
@@ -143,12 +173,36 @@ internal sealed partial class GitObjectStore : IDisposable
                 foreach (var indexPath in Directory.EnumerateFiles(packDirectory, "*.idx"))
                 {
                     cancellationToken.ThrowIfCancellationRequested();
+                    if (!File.Exists(indexPath) || !File.Exists(Path.ChangeExtension(indexPath, ".pack")))
+                    {
+                        continue;
+                    }
+
                     indexes.Add(await GitPackIndex.OpenAsync(indexPath, _objectFormat, cancellationToken).ConfigureAwait(false));
                 }
             }
 
             Volatile.Write(ref _packIndexes, indexes);
             return indexes;
+        }
+        finally
+        {
+            _packIndexesLock.Release();
+        }
+    }
+
+    private async Task ReloadPackIndexesAsync(CancellationToken cancellationToken)
+    {
+        await _packIndexesLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            if (Volatile.Read(ref _packIndexes) is { } indexes)
+            {
+                _retiredPackIndexes.AddRange(indexes);
+            }
+
+            _packReader.ClearObjectCache();
+            Volatile.Write(ref _packIndexes, null);
         }
         finally
         {
@@ -206,6 +260,8 @@ internal sealed partial class GitObjectStore : IDisposable
         return data.Data.LongLength;
     }
 
+    private readonly record struct PackedObjectReadResult(GitObjectData? ObjectData, bool PackIndexesStale);
+
     public void Dispose()
     {
         _objectCache.Clear();
@@ -217,6 +273,12 @@ internal sealed partial class GitObjectStore : IDisposable
             }
         }
 
+        foreach (var index in _retiredPackIndexes)
+        {
+            index.Dispose();
+        }
+
+        _retiredPackIndexes.Clear();
         Volatile.Write(ref _packIndexes, null);
         _packIndexesLock.Dispose();
         _packReader.Dispose();
