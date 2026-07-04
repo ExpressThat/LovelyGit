@@ -1,26 +1,42 @@
+using ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser;
+
 namespace ExpressThat.LovelyGit.Services.Git.CommitGraph;
 
 internal static class CommitGraphLaneLayout
 {
-    public static List<int> FindAllLanesByTarget(List<string?> activeLaneTargets, string target)
+    public static List<int> FindAllLanesByTarget(List<GitObjectId?> activeLaneTargets, GitObjectId target)
     {
-        var lanes = new List<int>();
+        List<int>? lanes = null;
+        var laneZeroMatched = false;
         for (var i = 0; i < activeLaneTargets.Count; i++)
         {
-            if (activeLaneTargets[i] == target)
+            if (activeLaneTargets[i] is { } candidate && candidate.Equals(target))
             {
+                if (i == 0 && lanes == null)
+                {
+                    laneZeroMatched = true;
+                    continue;
+                }
+
+                if (laneZeroMatched)
+                {
+                    lanes = new List<int> { 0 };
+                    laneZeroMatched = false;
+                }
+
+                lanes ??= new List<int>();
                 lanes.Add(i);
             }
         }
 
-        return lanes;
+        return lanes ?? (laneZeroMatched ? CommitGraphEmptyLists.LaneZero : CommitGraphEmptyLists.Ints);
     }
 
-    public static int? FindLaneByTarget(List<string?> activeLaneTargets, string target)
+    public static int? FindLaneByTarget(List<GitObjectId?> activeLaneTargets, GitObjectId target)
     {
         for (var i = 0; i < activeLaneTargets.Count; i++)
         {
-            if (activeLaneTargets[i] == target)
+            if (activeLaneTargets[i] is { } candidate && candidate.Equals(target))
             {
                 return i;
             }
@@ -29,7 +45,7 @@ internal static class CommitGraphLaneLayout
         return null;
     }
 
-    public static int AllocateLane(List<string?> activeLaneTargets)
+    public static int AllocateLane(List<GitObjectId?> activeLaneTargets)
     {
         for (var i = 0; i < activeLaneTargets.Count; i++)
         {
@@ -44,7 +60,7 @@ internal static class CommitGraphLaneLayout
     }
 
     public static int AllocateLaneAfter(
-        List<string?> activeLaneTargets,
+        List<GitObjectId?> activeLaneTargets,
         int reservedLane)
     {
         while (activeLaneTargets.Count <= reservedLane)
@@ -64,7 +80,7 @@ internal static class CommitGraphLaneLayout
         return activeLaneTargets.Count - 1;
     }
 
-    public static void SetLaneTarget(List<string?> activeLaneTargets, int lane, string target)
+    public static void SetLaneTarget(List<GitObjectId?> activeLaneTargets, int lane, GitObjectId target)
     {
         while (lane >= activeLaneTargets.Count)
         {
@@ -74,7 +90,7 @@ internal static class CommitGraphLaneLayout
         activeLaneTargets[lane] = target;
     }
 
-    public static void TrimTrailingEmptyLanes(List<string?> activeLaneTargets)
+    public static void TrimTrailingEmptyLanes(List<GitObjectId?> activeLaneTargets)
     {
         while (activeLaneTargets.Count > 0 && activeLaneTargets[^1] == null)
         {
@@ -82,17 +98,31 @@ internal static class CommitGraphLaneLayout
         }
     }
 
-    public static List<int> GetActiveLanes(List<string?> activeLaneTargets)
+    public static List<int> GetActiveLanes(List<GitObjectId?> activeLaneTargets)
     {
-        var lanes = new List<int>();
+        List<int>? lanes = null;
+        var laneZeroActive = false;
         for (var i = 0; i < activeLaneTargets.Count; i++)
         {
             if (activeLaneTargets[i] != null)
             {
+                if (i == 0 && lanes == null)
+                {
+                    laneZeroActive = true;
+                    continue;
+                }
+
+                if (laneZeroActive)
+                {
+                    lanes = new List<int> { 0 };
+                    laneZeroActive = false;
+                }
+
+                lanes ??= new List<int>();
                 lanes.Add(i);
             }
         }
 
-        return lanes;
+        return lanes ?? (laneZeroActive ? CommitGraphEmptyLists.LaneZero : CommitGraphEmptyLists.Ints);
     }
 }

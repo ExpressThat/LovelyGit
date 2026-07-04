@@ -125,11 +125,14 @@ function row(hash: string, refs: CommitGraphRow["commit"]["refs"]) {
 		activeLanesAbove: [],
 		activeLanesBelow: [],
 		commit: commit(hash, refs, [], []),
+		colorIndex: 0,
 		edgesAbove: [],
 		edgesBelow: [],
 		isBranchTip: false,
 		isMergeCommit: false,
 		lane: 0,
+		laneColorsAbove: [],
+		laneColorsBelow: [],
 		rowIndex: 0,
 	} satisfies CommitGraphRow;
 }
@@ -156,11 +159,14 @@ function legacyRow(hash: string, branches: string[], tags: string[]) {
 		activeLanesAbove: [],
 		activeLanesBelow: [],
 		commit: commit(hash, [], branches, tags),
+		colorIndex: 0,
 		edgesAbove: [],
 		edgesBelow: [],
 		isBranchTip: false,
 		isMergeCommit: false,
 		lane: 0,
+		laneColorsAbove: [],
+		laneColorsBelow: [],
 		rowIndex: 0,
 	} satisfies CommitGraphRow;
 }

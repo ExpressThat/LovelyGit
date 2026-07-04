@@ -2,20 +2,23 @@ using System.Buffers.Binary;
 
 namespace ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser.Packs;
 
-internal sealed class GitPackIndex
+internal sealed class GitPackIndex : IDisposable
 {
     private const int HeaderLength = 8;
     private const int FanoutBytes = 256 * 4;
 
     private readonly uint[] _fanout;
     private readonly int _hashBytes;
+    private readonly FileStream _file;
+    private bool _disposed;
 
-    private GitPackIndex(string indexPath, uint[] fanout, int hashBytes)
+    private GitPackIndex(string indexPath, uint[] fanout, int hashBytes, FileStream file)
     {
         IndexPath = indexPath;
         PackPath = Path.ChangeExtension(indexPath, ".pack");
         _fanout = fanout;
         _hashBytes = hashBytes;
+        _file = file;
     }
 
     public string IndexPath { get; }
@@ -31,34 +34,51 @@ internal sealed class GitPackIndex
         GitObjectFormat objectFormat,
         CancellationToken cancellationToken)
     {
-        await using var file = File.OpenRead(indexPath);
+        var file = new FileStream(
+            indexPath,
+            FileMode.Open,
+            FileAccess.Read,
+            FileShare.Read,
+            bufferSize: 1,
+            FileOptions.RandomAccess);
         var header = new byte[HeaderLength];
-        await GitPackFileHelpers.ReadExactlyAsync(file, header, cancellationToken).ConfigureAwait(false);
-        if (header[0] != 0xff || header[1] != 0x74 || header[2] != 0x4f || header[3] != 0x63)
+        try
         {
-            throw new InvalidDataException("Only Git pack index v2 files are supported.");
-        }
+            await GitPackFileHelpers.ReadExactlyAsync(file, header, cancellationToken).ConfigureAwait(false);
+            if (header[0] != 0xff || header[1] != 0x74 || header[2] != 0x4f || header[3] != 0x63)
+            {
+                throw new InvalidDataException("Only Git pack index v2 files are supported.");
+            }
 
-        var version = BinaryPrimitives.ReadUInt32BigEndian(header.AsSpan(4));
-        if (version != 2)
+            var version = BinaryPrimitives.ReadUInt32BigEndian(header.AsSpan(4));
+            if (version != 2)
+            {
+                throw new InvalidDataException("Only Git pack index v2 files are supported.");
+            }
+
+            var fanoutBytes = new byte[FanoutBytes];
+            await GitPackFileHelpers.ReadExactlyAsync(file, fanoutBytes, cancellationToken).ConfigureAwait(false);
+            var fanout = new uint[256];
+            for (var i = 0; i < fanout.Length; i++)
+            {
+                fanout[i] = BinaryPrimitives.ReadUInt32BigEndian(fanoutBytes.AsSpan(i * 4));
+            }
+
+            return new GitPackIndex(indexPath, fanout, GitObjectId.GetByteLength(objectFormat), file);
+        }
+        catch
         {
-            throw new InvalidDataException("Only Git pack index v2 files are supported.");
+            await file.DisposeAsync().ConfigureAwait(false);
+            throw;
         }
-
-        var fanoutBytes = new byte[FanoutBytes];
-        await GitPackFileHelpers.ReadExactlyAsync(file, fanoutBytes, cancellationToken).ConfigureAwait(false);
-        var fanout = new uint[256];
-        for (var i = 0; i < fanout.Length; i++)
-        {
-            fanout[i] = BinaryPrimitives.ReadUInt32BigEndian(fanoutBytes.AsSpan(i * 4));
-        }
-
-        return new GitPackIndex(indexPath, fanout, GitObjectId.GetByteLength(objectFormat));
     }
 
-    public async Task<long?> TryFindOffsetAsync(GitObjectId id, CancellationToken cancellationToken)
+    public long? TryFindOffset(GitObjectId id, CancellationToken cancellationToken)
     {
-        var target = id.ToByteArray();
+        cancellationToken.ThrowIfCancellationRequested();
+        Span<byte> target = stackalloc byte[_hashBytes];
+        Span<byte> currentHash = stackalloc byte[_hashBytes];
+        id.WriteTo(target);
         var bucket = target[0];
         var low = bucket == 0 ? 0 : _fanout[bucket - 1];
         var high = _fanout[bucket];
@@ -67,14 +87,12 @@ internal sealed class GitPackIndex
             return null;
         }
 
-        await using var file = File.OpenRead(IndexPath);
-        var currentHash = new byte[_hashBytes];
         while (low < high)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             var mid = low + ((high - low) / 2);
-            file.Seek(HashTableOffset + mid * _hashBytes, SeekOrigin.Begin);
-            await GitPackFileHelpers.ReadExactlyAsync(file, currentHash, cancellationToken).ConfigureAwait(false);
-            var comparison = currentHash.AsSpan().SequenceCompareTo(target);
+            ReadExactlyAt(currentHash, HashTableOffset + mid * _hashBytes);
+            var comparison = currentHash.SequenceCompareTo(target);
             if (comparison < 0)
             {
                 low = mid + 1;
@@ -85,18 +103,17 @@ internal sealed class GitPackIndex
             }
             else
             {
-                return await ReadObjectOffsetAsync(file, mid, cancellationToken).ConfigureAwait(false);
+                return ReadObjectOffset(mid);
             }
         }
 
         return null;
     }
 
-    private async Task<long> ReadObjectOffsetAsync(FileStream file, uint objectIndex, CancellationToken cancellationToken)
+    private long ReadObjectOffset(uint objectIndex)
     {
-        file.Seek(OffsetTableOffset + objectIndex * 4, SeekOrigin.Begin);
-        var small = new byte[4];
-        await GitPackFileHelpers.ReadExactlyAsync(file, small, cancellationToken).ConfigureAwait(false);
+        Span<byte> small = stackalloc byte[4];
+        ReadExactlyAt(small, OffsetTableOffset + objectIndex * 4);
         var offset = BinaryPrimitives.ReadUInt32BigEndian(small);
         if ((offset & 0x80000000U) == 0)
         {
@@ -104,9 +121,8 @@ internal sealed class GitPackIndex
         }
 
         var largeIndex = offset & 0x7fffffffU;
-        file.Seek(LargeOffsetTableOffset + largeIndex * 8, SeekOrigin.Begin);
-        var buffer = new byte[8];
-        await GitPackFileHelpers.ReadExactlyAsync(file, buffer, cancellationToken).ConfigureAwait(false);
+        Span<byte> buffer = stackalloc byte[8];
+        ReadExactlyAt(buffer, LargeOffsetTableOffset + largeIndex * 8);
         var largeOffset = BinaryPrimitives.ReadUInt64BigEndian(buffer);
         if (largeOffset > long.MaxValue)
         {
@@ -114,5 +130,34 @@ internal sealed class GitPackIndex
         }
 
         return (long)largeOffset;
+    }
+
+    private void ReadExactlyAt(Span<byte> buffer, long offset)
+    {
+        var filled = 0;
+        while (filled < buffer.Length)
+        {
+            var read = RandomAccess.Read(
+                _file.SafeFileHandle,
+                buffer[filled..],
+                offset + filled);
+            if (read == 0)
+            {
+                throw new EndOfStreamException();
+            }
+
+            filled += read;
+        }
+    }
+
+    public void Dispose()
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        _file.Dispose();
+        _disposed = true;
     }
 }

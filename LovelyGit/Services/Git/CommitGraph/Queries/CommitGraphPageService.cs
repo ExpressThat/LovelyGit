@@ -52,12 +52,10 @@ internal sealed partial class CommitGraphPageService : IDisposable
         }
 
         var isFreshGraphLoad = string.IsNullOrWhiteSpace(cursorText);
-        var cacheGeneration = GetCacheGeneration(foundRepo.Id);
         if (isFreshGraphLoad)
         {
             await SwitchActiveRepositoryAsync(foundRepo.Id, cancellationToken).ConfigureAwait(false);
             await ResetRepositoryGraphAsync(foundRepo.Id, cancellationToken).ConfigureAwait(false);
-            cacheGeneration = GetCacheGeneration(foundRepo.Id);
         }
 
         try
@@ -76,13 +74,7 @@ internal sealed partial class CommitGraphPageService : IDisposable
             var response = page.Response;
             response.NextCursor = response.HasMore ? CommitGraphManager.EncodeCursorState(page.NextCursor) : null;
 
-            StartCacheAndPreloadDetails(foundRepo.Id, foundRepo.Path, response, cacheGeneration);
-
-            if (response.HasMore)
-            {
-                ScheduleGraphClose(foundRepo.Id);
-            }
-            else
+            if (!response.HasMore)
             {
                 CloseGraph(foundRepo.Id);
             }

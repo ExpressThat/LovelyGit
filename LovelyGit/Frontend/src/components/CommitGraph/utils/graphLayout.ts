@@ -1,4 +1,8 @@
-import type { CommitGraphRow, CommitLaneEdge } from "@/generated/types";
+import type {
+	CommitGraphRow,
+	CommitLaneColor,
+	CommitLaneEdge,
+} from "@/generated/types";
 import {
 	GRAPH_BOTTOM_Y,
 	GRAPH_PADDING_LEFT,
@@ -11,8 +15,8 @@ import {
 
 export type GraphEdgeDirection = "above" | "below";
 
-export function laneColor(lane: number) {
-	return LANE_COLORS[lane % LANE_COLORS.length];
+export function graphColor(colorIndex: number) {
+	return LANE_COLORS[Math.abs(colorIndex) % LANE_COLORS.length];
 }
 
 export function xForLane(lane: number) {
@@ -61,6 +65,8 @@ export function graphRowLayout(row: CommitGraphRow) {
 	const activeBelow = new Set(row.activeLanesBelow);
 	const curvedAbove = row.edgesAbove.filter(isCurvedEdge);
 	const curvedBelow = row.edgesBelow.filter(isCurvedEdge);
+	const laneColorsAbove = colorMap(row.laneColorsAbove);
+	const laneColorsBelow = colorMap(row.laneColorsBelow);
 
 	return {
 		activeAbove,
@@ -69,9 +75,11 @@ export function graphRowLayout(row: CommitGraphRow) {
 		coveredBelow,
 		curvedAbove,
 		curvedBelow,
-		dotColor: laneColor(row.lane),
+		dotColor: graphColor(row.colorIndex),
 		dotX: xForLane(row.lane),
 		isStash: row.commit.refs.some((reference) => reference.kind === "Stash"),
+		laneColorsAbove,
+		laneColorsBelow,
 		maskEdges: [
 			...curvedAbove.map((edge) => ({ edge, direction: "above" as const })),
 			...curvedBelow.map((edge) => ({ edge, direction: "below" as const })),
@@ -84,4 +92,8 @@ export function graphRowLayout(row: CommitGraphRow) {
 
 function isCurvedEdge(edge: CommitLaneEdge) {
 	return edge.fromLane !== edge.toLane;
+}
+
+function colorMap(colors: CommitLaneColor[]) {
+	return new Map(colors.map((color) => [color.lane, color.colorIndex]));
 }

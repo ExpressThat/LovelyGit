@@ -7,15 +7,16 @@ internal readonly record struct CommitGraphCommitPriority(long Seconds, int Sort
     public static CommitGraphCommitPriority FromCommit(GitCommit commit, bool prioritize = false)
     {
         return new CommitGraphCommitPriority(
-            CommitGraphCommitMapper.GetAuthorUnixTimeSeconds(commit),
+            CommitGraphCommitMapper.GetGraphUnixTimeSeconds(commit),
             prioritize ? 0 : 1,
-            commit.Hash.ToString());
+            commit.Hash.Value);
     }
 }
 
 internal sealed class CommitGraphTraversalSession
 {
-    private readonly HashSet<string> _seenHashes = new(StringComparer.Ordinal);
+    private readonly HashSet<GitObjectId> _seenHashes = new();
+    private readonly HashSet<GitObjectId> _processedHashes = new();
 
     public CommitGraphTraversalSession(Guid repositoryId)
     {
@@ -26,35 +27,69 @@ internal sealed class CommitGraphTraversalSession
 
     public int Offset { get; private set; }
 
-    public List<string?> ActiveLaneTargets { get; private set; } = new();
+    public List<GitObjectId?> ActiveLaneTargets { get; private set; } = new();
+    public List<int> ActiveLaneColors { get; private set; } = new();
 
     public int MaxLaneCount { get; private set; }
+    public int NextColorIndex { get; private set; }
 
-    internal PriorityQueue<FrontierCommit, CommitGraphCommitPriority> Frontier { get; } =
-        new(CommitPriorityComparer.Instance);
+    public IReadOnlySet<GitObjectId> ProcessedHashes => _processedHashes;
 
-    public bool MarkSeen(string hash)
+    internal PriorityQueue<FrontierCommit, CommitGraphCommitPriority> ActiveFrontier { get; } =
+        new(PriorityComparer.Instance);
+
+    internal PriorityQueue<FrontierCommit, CommitGraphCommitPriority> TipFrontier { get; } =
+        new(PriorityComparer.Instance);
+
+    public int PendingCount => ActiveFrontier.Count + TipFrontier.Count;
+
+    public bool MarkSeen(GitObjectId hash)
     {
         return _seenHashes.Add(hash);
     }
 
-    public void EnqueueFrontier(string hash, CommitGraphCommitPriority priority)
+    public void MarkProcessed(GitObjectId hash)
     {
-        Frontier.Enqueue(new FrontierCommit(hash, priority.Seconds), priority);
+        _processedHashes.Add(hash);
     }
 
-    public void SaveState(int offset, List<string?> activeLaneTargets, int maxLaneCount)
+    public void EnqueueActiveFrontier(GitObjectId hash, CommitGraphCommitPriority priority)
+    {
+        ActiveFrontier.Enqueue(new FrontierCommit(hash), priority);
+    }
+
+    public void EnqueueTipFrontier(GitObjectId hash, CommitGraphCommitPriority priority)
+    {
+        TipFrontier.Enqueue(new FrontierCommit(hash), priority);
+    }
+
+    public int AllocateColor()
+    {
+        return NextColorIndex++;
+    }
+
+    public void SaveState(
+        int offset,
+        List<GitObjectId?> activeLaneTargets,
+        List<int> activeLaneColors,
+        int maxLaneCount)
     {
         Offset = offset;
         ActiveLaneTargets = activeLaneTargets;
+        ActiveLaneColors = activeLaneColors;
         MaxLaneCount = maxLaneCount;
     }
 
-    internal readonly record struct FrontierCommit(string Hash, long Seconds);
+    internal readonly record struct FrontierCommit(GitObjectId Hash);
 
-    private sealed class CommitPriorityComparer : IComparer<CommitGraphCommitPriority>
+    internal readonly record struct PendingFrontierCommit(
+        bool IsTip,
+        FrontierCommit Commit,
+        CommitGraphCommitPriority Priority);
+
+    internal sealed class PriorityComparer : IComparer<CommitGraphCommitPriority>
     {
-        public static CommitPriorityComparer Instance { get; } = new();
+        public static PriorityComparer Instance { get; } = new();
 
         public int Compare(CommitGraphCommitPriority x, CommitGraphCommitPriority y)
         {

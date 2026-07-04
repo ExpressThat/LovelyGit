@@ -12,8 +12,8 @@ import {
 import {
 	edgePath,
 	type GraphEdgeDirection,
+	graphColor,
 	graphRowLayout,
-	laneColor,
 	xForLane,
 } from "../utils/graphLayout";
 
@@ -53,6 +53,8 @@ export function GraphCell({
 				<g mask={hasCurveMask ? `url(#${curveMaskId})` : undefined}>
 					{layout.visibleLanes.map((lane) => (
 						<ActiveLane
+							aboveColorIndex={layout.laneColorsAbove.get(lane)}
+							belowColorIndex={layout.laneColorsBelow.get(lane)}
 							contentWidth={graphContentWidth}
 							drawAbove={
 								layout.activeAbove.has(lane) && !layout.coveredAbove.has(lane)
@@ -68,7 +70,7 @@ export function GraphCell({
 
 				{row.edgesAbove.map((edge) => (
 					<Fragment key={`${keyPrefix}-above-${edgeKey(edge)}`}>
-						{renderEdgePath(edge, "above", edge.fromLane, "above")}
+						{renderEdgePath(edge, "above", "above")}
 					</Fragment>
 				))}
 
@@ -126,11 +128,15 @@ function CurveMask({
 }
 
 function ActiveLane({
+	aboveColorIndex,
+	belowColorIndex,
 	contentWidth,
 	drawAbove,
 	drawBelow,
 	lane,
 }: {
+	aboveColorIndex: number | undefined;
+	belowColorIndex: number | undefined;
 	contentWidth: number;
 	drawAbove: boolean;
 	drawBelow: boolean;
@@ -144,8 +150,22 @@ function ActiveLane({
 
 	return (
 		<g>
-			{drawAbove ? renderLaneLine(lane, x, GRAPH_TOP_Y, ROW_CENTER_Y) : null}
-			{drawBelow ? renderLaneLine(lane, x, ROW_CENTER_Y, GRAPH_BOTTOM_Y) : null}
+			{drawAbove && aboveColorIndex != null
+				? renderLaneLine(
+						graphColor(aboveColorIndex),
+						x,
+						GRAPH_TOP_Y,
+						ROW_CENTER_Y,
+					)
+				: null}
+			{drawBelow && belowColorIndex != null
+				? renderLaneLine(
+						graphColor(belowColorIndex),
+						x,
+						ROW_CENTER_Y,
+						GRAPH_BOTTOM_Y,
+					)
+				: null}
 		</g>
 	);
 }
@@ -155,8 +175,13 @@ function BelowEdge({ edge }: { edge: CommitLaneEdge }) {
 
 	return (
 		<Fragment>
-			{renderEdgePath(edge, "below", edge.toLane, "below")}
-			{renderLaneLine(edge.toLane, x, ROW_CENTER_Y, GRAPH_BOTTOM_Y)}
+			{renderEdgePath(edge, "below", "below")}
+			{renderLaneLine(
+				graphColor(edge.colorIndex),
+				x,
+				ROW_CENTER_Y,
+				GRAPH_BOTTOM_Y,
+			)}
 		</Fragment>
 	);
 }
@@ -164,7 +189,6 @@ function BelowEdge({ edge }: { edge: CommitLaneEdge }) {
 function renderEdgePath(
 	edge: CommitLaneEdge,
 	direction: GraphEdgeDirection,
-	colorLane: number,
 	className: string,
 ) {
 	return (
@@ -172,17 +196,17 @@ function renderEdgePath(
 			className={className}
 			d={edgePath(edge, direction)}
 			fill="none"
-			stroke={laneColor(colorLane)}
+			stroke={graphColor(edge.colorIndex)}
 			strokeLinecap="butt"
 			strokeWidth={GRAPH_STROKE_WIDTH}
 		/>
 	);
 }
 
-function renderLaneLine(lane: number, x: number, y1: number, y2: number) {
+function renderLaneLine(color: string, x: number, y1: number, y2: number) {
 	return (
 		<line
-			stroke={laneColor(lane)}
+			stroke={color}
 			strokeLinecap="butt"
 			strokeOpacity="0.82"
 			strokeWidth={GRAPH_STROKE_WIDTH}
@@ -214,7 +238,7 @@ function renderCommitDot(x: number, color: string, isStash: boolean) {
 }
 
 function edgeKey(edge: CommitLaneEdge) {
-	return `${edge.fromLane}-${edge.toLane}`;
+	return `${edge.kind}-${edge.fromLane}-${edge.toLane}-${edge.colorIndex}`;
 }
 
 function rowKey(row: CommitGraphRow) {

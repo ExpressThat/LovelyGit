@@ -4,9 +4,13 @@ namespace ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser;
 
 internal sealed partial class LovelyGitRepository : IDisposable
 {
-    private const int CommitCacheSize = 4096;
+    private const int CommitCacheSize = 256;
+    private const int GraphCommitCacheSize = 1024;
+    private const int GraphHeaderCacheSize = 2048;
     private readonly GitObjectStore _objectStore;
     private readonly LruCache<GitObjectId, GitCommit> _commitCache = new(CommitCacheSize);
+    private readonly LruCache<GitObjectId, GitCommit> _graphCommitCache = new(GraphCommitCacheSize);
+    private readonly LruCache<GitObjectId, GitCommit> _graphHeaderCache = new(GraphHeaderCacheSize);
     private readonly Dictionary<string, GitRef> _refsByFullName;
     private readonly Dictionary<GitObjectId, List<string>> _branchNamesByCommit;
     private readonly Dictionary<GitObjectId, List<string>> _tagNamesByCommit;
@@ -112,89 +116,6 @@ internal sealed partial class LovelyGitRepository : IDisposable
             remotePrefixes.Order(StringComparer.Ordinal).ToArray());
     }
 
-    public async Task<GitCommit> GetCommitAsync(GitObjectId id, CancellationToken cancellationToken)
-    {
-        if (_commitCache.TryGet(id, out var cached))
-        {
-            return cached;
-        }
-
-        var data = await _objectStore.ReadObjectAsync(id, cancellationToken).ConfigureAwait(false);
-        if (data.Kind != GitObjectKind.Commit)
-        {
-            throw new InvalidDataException($"Object is not a commit: {id}");
-        }
-
-        var commit = GitObjectParsers.ParseCommit(id, data.Data);
-        if (_branchNamesByCommit.TryGetValue(id, out var branches))
-        {
-            commit.Branches.AddRange(branches);
-        }
-
-        if (_tagNamesByCommit.TryGetValue(id, out var tags))
-        {
-            commit.Tags.AddRange(tags);
-        }
-
-        if (_refsByCommit.TryGetValue(id, out var refs))
-        {
-            commit.Refs.AddRange(refs);
-        }
-
-        _commitCache.Set(id, commit);
-        return commit;
-    }
-
-    public async Task<IReadOnlyList<GitCommit>> GetStartingCommitsAsync(CancellationToken cancellationToken)
-    {
-        var seenIds = new HashSet<GitObjectId>();
-        var orderedIds = new List<GitObjectId>();
-        foreach (var reference in _refsByFullName.Values
-                     .Where(reference => reference.Kind != GitRefKind.Tag)
-                     .OrderBy(reference => reference.Kind == GitRefKind.Stash ? 0 : 1))
-        {
-            if (seenIds.Add(reference.Target))
-            {
-                orderedIds.Add(reference.Target);
-            }
-        }
-
-        if (HeadTarget != null && seenIds.Add(HeadTarget.Value))
-        {
-            orderedIds.Add(HeadTarget.Value);
-        }
-
-        var commits = new GitCommit?[orderedIds.Count];
-        await Parallel.ForEachAsync(
-                Enumerable.Range(0, orderedIds.Count),
-                cancellationToken,
-                async (index, itemCancellationToken) =>
-                {
-                    itemCancellationToken.ThrowIfCancellationRequested();
-                    try
-                    {
-                        commits[index] = await GetCommitAsync(orderedIds[index], itemCancellationToken)
-                            .ConfigureAwait(false);
-                    }
-                    catch when (!itemCancellationToken.IsCancellationRequested)
-                    {
-                        // Ignore refs that do not resolve to commits, matching the graph's previous behavior.
-                    }
-                })
-            .ConfigureAwait(false);
-
-        var resolvedCommits = new List<GitCommit>(commits.Length);
-        foreach (var commit in commits)
-        {
-            if (commit != null)
-            {
-                resolvedCommits.Add(commit);
-            }
-        }
-
-        return resolvedCommits;
-    }
-
     public async Task<GitTreeComparison> GetChangedTreeFilesAsync(
         GitObjectId? parentTreeId,
         GitObjectId? currentTreeId,
@@ -243,6 +164,8 @@ internal sealed partial class LovelyGitRepository : IDisposable
         }
 
         _commitCache.Clear();
+        _graphCommitCache.Clear();
+        _graphHeaderCache.Clear();
         _refsByFullName.Clear();
         _branchNamesByCommit.Clear();
         _tagNamesByCommit.Clear();

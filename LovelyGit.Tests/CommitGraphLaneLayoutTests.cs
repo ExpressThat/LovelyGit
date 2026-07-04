@@ -1,78 +1,33 @@
 using ExpressThat.LovelyGit.Services.Git.CommitGraph;
+using ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser;
 
 namespace LovelyGit.Tests;
 
 public sealed class CommitGraphLaneLayoutTests
 {
     [Fact]
-    public void AllocateLane_ReusesFirstEmptyLane()
+    public void AllocateLane_ReusesEmptyLaneBeforeAddingNewLane()
     {
-        var lanes = new List<string?> { "a", null, "c" };
+        var activeLanes = new List<GitObjectId?> { Id("a"), null, Id("c") };
 
-        var lane = CommitGraphLaneLayout.AllocateLane(lanes);
+        var lane = CommitGraphLaneLayout.AllocateLane(activeLanes);
 
         Assert.Equal(1, lane);
-        Assert.Equal(["a", null, "c"], lanes);
+        Assert.Equal(3, activeLanes.Count);
     }
 
     [Fact]
-    public void AllocateLane_AppendsWhenNoEmptyLaneExists()
+    public void TrimTrailingEmptyLanes_KeepsInteriorEmptyLanes()
     {
-        var lanes = new List<string?> { "a", "b" };
+        var activeLanes = new List<GitObjectId?> { Id("a"), null, null };
 
-        var lane = CommitGraphLaneLayout.AllocateLane(lanes);
+        CommitGraphLaneLayout.TrimTrailingEmptyLanes(activeLanes);
 
-        Assert.Equal(2, lane);
-        Assert.Equal(["a", "b", null], lanes);
+        Assert.Equal([Id("a")], activeLanes);
     }
 
-    [Fact]
-    public void SetLaneTarget_ExpandsLaneList()
+    private static GitObjectId Id(string prefix)
     {
-        var lanes = new List<string?> { "a" };
-
-        CommitGraphLaneLayout.SetLaneTarget(lanes, 3, "d");
-
-        Assert.Equal(["a", null, null, "d"], lanes);
-    }
-
-    [Fact]
-    public void FindLaneByTarget_ReturnsFirstMatchingLane()
-    {
-        var lanes = new List<string?> { "a", "b", "a" };
-
-        var lane = CommitGraphLaneLayout.FindLaneByTarget(lanes, "a");
-
-        Assert.Equal(0, lane);
-    }
-
-    [Fact]
-    public void FindAllLanesByTarget_ReturnsEveryMatchingLane()
-    {
-        var lanes = new List<string?> { "a", "b", "a", null };
-
-        var matches = CommitGraphLaneLayout.FindAllLanesByTarget(lanes, "a");
-
-        Assert.Equal([0, 2], matches);
-    }
-
-    [Fact]
-    public void TrimTrailingEmptyLanes_RemovesOnlyTrailingNulls()
-    {
-        var lanes = new List<string?> { "a", null, "c", null, null };
-
-        CommitGraphLaneLayout.TrimTrailingEmptyLanes(lanes);
-
-        Assert.Equal(["a", null, "c"], lanes);
-    }
-
-    [Fact]
-    public void GetActiveLanes_ReturnsNonEmptyLaneIndexes()
-    {
-        var lanes = new List<string?> { null, "b", null, "d" };
-
-        var active = CommitGraphLaneLayout.GetActiveLanes(lanes);
-
-        Assert.Equal([1, 3], active);
+        return GitObjectId.Parse(prefix.PadRight(40, '0'));
     }
 }

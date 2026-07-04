@@ -1,5 +1,3 @@
-using System.Globalization;
-
 namespace ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser;
 
 internal readonly record struct GitObjectId(string Value, GitObjectFormat ObjectFormat)
@@ -36,6 +34,34 @@ internal readonly record struct GitObjectId(string Value, GitObjectFormat Object
         return id;
     }
 
+    public static GitObjectId ParseAscii(ReadOnlySpan<byte> value, GitObjectFormat objectFormat)
+    {
+        if (!TryParseAscii(value, objectFormat, out var id))
+        {
+            throw new FormatException($"Invalid {objectFormat} Git object id.");
+        }
+
+        return id;
+    }
+
+    public static GitObjectId FromBytes(ReadOnlySpan<byte> value, GitObjectFormat objectFormat)
+    {
+        if (value.Length != GetByteLength(objectFormat))
+        {
+            throw new FormatException($"Invalid {objectFormat} Git object id byte length.");
+        }
+
+        var chars = new char[value.Length * 2];
+        for (var i = 0; i < value.Length; i++)
+        {
+            var current = value[i];
+            chars[i * 2] = ToHexChar(current >> 4);
+            chars[(i * 2) + 1] = ToHexChar(current & 0x0f);
+        }
+
+        return new GitObjectId(new string(chars), objectFormat);
+    }
+
     public static bool TryParse(string? value, out GitObjectId id)
     {
         id = default;
@@ -62,7 +88,7 @@ internal readonly record struct GitObjectId(string Value, GitObjectFormat Object
 
         for (var i = 0; i < value.Length; i++)
         {
-            if (!Uri.IsHexDigit(value[i]))
+            if (!IsHex(value[i]))
             {
                 return false;
             }
@@ -82,13 +108,43 @@ internal readonly record struct GitObjectId(string Value, GitObjectFormat Object
 
         for (var i = 0; i < value.Length; i++)
         {
-            if (!Uri.IsHexDigit(value[i]))
+            if (!IsHex(value[i]))
             {
                 return false;
             }
         }
 
         id = new GitObjectId(value.ToString().ToLowerInvariant(), objectFormat);
+        return true;
+    }
+
+    public static bool TryParseAscii(ReadOnlySpan<byte> value, GitObjectFormat objectFormat, out GitObjectId id)
+    {
+        id = default;
+        if (value.Length != GetTextLength(objectFormat))
+        {
+            return false;
+        }
+
+        for (var i = 0; i < value.Length; i++)
+        {
+            if (!IsHex(value[i]))
+            {
+                return false;
+            }
+        }
+
+        var text = string.Create(value.Length, value, static (destination, source) =>
+        {
+            for (var i = 0; i < source.Length; i++)
+            {
+                var current = source[i];
+                destination[i] = (char)(current >= (byte)'A' && current <= (byte)'F'
+                    ? current + 32
+                    : current);
+            }
+        });
+        id = new GitObjectId(text, objectFormat);
         return true;
     }
 
@@ -108,8 +164,42 @@ internal readonly record struct GitObjectId(string Value, GitObjectFormat Object
 
         for (var i = 0; i < ByteLength; i++)
         {
-            destination[i] = byte.Parse(Value.AsSpan(i * 2, 2), NumberStyles.HexNumber, CultureInfo.InvariantCulture);
+            destination[i] = (byte)((FromHex(Value[i * 2]) << 4) | FromHex(Value[(i * 2) + 1]));
         }
+    }
+
+    private static bool IsHex(char value)
+    {
+        return value is >= '0' and <= '9'
+            or >= 'a' and <= 'f'
+            or >= 'A' and <= 'F';
+    }
+
+    public static bool IsHexPrefix(string value)
+    {
+        return value.Length == 2 && IsHex(value[0]) && IsHex(value[1]);
+    }
+
+    private static bool IsHex(byte value)
+    {
+        return value is >= (byte)'0' and <= (byte)'9'
+            or >= (byte)'a' and <= (byte)'f'
+            or >= (byte)'A' and <= (byte)'F';
+    }
+
+    private static int FromHex(char value)
+    {
+        if (value <= '9')
+        {
+            return value - '0';
+        }
+
+        return (value | 0x20) - 'a' + 10;
+    }
+
+    private static char ToHexChar(int value)
+    {
+        return (char)(value < 10 ? '0' + value : 'a' + value - 10);
     }
 
     public static int GetByteLength(GitObjectFormat objectFormat) => objectFormat switch

@@ -48,9 +48,11 @@ internal static class CommitGraphCommitMapper
         };
     }
 
-    public static long GetAuthorUnixTimeSeconds(GitCommit commit)
+    public static long GetGraphUnixTimeSeconds(GitCommit commit)
     {
-        return commit.AuthorUnixSeconds;
+        return commit.CommitterUnixSeconds == 0
+            ? commit.AuthorUnixSeconds
+            : commit.CommitterUnixSeconds;
     }
 
     private static string TruncateMessage(string value)

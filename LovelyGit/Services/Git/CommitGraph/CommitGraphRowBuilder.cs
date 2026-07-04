@@ -3,139 +3,178 @@ using ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser;
 
 namespace ExpressThat.LovelyGit.Services.Git.CommitGraph;
 
-internal static class CommitGraphRowBuilder
+internal static partial class CommitGraphRowBuilder
 {
     public static CommitGraphRow Build(
         GitCommit commit,
-        IReadOnlyList<string> parents,
+        CommitGraphParentSet parents,
         int rowIndex,
-        List<string?> activeLaneTargets,
+        List<GitObjectId?> activeLaneTargets,
+        List<int> activeLaneColors,
+        Func<int> allocateColor,
         ref int maxLaneCount,
-        string? remoteUrl)
+        string? remoteUrl = null)
     {
-        var hash = commit.Hash.ToString();
-        var parentList = parents is List<string> list ? list : parents.ToList();
-        var incomingLanes = CommitGraphLaneLayout.FindAllLanesByTarget(activeLaneTargets, hash);
+        var isStash = IsStashRef(commit);
+        var incomingLanes = CommitGraphLaneLayout.FindAllLanesByTarget(activeLaneTargets, commit.Hash);
         var activeLanesAbove = rowIndex == 0
             ? []
             : CommitGraphLaneLayout.GetActiveLanes(activeLaneTargets);
-        var currentLane = ShouldLandStashLanesOnPrimaryLane(commit, incomingLanes, activeLaneTargets)
+        var laneColorsAbove = rowIndex == 0
+            ? CommitGraphEmptyLists.LaneColors
+            : GetActiveLaneColors(activeLaneTargets, activeLaneColors);
+        var currentLane = ShouldLandStashLanesOnPrimaryLane(isStash, incomingLanes, activeLaneTargets)
             ? 0
             : incomingLanes.Count > 0
             ? incomingLanes[0]
-            : IsStashRef(commit)
+            : isStash
                 ? CommitGraphLaneLayout.AllocateLaneAfter(activeLaneTargets, reservedLane: 0)
                 : CommitGraphLaneLayout.AllocateLane(activeLaneTargets);
+        var currentColor = ResolveCurrentColor(
+            currentLane,
+            incomingLanes,
+            activeLaneColors,
+            allocateColor);
 
         foreach (var lane in incomingLanes)
         {
             activeLaneTargets[lane] = null;
+            SetLaneColor(activeLaneColors, lane, -1);
         }
 
-        var mainParent = parentList.Count > 0 ? parentList[0] : null;
+        int? mainParentLane = null;
 
-        if (!string.IsNullOrEmpty(mainParent) && IsStashRef(commit))
+        if (parents.Count > 0)
         {
-            CommitGraphLaneLayout.SetLaneTarget(activeLaneTargets, currentLane, mainParent);
-        }
-        else if (!string.IsNullOrEmpty(mainParent))
-        {
-            CommitGraphLaneLayout.SetLaneTarget(activeLaneTargets, currentLane, mainParent);
+            var mainParent = parents[0];
+            if (!parents.IsProcessed(0))
+            {
+                var existingLane = CommitGraphLaneLayout.FindLaneByTarget(activeLaneTargets, mainParent);
+                mainParentLane = existingLane ?? currentLane;
+                if (existingLane == null)
+                {
+                    CommitGraphLaneLayout.SetLaneTarget(activeLaneTargets, currentLane, mainParent);
+                    SetLaneColor(activeLaneColors, currentLane, currentColor);
+                }
+            }
+            else if (currentLane < activeLaneTargets.Count)
+            {
+                activeLaneTargets[currentLane] = null;
+                SetLaneColor(activeLaneColors, currentLane, -1);
+            }
         }
         else if (currentLane < activeLaneTargets.Count)
         {
             activeLaneTargets[currentLane] = null;
+            SetLaneColor(activeLaneColors, currentLane, -1);
         }
 
         List<int>? mergeParentLanes = null;
-        if (parentList.Count > 1)
+        if (parents.Count > 1)
         {
-            for (var index = 1; index < parentList.Count; index++)
+            for (var index = 1; index < parents.Count; index++)
             {
-                var parent = parentList[index];
+                if (parents.IsProcessed(index))
+                {
+                    continue;
+                }
+
+                var parent = parents[index];
                 var parentLane = CommitGraphLaneLayout.FindLaneByTarget(activeLaneTargets, parent)
                     ?? CommitGraphLaneLayout.AllocateLane(activeLaneTargets);
+                EnsureLaneHasColor(parentLane, activeLaneColors, allocateColor);
                 CommitGraphLaneLayout.SetLaneTarget(activeLaneTargets, parentLane, parent);
                 mergeParentLanes ??= new List<int>();
                 mergeParentLanes.Add(parentLane);
             }
         }
 
-        CommitGraphLaneLayout.TrimTrailingEmptyLanes(activeLaneTargets);
+        var edgesAbove = BuildEdgesAbove(incomingLanes, currentLane, currentColor, laneColorsAbove);
+        var edgesBelow = BuildEdgesBelow(
+            currentLane,
+            currentColor,
+            mainParentLane,
+            mergeParentLanes,
+            activeLaneColors);
+        edgesBelow = CompactLanesBelow(activeLaneTargets, activeLaneColors, edgesBelow);
         maxLaneCount = Math.Max(maxLaneCount, activeLaneTargets.Count);
 
-        var commitInfo = CommitGraphCommitMapper.BuildInfo(commit, parentList, remoteUrl);
+        var commitInfo = CommitGraphCommitMapper.BuildInfo(
+            commit,
+            BuildParentList(parents),
+            remoteUrl);
         return new CommitGraphRow
         {
             Commit = commitInfo,
             RowIndex = rowIndex,
             Lane = currentLane,
+            ColorIndex = currentColor,
             ActiveLanesAbove = activeLanesAbove,
             ActiveLanesBelow = CommitGraphLaneLayout.GetActiveLanes(activeLaneTargets),
-            EdgesAbove = BuildEdgesAbove(incomingLanes, currentLane),
-            EdgesBelow = BuildEdgesBelow(currentLane, mainParent, mergeParentLanes),
-            IsMergeCommit = parentList.Count > 1,
-            IsBranchTip = commitInfo.Branches.Count > 0 || commitInfo.Refs.Any(reference => reference.Kind == CommitRefKind.Stash),
+            LaneColorsAbove = laneColorsAbove,
+            LaneColorsBelow = GetActiveLaneColors(activeLaneTargets, activeLaneColors),
+            EdgesAbove = edgesAbove,
+            EdgesBelow = edgesBelow,
+            IsMergeCommit = parents.Count > 1,
+            IsBranchTip = HasBranchOrStashRef(commitInfo),
         };
     }
 
     private static bool IsStashRef(GitCommit commit)
     {
-        return commit.Refs.Any(reference => reference.Kind == GitRefKind.Stash);
-    }
-
-    private static bool ShouldLandStashLanesOnPrimaryLane(
-        GitCommit commit,
-        IReadOnlyCollection<int> incomingLanes,
-        List<string?> activeLaneTargets)
-    {
-        return !IsStashRef(commit) &&
-            incomingLanes.Count > 0 &&
-            incomingLanes.All(lane => lane > 0) &&
-            (activeLaneTargets.Count == 0 || activeLaneTargets[0] == null);
-    }
-
-    private static List<CommitLaneEdge> BuildEdgesAbove(IEnumerable<int> incomingLanes, int currentLane)
-    {
-        return incomingLanes
-            .Select(lane => new CommitLaneEdge
-            {
-                FromLane = lane,
-                ToLane = currentLane,
-                Kind = lane == currentLane ? "straight" : "merge_in",
-            })
-            .ToList();
-    }
-
-    private static List<CommitLaneEdge> BuildEdgesBelow(
-        int currentLane,
-        string? mainParent,
-        IEnumerable<int>? mergeParentLanes)
-    {
-        var edgesBelow = new List<CommitLaneEdge>();
-        if (!string.IsNullOrEmpty(mainParent))
+        foreach (var reference in commit.Refs)
         {
-            edgesBelow.Add(new CommitLaneEdge
+            if (reference.Kind == GitRefKind.Stash)
             {
-                FromLane = currentLane,
-                ToLane = currentLane,
-                Kind = "straight",
-            });
-        }
-
-        if (mergeParentLanes != null)
-        {
-            foreach (var parentLane in mergeParentLanes)
-            {
-                edgesBelow.Add(new CommitLaneEdge
-                {
-                    FromLane = currentLane,
-                    ToLane = parentLane,
-                    Kind = "merge_in",
-                });
+                return true;
             }
         }
 
-        return edgesBelow;
+        return false;
+    }
+
+    private static bool ShouldLandStashLanesOnPrimaryLane(
+        bool isStash,
+        IReadOnlyCollection<int> incomingLanes,
+        List<GitObjectId?> activeLaneTargets)
+    {
+        if (isStash || incomingLanes.Count == 0 || (activeLaneTargets.Count > 0 && activeLaneTargets[0] != null))
+        {
+            return false;
+        }
+
+        foreach (var lane in incomingLanes)
+        {
+            if (lane <= 0)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static List<string> BuildParentList(CommitGraphParentSet parents)
+    {
+        var values = new List<string>(parents.Count);
+        for (var index = 0; index < parents.Count; index++)
+        {
+            values.Add(parents[index].Value);
+        }
+
+        return values;
+    }
+
+    private static bool HasBranchOrStashRef(CommitInfo commitInfo)
+    {
+        foreach (var reference in commitInfo.Refs)
+        {
+            if (reference.Kind is CommitRefKind.Local or CommitRefKind.Remote or CommitRefKind.Stash)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

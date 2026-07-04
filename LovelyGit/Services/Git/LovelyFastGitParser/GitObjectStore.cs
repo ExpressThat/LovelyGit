@@ -3,10 +3,10 @@ using ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser.Packs;
 
 namespace ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser;
 
-internal sealed class GitObjectStore : IDisposable
+internal sealed partial class GitObjectStore : IDisposable
 {
-    private const int ObjectCacheSize = 512;
-    private const int ObjectCacheBytes = 16 * 1024 * 1024;
+    private const int ObjectCacheSize = 256;
+    private const int ObjectCacheBytes = 8 * 1024 * 1024;
 
     private readonly string _gitDirectory;
     private readonly GitObjectFormat _objectFormat;
@@ -14,7 +14,11 @@ internal sealed class GitObjectStore : IDisposable
     private readonly LruCache<GitObjectId, GitObjectData> _objectCache =
         new(ObjectCacheSize, ObjectCacheBytes, ObjectWeight);
     private readonly SemaphoreSlim _packIndexesLock = new(1, 1);
+    private readonly object _looseObjectIndexGate = new();
     private List<GitPackIndex>? _packIndexes;
+    private HashSet<string>? _looseObjectIds;
+    private bool _looseObjectIndexLoaded;
+    private bool _looseObjectIndexTooLarge;
 
     public GitObjectStore(string gitDirectory, GitObjectFormat objectFormat)
     {
@@ -25,6 +29,14 @@ internal sealed class GitObjectStore : IDisposable
 
     public async Task<GitObjectData> ReadObjectAsync(GitObjectId id, CancellationToken cancellationToken)
     {
+        return await ReadObjectAsync(id, cacheObject: true, cancellationToken).ConfigureAwait(false);
+    }
+
+    public async Task<GitObjectData> ReadObjectAsync(
+        GitObjectId id,
+        bool cacheObject,
+        CancellationToken cancellationToken)
+    {
         if (_objectCache.TryGet(id, out var cached))
         {
             return cached;
@@ -33,14 +45,22 @@ internal sealed class GitObjectStore : IDisposable
         var loose = await TryReadLooseObjectAsync(id, cancellationToken).ConfigureAwait(false);
         if (loose != null)
         {
-            _objectCache.Set(id, loose);
+            if (cacheObject)
+            {
+                _objectCache.Set(id, loose);
+            }
+
             return loose;
         }
 
-        var packed = await TryReadPackedObjectAsync(id, cancellationToken).ConfigureAwait(false);
+        var packed = await TryReadPackedObjectAsync(id, cacheObject, cancellationToken).ConfigureAwait(false);
         if (packed != null)
         {
-            _objectCache.Set(id, packed);
+            if (cacheObject)
+            {
+                _objectCache.Set(id, packed);
+            }
+
             return packed;
         }
 
@@ -57,7 +77,7 @@ internal sealed class GitObjectStore : IDisposable
     {
         var value = id.Value;
         var path = Path.Combine(_gitDirectory, "objects", value[..2], value[2..]);
-        if (!File.Exists(path))
+        if (!MightHaveLooseObject(value) || !File.Exists(path))
         {
             return null;
         }
@@ -74,18 +94,25 @@ internal sealed class GitObjectStore : IDisposable
         return ParseLooseObject(inflated.ToArray());
     }
 
-    private async Task<GitObjectData?> TryReadPackedObjectAsync(GitObjectId id, CancellationToken cancellationToken)
+    private async Task<GitObjectData?> TryReadPackedObjectAsync(
+        GitObjectId id,
+        bool cacheObject,
+        CancellationToken cancellationToken)
     {
         foreach (var index in await GetPackIndexesAsync(cancellationToken).ConfigureAwait(false))
         {
-            var offset = await index.TryFindOffsetAsync(id, cancellationToken).ConfigureAwait(false);
+            var offset = index.TryFindOffset(id, cancellationToken);
             if (offset == null)
             {
                 continue;
             }
 
             return await _packReader
-                .ReadObjectAtAsync(index.PackPath, offset.Value, ReadObjectAsync, cancellationToken)
+                .ReadObjectAtAsync(
+                    index.PackPath,
+                    offset.Value,
+                    ReadObjectAsync,
+                    cancellationToken)
                 .ConfigureAwait(false);
         }
 
@@ -182,6 +209,14 @@ internal sealed class GitObjectStore : IDisposable
     public void Dispose()
     {
         _objectCache.Clear();
+        if (Volatile.Read(ref _packIndexes) is { } indexes)
+        {
+            foreach (var index in indexes)
+            {
+                index.Dispose();
+            }
+        }
+
         Volatile.Write(ref _packIndexes, null);
         _packIndexesLock.Dispose();
         _packReader.Dispose();

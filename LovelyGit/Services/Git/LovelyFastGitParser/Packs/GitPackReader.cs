@@ -1,16 +1,17 @@
-using System.Buffers;
 using ICSharpCode.SharpZipLib.Zip.Compression;
 
 namespace ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser.Packs;
 
-internal sealed class GitPackReader : IDisposable
+internal sealed partial class GitPackReader : IDisposable
 {
-    private const int PackOffsetCacheSize = 512;
-    private const int PackOffsetCacheBytes = 16 * 1024 * 1024;
+    private const int PackOffsetCacheSize = 256;
+    private const int PackOffsetCacheBytes = 8 * 1024 * 1024;
 
     private readonly GitObjectFormat _objectFormat;
     private readonly LruCache<PackObjectKey, GitObjectData> _packOffsetCache =
         new(PackOffsetCacheSize, PackOffsetCacheBytes, ObjectWeight);
+    private readonly object _packFilesGate = new();
+    private readonly Dictionary<string, FileStream> _packFiles = new(StringComparer.Ordinal);
 
     public GitPackReader(GitObjectFormat objectFormat)
     {
@@ -29,8 +30,7 @@ internal sealed class GitPackReader : IDisposable
             return cached;
         }
 
-        await using var file = File.OpenRead(packPath);
-        file.Seek(offset, SeekOrigin.Begin);
+        using var file = new RandomAccessPackStream(GetPackFile(packPath).SafeFileHandle, offset);
 
         var first = file.ReadByte();
         if (first < 0)
@@ -44,8 +44,12 @@ internal sealed class GitPackReader : IDisposable
         if (rawKind == 6)
         {
             var baseOffset = offset - ReadOffsetDeltaBaseDistance(file);
-            var delta = await InflateRemainingAsync(file, objectSize, cancellationToken).ConfigureAwait(false);
-            var baseObject = await ReadObjectAtAsync(packPath, baseOffset, readObjectAsync, cancellationToken)
+            var delta = InflateRemaining(file, objectSize, cancellationToken);
+            var baseObject = await ReadObjectAtAsync(
+                    packPath,
+                    baseOffset,
+                    readObjectAsync,
+                    cancellationToken)
                 .ConfigureAwait(false);
             return CacheAndReturn(key, new GitObjectData(
                 baseObject.Kind,
@@ -54,13 +58,13 @@ internal sealed class GitPackReader : IDisposable
 
         if (rawKind == 7)
         {
-            var baseHash = new byte[GitObjectId.GetByteLength(_objectFormat)];
-            await GitPackFileHelpers.ReadExactlyAsync(file, baseHash, cancellationToken).ConfigureAwait(false);
+            Span<byte> baseHash = stackalloc byte[GitObjectId.GetByteLength(_objectFormat)];
+            GitPackFileHelpers.ReadExactly(file, baseHash, cancellationToken);
             var baseObject = await readObjectAsync(
-                    new GitObjectId(Convert.ToHexString(baseHash).ToLowerInvariant(), _objectFormat),
+                    GitObjectId.FromBytes(baseHash, _objectFormat),
                     cancellationToken)
                 .ConfigureAwait(false);
-            var delta = await InflateRemainingAsync(file, objectSize, cancellationToken).ConfigureAwait(false);
+            var delta = InflateRemaining(file, objectSize, cancellationToken);
             return CacheAndReturn(key, new GitObjectData(
                 baseObject.Kind,
                 GitDeltaResolver.ApplyDelta(baseObject.Data, delta)));
@@ -77,7 +81,7 @@ internal sealed class GitPackReader : IDisposable
 
         return CacheAndReturn(
             key,
-            new GitObjectData(kind, await InflateRemainingAsync(file, objectSize, cancellationToken).ConfigureAwait(false)));
+            new GitObjectData(kind, InflateRemaining(file, objectSize, cancellationToken)));
     }
 
     private GitObjectData CacheAndReturn(PackObjectKey key, GitObjectData objectData)
@@ -94,6 +98,36 @@ internal sealed class GitPackReader : IDisposable
     public void Dispose()
     {
         ClearObjectCache();
+        lock (_packFilesGate)
+        {
+            foreach (var file in _packFiles.Values)
+            {
+                file.Dispose();
+            }
+
+            _packFiles.Clear();
+        }
+    }
+
+    private FileStream GetPackFile(string packPath)
+    {
+        lock (_packFilesGate)
+        {
+            if (_packFiles.TryGetValue(packPath, out var file))
+            {
+                return file;
+            }
+
+            file = new FileStream(
+                packPath,
+                FileMode.Open,
+                FileAccess.Read,
+                FileShare.Read,
+                bufferSize: 1,
+                FileOptions.RandomAccess);
+            _packFiles.Add(packPath, file);
+            return file;
+        }
     }
 
     private static ulong ReadVariableSize(Stream stream, int first)
@@ -137,76 +171,6 @@ internal sealed class GitPackReader : IDisposable
         }
 
         return value;
-    }
-
-    private static async Task<byte[]> InflateRemainingAsync(
-        Stream stream,
-        ulong expectedSize,
-        CancellationToken cancellationToken)
-    {
-        if (expectedSize > int.MaxValue)
-        {
-            throw new InvalidDataException("Packed object is too large.");
-        }
-
-        var inflater = new Inflater(noHeader: false);
-        var input = ArrayPool<byte>.Shared.Rent(8192);
-        var output = ArrayPool<byte>.Shared.Rent(8192);
-        var inflated = new byte[(int)expectedSize];
-        var inflatedOffset = 0;
-        try
-        {
-            while (!inflater.IsFinished)
-            {
-                cancellationToken.ThrowIfCancellationRequested();
-                if (inflater.IsNeedingInput)
-                {
-                    var read = await stream.ReadAsync(input.AsMemory(0, input.Length), cancellationToken)
-                        .ConfigureAwait(false);
-                    if (read == 0)
-                    {
-                        throw new EndOfStreamException("Packed object zlib stream ended unexpectedly.");
-                    }
-
-                    inflater.SetInput(input, 0, read);
-                }
-
-                var written = inflater.Inflate(output, 0, output.Length);
-                if (written > 0)
-                {
-                    if (inflatedOffset + written > inflated.Length)
-                    {
-                        throw new InvalidDataException("Packed object inflated beyond its expected size.");
-                    }
-
-                    output.AsSpan(0, written).CopyTo(inflated.AsSpan(inflatedOffset));
-                    inflatedOffset += written;
-                    continue;
-                }
-
-                if (inflater.IsNeedingDictionary)
-                {
-                    throw new InvalidDataException("Packed object requires an unsupported zlib dictionary.");
-                }
-
-                if (!inflater.IsNeedingInput && !inflater.IsFinished)
-                {
-                    throw new InvalidDataException("Packed object zlib stream made no progress.");
-                }
-            }
-
-            if (inflatedOffset != inflated.Length)
-            {
-                throw new InvalidDataException("Packed object inflated to an unexpected size.");
-            }
-
-            return inflated;
-        }
-        finally
-        {
-            ArrayPool<byte>.Shared.Return(input);
-            ArrayPool<byte>.Shared.Return(output);
-        }
     }
 
     private static long ObjectWeight(GitObjectData data)

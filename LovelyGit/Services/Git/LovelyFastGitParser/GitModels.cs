@@ -17,17 +17,91 @@ internal sealed record GitTag(GitObjectId Hash, GitObjectId Target, string Name,
 
 internal sealed class GitCommit
 {
+    private GitObjectId _firstParentHash;
+    private List<GitObjectId>? _extraParentHashes;
+    private List<GitObjectId>? _parentHashesSnapshot;
+    private List<string>? _branches;
+    private List<string>? _tags;
+    private List<GitCommitRef>? _refs;
+
     public GitObjectId Hash { get; init; }
     public GitObjectId? TreeHash { get; set; }
-    public List<GitObjectId> ParentHashes { get; } = new();
+    public int ParentHashCount { get; private set; }
+    public IReadOnlyList<GitObjectId> ParentHashes => GetParentHashesSnapshot();
     public string AuthorName { get; set; } = string.Empty;
     public string AuthorEmail { get; set; } = string.Empty;
     public long AuthorUnixSeconds { get; set; }
+    public long CommitterUnixSeconds { get; set; }
     public string Subject { get; set; } = string.Empty;
     public string Body { get; set; } = string.Empty;
-    public List<string> Branches { get; } = new();
-    public List<string> Tags { get; } = new();
-    public List<GitCommitRef> Refs { get; } = new();
+    public IReadOnlyList<string> Branches => _branches ?? [];
+    public IReadOnlyList<string> Tags => _tags ?? [];
+    public IReadOnlyList<GitCommitRef> Refs => _refs ?? [];
+
+    public void AddParentHash(GitObjectId id)
+    {
+        if (ParentHashCount == 0)
+        {
+            _firstParentHash = id;
+        }
+        else
+        {
+            (_extraParentHashes ??= new List<GitObjectId>(1)).Add(id);
+        }
+
+        _parentHashesSnapshot = null;
+        ParentHashCount++;
+    }
+
+    public GitObjectId GetParentHash(int index)
+    {
+        if ((uint)index >= (uint)ParentHashCount)
+        {
+            throw new ArgumentOutOfRangeException(nameof(index));
+        }
+
+        return index == 0 ? _firstParentHash : _extraParentHashes![index - 1];
+    }
+
+    public void AddBranches(IEnumerable<string> branches)
+    {
+        _branches ??= new List<string>();
+        _branches.AddRange(branches);
+    }
+
+    public void AddTags(IEnumerable<string> tags)
+    {
+        _tags ??= new List<string>();
+        _tags.AddRange(tags);
+    }
+
+    public void AddRefs(IEnumerable<GitCommitRef> refs)
+    {
+        _refs ??= new List<GitCommitRef>();
+        _refs.AddRange(refs);
+    }
+
+    private IReadOnlyList<GitObjectId> GetParentHashesSnapshot()
+    {
+        if (ParentHashCount == 0)
+        {
+            return [];
+        }
+
+        if (_parentHashesSnapshot != null)
+        {
+            return _parentHashesSnapshot;
+        }
+
+        var snapshot = new List<GitObjectId>(ParentHashCount) { _firstParentHash };
+        if (_extraParentHashes != null)
+        {
+            snapshot.AddRange(_extraParentHashes);
+        }
+
+        _parentHashesSnapshot = snapshot;
+        return snapshot;
+    }
 }
 
 internal sealed record GitTreeFile(string Path, GitObjectId ObjectId, string Mode);
