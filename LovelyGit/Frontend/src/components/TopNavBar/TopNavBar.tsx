@@ -1,49 +1,25 @@
 import { GitCompareArrows } from "lucide-react";
-import { BranchActionControl } from "./components/BranchActionControl";
 import { RemoteActionsControl } from "./components/RemoteActionsControl";
 import { SettingsDialog } from "./components/SettingsDialog";
-import { StashActionControl } from "./components/StashActionControl";
 import { Tabs } from "./components/Tabs";
 import { TerminalActionControl } from "./components/TerminalActionControl";
 import { ThemeSelector } from "./components/ThemeSelector";
-import { useGitOperationState } from "./components/useGitOperationState";
 
 export function TopNavBar({
-	onBranchCreated,
 	onOpenWorkingChanges,
-	onStashCreated,
 	repositoryId,
-	selectedCommitHash,
-	workingChangesKnown,
 	workingChangesCount,
 }: {
-	onBranchCreated: () => void;
 	onOpenWorkingChanges: () => void;
-	onStashCreated: () => void;
 	repositoryId: string | null;
-	selectedCommitHash: string | null;
-	workingChangesKnown: boolean;
 	workingChangesCount: number;
 }) {
-	const operationState = useGitOperationState(repositoryId);
-
 	return (
 		<header className="shrink-0">
 			<Tabs />
 			<div className="flex h-10 w-full items-center justify-between gap-2 border-b bg-card px-2">
 				<div className="flex items-center gap-1">
 					<RemoteActionsControl repositoryId={repositoryId} />
-					<BranchActionControl
-						onBranchCreated={onBranchCreated}
-						repositoryId={repositoryId}
-						selectedCommitHash={selectedCommitHash}
-					/>
-					<StashActionControl
-						onStashCreated={onStashCreated}
-						repositoryId={repositoryId}
-						workingChangesKnown={workingChangesKnown}
-						workingChangesCount={workingChangesCount}
-					/>
 					<TerminalActionControl repositoryId={repositoryId} />
 				</div>
 				<div className="flex items-center justify-end gap-1">

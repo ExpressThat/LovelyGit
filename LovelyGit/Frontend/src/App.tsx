@@ -1,11 +1,7 @@
 import "./App.css";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
-import {
-	cancelCommitDiffPreparation,
-	type DetailsPanelState,
-	panelTitle,
-} from "./AppPanelState";
+import { type DetailsPanelState, panelTitle } from "./AppPanelState";
 import { CommitDetails } from "./components/CommitDetails/CommitDetails";
 import { CommitFileDiffView } from "./components/CommitFileDiff/CommitFileDiffView";
 import { CommitGraphLayer } from "./components/CommitGraph/CommitGraphLayer";
@@ -39,43 +35,20 @@ function App() {
 		if (previousRepositoryIdRef.current === currentGitRepositoryId) {
 			return;
 		}
-		if (detailsPanel?.kind === "commit" && previousRepositoryIdRef.current) {
-			cancelCommitDiffPreparation(
-				previousRepositoryIdRef.current,
-				detailsPanel.commitHash,
-			);
-		}
 		previousRepositoryIdRef.current = currentGitRepositoryId;
 		setDetailsPanel(null);
-	}, [currentGitRepositoryId, detailsPanel]);
+	}, [currentGitRepositoryId]);
 	const closeDetailsPanel = () => {
-		if (detailsPanel?.kind === "commit" && currentGitRepositoryId) {
-			cancelCommitDiffPreparation(
-				currentGitRepositoryId,
-				detailsPanel.commitHash,
-			);
-		}
 		setDetailsPanel(null);
 	};
 	return (
 		<RepositoryProvider>
 			<main className="app-shell">
 				<TopNavBar
-					onBranchCreated={() =>
-						setCommitGraphRefreshToken((token) => token + 1)
-					}
 					onOpenWorkingChanges={() =>
 						setDetailsPanel({ kind: "workingChanges" })
 					}
-					onStashCreated={() => {
-						setCommitGraphRefreshToken((token) => token + 1);
-						void workingTreeChanges.reload();
-					}}
 					repositoryId={currentGitRepositoryId}
-					selectedCommitHash={
-						detailsPanel?.kind === "commit" ? detailsPanel.commitHash : null
-					}
-					workingChangesKnown={workingTreeChanges.isSummaryLoaded}
 					workingChangesCount={workingTreeChanges.totalCount}
 				/>
 				<div className="flex min-h-0 flex-1 overflow-hidden">
