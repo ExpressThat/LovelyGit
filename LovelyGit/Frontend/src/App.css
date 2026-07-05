@@ -70,6 +70,14 @@
 	background: color-mix(in oklch, var(--muted-foreground) 65%, transparent);
 }
 
+.select-scrollbar::-webkit-scrollbar-track {
+	background: var(--popover);
+}
+
+.select-scrollbar::-webkit-scrollbar-thumb {
+	border-color: var(--popover);
+}
+
 @layer components {
 	@media (max-width: 900px) {
 		.diff-toolbar-button {

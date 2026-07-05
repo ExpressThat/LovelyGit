@@ -76,6 +76,14 @@
 - React Compiler is enabled through `@vitejs/plugin-react` plus `@rolldown/plugin-babel` in `vite.config.ts`; avoid unnecessary manual memoization unless measurements or existing patterns justify it.
 - UI uses Tailwind v4 plus shadcn `base-nova` config in `components.json`; local VS Code settings suppress Tailwind canonical-class suggestions.
 
+## Design System
+- Use semantic Tailwind/shadcn color tokens for app UI: `bg-background`, `bg-card`, `bg-popover`, `bg-sidebar`, `bg-muted`, `bg-secondary`, `bg-accent`, `text-foreground`, `text-muted-foreground`, `border-border`, `ring-ring`, and `bg-primary` for true primary emphasis. Avoid hard-coded colors in app chrome unless a preview/demo must intentionally show a fixed sample.
+- Theme colors are CSS variables applied in `Frontend/src/lib/settings/theme/themeUtils.ts`. `background` is the user's base surface color; derived surfaces such as `card`, `popover`, `muted`, `secondary`, `accent`, `sidebar`, `border`, and `input` should stay related to that background so panels, dialogs, sidebars, lists, and hover states feel like the same theme.
+- Do not use the user's accent color as a general surface color. In this app, `--accent` is a shadcn interaction surface used by hover, active, selected, dropdown, and menu rows. User accent choices should drive `primary`, `ring`, `sidebar-primary`, and other emphasis tokens, while `--accent` should remain a background-derived interaction surface.
+- When adding new panels or dialogs, prefer `bg-popover` for floating/dialog surfaces, `bg-card` for framed sections and repeated items, `bg-background` for the main workspace, and `bg-sidebar` for side navigation. If a surface looks like it ignores a custom theme background, check whether it is using a hard-coded color, opacity over black/white, or the wrong semantic token.
+- Theme and font settings must be applied before React renders in `Frontend/src/bootstrapApp.tsx` as well as live through the React hooks, so launch does not flash the wrong theme or font.
+- After changing theme behavior, visually test at least one light and one dark custom background/accent combination in the real WebView2 app with CMG, and inspect screenshots for dialogs, sidebars, top nav, commit graph rows, details/working-changes panels, dropdowns, and hover/selected states.
+
 ## Testing State
 - No test projects, frontend test runner, or CI verification workflow are present. For focused verification, run the relevant build/codegen command above and mention any unverified runtime behavior.
 

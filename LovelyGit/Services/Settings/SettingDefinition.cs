@@ -27,15 +27,85 @@ namespace ExpressThat.LovelyGit.Services.Settings
             null,
             GetJsonTypeInfo<Guid?>());
 
-        public static readonly SettingDefinition<AppTheme> Theme = new(
+        public static readonly SettingDefinition<string> Theme = new(
             nameof(Setting.Theme),
-            AppTheme.System,
-            GetJsonTypeInfo<AppTheme>());
+            "System",
+            GetJsonTypeInfo<string>());
 
-        public static readonly SettingDefinition<AppFont> Font = new(
+        public static readonly SettingDefinition<string> LightTheme = new(
+            nameof(Setting.LightTheme),
+            "Morning",
+            GetJsonTypeInfo<string>());
+
+        public static readonly SettingDefinition<string> DarkTheme = new(
+            nameof(Setting.DarkTheme),
+            "Midnight",
+            GetJsonTypeInfo<string>());
+
+        public static readonly SettingDefinition<string> Font = new(
             nameof(Setting.Font),
-            AppFont.Inter,
-            GetJsonTypeInfo<AppFont>());
+            "Inter",
+            GetJsonTypeInfo<string>());
+
+        public static readonly SettingDefinition<string> UiFont = new(
+            nameof(Setting.UiFont),
+            "Inter",
+            GetJsonTypeInfo<string>());
+
+        public static readonly SettingDefinition<string> CodeFont = new(
+            nameof(Setting.CodeFont),
+            "Consolas",
+            GetJsonTypeInfo<string>());
+
+        public static readonly SettingDefinition<string> LightUiFont = new(
+            nameof(Setting.LightUiFont),
+            "Inter",
+            GetJsonTypeInfo<string>());
+
+        public static readonly SettingDefinition<string> LightCodeFont = new(
+            nameof(Setting.LightCodeFont),
+            "Consolas",
+            GetJsonTypeInfo<string>());
+
+        public static readonly SettingDefinition<string> DarkUiFont = new(
+            nameof(Setting.DarkUiFont),
+            "Inter",
+            GetJsonTypeInfo<string>());
+
+        public static readonly SettingDefinition<string> DarkCodeFont = new(
+            nameof(Setting.DarkCodeFont),
+            "Consolas",
+            GetJsonTypeInfo<string>());
+
+        public static readonly SettingDefinition<string> LightAccent = new(
+            nameof(Setting.LightAccent),
+            "",
+            GetJsonTypeInfo<string>());
+
+        public static readonly SettingDefinition<string> LightBackground = new(
+            nameof(Setting.LightBackground),
+            "",
+            GetJsonTypeInfo<string>());
+
+        public static readonly SettingDefinition<string> LightForeground = new(
+            nameof(Setting.LightForeground),
+            "",
+            GetJsonTypeInfo<string>());
+
+        public static readonly SettingDefinition<string> DarkAccent = new(
+            nameof(Setting.DarkAccent),
+            "",
+            GetJsonTypeInfo<string>());
+
+        public static readonly SettingDefinition<string> DarkBackground = new(
+            nameof(Setting.DarkBackground),
+            "",
+            GetJsonTypeInfo<string>());
+
+        public static readonly SettingDefinition<string> DarkForeground = new(
+            nameof(Setting.DarkForeground),
+            "",
+            GetJsonTypeInfo<string>());
 
         public static readonly SettingDefinition<CommitDiffViewMode> CommitDiffViewMode = new(
             nameof(Setting.CommitDiffViewMode),
@@ -77,7 +147,21 @@ namespace ExpressThat.LovelyGit.Services.Settings
             {
                 [Setting.CurrentGitRepositoryId] = CurrentGitRepositoryId,
                 [Setting.Theme] = Theme,
+                [Setting.LightTheme] = LightTheme,
+                [Setting.DarkTheme] = DarkTheme,
                 [Setting.Font] = Font,
+                [Setting.UiFont] = UiFont,
+                [Setting.CodeFont] = CodeFont,
+                [Setting.LightUiFont] = LightUiFont,
+                [Setting.LightCodeFont] = LightCodeFont,
+                [Setting.DarkUiFont] = DarkUiFont,
+                [Setting.DarkCodeFont] = DarkCodeFont,
+                [Setting.LightAccent] = LightAccent,
+                [Setting.LightBackground] = LightBackground,
+                [Setting.LightForeground] = LightForeground,
+                [Setting.DarkAccent] = DarkAccent,
+                [Setting.DarkBackground] = DarkBackground,
+                [Setting.DarkForeground] = DarkForeground,
                 [Setting.CommitDiffViewMode] = CommitDiffViewMode,
                 [Setting.CommitDiffLineDisplayMode] = CommitDiffLineDisplayMode,
                 [Setting.CommitDiffContextLines] = CommitDiffContextLines,

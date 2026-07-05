@@ -10,7 +10,21 @@ namespace ExpressThat.LovelyGit.Services.Settings
     {
         CurrentGitRepositoryId,
         Theme,
+        LightTheme,
+        DarkTheme,
         Font,
+        UiFont,
+        CodeFont,
+        LightUiFont,
+        LightCodeFont,
+        DarkUiFont,
+        DarkCodeFont,
+        LightAccent,
+        LightBackground,
+        LightForeground,
+        DarkAccent,
+        DarkBackground,
+        DarkForeground,
         CommitDiffViewMode,
         CommitDiffLineDisplayMode,
         CommitDiffContextLines,
@@ -18,41 +32,6 @@ namespace ExpressThat.LovelyGit.Services.Settings
         CommitDiffIgnoreWhitespace,
         CommitGraphRefsPanelOpen,
         RemotePrimaryAction
-    }
-
-    [TypeSharp]
-    [Union]
-    [JsonConverter(typeof(JsonStringEnumConverter<AppTheme>))]
-    public enum AppTheme
-    {
-        System,
-        Light,
-        Dark,
-        Morning,
-        Midnight,
-        Harbor,
-        Forest,
-        Ember,
-        Rose,
-        Copper,
-        Orchid
-    }
-
-    [TypeSharp]
-    [Union]
-    [JsonConverter(typeof(JsonStringEnumConverter<AppFont>))]
-    public enum AppFont
-    {
-        Inter,
-        System,
-        Segoe,
-        Aptos,
-        Verdana,
-        Trebuchet,
-        Georgia,
-        Cambria,
-        Consolas,
-        Mono
     }
 
     [TypeSharp]
