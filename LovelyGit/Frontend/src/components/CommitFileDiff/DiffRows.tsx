@@ -201,5 +201,5 @@ function isDiffChangedLine(line: CommitFileDiffLine) {
 }
 
 function workingLineText(line: CommitFileDiffLine) {
-	return line.text || line.newText || line.oldText;
+	return line.text || line.newText || line.oldText || "";
 }

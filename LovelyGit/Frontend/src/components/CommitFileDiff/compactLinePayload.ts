@@ -6,10 +6,10 @@ import type {
 type CompactLineTuple = [
 	number | null,
 	number | null,
-	string,
-	string,
-	string,
-	string,
+	string | null,
+	string | null,
+	string | null,
+	string | null,
 ];
 
 export function hasCompactLinePayload(diff: CommitFileDiffResponse) {
@@ -37,10 +37,10 @@ function toDiffLine(tuple: CompactLineTuple): CommitFileDiffLine {
 	return {
 		oldLineNumber: tuple[0],
 		newLineNumber: tuple[1],
-		oldText: tuple[2],
-		newText: tuple[3],
-		text: tuple[4],
-		changeType: tuple[5],
+		oldText: tuple[2] ?? "",
+		newText: tuple[3] ?? "",
+		text: tuple[4] ?? "",
+		changeType: tuple[5] ?? "",
 		oldSyntaxSpans: [],
 		newSyntaxSpans: [],
 		syntaxSpans: [],

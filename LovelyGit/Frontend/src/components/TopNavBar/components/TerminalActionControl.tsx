@@ -18,7 +18,7 @@ export function TerminalActionControl({
 	return (
 		<Button
 			aria-label="Open terminal at repository"
-			className="h-8"
+			className="h-9 px-3"
 			disabled={!repositoryId}
 			onClick={() => void openTerminal()}
 			size="sm"
@@ -30,7 +30,7 @@ export function TerminalActionControl({
 			type="button"
 			variant="ghost"
 		>
-			<SquareTerminal aria-hidden="true" />
+			<SquareTerminal aria-hidden="true" className="size-6" />
 			<span>Terminal</span>
 		</Button>
 	);

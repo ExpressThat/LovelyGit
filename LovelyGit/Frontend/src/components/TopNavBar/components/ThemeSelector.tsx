@@ -61,10 +61,10 @@ export function ThemeSelector() {
 	return (
 		<DropdownMenu open={open} onOpenChange={setOpen}>
 			<DropdownMenuTrigger
-				className="inline-flex size-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+				className="inline-flex size-9 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
 				aria-label="Select colour theme"
 			>
-				<Icon className="size-4" />
+				<Icon className="size-6" />
 			</DropdownMenuTrigger>
 			<DropdownMenuContent className="min-w-44" align="end">
 				<DropdownMenuGroup>

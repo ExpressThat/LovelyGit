@@ -22,6 +22,9 @@ function App() {
 		null,
 	);
 	const [commitGraphRefreshToken, setCommitGraphRefreshToken] = useState(0);
+	const [currentBranchName, setCurrentBranchName] = useState<string | null>(
+		null,
+	);
 	const isWorkingChangesPanelOpen = detailsPanel?.kind === "workingChanges";
 	const workingTreeChanges = useWorkingTreeChanges(
 		currentGitRepositoryId,
@@ -36,6 +39,7 @@ function App() {
 			return;
 		}
 		previousRepositoryIdRef.current = currentGitRepositoryId;
+		setCurrentBranchName(null);
 		setDetailsPanel(null);
 	}, [currentGitRepositoryId]);
 	const closeDetailsPanel = () => {
@@ -45,6 +49,7 @@ function App() {
 		<RepositoryProvider>
 			<main className="app-shell">
 				<TopNavBar
+					currentBranchName={currentBranchName}
 					onOpenWorkingChanges={() =>
 						setDetailsPanel({ kind: "workingChanges" })
 					}
@@ -60,6 +65,7 @@ function App() {
 										detailsPanel?.kind === "commit" &&
 											detailsPanel.selectedFile,
 									)}
+									onCurrentBranchNameChange={setCurrentBranchName}
 									onSelectCommit={selectCommit}
 									refreshToken={commitGraphRefreshToken}
 									repositoryId={currentGitRepositoryId}

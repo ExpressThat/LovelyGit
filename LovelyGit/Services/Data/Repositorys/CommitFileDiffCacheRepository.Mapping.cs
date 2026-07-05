@@ -30,8 +30,10 @@ internal sealed partial class CommitFileDiffCacheRepository
         };
     }
 
-    private static string Truncate(string value)
+    private static string Truncate(string? value)
     {
+        value ??= string.Empty;
+
         if (value.Length <= MaxCachedLineLength)
         {
             return value;
@@ -41,10 +43,15 @@ internal sealed partial class CommitFileDiffCacheRepository
     }
 
     private static List<CommitFileDiffSyntaxSpan> TrimSpans(
-        IEnumerable<CommitFileDiffSyntaxSpan> spans,
+        IEnumerable<CommitFileDiffSyntaxSpan>? spans,
         int maxLength)
     {
         var trimmed = new List<CommitFileDiffSyntaxSpan>();
+        if (spans == null)
+        {
+            return trimmed;
+        }
+
         foreach (var span in spans)
         {
             if (span.Start >= maxLength)
@@ -70,10 +77,15 @@ internal sealed partial class CommitFileDiffCacheRepository
     }
 
     private static List<CommitFileDiffChangeSpan> TrimSpans(
-        IEnumerable<CommitFileDiffChangeSpan> spans,
+        IEnumerable<CommitFileDiffChangeSpan>? spans,
         int maxLength)
     {
         var trimmed = new List<CommitFileDiffChangeSpan>();
+        if (spans == null)
+        {
+            return trimmed;
+        }
+
         foreach (var span in spans)
         {
             if (span.Start >= maxLength)
@@ -166,9 +178,14 @@ internal sealed partial class CommitFileDiffCacheRepository
         };
     }
 
-    private static List<CommitFileDiffSyntaxSpanCache> ToCache(IEnumerable<CommitFileDiffSyntaxSpan> spans)
+    private static List<CommitFileDiffSyntaxSpanCache> ToCache(IEnumerable<CommitFileDiffSyntaxSpan>? spans)
     {
         var cached = new List<CommitFileDiffSyntaxSpanCache>();
+        if (spans == null)
+        {
+            return cached;
+        }
+
         foreach (var span in spans)
         {
             cached.Add(new CommitFileDiffSyntaxSpanCache
@@ -182,9 +199,14 @@ internal sealed partial class CommitFileDiffCacheRepository
         return cached;
     }
 
-    private static List<CommitFileDiffSyntaxSpan> ToResponse(IEnumerable<CommitFileDiffSyntaxSpanCache> spans)
+    private static List<CommitFileDiffSyntaxSpan> ToResponse(IEnumerable<CommitFileDiffSyntaxSpanCache>? spans)
     {
         var response = new List<CommitFileDiffSyntaxSpan>();
+        if (spans == null)
+        {
+            return response;
+        }
+
         foreach (var span in spans)
         {
             response.Add(new CommitFileDiffSyntaxSpan
@@ -198,9 +220,14 @@ internal sealed partial class CommitFileDiffCacheRepository
         return response;
     }
 
-    private static List<CommitFileDiffChangeSpanCache> ToCache(IEnumerable<CommitFileDiffChangeSpan> spans)
+    private static List<CommitFileDiffChangeSpanCache> ToCache(IEnumerable<CommitFileDiffChangeSpan>? spans)
     {
         var cached = new List<CommitFileDiffChangeSpanCache>();
+        if (spans == null)
+        {
+            return cached;
+        }
+
         foreach (var span in spans)
         {
             cached.Add(new CommitFileDiffChangeSpanCache
@@ -214,9 +241,14 @@ internal sealed partial class CommitFileDiffCacheRepository
         return cached;
     }
 
-    private static List<CommitFileDiffChangeSpan> ToResponse(IEnumerable<CommitFileDiffChangeSpanCache> spans)
+    private static List<CommitFileDiffChangeSpan> ToResponse(IEnumerable<CommitFileDiffChangeSpanCache>? spans)
     {
         var response = new List<CommitFileDiffChangeSpan>();
+        if (spans == null)
+        {
+            return response;
+        }
+
         foreach (var span in spans)
         {
             response.Add(new CommitFileDiffChangeSpan

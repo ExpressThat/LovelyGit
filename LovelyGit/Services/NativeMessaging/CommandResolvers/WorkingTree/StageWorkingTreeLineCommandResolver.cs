@@ -52,8 +52,8 @@ internal sealed class StageWorkingTreeLineCommandResolver : CommandResponder<Sta
                     command.Arguments.ChangeType,
                     command.Arguments.OldLineNumber,
                     command.Arguments.NewLineNumber,
-                    command.Arguments.OldText,
-                    command.Arguments.NewText,
+                    command.Arguments.OldText ?? string.Empty,
+                    command.Arguments.NewText ?? string.Empty,
                     CancellationToken.None)
                 .ConfigureAwait(false);
             return Success(command);

@@ -90,13 +90,13 @@ export function RemoteActionsControl({
 
 	return (
 		<div className="inline-flex items-center gap-1">
-			<div className="inline-flex h-8 overflow-hidden rounded-md border bg-background">
+			<div className="inline-flex h-9 overflow-hidden rounded-md border bg-background">
 				<Button
 					aria-label={primaryIconTitle(
 						primary,
 						remoteTargets.selectedRemoteName,
 					)}
-					className="h-full min-w-24 rounded-none border-0 px-2"
+					className="h-full min-w-28 rounded-none border-0 px-3"
 					disabled={!canRunRemoteAction}
 					onClick={() => void runAction(primary)}
 					size="sm"
@@ -106,21 +106,19 @@ export function RemoteActionsControl({
 				>
 					<Icon
 						aria-hidden="true"
-						className={
-							busyAction === primary.value ? "animate-pulse" : undefined
-						}
+						className={`size-6 ${busyAction === primary.value ? "animate-pulse" : ""}`}
 					/>
 					<span>{primary.toolbarLabel}</span>
 				</Button>
 				<DropdownMenu open={open} onOpenChange={setOpen}>
 					<DropdownMenuTrigger
 						aria-label="Choose fetch or pull default"
-						className="inline-flex h-full w-7 items-center justify-center border-l text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
+						className="inline-flex h-full w-8 items-center justify-center border-l text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
 						disabled={!canRunRemoteAction}
 						title="Choose fetch or pull default"
 					>
 						<span className="sr-only">Choose fetch or pull default</span>
-						<ChevronDown aria-hidden="true" className="size-3.5" />
+						<ChevronDown aria-hidden="true" className="size-5" />
 					</DropdownMenuTrigger>
 					<DropdownMenuContent align="start" className="min-w-72 p-0">
 						<DropdownMenuGroup>
@@ -155,7 +153,7 @@ export function RemoteActionsControl({
 			</div>
 			<Button
 				aria-label="Push"
-				className="h-8"
+				className="h-9 px-3"
 				disabled={!canRunRemoteAction}
 				onClick={() => void runAction(pushRemoteAction)}
 				size="sm"
@@ -169,7 +167,7 @@ export function RemoteActionsControl({
 			>
 				<PushIcon
 					aria-hidden="true"
-					className={busyAction === "Push" ? "animate-pulse" : undefined}
+					className={`size-6 ${busyAction === "Push" ? "animate-pulse" : ""}`}
 				/>
 				<span>Push</span>
 			</Button>

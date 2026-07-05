@@ -3,6 +3,7 @@ import {
 	GitBranch,
 	GitPullRequestArrow,
 	Settings,
+	SunMoon,
 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -17,8 +18,13 @@ import {
 import { FileDiffViewSettings } from "./FileDiffViewSettings";
 import { GraphViewSettings } from "./GraphViewSettings";
 import { RemoteOperationSettings } from "./RemoteOperationSettings";
+import { ThemeSettings } from "./ThemeSettings";
 
-type SettingsCategory = "fileDiffView" | "graphView" | "remoteOperations";
+type SettingsCategory =
+	| "theme"
+	| "fileDiffView"
+	| "graphView"
+	| "remoteOperations";
 
 const categories: Array<{
 	description: string;
@@ -26,6 +32,12 @@ const categories: Array<{
 	id: SettingsCategory;
 	label: string;
 }> = [
+	{
+		description: "Colour theme and system appearance",
+		icon: SunMoon,
+		id: "theme",
+		label: "Theme",
+	},
 	{
 		description: "Diff layout, context, whitespace, and line wrapping",
 		icon: FileText,
@@ -49,7 +61,7 @@ const categories: Array<{
 export function SettingsDialog() {
 	const [open, setOpen] = useState(false);
 	const [activeCategory, setActiveCategory] =
-		useState<SettingsCategory>("fileDiffView");
+		useState<SettingsCategory>("theme");
 	const active = categories.find((category) => category.id === activeCategory);
 	return (
 		<Dialog open={open} onOpenChange={setOpen}>
@@ -57,13 +69,13 @@ export function SettingsDialog() {
 				render={
 					<Button
 						aria-label="Open settings"
-						size="icon-sm"
+						className="size-9"
 						title="Settings"
 						variant="ghost"
 					/>
 				}
 			>
-				<Settings aria-hidden="true" className="size-4" />
+				<Settings aria-hidden="true" className="size-6" />
 			</DialogTrigger>
 			<DialogContent className="grid h-[min(560px,calc(100vh-2rem))] max-w-[min(920px,calc(100vw-2rem))] grid-rows-[auto_minmax(0,1fr)] gap-0 overflow-hidden p-0 sm:max-w-[min(920px,calc(100vw-2rem))]">
 				<DialogHeader className="border-b px-5 py-4">
@@ -84,6 +96,7 @@ export function SettingsDialog() {
 						))}
 					</nav>
 					<section className="custom-scrollbar min-h-0 overflow-y-auto p-5">
+						{activeCategory === "theme" ? <ThemeSettings /> : null}
 						{activeCategory === "fileDiffView" ? (
 							<FileDiffViewSettings />
 						) : null}

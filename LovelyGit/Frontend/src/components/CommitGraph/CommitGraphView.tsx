@@ -19,11 +19,13 @@ import { useRepositoryRefs } from "./hooks/useRepositoryRefs";
 import { resolveWidths } from "./utils/columns";
 
 export function CommitGraphView({
+	onCurrentBranchNameChange,
 	onSelectCommit,
 	refreshToken = 0,
 	repositoryId,
 	selectedCommitHash,
 }: {
+	onCurrentBranchNameChange?: (branchName: string | null) => void;
 	onSelectCommit: (row: CommitGraphRowModel) => void;
 	refreshToken?: number;
 	repositoryId: string | null;
@@ -48,6 +50,10 @@ export function CommitGraphView({
 		totalRows,
 	} = useCommitGraphData(refreshToken);
 	const repositoryRefs = useRepositoryRefs(repositoryId, refreshToken);
+
+	useEffect(() => {
+		onCurrentBranchNameChange?.(currentBranchName);
+	}, [currentBranchName, onCurrentBranchNameChange]);
 
 	useEffect(() => {
 		const node = viewportRef.current;
