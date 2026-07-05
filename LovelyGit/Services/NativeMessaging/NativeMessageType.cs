@@ -1,13 +1,11 @@
 using System.Text.Json.Serialization;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.CommitGraph;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.KnownRepository;
-using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Remotes;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Settings;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.WorkingTree;
 using ExpressThat.LovelyGit.Services.NativeMessaging.Commands;
 using ExpressThat.LovelyGit.Services.Data.Models;
 using ExpressThat.LovelyGit.Services.Git.CommitGraph.Models;
-using ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser.Remotes;
 using ExpressThat.LovelyGit.Services.Git.WorkingTree.Models;
 using ExpressThat.LovelyGit.Services.Settings;
 using System.Text.Json;
@@ -37,8 +35,6 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging
         GetCommitFileDiff,
         [NativeMessageContract(typeof(GetCommitPatchCommandArguments), typeof(CommitPatchResponse))]
         GetCommitPatch,
-        [NativeMessageContract(typeof(GetRepositoryRemotesCommandArguments), typeof(List<GitRemote>))]
-        GetRepositoryRemotes,
         [NativeMessageContract(typeof(GetWorkingTreeChangesCommandArguments), typeof(WorkingTreeChangeSummaryResponse))]
         GetWorkingTreeChangeSummary,
         [NativeMessageContract(typeof(GetWorkingTreeChangesCommandArguments), typeof(WorkingTreeChangesResponse))]

@@ -14,9 +14,13 @@ import { WorkingChangesPanel } from "./components/WorkingChanges/WorkingChangesP
 import { WorkingTreeFileDiffView } from "./components/WorkingChanges/WorkingTreeFileDiffView";
 import type { CommitGraphRow } from "./generated/types";
 import { RepositoryProvider } from "./lib/repositoryContext";
+import { useApplyFont } from "./lib/settings/font/useApplyFont";
 import { useSetting } from "./lib/settings/settingsStore";
+import { useApplyTheme } from "./lib/settings/theme/useApplyTheme";
 
 function App() {
+	useApplyTheme();
+	useApplyFont();
 	const currentGitRepositoryId = useSetting("CurrentGitRepositoryId");
 	const [detailsPanel, setDetailsPanel] = useState<DetailsPanelState | null>(
 		null,

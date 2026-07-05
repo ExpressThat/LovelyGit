@@ -1,9 +1,8 @@
 import { GitBranch, GitCompareArrows } from "lucide-react";
+import { SettingsDialog } from "../Settings/SettingsDialog";
 import { RemoteActionsControl } from "./components/RemoteActionsControl";
-import { SettingsDialog } from "./components/SettingsDialog";
 import { Tabs } from "./components/Tabs";
 import { TerminalActionControl } from "./components/TerminalActionControl";
-import { ThemeSelector } from "./components/ThemeSelector";
 
 export function TopNavBar({
 	currentBranchName,
@@ -48,7 +47,6 @@ export function TopNavBar({
 							</span>
 						) : null}
 					</button>
-					<ThemeSelector />
 					<SettingsDialog />
 				</div>
 			</div>

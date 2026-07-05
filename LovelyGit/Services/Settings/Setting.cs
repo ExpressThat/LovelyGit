@@ -10,6 +10,7 @@ namespace ExpressThat.LovelyGit.Services.Settings
     {
         CurrentGitRepositoryId,
         Theme,
+        Font,
         CommitDiffViewMode,
         CommitDiffLineDisplayMode,
         CommitDiffContextLines,
@@ -26,7 +27,32 @@ namespace ExpressThat.LovelyGit.Services.Settings
     {
         System,
         Light,
-        Dark
+        Dark,
+        Morning,
+        Midnight,
+        Harbor,
+        Forest,
+        Ember,
+        Rose,
+        Copper,
+        Orchid
+    }
+
+    [TypeSharp]
+    [Union]
+    [JsonConverter(typeof(JsonStringEnumConverter<AppFont>))]
+    public enum AppFont
+    {
+        Inter,
+        System,
+        Segoe,
+        Aptos,
+        Verdana,
+        Trebuchet,
+        Georgia,
+        Cambria,
+        Consolas,
+        Mono
     }
 
     [TypeSharp]

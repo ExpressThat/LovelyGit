@@ -1,4 +1,5 @@
 import type {
+	AppFont,
 	AppTheme,
 	CommitDiffLineDisplayMode,
 	CommitDiffViewMode,
@@ -13,6 +14,7 @@ export type Settings = {
 	CommitDiffWrapLines: boolean;
 	CommitGraphRefsPanelOpen: boolean;
 	CurrentGitRepositoryId: string | null;
+	Font: AppFont;
 	RemotePrimaryAction: RemotePrimaryAction;
 	Theme: AppTheme;
 };
@@ -26,6 +28,7 @@ export const DEFAULT_SETTINGS: Settings = {
 	CommitDiffWrapLines: false,
 	CommitGraphRefsPanelOpen: true,
 	CurrentGitRepositoryId: null,
+	Font: "Inter",
 	RemotePrimaryAction: "Fetch",
 	Theme: "System",
 };

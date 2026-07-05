@@ -12,6 +12,7 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Settin
 [JsonSerializable(typeof(SetMultipleSettingsCommandArguments))]
 [JsonSerializable(typeof(Guid?))]
 [JsonSerializable(typeof(AppTheme))]
+[JsonSerializable(typeof(AppFont))]
 [JsonSerializable(typeof(CommitDiffViewMode))]
 [JsonSerializable(typeof(CommitDiffLineDisplayMode))]
 [JsonSerializable(typeof(RemotePrimaryAction))]

@@ -63,14 +63,8 @@ export function normalizePrimaryAction(value: RemotePrimaryAction) {
 	return defaultableValues.has(value) ? value : "Fetch";
 }
 
-export function primaryIconTitle(
-	action: RemoteAction,
-	remoteName: string | null,
-) {
-	const target = remoteName ? ` from ${remoteName}` : "";
-	return action.value === "Fetch"
-		? `Fetch all${target}`
-		: `${action.menuLabel}${target}`;
+export function primaryIconTitle(action: RemoteAction) {
+	return action.value === "Fetch" ? "Fetch all" : action.menuLabel;
 }
 
 function remoteAction(

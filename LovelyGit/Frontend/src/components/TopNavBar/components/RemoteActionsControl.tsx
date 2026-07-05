@@ -21,8 +21,6 @@ import {
 	type RemoteAction,
 } from "./RemoteActions";
 import { RemoteDefaultRow } from "./RemoteDefaultRow";
-import { RemoteTargetSelect } from "./RemoteTargetSelect";
-import { useRemoteTargets } from "./RemoteTargets";
 
 export function RemoteActionsControl({
 	repositoryId,
@@ -36,7 +34,6 @@ export function RemoteActionsControl({
 	const primaryAction = normalizePrimaryAction(
 		useSetting("RemotePrimaryAction"),
 	);
-	const remoteTargets = useRemoteTargets(repositoryId);
 	const primary = useMemo(
 		() =>
 			defaultableRemoteActions.find(
@@ -45,17 +42,12 @@ export function RemoteActionsControl({
 		[primaryAction],
 	);
 	const isBusy = busyAction !== null;
-	const canRunRemoteAction =
-		Boolean(repositoryId) &&
-		remoteTargets.status === "loaded" &&
-		remoteTargets.selectedRemoteName !== null &&
-		!isBusy;
+	const canRunRemoteAction = Boolean(repositoryId) && !isBusy;
 	const Icon = primary.icon;
 	const PushIcon = pushRemoteAction.icon;
 
 	const runAction = async (action: RemoteAction) => {
-		const remoteName = remoteTargets.selectedRemoteName;
-		if (!repositoryId || !remoteName || isBusy) {
+		if (!repositoryId || isBusy) {
 			return;
 		}
 
@@ -67,7 +59,7 @@ export function RemoteActionsControl({
 					commandType: action.commandType,
 					arguments: {
 						pullMode: action.pullMode,
-						remoteName,
+						remoteName: null,
 						repositoryId,
 					},
 				},
@@ -92,15 +84,12 @@ export function RemoteActionsControl({
 		<div className="inline-flex items-center gap-1">
 			<div className="inline-flex h-9 overflow-hidden rounded-md border bg-background">
 				<Button
-					aria-label={primaryIconTitle(
-						primary,
-						remoteTargets.selectedRemoteName,
-					)}
+					aria-label={primaryIconTitle(primary)}
 					className="h-full min-w-28 rounded-none border-0 px-3"
 					disabled={!canRunRemoteAction}
 					onClick={() => void runAction(primary)}
 					size="sm"
-					title={primaryIconTitle(primary, remoteTargets.selectedRemoteName)}
+					title={primaryIconTitle(primary)}
 					type="button"
 					variant="ghost"
 				>
@@ -126,10 +115,6 @@ export function RemoteActionsControl({
 								Choose which fetch or pull action the main toolbar button runs
 								by default
 							</DropdownMenuLabel>
-							<RemoteTargetSelect
-								disabled={isBusy}
-								remoteTargets={remoteTargets}
-							/>
 							<div className="py-1" role="radiogroup">
 								{defaultableRemoteActions.map((action) => (
 									<RemoteDefaultRow
@@ -157,11 +142,7 @@ export function RemoteActionsControl({
 				disabled={!canRunRemoteAction}
 				onClick={() => void runAction(pushRemoteAction)}
 				size="sm"
-				title={
-					remoteTargets.selectedRemoteName
-						? `Push to ${remoteTargets.selectedRemoteName}`
-						: "No remotes configured"
-				}
+				title="Push"
 				type="button"
 				variant="ghost"
 			>

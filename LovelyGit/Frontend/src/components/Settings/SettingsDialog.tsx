@@ -1,9 +1,9 @@
 import {
+	Brush,
 	FileText,
 	GitBranch,
 	GitPullRequestArrow,
 	Settings,
-	SunMoon,
 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -15,13 +15,13 @@ import {
 	DialogTitle,
 	DialogTrigger,
 } from "@/components/ui/dialog";
+import { AppearanceSettings } from "./AppearanceSettings";
 import { FileDiffViewSettings } from "./FileDiffViewSettings";
 import { GraphViewSettings } from "./GraphViewSettings";
 import { RemoteOperationSettings } from "./RemoteOperationSettings";
-import { ThemeSettings } from "./ThemeSettings";
 
 type SettingsCategory =
-	| "theme"
+	| "appearance"
 	| "fileDiffView"
 	| "graphView"
 	| "remoteOperations";
@@ -33,10 +33,10 @@ const categories: Array<{
 	label: string;
 }> = [
 	{
-		description: "Colour theme and system appearance",
-		icon: SunMoon,
-		id: "theme",
-		label: "Theme",
+		description: "Theme, fonts, and visual style",
+		icon: Brush,
+		id: "appearance",
+		label: "Appearance",
 	},
 	{
 		description: "Diff layout, context, whitespace, and line wrapping",
@@ -61,7 +61,7 @@ const categories: Array<{
 export function SettingsDialog() {
 	const [open, setOpen] = useState(false);
 	const [activeCategory, setActiveCategory] =
-		useState<SettingsCategory>("theme");
+		useState<SettingsCategory>("appearance");
 	const active = categories.find((category) => category.id === activeCategory);
 	return (
 		<Dialog open={open} onOpenChange={setOpen}>
@@ -96,7 +96,7 @@ export function SettingsDialog() {
 						))}
 					</nav>
 					<section className="custom-scrollbar min-h-0 overflow-y-auto p-5">
-						{activeCategory === "theme" ? <ThemeSettings /> : null}
+						{activeCategory === "appearance" ? <AppearanceSettings /> : null}
 						{activeCategory === "fileDiffView" ? (
 							<FileDiffViewSettings />
 						) : null}

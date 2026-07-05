@@ -32,6 +32,11 @@ namespace ExpressThat.LovelyGit.Services.Settings
             AppTheme.System,
             GetJsonTypeInfo<AppTheme>());
 
+        public static readonly SettingDefinition<AppFont> Font = new(
+            nameof(Setting.Font),
+            AppFont.Inter,
+            GetJsonTypeInfo<AppFont>());
+
         public static readonly SettingDefinition<CommitDiffViewMode> CommitDiffViewMode = new(
             nameof(Setting.CommitDiffViewMode),
             ExpressThat.LovelyGit.Services.Git.CommitGraph.Models.CommitDiffViewMode.SideBySide,
@@ -72,6 +77,7 @@ namespace ExpressThat.LovelyGit.Services.Settings
             {
                 [Setting.CurrentGitRepositoryId] = CurrentGitRepositoryId,
                 [Setting.Theme] = Theme,
+                [Setting.Font] = Font,
                 [Setting.CommitDiffViewMode] = CommitDiffViewMode,
                 [Setting.CommitDiffLineDisplayMode] = CommitDiffLineDisplayMode,
                 [Setting.CommitDiffContextLines] = CommitDiffContextLines,
