@@ -25,10 +25,12 @@ type DiffState =
 
 export function WorkingTreeFileDiffView({
 	file,
+	onChange,
 	onClose,
 	repositoryId,
 }: {
 	file: WorkingTreeChangedFile;
+	onChange?: () => Promise<void> | void;
 	onClose: () => void;
 	repositoryId: string;
 }) {
@@ -54,26 +56,6 @@ export function WorkingTreeFileDiffView({
 			}),
 		[file.group, file.path, ignoreWhitespace, repositoryId, viewMode],
 	);
-
-	const refreshDiffInPlace = async () => {
-		try {
-			const diff = await fetchDiff();
-			if (!diff) {
-				setState({ status: "error", message: "File diff was empty." });
-				return;
-			}
-
-			setState({ status: "loaded", diff });
-		} catch (error: unknown) {
-			setState({
-				status: "error",
-				message:
-					error instanceof Error
-						? error.message
-						: "Failed to load working file diff.",
-			});
-		}
-	};
 
 	useEffect(() => {
 		let isActive = true;
@@ -128,7 +110,7 @@ export function WorkingTreeFileDiffView({
 				},
 			});
 			removeLineFromCurrentDiff(line);
-			await refreshDiffInPlace();
+			refreshWorkingChangesList(onChange);
 		} catch (error) {
 			setState({
 				status: "error",
@@ -157,7 +139,7 @@ export function WorkingTreeFileDiffView({
 				},
 			});
 			removeLineFromCurrentDiff(line);
-			await refreshDiffInPlace();
+			refreshWorkingChangesList(onChange);
 		} catch (error) {
 			setState({
 				status: "error",
@@ -172,6 +154,10 @@ export function WorkingTreeFileDiffView({
 	const removeLineFromCurrentDiff = (line: CommitFileDiffLine) => {
 		setState((current) => {
 			if (current.status !== "loaded") {
+				return current;
+			}
+
+			if (current.diff.compactLinesGzipBase64) {
 				return current;
 			}
 
@@ -216,4 +202,13 @@ export function WorkingTreeFileDiffView({
 			</div>
 		</section>
 	);
+}
+
+function refreshWorkingChangesList(onChange?: () => Promise<void> | void) {
+	Promise.resolve(onChange?.()).catch((error) => {
+		console.error(
+			"Failed to refresh working changes after line action.",
+			error,
+		);
+	});
 }

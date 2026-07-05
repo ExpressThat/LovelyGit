@@ -13,6 +13,7 @@ import {
 	type DiffDisplayRow,
 	DiffLineActionButton,
 	getCombinedLineAction,
+	getCombinedLineActionPayload,
 } from "./DiffRows";
 
 const DIFF_OVERSCAN = 12;
@@ -85,8 +86,12 @@ export function CombinedDiff({
 						}
 
 						const line = row.line;
+						const actionPayload = getCombinedLineActionPayload(
+							lines,
+							item.index,
+						);
 						const lineAction = getCombinedLineAction(
-							line,
+							actionPayload ?? line,
 							onStageLine,
 							onUnstageLine,
 						);
@@ -122,7 +127,7 @@ export function CombinedDiff({
 									<DiffLineActionButton
 										action={lineAction}
 										disabled={isLineActionBusy}
-										line={line}
+										line={actionPayload ?? line}
 									/>
 								) : hasLineAction ? (
 									<div className="border-l" />

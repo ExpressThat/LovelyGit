@@ -47,6 +47,20 @@ export function isSameDiffLine(
 	left: CommitFileDiffLine,
 	right: CommitFileDiffLine,
 ) {
+	if (
+		right.changeType === "Modified" &&
+		(left.changeType === "Deleted" || left.changeType === "Inserted")
+	) {
+		return (
+			(left.changeType === "Deleted" &&
+				left.oldLineNumber === right.oldLineNumber &&
+				workingOldText(left) === workingOldText(right)) ||
+			(left.changeType === "Inserted" &&
+				left.newLineNumber === right.newLineNumber &&
+				workingNewText(left) === workingNewText(right))
+		);
+	}
+
 	return (
 		left.changeType === right.changeType &&
 		left.oldLineNumber === right.oldLineNumber &&

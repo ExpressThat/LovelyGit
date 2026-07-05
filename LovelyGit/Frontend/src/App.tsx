@@ -112,6 +112,7 @@ function App() {
 										>
 											<WorkingTreeFileDiffView
 												file={detailsPanel.selectedFile}
+												onChange={() => workingTreeChanges.reload()}
 												onClose={() =>
 													setDetailsPanel({
 														kind: "workingChanges",

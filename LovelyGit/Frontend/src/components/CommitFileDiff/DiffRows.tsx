@@ -85,6 +85,55 @@ export function getCombinedLineAction(
 	return getAvailableLineAction(onStageLine, onUnstageLine);
 }
 
+export function getCombinedLineActionPayload(
+	rows: DiffDisplayRow[],
+	index: number,
+): CommitFileDiffLine | null {
+	const row = rows[index];
+	if (!row || row.kind !== "line") {
+		return null;
+	}
+
+	const line = row.line;
+	if (line.changeType === "Deleted") {
+		const next = rows[index + 1];
+		if (
+			next?.kind === "line" &&
+			next.line.changeType === "Inserted" &&
+			line.oldLineNumber != null &&
+			next.line.newLineNumber != null
+		) {
+			return {
+				...line,
+				changeType: "Modified",
+				newLineNumber: next.line.newLineNumber,
+				newText: workingLineText(next.line),
+				oldText: workingLineText(line),
+			};
+		}
+	}
+
+	if (line.changeType === "Inserted") {
+		const previous = rows[index - 1];
+		if (
+			previous?.kind === "line" &&
+			previous.line.changeType === "Deleted" &&
+			previous.line.oldLineNumber != null &&
+			line.newLineNumber != null
+		) {
+			return {
+				...line,
+				changeType: "Modified",
+				oldLineNumber: previous.line.oldLineNumber,
+				oldText: workingLineText(previous.line),
+				newText: workingLineText(line),
+			};
+		}
+	}
+
+	return line;
+}
+
 function getAvailableLineAction(
 	onStageLine?: (line: CommitFileDiffLine) => void,
 	onUnstageLine?: (line: CommitFileDiffLine) => void,
@@ -149,4 +198,8 @@ function isDiffChangedLine(line: CommitFileDiffLine) {
 		line.changeType === "Inserted" ||
 		line.changeType === "Modified"
 	);
+}
+
+function workingLineText(line: CommitFileDiffLine) {
+	return line.text || line.newText || line.oldText;
 }

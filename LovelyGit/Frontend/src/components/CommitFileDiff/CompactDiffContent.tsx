@@ -64,6 +64,34 @@ export function CompactDiffContent({
 		return <CompactDiffLoading />;
 	}
 
+	if (lines.length === 0 || !lines.some(isChangedLine)) {
+		return (
+			<div className="m-4 rounded-md border bg-card p-4 text-sm text-muted-foreground">
+				No textual differences.
+			</div>
+		);
+	}
+
+	const removeLine = (line: CommitFileDiffLine) => {
+		setLines(
+			(current) =>
+				current?.filter(
+					(currentLine) => !isLineActionTarget(currentLine, line),
+				) ?? current,
+		);
+	};
+	const stageLine = onStageLine
+		? (line: CommitFileDiffLine) => {
+				removeLine(line);
+				onStageLine(line);
+			}
+		: undefined;
+	const unstageLine = onUnstageLine
+		? (line: CommitFileDiffLine) => {
+				removeLine(line);
+				onUnstageLine(line);
+			}
+		: undefined;
 	const rows =
 		lineDisplayMode === "FullFile"
 			? lines.map((line): DiffDisplayRow => ({ kind: "line", line }))
@@ -71,14 +99,73 @@ export function CompactDiffContent({
 
 	return diff.viewMode === "SideBySide" ? (
 		<SideBySideDiff
-			{...{ isLineActionBusy, onStageLine, onUnstageLine, wrapLines }}
+			{...{
+				isLineActionBusy,
+				onStageLine: stageLine,
+				onUnstageLine: unstageLine,
+				wrapLines,
+			}}
 			lines={rows}
 		/>
 	) : (
 		<CombinedDiff
-			{...{ isLineActionBusy, onStageLine, onUnstageLine, wrapLines }}
+			{...{
+				isLineActionBusy,
+				onStageLine: stageLine,
+				onUnstageLine: unstageLine,
+				wrapLines,
+			}}
 			lines={rows}
 		/>
+	);
+}
+
+function isLineActionTarget(
+	line: CommitFileDiffLine,
+	actionLine: CommitFileDiffLine,
+) {
+	if (
+		actionLine.changeType === "Modified" &&
+		(line.changeType === "Deleted" || line.changeType === "Inserted")
+	) {
+		return (
+			(line.changeType === "Deleted" &&
+				line.oldLineNumber === actionLine.oldLineNumber &&
+				lineText(line) === oldLineText(actionLine)) ||
+			(line.changeType === "Inserted" &&
+				line.newLineNumber === actionLine.newLineNumber &&
+				lineText(line) === newLineText(actionLine))
+		);
+	}
+
+	return (
+		line.changeType === actionLine.changeType &&
+		line.oldLineNumber === actionLine.oldLineNumber &&
+		line.newLineNumber === actionLine.newLineNumber &&
+		line.oldText === actionLine.oldText &&
+		line.newText === actionLine.newText &&
+		line.text === actionLine.text
+	);
+}
+
+function lineText(line: CommitFileDiffLine) {
+	return line.text || line.oldText || line.newText;
+}
+
+function oldLineText(line: CommitFileDiffLine) {
+	return line.oldText || line.text;
+}
+
+function newLineText(line: CommitFileDiffLine) {
+	return line.newText || line.text;
+}
+
+function isChangedLine(line: CommitFileDiffLine) {
+	return (
+		line.changeType === "Added" ||
+		line.changeType === "Deleted" ||
+		line.changeType === "Inserted" ||
+		line.changeType === "Modified"
 	);
 }
 

@@ -4,6 +4,7 @@ import { ActionButton } from "./WorkingChangesPanelParts";
 const COMMIT_TITLE_LIMIT = 72;
 
 export function CommitStagedForm({
+	canCommit,
 	commitBody,
 	commitTitle,
 	isBusy,
@@ -12,6 +13,7 @@ export function CommitStagedForm({
 	onCommitBodyChange,
 	onCommitTitleChange,
 }: {
+	canCommit: boolean;
 	commitBody: string;
 	commitTitle: string;
 	isBusy: boolean;
@@ -62,7 +64,7 @@ export function CommitStagedForm({
 			</div>
 			<div className="flex justify-end gap-2">
 				<ActionButton
-					disabled={isBusy || commitTitle.trim().length === 0}
+					disabled={isBusy || !canCommit || commitTitle.trim().length === 0}
 					icon={
 						<GitCommitHorizontal
 							aria-hidden="true"

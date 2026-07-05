@@ -29,7 +29,6 @@ export function ChangedFileRow({
 }) {
 	const Icon = statusIcon(file.status, file.group);
 	const handleFileClick = () => {
-		onToggleSelected?.();
 		onSelect();
 	};
 
