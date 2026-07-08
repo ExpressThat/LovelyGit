@@ -38,6 +38,10 @@ function App() {
 	const selectCommit = (row: CommitGraphRow) => {
 		setDetailsPanel({ commitHash: row.commit.hash, kind: "commit" });
 	};
+	const refreshRepositoryState = () => {
+		setCommitGraphRefreshToken((token) => token + 1);
+		void workingTreeChanges.reload();
+	};
 	useEffect(() => {
 		if (previousRepositoryIdRef.current === currentGitRepositoryId) {
 			return;
@@ -70,6 +74,7 @@ function App() {
 											detailsPanel.selectedFile,
 									)}
 									onCurrentBranchNameChange={setCurrentBranchName}
+									onRepositoryMutation={refreshRepositoryState}
 									onSelectCommit={selectCommit}
 									refreshToken={commitGraphRefreshToken}
 									repositoryId={currentGitRepositoryId}
