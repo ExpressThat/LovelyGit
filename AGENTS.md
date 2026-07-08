@@ -1,5 +1,12 @@
 # AGENTS.md
 
+## Team Workflow
+- Use merge commits only for branch integration and PR merge guidance in this LovelyGit workspace; do not squash merges.
+- Keep commit authorship and GitHub PR review identity separate. Local Git config controls commits; GitHub CLI/browser authentication controls PR comments, reviews, and merges.
+- Before committing, verify the repo-local identity with `git config --show-origin --get user.name` and `git config --show-origin --get user.email`. If it needs to change for this workspace, use `git config --local user.name "<name>"` and `git config --local user.email "<email>"`; do not change global Git identity for a task-specific split.
+- Before posting PR reviews or comments, verify the GitHub account with `gh auth status`. If it is not the intended reviewer account, switch explicitly with `gh auth switch` or set a task-scoped `GH_TOKEN`; do not rely on whichever account happens to be active.
+- Do not amend, rebase, or rewrite existing commits solely to repair author identity unless the user explicitly asks for history rewriting.
+
 ## Visual Testing
 - Use CMG from `C:\CMG\CMG.exe` for visual checks of the real LovelyGit desktop app, not a plain browser-only `localhost` session.
 - Treat the shipped release skill `C:\CMG\SKILL.md` as the CMG usage contract. Do not inspect or depend on CMG source internals for normal LovelyGit testing guidance.
