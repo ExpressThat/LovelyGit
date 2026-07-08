@@ -1,0 +1,84 @@
+suite "LovelyGit selected-repository gates" {
+  beforeEach {
+    waitForElement "getByText=COMMIT MESSAGE" timeout=20000
+    waitForElement "getByText=HASH" timeout=5000
+    waitForElement "getByText=AUTHOR" timeout=5000
+  }
+
+  test "commit graph loads, pages, and selects a commit" tag=graph tag=paging tag=details tag=visual tag=a11y tag=diagnostics {
+    screenshotPage output="artifacts/cmg-qa/repository-graph-initial.png" animations=disabled caret=hide
+    accessibilitySnapshot output="artifacts/cmg-qa/repository-graph-initial.a11y.json"
+
+    wheel center deltaY=900
+    waitForTimeout 500
+    screenshotPage output="artifacts/cmg-qa/repository-graph-paged.png" animations=disabled caret=hide
+
+    click "button[style*='grid-template-columns']"
+    waitForElement "getByText=FILES" timeout=10000
+    waitForElement "getByText=ADDITIONS" timeout=5000
+    waitForElement "getByText=DELETIONS" timeout=5000
+    waitForElement "[aria-label='Changed files']" timeout=5000
+
+    screenshotPage output="artifacts/cmg-qa/repository-commit-details.png" animations=disabled caret=hide
+    accessibilitySnapshot output="artifacts/cmg-qa/repository-commit-details.a11y.json"
+    click "getByRole=button|Close"
+    waitForElement "getByText=COMMIT MESSAGE" timeout=5000
+
+    listPageErrors
+    listConsole level=error
+    expectNoPageError timeout=250
+    expectNoConsole level=error timeout=250
+  }
+
+  test "settings theme and dropdown controls remain polished" tag=settings tag=theme tag=dropdown tag=visual tag=a11y tag=diagnostics {
+    click "getByRole=button|Open settings"
+    waitForElement "getByText=Settings" timeout=5000
+    click "getByText=Appearance"
+    waitForElement "getByText=Choose the app mode, paired palettes, and typefaces." timeout=5000
+    click "getByText=Dark"
+    waitForTimeout 250
+    screenshotPage output="artifacts/cmg-qa/repository-settings-dark.png" animations=disabled caret=hide
+
+    click "getByRole=button|File Diff View"
+    waitForElement "getByText=Layout" timeout=5000
+    click "getByRole=button|Combined"
+    click "getByRole=button|Side by side"
+    click "getByRole=button|Increase context lines"
+    click "getByRole=button|Decrease context lines"
+    click "getByRole=button|Graph View"
+    waitForElement "getByText=Refs Panel" timeout=5000
+    screenshotPage output="artifacts/cmg-qa/repository-settings-controls.png" animations=disabled caret=hide
+    accessibilitySnapshot output="artifacts/cmg-qa/repository-settings-controls.a11y.json"
+
+    click "getByRole=button|Close"
+    waitForElement "getByText=COMMIT MESSAGE" timeout=5000
+
+    listPageErrors
+    listConsole level=error
+    expectNoPageError timeout=250
+    expectNoConsole level=error timeout=250
+  }
+
+  test "toolbar dropdown and working changes panel are reachable" tag=toolbar tag=dropdown tag=working-tree tag=visual tag=a11y tag=diagnostics {
+    click "getByRole=button|Choose fetch or pull default"
+    waitForElement "getByText=Choose which fetch or pull action the main toolbar button runs by default" timeout=5000
+    screenshotPage output="artifacts/cmg-qa/repository-remote-dropdown.png" animations=disabled caret=hide
+    accessibilitySnapshot output="artifacts/cmg-qa/repository-remote-dropdown.a11y.json"
+    press "Escape"
+
+    click "getByRole=button|Open working changes"
+    waitForElement "getByText=changed files" timeout=10000
+    waitForElement "getByText=Unstaged files" timeout=5000
+    waitForElement "getByText=Staged files" timeout=5000
+    expectAccessible role=button name="Refresh working changes"
+
+    screenshotPage output="artifacts/cmg-qa/repository-working-changes.png" animations=disabled caret=hide
+    accessibilitySnapshot output="artifacts/cmg-qa/repository-working-changes.a11y.json"
+    click "getByRole=button|Close"
+
+    listPageErrors
+    listConsole level=error
+    expectNoPageError timeout=250
+    expectNoConsole level=error timeout=250
+  }
+}

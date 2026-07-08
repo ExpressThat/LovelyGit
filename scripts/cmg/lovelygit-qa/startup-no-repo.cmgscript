@@ -1,0 +1,36 @@
+suite "LovelyGit startup and no-repo gates" {
+  test "new-tab startup has usable entry points" tag=smoke tag=visual tag=a11y tag=diagnostics {
+    waitForElement "getByText=Open a repository" timeout=15000
+    waitForElement "getByRole=button|Open Repo" timeout=5000
+    expectAccessible role=button name="Open Repo"
+    expectAccessible role=button name="Open settings"
+
+    screenshotPage output="artifacts/cmg-qa/startup-no-repo.png" animations=disabled caret=hide
+    accessibilitySnapshot output="artifacts/cmg-qa/startup-no-repo.a11y.json"
+
+    listPageErrors
+    listConsole level=error
+    expectNoPageError timeout=250
+    expectNoConsole level=error timeout=250
+  }
+
+  test "settings dialog is reachable without a repository" tag=settings tag=dialog tag=a11y tag=diagnostics {
+    click "getByRole=button|Open settings"
+    waitForElement "getByText=Settings" timeout=5000
+    waitForElement "getByText=Appearance" timeout=5000
+    waitForElement "getByText=File Diff View" timeout=5000
+    waitForElement "getByText=Graph View" timeout=5000
+    waitForElement "getByText=Remote Operations" timeout=5000
+
+    screenshotPage output="artifacts/cmg-qa/startup-settings-dialog.png" animations=disabled caret=hide
+    accessibilitySnapshot output="artifacts/cmg-qa/startup-settings-dialog.a11y.json"
+
+    click "getByRole=button|Close"
+    waitForElement "getByRole=button|Open Repo" timeout=5000
+
+    listPageErrors
+    listConsole level=error
+    expectNoPageError timeout=250
+    expectNoConsole level=error timeout=250
+  }
+}

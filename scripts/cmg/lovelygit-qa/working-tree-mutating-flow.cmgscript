@@ -1,0 +1,23 @@
+# Optional destructive coverage.
+# Run only against a disposable fixture repository with known unstaged changes.
+suite "LovelyGit working tree mutation gates" {
+  test "stage and unstage available changes" tag=working-tree tag=mutating tag=diagnostics {
+    waitForElement "getByText=COMMIT MESSAGE" timeout=20000
+    click "getByRole=button|Open working changes"
+    waitForElement "getByText=Unstaged files" timeout=10000
+
+    screenshotPage output="artifacts/cmg-qa/mutating-before-stage.png" animations=disabled caret=hide
+    click "getByRole=button|Stage all changes"
+    waitForTimeout 1000
+    screenshotPage output="artifacts/cmg-qa/mutating-after-stage.png" animations=disabled caret=hide
+
+    click "getByRole=button|Unstage all changes"
+    waitForTimeout 1000
+    screenshotPage output="artifacts/cmg-qa/mutating-after-unstage.png" animations=disabled caret=hide
+
+    listPageErrors
+    listConsole level=error
+    expectNoPageError timeout=250
+    expectNoConsole level=error timeout=250
+  }
+}
