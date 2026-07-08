@@ -1,8 +1,8 @@
 suite "LovelyGit startup and no-repo gates" {
   test "new-tab startup has usable entry points" tag=smoke tag=visual tag=a11y tag=diagnostics {
     waitForElement "getByText=Open a repository" timeout=15000
-    waitForElement "getByRole=button|Open Repo" timeout=5000
-    expectAccessible role=button name="Open Repo"
+    waitForElement "getByText=Open Repo" timeout=5000
+    expectAccessible role=button name="Open a Git repository"
     expectAccessible role=button name="Open settings"
 
     screenshotPage output="artifacts/cmg-qa/startup-no-repo.png" animations=disabled caret=hide
@@ -26,7 +26,7 @@ suite "LovelyGit startup and no-repo gates" {
     accessibilitySnapshot output="artifacts/cmg-qa/startup-settings-dialog.a11y.json"
 
     click "getByRole=button|Close"
-    waitForElement "getByRole=button|Open Repo" timeout=5000
+    waitForElement "getByText=Open Repo" timeout=5000
 
     listPageErrors
     listConsole level=error

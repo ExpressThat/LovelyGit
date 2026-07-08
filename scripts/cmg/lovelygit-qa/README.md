@@ -23,7 +23,7 @@ The WebView2 target should be titled `LovelyGit` and use `http://localhost:5000/
 : Runs after a repository is selected. It checks commit graph headers and rows, paging/scrolling, commit selection, commit details, settings/theme/dialog/dropdown behavior, working changes panel, screenshots, accessibility snapshots, and diagnostics. The commit-row click uses the current generic row button shape because commit rows do not yet expose a stable generic accessible name.
 
 `working-tree-mutating-flow.cmgscript`
-: Optional destructive flow for a disposable fixture repository only. It checks stage/unstage/discard/commit affordances when working-tree changes are available. Do not run it on a real working repo.
+: Optional destructive flow for a disposable fixture repository only. It checks stage/unstage affordances when working-tree changes are available. Do not run it on a real working repo.
 
 ## Recommended command sequence
 
