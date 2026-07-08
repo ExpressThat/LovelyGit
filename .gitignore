@@ -759,3 +759,5 @@ LovelyGit/wwwroot/
 LovelyGit/Frontend/src/generated/
 
 other_client_features.md
+
+.claude/worktrees/
