@@ -9,10 +9,14 @@ type RefListRow =
 	| { id: string; item: RefPanelItem; type: "item" };
 
 export function RefsPanelList({
+	onRepositoryMutation,
 	onSelectCommit,
+	repositoryId,
 	sections,
 }: {
+	onRepositoryMutation: () => void;
 	onSelectCommit: (row: CommitGraphRow) => void;
+	repositoryId: string | null;
 	sections: RefPanelSection[];
 }) {
 	const parentRef = useRef<HTMLDivElement>(null);
@@ -49,7 +53,12 @@ export function RefsPanelList({
 							{row.type === "header" ? (
 								<RefHeader section={row.section} />
 							) : (
-								<RefPanelRow item={row.item} onSelectCommit={onSelectCommit} />
+								<RefPanelRow
+									item={row.item}
+									onRepositoryMutation={onRepositoryMutation}
+									onSelectCommit={onSelectCommit}
+									repositoryId={repositoryId}
+								/>
 							)}
 						</div>
 					);

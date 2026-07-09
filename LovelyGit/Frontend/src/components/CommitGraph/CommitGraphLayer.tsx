@@ -5,6 +5,7 @@ import { CommitGraphView } from "./CommitGraphView";
 export function CommitGraphLayer({
 	isDimmed,
 	onCurrentBranchNameChange,
+	onRepositoryMutation,
 	onSelectCommit,
 	refreshToken,
 	repositoryId,
@@ -12,6 +13,7 @@ export function CommitGraphLayer({
 }: {
 	isDimmed: boolean;
 	onCurrentBranchNameChange?: (branchName: string | null) => void;
+	onRepositoryMutation: () => void;
 	onSelectCommit: (row: CommitGraphRow) => void;
 	refreshToken: number;
 	repositoryId: string;
@@ -32,6 +34,7 @@ export function CommitGraphLayer({
 		>
 			<CommitGraphView
 				onCurrentBranchNameChange={onCurrentBranchNameChange}
+				onRepositoryMutation={onRepositoryMutation}
 				onSelectCommit={onSelectCommit}
 				refreshToken={refreshToken}
 				repositoryId={repositoryId}

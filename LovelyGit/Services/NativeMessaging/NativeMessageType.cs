@@ -61,6 +61,14 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging
         PullRepository,
         [NativeMessageContract(typeof(GitRemoteCommandArguments))]
         PushRepository,
+        [NativeMessageContract(typeof(CheckoutBranchCommandArguments))]
+        CheckoutBranch,
+        [NativeMessageContract(typeof(CreateBranchCommandArguments))]
+        CreateBranch,
+        [NativeMessageContract(typeof(DeleteBranchCommandArguments))]
+        DeleteBranch,
+        [NativeMessageContract(typeof(RenameBranchCommandArguments))]
+        RenameBranch,
         [NativeMessageContract(typeof(GetSettingsCommandArguments), typeof(JsonElement))]
         GetSetting,
         [NativeMessageContract(typeof(SetSettingsCommandArguments))]

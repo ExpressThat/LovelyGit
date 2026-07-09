@@ -60,3 +60,37 @@ public record GitRemoteCommandArguments
     public GitPullMode PullMode { get; set; } = GitPullMode.Merge;
     public string? RemoteName { get; set; }
 }
+
+[TypeSharp]
+public record CheckoutBranchCommandArguments
+{
+    public Guid RepositoryId { get; set; }
+    public string BranchName { get; set; } = string.Empty;
+    public string? LocalBranchName { get; set; }
+    public bool IsRemote { get; set; }
+}
+
+[TypeSharp]
+public record CreateBranchCommandArguments
+{
+    public Guid RepositoryId { get; set; }
+    public string BranchName { get; set; } = string.Empty;
+    public string StartPoint { get; set; } = "HEAD";
+    public bool Checkout { get; set; }
+}
+
+[TypeSharp]
+public record DeleteBranchCommandArguments
+{
+    public Guid RepositoryId { get; set; }
+    public string BranchName { get; set; } = string.Empty;
+    public bool Force { get; set; }
+}
+
+[TypeSharp]
+public record RenameBranchCommandArguments
+{
+    public Guid RepositoryId { get; set; }
+    public string BranchName { get; set; } = string.Empty;
+    public string NewBranchName { get; set; } = string.Empty;
+}
