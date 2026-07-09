@@ -2,10 +2,18 @@
 
 ## Team Workflow
 - Use merge commits only for branch integration and PR merge guidance in this LovelyGit workspace; do not squash merges.
+- Code-changing work should produce a commit and PR. QA tests/artifacts and documentation updates should also be committed and PR'd when they are relevant to the work.
 - Keep commit authorship and GitHub PR review identity separate. Local Git config controls commits; GitHub CLI/browser authentication controls PR comments, reviews, and merges.
 - Before committing, verify the repo-local identity with `git config --show-origin --get user.name` and `git config --show-origin --get user.email`. If it needs to change for this workspace, use `git config --local user.name "<name>"` and `git config --local user.email "<email>"`; do not change global Git identity for a task-specific split.
 - Before posting PR reviews or comments, verify the GitHub account with `gh auth status`. If it is not the intended reviewer account, switch explicitly with `gh auth switch` or set a task-scoped `GH_TOKEN`; do not rely on whichever account happens to be active.
+- Alice reviews PRs with the `ExpressThat-bot` GitHub identity using the provided `GH_TOKEN`; include that review expectation in PR handoff notes when Alice is the intended reviewer.
 - Do not amend, rebase, or rewrite existing commits solely to repair author identity unless the user explicitly asks for history rewriting.
+
+## Product Direction
+- Keep LovelyGit moving toward a beautiful, extremely fast Git GUI client with feature depth comparable to major Git clients.
+- Preserve the existing backend/frontend communication patterns unless a task explicitly calls for a contract change.
+- Pay attention to performance metrics such as interaction latency, git operation duration, and RAM use when adding or changing behavior.
+- Treat QA, reviews, and docs as part of the delivery work, not optional follow-up.
 
 ## Visual Testing
 - Use CMG from `C:\CMG\CMG.exe` for visual checks of the real LovelyGit desktop app, not a plain browser-only `localhost` session.
