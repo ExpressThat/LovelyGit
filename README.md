@@ -52,6 +52,10 @@ are documented in [scripts/cmg/lovelygit-qa/README.md](scripts/cmg/lovelygit-qa/
 Performance gates and current known blockers are tracked in
 [docs/performance-baseline.md](docs/performance-baseline.md).
 
+Product roadmap priorities, feature inventory, lane ownership, and definition of
+done guidance are tracked in
+[docs/product-roadmap.md](docs/product-roadmap.md).
+
 ## Contributor notes
 
 - Do not edit generated files under `LovelyGit/Frontend/src/generated` by hand.
