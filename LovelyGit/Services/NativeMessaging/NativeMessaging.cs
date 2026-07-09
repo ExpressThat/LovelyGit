@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Diagnostics;
 using ExpressThat.LovelyGit.Services.Diagnostics;
+using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.KnownRepository;
 using ExpressThat.LovelyGit.Services.NativeMessaging.Commands;
 using InfiniFrame;
 using Microsoft.AspNetCore.Http.Json;
@@ -17,10 +18,21 @@ internal sealed partial class NativeMessaging : INativeMessaging
 
     public NativeMessaging(
         CommandResolver commandResolver,
-        IOptions<JsonOptions> jsonOptions)
+        IOptions<JsonOptions> jsonOptions,
+        CloneRepositoryProgressPublisher cloneProgressPublisher)
     {
         this.commandResolver = commandResolver;
         serializerOptions = jsonOptions.Value.SerializerOptions;
+        cloneProgressPublisher.ProgressChanged += SendCloneProgress;
+    }
+
+    private void SendCloneProgress(CloneRepositoryProgressNotification progress)
+    {
+        Send(
+            NativeMessageType.CloneRepositoryProgress,
+            progress,
+            KnownRepositoriesJsonSerializerContext.Default
+                .NativeMessageResponseCloneRepositoryProgressNotification);
     }
 
     public bool HasWindow

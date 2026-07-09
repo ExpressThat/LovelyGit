@@ -11,9 +11,14 @@ export function NewTab() {
 						Choose a recent repository or add one from disk.
 					</p>
 				</div>
-				<OpenRepoButton />
+				<div className="flex shrink-0 items-center gap-2">
+					<OpenRepoButton />
+					<CloneRepositoryDialog />
+				</div>
 			</div>
 			<RecentRepositories />
 		</div>
 	);
 }
+
+import { CloneRepositoryDialog } from "./CloneRepositoryDialog";

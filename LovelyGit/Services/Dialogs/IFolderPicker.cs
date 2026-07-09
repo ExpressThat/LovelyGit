@@ -2,5 +2,7 @@ namespace ExpressThat.LovelyGit.Services.Dialogs;
 
 public interface IFolderPicker
 {
-    Task<string?> PickFolderAsync(CancellationToken cancellationToken);
+    Task<string?> PickFolderAsync(
+        CancellationToken cancellationToken,
+        string title = "Select Git repository");
 }

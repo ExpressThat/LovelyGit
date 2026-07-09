@@ -11,11 +11,15 @@ internal static class KnownRepositoryServiceCollectionExtensions
         services.AddLovelyGitJsonTypeInfoResolver(KnownRepositoriesJsonSerializerContext.Default);
         services.AddSingleton<RepositoryRevealService>();
         services.AddSingleton<RepositoryTerminalService>();
+        services.AddSingleton<CloneRepositoryProgressPublisher>();
         services.AddSingleton<ICommandResponder, KnownGitRepositorysCommandResolver>();
         services.AddSingleton<ICommandResponder, AddKnownGitRepositorysCommandResolver>();
         services.AddSingleton<ICommandResponder, RemoveKnownGitRepositorysCommandResolver>();
         services.AddSingleton<ICommandResponder, RevealKnownGitRepositoryCommandResolver>();
         services.AddSingleton<ICommandResponder, OpenRepositoryTerminalCommandResolver>();
+        services.AddSingleton<ICommandResponder, ChooseCloneDestinationCommandResolver>();
+        services.AddSingleton<ICommandResponder, CloneRepositoryCommandResolver>();
+        services.AddSingleton<ICommandResponder, CancelCloneRepositoryCommandResolver>();
 
         return services;
     }

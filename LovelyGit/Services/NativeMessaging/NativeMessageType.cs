@@ -25,6 +25,12 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging
         RevealKnownGitRepository,
         [NativeMessageContract(typeof(OpenRepositoryTerminalCommandArguments), typeof(EmptyCommandArguments))]
         OpenRepositoryTerminal,
+        [NativeMessageContract(typeof(EmptyCommandArguments), typeof(CloneDestinationResponse))]
+        ChooseCloneDestination,
+        [NativeMessageContract(typeof(CloneRepositoryCommandArguments), typeof(KnownGitRepository))]
+        CloneRepository,
+        [NativeMessageContract(typeof(CancelCloneRepositoryCommandArguments))]
+        CancelCloneRepository,
         [NativeMessageContract(typeof(CommitGraphCommandArguments), typeof(CommitGraphResponse))]
         CommitGraph,
         [NativeMessageContract(typeof(GetRepositoryRefsCommandArguments), typeof(RepositoryRefsResponse))]
@@ -78,6 +84,8 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging
         [NativeMessageContract(ResponseType = typeof(WorkingTreeChangedNotification))]
         WorkingTreeChanged,
         [NativeMessageContract(ResponseType = typeof(CommitGraphChangedNotification))]
-        CommitGraphChanged
+        CommitGraphChanged,
+        [NativeMessageContract(ResponseType = typeof(CloneRepositoryProgressNotification))]
+        CloneRepositoryProgress
     }
 }

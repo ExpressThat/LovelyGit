@@ -11,13 +11,15 @@ public class InfiniFrameFolderPicker : IFolderPicker
         _windowProvider = windowProvider;
     }
 
-    public async Task<string?> PickFolderAsync(CancellationToken cancellationToken)
+    public async Task<string?> PickFolderAsync(
+        CancellationToken cancellationToken,
+        string title = "Select Git repository")
     {
         var window = _windowProvider.Window
             ?? throw new InvalidOperationException("The application window is not available.");
 
         var folders = await window
-            .ShowOpenFolderAsync("Select Git repository", string.Empty, false, cancellationToken)
+            .ShowOpenFolderAsync(title, string.Empty, false, cancellationToken)
             .ConfigureAwait(false);
 
         return folders.FirstOrDefault();
