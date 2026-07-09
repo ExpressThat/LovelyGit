@@ -50,6 +50,26 @@ public sealed class WorkingTreeStatusListServiceTests
     }
 
     [Fact]
+    public async Task GetChangesAsync_DoesNotReportNestedTrackedFilesAsUntracked()
+    {
+        using var directory = TemporaryDirectory.Create("lovelygit-status-");
+        await CreateInitialCommitAsync(directory.Path);
+        var sourceDirectory = Directory.CreateDirectory(Path.Combine(directory.Path, "src", "feature"));
+        await File.WriteAllTextAsync(Path.Combine(sourceDirectory.FullName, "first.cs"), "first");
+        await File.WriteAllTextAsync(Path.Combine(sourceDirectory.FullName, "second.cs"), "second");
+        await GitTestProcess.RunAsync(directory.Path, "add", ".");
+        await GitTestProcess.RunAsync(directory.Path, "commit", "-m", "nested files");
+        await File.WriteAllTextAsync(Path.Combine(directory.Path, "file.txt"), "changed content");
+
+        var response = await new WorkingTreeStatusListService(new GitCliService())
+            .GetChangesAsync(directory.Path, CancellationToken.None);
+
+        Assert.Empty(response.Untracked);
+        var file = Assert.Single(response.Unstaged);
+        AssertStatus(file, "file.txt", "Modified", WorkingTreeChangeGroup.Unstaged);
+    }
+
+    [Fact]
     public async Task GetChangesAsync_ResolvesHeadFromPackedRefs()
     {
         using var directory = TemporaryDirectory.Create("lovelygit-status-");

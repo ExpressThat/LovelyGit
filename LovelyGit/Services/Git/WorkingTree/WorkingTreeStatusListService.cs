@@ -71,7 +71,7 @@ internal sealed partial class WorkingTreeStatusListService
                 paths.WorkTreeDirectory,
                 objectFormat,
                 cancellationToken,
-                collectRootTracking: false)
+                collectRootTracking: true)
             .ConfigureAwait(false);
         if (await HasStagedChangesAsync(paths.GitDirectory, objectFormat, fullScan, cancellationToken)
                 .ConfigureAwait(false))
@@ -82,8 +82,8 @@ internal sealed partial class WorkingTreeStatusListService
         var untracked = await FindUntrackedFilesAsync(
                 paths.WorkTreeDirectory,
                 paths.GitDirectory,
-                rootTracking.RootTrackedFiles,
-                rootTracking.RootTrackedDirectories,
+                fullScan.RootTrackedFiles,
+                fullScan.RootTrackedDirectories,
                 cancellationToken)
             .ConfigureAwait(false);
 
