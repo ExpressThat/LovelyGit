@@ -54,6 +54,11 @@ function App() {
 			<main className="app-shell">
 				<TopNavBar
 					currentBranchName={currentBranchName}
+					onBranchChanged={(branchName) => {
+						setCurrentBranchName(branchName);
+						setDetailsPanel(null);
+						setCommitGraphRefreshToken((token) => token + 1);
+					}}
 					onOpenWorkingChanges={() =>
 						setDetailsPanel({ kind: "workingChanges" })
 					}

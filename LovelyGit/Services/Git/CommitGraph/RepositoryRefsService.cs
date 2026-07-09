@@ -43,6 +43,9 @@ internal sealed class RepositoryRefsService
         var worktrees = await GitWorktreeReader
             .ReadAsync(paths.GitDirectory, paths.WorkTreeDirectory, cancellationToken)
             .ConfigureAwait(false);
+        var stashes = await GitStashReader
+            .ReadAsync(paths.GitDirectory, objectFormat, cancellationToken)
+            .ConfigureAwait(false);
 
         return new RepositoryRefsResponse
         {
@@ -50,6 +53,7 @@ internal sealed class RepositoryRefsService
             RemotePrefixes = summary.RemotePrefixes.ToList(),
             Refs = summary.Refs.Select(reference => ToItem(reference, remoteUrl)).ToList(),
             Worktrees = worktrees.Select(ToItem).ToList(),
+            Stashes = stashes.Select(ToItem).ToList(),
         };
     }
 
@@ -81,5 +85,14 @@ internal sealed class RepositoryRefsService
             IsCurrent = worktree.IsCurrent,
             IsLocked = worktree.IsLocked,
             LockReason = worktree.LockReason,
+        };
+
+    private static RepositoryStashItem ToItem(GitStashEntry stash) =>
+        new()
+        {
+            Selector = stash.Selector,
+            CommitHash = stash.Target.ToString(),
+            Message = stash.Message,
+            CreatedAtUnixSeconds = stash.CreatedAtUnixSeconds,
         };
 }

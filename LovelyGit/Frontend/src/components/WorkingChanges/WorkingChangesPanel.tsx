@@ -4,6 +4,7 @@ import type {
 } from "@/generated/types";
 import { CommitStagedForm } from "./CommitStagedForm";
 import { DiscardWorkingTreeChangesDialog } from "./DiscardWorkingTreeChangesDialog";
+import { StashDialog } from "./StashDialog";
 import { useWorkingChangesPanelActions } from "./useWorkingChangesPanelActions";
 import { splitWorkingChanges, WorkingChangesList } from "./WorkingChangesList";
 import { WorkingChangesHeader } from "./WorkingChangesPanelParts";
@@ -62,6 +63,13 @@ export function WorkingChangesPanel({
 	return (
 		<div className="flex h-full min-h-0 flex-col gap-4 p-4 text-left text-sm">
 			<WorkingChangesHeader
+				actions={
+					<StashDialog
+						canCreate={(changes?.totalCount ?? totalCount) > 0}
+						onRepositoryChanged={onCommitSuccess}
+						repositoryId={repositoryId}
+					/>
+				}
 				isLoading={isLoading}
 				onRefresh={onRefresh}
 				totalCount={changes?.totalCount ?? totalCount}

@@ -13,10 +13,12 @@ export function WorkingChangesSkeleton() {
 }
 
 export function WorkingChangesHeader({
+	actions,
 	isLoading,
 	onRefresh,
 	totalCount,
 }: {
+	actions?: ReactNode;
 	isLoading: boolean;
 	onRefresh: () => Promise<void> | void;
 	totalCount: number;
@@ -31,18 +33,21 @@ export function WorkingChangesHeader({
 					Staged, working tree, and unmerged
 				</div>
 			</div>
-			<button
-				aria-label="Refresh working changes"
-				className="inline-flex size-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-				onClick={onRefresh}
-				type="button"
-			>
-				<RefreshCw
-					aria-hidden="true"
-					className={isLoading ? "animate-spin" : ""}
-					size={14}
-				/>
-			</button>
+			<div className="flex items-center gap-2">
+				{actions}
+				<button
+					aria-label="Refresh working changes"
+					className="inline-flex size-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+					onClick={onRefresh}
+					type="button"
+				>
+					<RefreshCw
+						aria-hidden="true"
+						className={isLoading ? "animate-spin" : ""}
+						size={14}
+					/>
+				</button>
+			</div>
 		</div>
 	);
 }

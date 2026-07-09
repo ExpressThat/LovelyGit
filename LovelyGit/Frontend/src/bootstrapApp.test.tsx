@@ -3,9 +3,20 @@ import { describe, expect, it, vi } from "vitest";
 const calls = vi.hoisted(() => [] as string[]);
 
 vi.mock("./lib/settings/settingsStore", () => ({
+	getSetting: vi.fn(() => ""),
 	initSettingsStore: vi.fn(async () => {
 		calls.push("settings");
 	}),
+}));
+
+vi.mock("./lib/settings/theme/themeUtils", () => ({
+	applyThemeToDocument: vi.fn(),
+	calculateAppearanceSide: vi.fn(() => "light"),
+	calculateTheme: vi.fn(() => ({})),
+}));
+
+vi.mock("./lib/settings/font/fontUtils", () => ({
+	applyFontsToDocument: vi.fn(),
 }));
 
 vi.mock("react-dom/client", () => ({

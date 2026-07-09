@@ -29,6 +29,9 @@ internal static class WorkingTreeServiceCollectionExtensions
         services.AddSingleton<ICommandResponder, FetchRepositoryCommandResolver>();
         services.AddSingleton<ICommandResponder, PullRepositoryCommandResolver>();
         services.AddSingleton<ICommandResponder, PushRepositoryCommandResolver>();
+        services.AddSingleton<ICommandResponder, CheckoutBranchCommandResolver>();
+        services.AddSingleton<ICommandResponder, CreateBranchCommandResolver>();
+        services.AddSingleton<ICommandResponder, StashCommandResolver>();
 
         return services;
     }

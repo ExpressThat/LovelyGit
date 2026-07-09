@@ -60,3 +60,29 @@ public record GitRemoteCommandArguments
     public GitPullMode PullMode { get; set; } = GitPullMode.Merge;
     public string? RemoteName { get; set; }
 }
+
+[TypeSharp]
+public record CheckoutBranchCommandArguments
+{
+    public Guid RepositoryId { get; set; }
+    public string BranchName { get; set; } = string.Empty;
+}
+
+[TypeSharp]
+public record CreateBranchCommandArguments
+{
+    public Guid RepositoryId { get; set; }
+    public string BranchName { get; set; } = string.Empty;
+    public string? StartPoint { get; set; }
+}
+
+[TypeSharp]
+public record StashCommandArguments
+{
+    public Guid RepositoryId { get; set; }
+    public StashAction Action { get; set; }
+    public string? Selector { get; set; }
+    public string? Message { get; set; }
+    public bool IncludeUntracked { get; set; }
+    public bool RestoreIndex { get; set; }
+}

@@ -1,16 +1,19 @@
-import { GitBranch, GitCompareArrows } from "lucide-react";
+import { GitCompareArrows } from "lucide-react";
 import { SettingsDialog } from "../Settings/SettingsDialog";
+import { BranchControl } from "./components/BranchControl";
 import { RemoteActionsControl } from "./components/RemoteActionsControl";
 import { Tabs } from "./components/Tabs";
 import { TerminalActionControl } from "./components/TerminalActionControl";
 
 export function TopNavBar({
 	currentBranchName,
+	onBranchChanged,
 	onOpenWorkingChanges,
 	repositoryId,
 	workingChangesCount,
 }: {
 	currentBranchName: string | null;
+	onBranchChanged: (branchName: string) => void;
 	onOpenWorkingChanges: () => void;
 	repositoryId: string | null;
 	workingChangesCount: number;
@@ -19,14 +22,13 @@ export function TopNavBar({
 		<header className="shrink-0">
 			<Tabs />
 			<div className="grid h-12 w-full grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 border-b bg-card px-2">
-				<div
-					className="flex min-w-0 items-center gap-2 text-muted-foreground text-sm"
-					title={currentBranchName ?? undefined}
-				>
-					<GitBranch aria-hidden="true" className="size-6 shrink-0" />
-					<span className="truncate">
-						{currentBranchName ?? (repositoryId ? "Detached HEAD" : "")}
-					</span>
+				<div className="min-w-0">
+					<BranchControl
+						currentBranchName={currentBranchName}
+						key={repositoryId}
+						onBranchChanged={onBranchChanged}
+						repositoryId={repositoryId}
+					/>
 				</div>
 				<div className="flex items-center justify-center gap-2">
 					<RemoteActionsControl repositoryId={repositoryId} />
