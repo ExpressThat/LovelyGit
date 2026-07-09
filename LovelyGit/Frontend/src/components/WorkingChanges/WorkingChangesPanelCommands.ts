@@ -9,6 +9,21 @@ export type IndexCommandType =
 	| "StageWorkingTreeFiles"
 	| "UnstageWorkingTreeFiles";
 
+export type CommitMessagePayload = {
+	body: string;
+	title: string;
+};
+
+export function normalizeCommitMessage(
+	title: string,
+	body: string,
+): CommitMessagePayload {
+	return {
+		body: body.trim(),
+		title: title.trim(),
+	};
+}
+
 export async function runIndexCommand({
 	commandType,
 	files,
@@ -18,6 +33,7 @@ export async function runIndexCommand({
 	setActionError,
 	setIsMutating,
 	setSelectedKeys,
+	setSuccessMessage,
 }: {
 	commandType: IndexCommandType;
 	files: WorkingTreeChangedFile[];
@@ -27,6 +43,7 @@ export async function runIndexCommand({
 	setActionError: (message: string | null) => void;
 	setIsMutating: (isMutating: boolean) => void;
 	setSelectedKeys: (keys: Set<string>) => void;
+	setSuccessMessage?: (message: string | null) => void;
 }) {
 	if (!includeAll && files.length === 0) {
 		return;
@@ -34,6 +51,7 @@ export async function runIndexCommand({
 
 	setIsMutating(true);
 	setActionError(null);
+	setSuccessMessage?.(null);
 	try {
 		await sendRequestWithResponse({
 			commandType,
@@ -65,6 +83,7 @@ export async function commitStagedChanges({
 	setCommitTitle,
 	setIsCommitting,
 	setSelectedKeys,
+	setSuccessMessage,
 }: {
 	changes: WorkingTreeChangesResponse | null;
 	commitBody: string;
@@ -76,29 +95,29 @@ export async function commitStagedChanges({
 	setCommitTitle: (title: string) => void;
 	setIsCommitting: (isCommitting: boolean) => void;
 	setSelectedKeys: (keys: Set<string>) => void;
+	setSuccessMessage: (message: string | null) => void;
 }) {
-	if (
-		!changes ||
-		changes.staged.length === 0 ||
-		commitTitle.trim().length === 0
-	) {
+	const message = normalizeCommitMessage(commitTitle, commitBody);
+	if (!changes || changes.staged.length === 0 || message.title.length === 0) {
 		return;
 	}
 
 	setIsCommitting(true);
 	setActionError(null);
+	setSuccessMessage(null);
 	try {
 		await sendRequestWithResponse({
 			commandType: "CommitStagedChanges",
 			arguments: {
-				body: commitBody,
+				body: message.body,
 				repositoryId,
-				title: commitTitle,
+				title: message.title,
 			},
 		});
 		setCommitTitle("");
 		setCommitBody("");
 		setSelectedKeys(new Set());
+		setSuccessMessage("Committed staged changes.");
 		await onCommitSuccess();
 	} catch (error) {
 		setActionError(

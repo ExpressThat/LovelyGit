@@ -1,3 +1,4 @@
+import { CheckCircle2 } from "lucide-react";
 import type {
 	WorkingTreeChangedFile,
 	WorkingTreeChangesResponse,
@@ -52,6 +53,7 @@ export function WorkingChangesPanel({
 		setCommitBody,
 		setCommitTitle,
 		setDiscardFiles,
+		successMessage,
 		toggleSelected,
 	} = useWorkingChangesPanelActions({
 		changes,
@@ -69,6 +71,12 @@ export function WorkingChangesPanel({
 			{error || actionError ? (
 				<div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
 					{actionError ?? error}
+				</div>
+			) : null}
+			{successMessage ? (
+				<div className="flex items-center gap-2 rounded-md border border-primary/30 bg-primary/10 p-3 text-sm text-foreground">
+					<CheckCircle2 aria-hidden="true" className="text-primary" size={16} />
+					<span>{successMessage}</span>
 				</div>
 			) : null}
 			<div className="min-h-0 flex-1">

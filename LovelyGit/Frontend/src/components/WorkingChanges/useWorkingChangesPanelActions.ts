@@ -26,6 +26,7 @@ export function useWorkingChangesPanelActions({
 		() => new Set(),
 	);
 	const [actionError, setActionError] = useState<string | null>(null);
+	const [successMessage, setSuccessMessage] = useState<string | null>(null);
 	const [isMutating, setIsMutating] = useState(false);
 	const [commitTitle, setCommitTitle] = useState("");
 	const [commitBody, setCommitBody] = useState("");
@@ -68,6 +69,7 @@ export function useWorkingChangesPanelActions({
 				setCommitTitle,
 				setIsCommitting,
 				setSelectedKeys,
+				setSuccessMessage,
 			}),
 		commitTitle,
 		discardFiles,
@@ -98,11 +100,19 @@ export function useWorkingChangesPanelActions({
 				setActionError,
 				setIsMutating,
 				setSelectedKeys,
+				setSuccessMessage,
 			}),
 		selectedKeys,
-		setCommitBody,
-		setCommitTitle,
+		setCommitBody: (body: string) => {
+			setSuccessMessage(null);
+			setCommitBody(body);
+		},
+		setCommitTitle: (title: string) => {
+			setSuccessMessage(null);
+			setCommitTitle(title);
+		},
 		setDiscardFiles,
+		successMessage,
 		toggleSelected: (file: WorkingTreeChangedFile) => {
 			const key = fileKey(file);
 			setSelectedKeys((current) => {
