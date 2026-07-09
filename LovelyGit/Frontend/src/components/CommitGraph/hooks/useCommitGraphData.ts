@@ -119,6 +119,12 @@ export function useCommitGraphData(externalRefreshToken = 0) {
 				}
 			}
 		} catch (error) {
+			if (
+				session.repositoryId !== loadingRepositoryId ||
+				session.generation !== loadingGeneration
+			) {
+				return;
+			}
 			const message =
 				error instanceof Error ? error.message : "Failed to load commit graph";
 			setState((current) => ({

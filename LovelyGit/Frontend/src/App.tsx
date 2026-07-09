@@ -13,6 +13,7 @@ import { useWorkingTreeChanges } from "./components/WorkingChanges/useWorkingTre
 import { WorkingChangesPanel } from "./components/WorkingChanges/WorkingChangesPanel";
 import { WorkingTreeFileDiffView } from "./components/WorkingChanges/WorkingTreeFileDiffView";
 import type { CommitGraphRow } from "./generated/types";
+import { subscribeToServerEvent } from "./lib/commands";
 import { RepositoryProvider } from "./lib/repositoryContext";
 import { useApplyFont } from "./lib/settings/font/useApplyFont";
 import { useSetting } from "./lib/settings/settingsStore";
@@ -46,6 +47,14 @@ function App() {
 		setCurrentBranchName(null);
 		setDetailsPanel(null);
 	}, [currentGitRepositoryId]);
+	useEffect(() => {
+		return subscribeToServerEvent("CommitGraphChanged", () => {
+			setCurrentBranchName(null);
+			setDetailsPanel((current) =>
+				current?.kind === "commit" ? null : current,
+			);
+		});
+	}, []);
 	const closeDetailsPanel = () => {
 		setDetailsPanel(null);
 	};

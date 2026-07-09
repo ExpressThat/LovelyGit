@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { RepositoryRefsResponse } from "@/generated/types";
 import {
 	sendRequestWithResponse,
@@ -17,6 +17,7 @@ export function useRepositoryRefs(
 	refreshToken: number,
 ) {
 	const [invalidationToken, setInvalidationToken] = useState(0);
+	const previousRepositoryIdRef = useRef<string | null>(repositoryId);
 	const loadKey = `${refreshToken}:${invalidationToken}`;
 	const [state, setState] = useState<RepositoryRefsState>({
 		status: "idle",
@@ -37,7 +38,12 @@ export function useRepositoryRefs(
 
 		let isActive = true;
 		const activeLoadKey = loadKey;
-		setState((current) => ({ status: "loading", refs: current.refs }));
+		const repositoryChanged = previousRepositoryIdRef.current !== repositoryId;
+		previousRepositoryIdRef.current = repositoryId;
+		setState((current) => ({
+			status: "loading",
+			refs: repositoryChanged ? null : current.refs,
+		}));
 		sendRequestWithResponse({
 			arguments: { knownRepositoryId: repositoryId },
 			commandType: NativeMessageType.GetRepositoryRefs,
