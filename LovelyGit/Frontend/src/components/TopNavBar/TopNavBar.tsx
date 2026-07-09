@@ -27,6 +27,12 @@ export function TopNavBar({
 						currentBranchName={currentBranchName}
 						key={repositoryId}
 						onBranchChanged={onBranchChanged}
+						onOpenWorkingChanges={onOpenWorkingChanges}
+						onRepositoryChanged={() => {
+							if (currentBranchName) {
+								onBranchChanged(currentBranchName);
+							}
+						}}
 						repositoryId={repositoryId}
 					/>
 				</div>

@@ -1,13 +1,19 @@
+import type { BranchIntegrationMode } from "@/components/TopNavBar/components/BranchIntegrationDialog";
 import { Button } from "@/components/ui/button";
 import type { CommitGraphRow } from "@/generated/types";
 import { shortHash } from "../utils/format";
+import { BranchContextMenu } from "./BranchContextMenu";
 import { RefIcon } from "./RefCellUtils";
 import type { RefPanelItem, RefPanelSection } from "./RefsPanelData";
 
 export function RefSection({
+	currentBranchName,
+	onIntegrateBranch,
 	onSelectCommit,
 	section,
 }: {
+	currentBranchName: string | null;
+	onIntegrateBranch: (mode: BranchIntegrationMode, branchName: string) => void;
 	onSelectCommit: (row: CommitGraphRow) => void;
 	section: RefPanelSection;
 }) {
@@ -20,8 +26,10 @@ export function RefSection({
 			<div className="grid gap-1">
 				{section.items.map((item) => (
 					<RefPanelRow
+						currentBranchName={currentBranchName}
 						item={item}
 						key={`${item.kind}:${item.name}:${item.commitHash}`}
+						onIntegrateBranch={onIntegrateBranch}
 						onSelectCommit={onSelectCommit}
 					/>
 				))}
@@ -31,14 +39,18 @@ export function RefSection({
 }
 
 export function RefPanelRow({
+	currentBranchName,
 	item,
+	onIntegrateBranch,
 	onSelectCommit,
 }: {
+	currentBranchName: string | null;
 	item: RefPanelItem;
+	onIntegrateBranch: (mode: BranchIntegrationMode, branchName: string) => void;
 	onSelectCommit: (row: CommitGraphRow) => void;
 }) {
 	const row = item.row;
-	return (
+	const branchButton = (
 		<Button
 			aria-disabled={!row}
 			className="h-7 min-w-0 justify-start gap-2 px-2 font-normal"
@@ -58,5 +70,19 @@ export function RefPanelRow({
 				{shortHash(item.commitHash)}
 			</span>
 		</Button>
+	);
+
+	if (item.kind !== "Local") {
+		return branchButton;
+	}
+
+	return (
+		<BranchContextMenu
+			branchName={item.name}
+			currentBranchName={currentBranchName}
+			onIntegrateBranch={onIntegrateBranch}
+		>
+			{branchButton}
+		</BranchContextMenu>
 	);
 }

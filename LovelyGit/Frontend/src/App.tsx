@@ -75,6 +75,12 @@ function App() {
 											detailsPanel.selectedFile,
 									)}
 									onCurrentBranchNameChange={setCurrentBranchName}
+									onOpenWorkingChanges={() =>
+										setDetailsPanel({ kind: "workingChanges" })
+									}
+									onRepositoryChanged={() =>
+										setCommitGraphRefreshToken((token) => token + 1)
+									}
 									onSelectCommit={selectCommit}
 									refreshToken={commitGraphRefreshToken}
 									repositoryId={currentGitRepositoryId}

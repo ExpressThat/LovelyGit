@@ -4,6 +4,7 @@ import type {
 } from "@/generated/types";
 import { CommitStagedForm } from "./CommitStagedForm";
 import { DiscardWorkingTreeChangesDialog } from "./DiscardWorkingTreeChangesDialog";
+import { RepositoryOperationBanner } from "./RepositoryOperationBanner";
 import { StashDialog } from "./StashDialog";
 import { useWorkingChangesPanelActions } from "./useWorkingChangesPanelActions";
 import { splitWorkingChanges, WorkingChangesList } from "./WorkingChangesList";
@@ -79,6 +80,13 @@ export function WorkingChangesPanel({
 					{actionError ?? error}
 				</div>
 			) : null}
+			<RepositoryOperationBanner
+				conflictCount={visibleChanges.unmerged.length}
+				onRefresh={onRefresh}
+				onRepositoryChanged={onCommitSuccess}
+				repositoryId={repositoryId}
+				workingTreeCount={visibleChanges.totalCount}
+			/>
 			<div className="min-h-0 flex-1">
 				<WorkingChangesList
 					isBusy={isBusy}

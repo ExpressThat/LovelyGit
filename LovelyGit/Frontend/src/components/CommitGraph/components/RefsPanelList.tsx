@@ -1,5 +1,6 @@
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { useMemo, useRef } from "react";
+import type { BranchIntegrationMode } from "@/components/TopNavBar/components/BranchIntegrationDialog";
 import type { CommitGraphRow } from "@/generated/types";
 import type { RefPanelItem, RefPanelSection } from "./RefsPanelData";
 import { RefPanelRow } from "./RefsPanelSections";
@@ -10,8 +11,12 @@ type RefListRow =
 
 export function RefsPanelList({
 	onSelectCommit,
+	currentBranchName,
+	onIntegrateBranch,
 	sections,
 }: {
+	currentBranchName: string | null;
+	onIntegrateBranch: (mode: BranchIntegrationMode, branchName: string) => void;
 	onSelectCommit: (row: CommitGraphRow) => void;
 	sections: RefPanelSection[];
 }) {
@@ -49,7 +54,12 @@ export function RefsPanelList({
 							{row.type === "header" ? (
 								<RefHeader section={row.section} />
 							) : (
-								<RefPanelRow item={row.item} onSelectCommit={onSelectCommit} />
+								<RefPanelRow
+									currentBranchName={currentBranchName}
+									item={row.item}
+									onIntegrateBranch={onIntegrateBranch}
+									onSelectCommit={onSelectCommit}
+								/>
 							)}
 						</div>
 					);

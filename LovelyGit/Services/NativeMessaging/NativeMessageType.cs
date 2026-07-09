@@ -1,6 +1,9 @@
 using System.Text.Json.Serialization;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.CommitGraph;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.KnownRepository;
+using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Merge;
+using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Rebase;
+using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.RepositoryOperations;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Settings;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.WorkingTree;
 using ExpressThat.LovelyGit.Services.NativeMessaging.Commands;
@@ -73,6 +76,16 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging
         CreateBranch,
         [NativeMessageContract(typeof(StashCommandArguments))]
         ManageStash,
+        [NativeMessageContract(typeof(MergeBranchIntoCurrentCommandArguments), typeof(BranchIntegrationCommandResponse))]
+        MergeBranchIntoCurrent,
+        [NativeMessageContract(typeof(RebaseCurrentBranchOntoBranchCommandArguments), typeof(BranchIntegrationCommandResponse))]
+        RebaseCurrentBranchOntoBranch,
+        [NativeMessageContract(typeof(GetRepositoryOperationStateCommandArguments), typeof(RepositoryOperationStateResponse))]
+        GetRepositoryOperationState,
+        [NativeMessageContract(typeof(RepositoryOperationCommandArguments), typeof(BranchIntegrationCommandResponse))]
+        ContinueRepositoryOperation,
+        [NativeMessageContract(typeof(RepositoryOperationCommandArguments))]
+        AbortRepositoryOperation,
         [NativeMessageContract(typeof(GetSettingsCommandArguments), typeof(JsonElement))]
         GetSetting,
         [NativeMessageContract(typeof(SetSettingsCommandArguments))]

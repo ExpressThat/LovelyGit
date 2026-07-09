@@ -1,5 +1,6 @@
 import { ChevronLeft, ChevronRight, Search, X } from "lucide-react";
 import { useMemo, useState } from "react";
+import type { BranchIntegrationMode } from "@/components/TopNavBar/components/BranchIntegrationDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { CommitGraphRow, RepositoryRefsResponse } from "@/generated/types";
@@ -10,12 +11,14 @@ import { filterWorktrees, WorktreeSection } from "./WorktreeSection";
 
 export function RefsPanel({
 	currentBranchName,
+	onIntegrateBranch,
 	onSelectCommit,
 	remotePrefixes,
 	repositoryRefs,
 	rows,
 }: {
 	currentBranchName: string | null;
+	onIntegrateBranch: (mode: BranchIntegrationMode, branchName: string) => void;
 	onSelectCommit: (row: CommitGraphRow) => void;
 	remotePrefixes: string[];
 	repositoryRefs: RepositoryRefsResponse | null;
@@ -114,6 +117,8 @@ export function RefsPanel({
 						/>
 					</div>
 					<RefsPanelList
+						currentBranchName={currentBranchName}
+						onIntegrateBranch={onIntegrateBranch}
 						onSelectCommit={onSelectCommit}
 						sections={filteredSections}
 					/>

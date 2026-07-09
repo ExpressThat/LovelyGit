@@ -1,4 +1,6 @@
+import type { BranchIntegrationMode } from "@/components/TopNavBar/components/BranchIntegrationDialog";
 import type { CommitGraphRow } from "@/generated/types";
+import { BranchContextMenu } from "./BranchContextMenu";
 import {
 	buildLegacyRefs,
 	groupRefs,
@@ -11,10 +13,12 @@ import {
 
 export function RefCell({
 	currentBranchName,
+	onIntegrateBranch,
 	remotePrefixes,
 	row,
 }: {
 	currentBranchName: string | null;
+	onIntegrateBranch: (mode: BranchIntegrationMode, branchName: string) => void;
 	remotePrefixes: string[];
 	row: CommitGraphRow;
 }) {
@@ -32,8 +36,10 @@ export function RefCell({
 		<div className="flex min-w-0 gap-1 overflow-hidden">
 			{groups.map((group) => (
 				<RefGroupPill
+					currentBranchName={currentBranchName}
 					group={group}
 					key={group.key}
+					onIntegrateBranch={onIntegrateBranch}
 					remotePrefixes={remotePrefixes}
 				/>
 			))}
@@ -41,14 +47,18 @@ export function RefCell({
 	);
 }
 function RefGroupPill({
+	currentBranchName,
 	group,
+	onIntegrateBranch,
 	remotePrefixes,
 }: {
+	currentBranchName: string | null;
 	group: RefGroup;
+	onIntegrateBranch: (mode: BranchIntegrationMode, branchName: string) => void;
 	remotePrefixes: string[];
 }) {
 	const icons = uniqueKinds(group.refs);
-	return (
+	const pill = (
 		<span
 			className="inline-flex h-[17px] max-w-[132px] shrink-0 items-center gap-1 overflow-hidden whitespace-nowrap rounded-[3px] border border-border bg-secondary px-1 text-[11px] text-secondary-foreground shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
 			title={group.primary.name}
@@ -62,5 +72,18 @@ function RefGroupPill({
 				{refLabelForRemotes(group.primary.name, remotePrefixes)}
 			</span>
 		</span>
+	);
+	const localBranch = group.refs.find((ref) => ref.kind === "Local");
+	return localBranch ? (
+		<BranchContextMenu
+			branchName={localBranch.name}
+			currentBranchName={currentBranchName}
+			inline
+			onIntegrateBranch={onIntegrateBranch}
+		>
+			{pill}
+		</BranchContextMenu>
+	) : (
+		pill
 	);
 }

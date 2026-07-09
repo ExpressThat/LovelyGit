@@ -1,5 +1,9 @@
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { useEffect, useMemo, useRef, useState } from "react";
+import {
+	BranchIntegrationDialog,
+	type BranchIntegrationMode,
+} from "@/components/TopNavBar/components/BranchIntegrationDialog";
 import type { CommitGraphRow as CommitGraphRowModel } from "@/generated/types";
 import { CommitGraphHeader } from "./components/CommitGraphHeader";
 import { CommitRow } from "./components/CommitRow";
@@ -20,12 +24,16 @@ import { resolveWidths } from "./utils/columns";
 
 export function CommitGraphView({
 	onCurrentBranchNameChange,
+	onOpenWorkingChanges,
+	onRepositoryChanged,
 	onSelectCommit,
 	refreshToken = 0,
 	repositoryId,
 	selectedCommitHash,
 }: {
 	onCurrentBranchNameChange?: (branchName: string | null) => void;
+	onOpenWorkingChanges: () => void;
+	onRepositoryChanged: () => void;
 	onSelectCommit: (row: CommitGraphRowModel) => void;
 	refreshToken?: number;
 	repositoryId: string | null;
@@ -38,6 +46,10 @@ export function CommitGraphView({
 	const [preferredWidths, setPreferredWidths] =
 		useState<Record<ColKey, number>>(COL_DEFAULT);
 	const graphScrollerRef = useRef<HTMLDivElement | null>(null);
+	const [integrationTarget, setIntegrationTarget] = useState<{
+		branchName: string;
+		mode: BranchIntegrationMode;
+	} | null>(null);
 
 	const {
 		currentBranchName,
@@ -156,86 +168,110 @@ export function CommitGraphView({
 		window.addEventListener("pointerup", onUp, { once: true });
 	};
 
+	const integrateBranch = (mode: BranchIntegrationMode, branchName: string) =>
+		setIntegrationTarget({ branchName, mode });
+
 	return (
-		<section className="h-full w-full overflow-hidden bg-background">
-			<div className="flex h-full w-full min-w-0">
-				<RefsPanel
-					currentBranchName={currentBranchName}
-					onSelectCommit={onSelectCommit}
-					remotePrefixes={remotePrefixes}
-					repositoryRefs={repositoryRefs.refs}
-					rows={rows}
-				/>
-				<div ref={viewportRef} className="flex h-full min-w-0 flex-1 flex-col">
-					<CommitGraphHeader
-						isInitialLoading={isInitialLoading}
-						onResizeStart={handleResizeStart}
-						templateColumns={templateColumns}
+		<>
+			<section className="h-full w-full overflow-hidden bg-background">
+				<div className="flex h-full w-full min-w-0">
+					<RefsPanel
+						currentBranchName={currentBranchName}
+						onIntegrateBranch={integrateBranch}
+						onSelectCommit={onSelectCommit}
+						remotePrefixes={remotePrefixes}
+						repositoryRefs={repositoryRefs.refs}
+						rows={rows}
 					/>
-
-					{error ? (
-						<div className="h-7 border-b border-destructive/40 bg-destructive/10 px-[10px] leading-[27px] text-destructive">
-							{error}
-						</div>
-					) : null}
-
 					<div
-						ref={scrollRef}
-						className="custom-scrollbar relative min-h-0 w-full flex-1 overflow-x-hidden overflow-y-auto bg-[repeating-linear-gradient(to_bottom,var(--background)_0,var(--background)_21px,var(--card)_21px,var(--card)_22px)]"
+						ref={viewportRef}
+						className="flex h-full min-w-0 flex-1 flex-col"
 					>
+						<CommitGraphHeader
+							isInitialLoading={isInitialLoading}
+							onResizeStart={handleResizeStart}
+							templateColumns={templateColumns}
+						/>
+
+						{error ? (
+							<div className="h-7 border-b border-destructive/40 bg-destructive/10 px-[10px] leading-[27px] text-destructive">
+								{error}
+							</div>
+						) : null}
+
 						<div
-							className="relative h-full w-full"
-							style={{ height: `${virtualizer.getTotalSize()}px` }}
+							ref={scrollRef}
+							className="custom-scrollbar relative min-h-0 w-full flex-1 overflow-x-hidden overflow-y-auto bg-[repeating-linear-gradient(to_bottom,var(--background)_0,var(--background)_21px,var(--card)_21px,var(--card)_22px)]"
 						>
-							{virtualItems.map((item) => (
-								<div
-									className="absolute left-0 top-0 w-full"
-									key={item.key}
-									style={{
-										height: `${ROW_HEIGHT}px`,
-										transform: `translateY(${Math.round(item.start)}px)`,
-									}}
-								>
-									<CommitRow
-										graph={{
-											contentWidth: graphContentWidth,
-											scrollLeft: graphScrollLeft,
+							<div
+								className="relative h-full w-full"
+								style={{ height: `${virtualizer.getTotalSize()}px` }}
+							>
+								{virtualItems.map((item) => (
+									<div
+										className="absolute left-0 top-0 w-full"
+										key={item.key}
+										style={{
+											height: `${ROW_HEIGHT}px`,
+											transform: `translateY(${Math.round(item.start)}px)`,
 										}}
-										isSelected={
-											Boolean(rows[item.index]) &&
-											rows[item.index]?.commit.hash === selectedCommitHash
-										}
-										onSelect={onSelectCommit}
-										currentBranchName={currentBranchName}
-										remotePrefixes={remotePrefixes}
-										row={rows[item.index] ?? null}
-										rowIndex={item.index}
-										templateColumns={templateColumns}
-									/>
-								</div>
-							))}
+									>
+										<CommitRow
+											graph={{
+												contentWidth: graphContentWidth,
+												scrollLeft: graphScrollLeft,
+											}}
+											isSelected={
+												Boolean(rows[item.index]) &&
+												rows[item.index]?.commit.hash === selectedCommitHash
+											}
+											onIntegrateBranch={integrateBranch}
+											onSelect={onSelectCommit}
+											currentBranchName={currentBranchName}
+											remotePrefixes={remotePrefixes}
+											row={rows[item.index] ?? null}
+											rowIndex={item.index}
+											templateColumns={templateColumns}
+										/>
+									</div>
+								))}
+							</div>
 						</div>
-					</div>
-					<div
-						className="grid h-3 border-t bg-background"
-						style={{ gridTemplateColumns: templateColumns }}
-					>
-						<div />
 						<div
-							className="custom-scrollbar overflow-x-auto overflow-y-hidden"
-							ref={graphScrollerRef}
-							onScroll={(event) =>
-								setGraphScrollLeft(event.currentTarget.scrollLeft)
-							}
+							className="grid h-3 border-t bg-background"
+							style={{ gridTemplateColumns: templateColumns }}
 						>
-							<div style={{ height: 1, width: graphContentWidth }} />
+							<div />
+							<div
+								className="custom-scrollbar overflow-x-auto overflow-y-hidden"
+								ref={graphScrollerRef}
+								onScroll={(event) =>
+									setGraphScrollLeft(event.currentTarget.scrollLeft)
+								}
+							>
+								<div style={{ height: 1, width: graphContentWidth }} />
+							</div>
+							<div />
+							<div />
+							<div />
 						</div>
-						<div />
-						<div />
-						<div />
 					</div>
 				</div>
-			</div>
-		</section>
+			</section>
+			<BranchIntegrationDialog
+				branches={(repositoryRefs.refs?.refs ?? []).filter(
+					(ref) => ref.kind === "Local",
+				)}
+				currentBranchName={currentBranchName}
+				mode={integrationTarget?.mode ?? null}
+				onOpenChange={(mode) => {
+					if (mode === null) setIntegrationTarget(null);
+				}}
+				onOpenWorkingChanges={onOpenWorkingChanges}
+				onRepositoryChanged={onRepositoryChanged}
+				repositoryId={repositoryId}
+				targetBranchName={integrationTarget?.branchName}
+			/>
+		</>
 	);
 }

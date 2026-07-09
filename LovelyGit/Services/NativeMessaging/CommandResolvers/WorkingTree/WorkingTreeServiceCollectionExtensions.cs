@@ -1,6 +1,9 @@
 using ExpressThat.LovelyGit.Services.Git.WorkingTree;
 using ExpressThat.LovelyGit.Services.NativeMessaging.Commands;
 using ExpressThat.LovelyGit.Services.Json;
+using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Merge;
+using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Rebase;
+using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.RepositoryOperations;
 
 namespace ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.WorkingTree;
 
@@ -9,6 +12,9 @@ internal static class WorkingTreeServiceCollectionExtensions
     public static IServiceCollection AddWorkingTreeCommands(this IServiceCollection services)
     {
         services.AddLovelyGitJsonTypeInfoResolver(WorkingTreeJsonSerializerContext.Default);
+        services.AddLovelyGitJsonTypeInfoResolver(MergeJsonSerializerContext.Default);
+        services.AddLovelyGitJsonTypeInfoResolver(RebaseJsonSerializerContext.Default);
+        services.AddLovelyGitJsonTypeInfoResolver(RepositoryOperationsJsonSerializerContext.Default);
         services.AddSingleton<WorkingTreeChangeService>();
         services.AddSingleton<WorkingTreeStatusListService>();
         services.AddSingleton<WorkingTreePreliminarySummaryService>();
@@ -32,6 +38,11 @@ internal static class WorkingTreeServiceCollectionExtensions
         services.AddSingleton<ICommandResponder, CheckoutBranchCommandResolver>();
         services.AddSingleton<ICommandResponder, CreateBranchCommandResolver>();
         services.AddSingleton<ICommandResponder, StashCommandResolver>();
+        services.AddSingleton<ICommandResponder, MergeBranchIntoCurrentCommandResolver>();
+        services.AddSingleton<ICommandResponder, RebaseCurrentBranchOntoBranchCommandResolver>();
+        services.AddSingleton<ICommandResponder, GetRepositoryOperationStateCommandResolver>();
+        services.AddSingleton<ICommandResponder, ContinueRepositoryOperationCommandResolver>();
+        services.AddSingleton<ICommandResponder, AbortRepositoryOperationCommandResolver>();
 
         return services;
     }

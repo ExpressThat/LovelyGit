@@ -1,5 +1,6 @@
 /** biome-ignore-all lint/suspicious/noArrayIndexKey: shimmer has no id */
 import type { ReactNode } from "react";
+import type { BranchIntegrationMode } from "@/components/TopNavBar/components/BranchIntegrationDialog";
 import type { CommitGraphRow } from "@/generated/types";
 import { AuthorCell } from "./AuthorCell";
 import { CommitMessage } from "./CommitMessage";
@@ -12,6 +13,7 @@ export function CommitRow({
 	currentBranchName,
 	graph,
 	isSelected,
+	onIntegrateBranch,
 	onSelect,
 	remotePrefixes,
 	row,
@@ -24,6 +26,7 @@ export function CommitRow({
 		scrollLeft: number;
 	};
 	isSelected: boolean;
+	onIntegrateBranch: (mode: BranchIntegrationMode, branchName: string) => void;
 	onSelect: (row: CommitGraphRow) => void;
 	remotePrefixes: string[];
 	row: CommitGraphRow | null;
@@ -71,6 +74,7 @@ export function CommitRow({
 			<Column className="px-[6px] py-[2px]">
 				<RefCell
 					currentBranchName={currentBranchName}
+					onIntegrateBranch={onIntegrateBranch}
 					remotePrefixes={remotePrefixes}
 					row={row}
 				/>

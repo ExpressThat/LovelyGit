@@ -2,6 +2,8 @@ import {
 	Check,
 	ChevronDown,
 	GitBranch,
+	GitMerge,
+	ListRestart,
 	LoaderCircle,
 	Plus,
 	Search,
@@ -31,16 +33,24 @@ import type { RepositoryRefItem } from "@/generated/types";
 import { sendRequestWithResponse } from "@/lib/commands";
 import { gitMutationTimeoutMs } from "@/lib/gitMutationTimeout";
 import { NativeMessageType } from "@/lib/nativeMessaging";
+import {
+	BranchIntegrationDialog,
+	type BranchIntegrationMode,
+} from "./BranchIntegrationDialog";
 
 type BranchControlProps = {
 	currentBranchName: string | null;
 	onBranchChanged: (branchName: string) => void;
+	onOpenWorkingChanges: () => void;
+	onRepositoryChanged: () => void;
 	repositoryId: string | null;
 };
 
 export function BranchControl({
 	currentBranchName,
 	onBranchChanged,
+	onOpenWorkingChanges,
+	onRepositoryChanged,
 	repositoryId,
 }: BranchControlProps) {
 	const [branches, setBranches] = useState<RepositoryRefItem[]>([]);
@@ -48,6 +58,8 @@ export function BranchControl({
 	const [createOpen, setCreateOpen] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [isLoading, setIsLoading] = useState(false);
+	const [integrationMode, setIntegrationMode] =
+		useState<BranchIntegrationMode | null>(null);
 	const [menuOpen, setMenuOpen] = useState(false);
 	const [query, setQuery] = useState("");
 
@@ -107,6 +119,9 @@ export function BranchControl({
 				return left.name.localeCompare(right.name);
 			});
 	}, [branches, currentBranchName, query]);
+	const canIntegrate =
+		currentBranchName !== null &&
+		branches.some((branch) => branch.name !== currentBranchName);
 
 	const checkoutBranch = async (branchName: string) => {
 		if (!repositoryId || busyBranch || branchName === currentBranchName) {
@@ -230,6 +245,28 @@ export function BranchControl({
 							<Plus aria-hidden="true" className="size-4" />
 							Create new branch…
 						</DropdownMenuItem>
+						<DropdownMenuItem
+							className="min-h-8 px-2"
+							disabled={!canIntegrate}
+							onClick={() => {
+								setMenuOpen(false);
+								setIntegrationMode("merge");
+							}}
+						>
+							<GitMerge aria-hidden="true" className="size-4" />
+							Merge into current branch…
+						</DropdownMenuItem>
+						<DropdownMenuItem
+							className="min-h-8 px-2"
+							disabled={!canIntegrate}
+							onClick={() => {
+								setMenuOpen(false);
+								setIntegrationMode("rebase");
+							}}
+						>
+							<ListRestart aria-hidden="true" className="size-4" />
+							Rebase current branch…
+						</DropdownMenuItem>
 					</DropdownMenuGroup>
 				</DropdownMenuContent>
 			</DropdownMenu>
@@ -238,6 +275,15 @@ export function BranchControl({
 				onBranchChanged={onBranchChanged}
 				onOpenChange={setCreateOpen}
 				open={createOpen}
+				repositoryId={repositoryId}
+			/>
+			<BranchIntegrationDialog
+				branches={branches}
+				currentBranchName={currentBranchName}
+				mode={integrationMode}
+				onOpenChange={setIntegrationMode}
+				onOpenWorkingChanges={onOpenWorkingChanges}
+				onRepositoryChanged={onRepositoryChanged}
 				repositoryId={repositoryId}
 			/>
 		</>
@@ -250,9 +296,12 @@ function CreateBranchDialog({
 	onOpenChange,
 	open,
 	repositoryId,
-}: BranchControlProps & {
+}: {
+	currentBranchName: string | null;
+	onBranchChanged: (branchName: string) => void;
 	onOpenChange: (open: boolean) => void;
 	open: boolean;
+	repositoryId: string | null;
 }) {
 	const [branchName, setBranchName] = useState("");
 	const [isCreating, setIsCreating] = useState(false);
