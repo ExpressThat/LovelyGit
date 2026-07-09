@@ -2,6 +2,8 @@
 
 This suite runs against the real LovelyGit WebView2 app, not a browser-only Vite session. It launches through `scripts/Start-LovelyGitVisualTest.ps1`, attaches CMG to remote debugging port `9333`, and writes screenshots, GIFs, traces, and a JSON report under `artifacts/cmg/lovelygit-smoke/`.
 
+Generated CMG evidence under `artifacts/` is intentionally ignored output. Commit the CMG tests, scripts, and documentation only; do not commit screenshots, GIFs, traces, reports, or other run outputs unless separately approved.
+
 ## Preconditions
 
 - `C:/CMG/CMG.exe` is installed.
