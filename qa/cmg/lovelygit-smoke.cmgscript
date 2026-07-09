@@ -1,0 +1,55 @@
+suite "LovelyGit real app smoke" baseUrl="http://localhost:5000/" {
+  beforeEach {
+    setViewport width=1360 height=900
+    navigate "/"
+    waitForElement "body" timeout=15000
+  }
+
+  test "repository graph, details, and working changes" tag=smoke {
+    step "Open a repository from current or recent state" {
+      evaluate "const text = document.body.innerText.toUpperCase(); const hasGraph = text.includes('COMMIT MESSAGE') && text.includes('HASH') && text.includes('AUTHOR'); if (!hasGraph) { const rows = Array.from(document.querySelectorAll('section button')).filter(button => button.innerText.trim().length > 0); if (rows.length === 0) throw new Error('No current repository or recent repository rows are available. Add a repository once before running the smoke suite.'); rows[0].click(); }"
+      waitForFunction "document.body.innerText.toUpperCase().includes('COMMIT MESSAGE') && document.body.innerText.toUpperCase().includes('HASH') && document.body.innerText.toUpperCase().includes('AUTHOR')" timeout=20000
+      screenshotPage output="artifacts/cmg/lovelygit-smoke/commit-graph.png" animations=disabled caret=hide
+    }
+
+    step "Select a commit and load details" {
+      waitForFunction "Array.from(document.querySelectorAll('button')).some(button => /[0-9a-f]{7,}/i.test(button.innerText) && button.innerText.includes('\\n'))" timeout=20000
+      evaluate "const row = Array.from(document.querySelectorAll('button')).find(button => /[0-9a-f]{7,}/i.test(button.innerText) && button.innerText.includes('\\n')); if (!row) throw new Error('No commit row button was available.'); row.scrollIntoView({ block: 'center' }); row.click();"
+      expectText "body" "FILES" timeout=15000
+      expectText "body" "ADDITIONS" timeout=15000
+      expectText "body" "DELETIONS" timeout=15000
+      screenshotPage output="artifacts/cmg/lovelygit-smoke/commit-details.png" animations=disabled caret=hide
+    }
+
+    step "Open and refresh working changes" {
+      click "button[aria-label='Open working changes']"
+      expectText "body" "Working Changes" timeout=10000
+      expectText "body" "changed files" timeout=10000
+      click "button[aria-label='Refresh working changes']"
+      screenshotPage output="artifacts/cmg/lovelygit-smoke/working-changes.png" animations=disabled caret=hide
+    }
+
+    listPageErrors
+    listConsole level=error
+    expectNoPageError timeout=250
+    expectNoConsole level=error timeout=250
+  }
+
+  test "settings appearance dialog" tag=smoke {
+    step "Open settings and exercise appearance mode controls" {
+      click "button[aria-label='Open settings']"
+      expectText "body" "Settings" timeout=5000
+      expectText "body" "Appearance" timeout=5000
+      expectText "body" "Light theme" timeout=5000
+      evaluate "const dark = Array.from(document.querySelectorAll('button')).find(button => button.innerText.trim() === 'Dark'); if (!dark) throw new Error('Dark appearance mode button was not available.'); dark.click();"
+      expectText "body" "Dark theme" timeout=5000
+      evaluate "const light = Array.from(document.querySelectorAll('button')).find(button => button.innerText.trim() === 'Light'); if (!light) throw new Error('Light appearance mode button was not available.'); light.click();"
+      screenshotPage output="artifacts/cmg/lovelygit-smoke/settings-appearance.png" animations=disabled caret=hide
+    }
+
+    listPageErrors
+    listConsole level=error
+    expectNoPageError timeout=250
+    expectNoConsole level=error timeout=250
+  }
+}
