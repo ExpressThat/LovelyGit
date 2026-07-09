@@ -7,6 +7,7 @@ import type {
 } from "@/generated/types";
 import {
 	buildRefPanelSections,
+	buildRefPanelSummary,
 	filterRefPanelSections,
 	refPanelItemToRefInfo,
 } from "./RefsPanelData";
@@ -117,6 +118,48 @@ describe("buildRefPanelSections", () => {
 			name: "v1",
 			remoteUrl: "https://github.com/example/repo/releases/tag/v1",
 		});
+	});
+});
+
+describe("buildRefPanelSummary", () => {
+	it("counts ref kinds and normalizes the current branch label", () => {
+		const sections = buildRefPanelSections({
+			currentBranchName: "origin/main",
+			remotePrefixes: ["origin"],
+			rows: [
+				row("abc1234", [
+					ref("Local", "feature/x"),
+					ref("Remote", "origin/main"),
+					ref("Tag", "v1"),
+					ref("Stash", "stash@{0}"),
+				]),
+			],
+		});
+
+		expect(
+			buildRefPanelSummary({
+				currentBranchName: "origin/main",
+				remotePrefixes: ["origin"],
+				sections,
+			}),
+		).toEqual({
+			currentBranchLabel: "main",
+			localBranchCount: 1,
+			remoteBranchCount: 1,
+			stashCount: 1,
+			tagCount: 1,
+			totalRefCount: 4,
+		});
+	});
+
+	it("reports a detached current branch label when no branch is selected", () => {
+		expect(
+			buildRefPanelSummary({
+				currentBranchName: null,
+				remotePrefixes: ["origin"],
+				sections: [],
+			}).currentBranchLabel,
+		).toBeNull();
 	});
 });
 

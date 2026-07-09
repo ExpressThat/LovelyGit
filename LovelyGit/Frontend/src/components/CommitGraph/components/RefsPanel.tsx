@@ -4,7 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { CommitGraphRow, RepositoryRefsResponse } from "@/generated/types";
 import { setSetting, useSetting } from "@/lib/settings/settingsStore";
-import { buildRefPanelSections, filterRefPanelSections } from "./RefsPanelData";
+import {
+	buildRefPanelSections,
+	buildRefPanelSummary,
+	filterRefPanelSections,
+	type RefPanelSummary,
+} from "./RefsPanelData";
 import { RefsPanelList } from "./RefsPanelList";
 import { filterWorktrees, WorktreeSection } from "./WorktreeSection";
 
@@ -37,6 +42,16 @@ export function RefsPanel({
 	const filteredSections = useMemo(
 		() => filterRefPanelSections(sections, query),
 		[sections, query],
+	);
+	const summary = useMemo(
+		() =>
+			buildRefPanelSummary({
+				currentBranchName:
+					repositoryRefs?.currentBranchName ?? currentBranchName,
+				remotePrefixes: repositoryRefs?.remotePrefixes ?? remotePrefixes,
+				sections,
+			}),
+		[currentBranchName, remotePrefixes, repositoryRefs, sections],
 	);
 	const filteredWorktrees = useMemo(
 		() => filterWorktrees(repositoryRefs?.worktrees ?? [], query),
@@ -76,6 +91,10 @@ export function RefsPanel({
 				</Button>
 			</header>
 			<div className="border-b p-2">
+				<RefsSummary
+					summary={summary}
+					worktreeCount={repositoryRefs?.worktrees.length ?? 0}
+				/>
 				<div className="relative">
 					<Search
 						aria-hidden="true"
@@ -124,6 +143,53 @@ export function RefsPanel({
 				</div>
 			)}
 		</aside>
+	);
+}
+
+function RefsSummary({
+	summary,
+	worktreeCount,
+}: {
+	summary: RefPanelSummary;
+	worktreeCount: number;
+}) {
+	return (
+		<div className="mb-2 space-y-1.5">
+			<div className="flex min-w-0 items-center justify-between gap-2">
+				<div className="min-w-0 text-[10px] font-semibold uppercase text-muted-foreground">
+					Current
+				</div>
+				<div
+					className="min-w-0 truncate text-right text-xs font-medium text-sidebar-foreground"
+					title={summary.currentBranchLabel ?? "Detached HEAD"}
+				>
+					{summary.currentBranchLabel ?? "Detached HEAD"}
+				</div>
+			</div>
+			<div className="grid grid-cols-3 gap-1 text-center">
+				<SummaryMetric label="Local" value={summary.localBranchCount} />
+				<SummaryMetric label="Tags" value={summary.tagCount} />
+				<SummaryMetric label="Worktrees" value={worktreeCount} />
+			</div>
+			<div className="grid grid-cols-3 gap-1 text-center">
+				<SummaryMetric label="Remote" value={summary.remoteBranchCount} />
+				<SummaryMetric label="Stashes" value={summary.stashCount} />
+				<SummaryMetric label="Refs" value={summary.totalRefCount} />
+			</div>
+		</div>
+	);
+}
+
+function SummaryMetric({ label, value }: { label: string; value: number }) {
+	return (
+		<div className="rounded border bg-sidebar px-1 py-1">
+			<div className="font-mono text-xs leading-none text-sidebar-foreground">
+				{value.toLocaleString()}
+			</div>
+			<div className="mt-0.5 truncate text-[9px] leading-none text-muted-foreground">
+				{label}
+			</div>
+		</div>
 	);
 }
 

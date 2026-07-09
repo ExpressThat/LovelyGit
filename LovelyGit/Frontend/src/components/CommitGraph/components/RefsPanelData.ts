@@ -27,6 +27,15 @@ export type RefPanelSection = {
 	label: string;
 };
 
+export type RefPanelSummary = {
+	currentBranchLabel: string | null;
+	localBranchCount: number;
+	remoteBranchCount: number;
+	stashCount: number;
+	tagCount: number;
+	totalRefCount: number;
+};
+
 const sectionLabels: Record<CommitRefKind, string> = {
 	Local: "Branches",
 	Remote: "Remote Branches",
@@ -124,6 +133,34 @@ export function filterRefPanelSections(
 			};
 		})
 		.filter((section) => section.count > 0);
+}
+
+export function buildRefPanelSummary({
+	currentBranchName,
+	remotePrefixes,
+	sections,
+}: {
+	currentBranchName: string | null;
+	remotePrefixes: string[];
+	sections: RefPanelSection[];
+}): RefPanelSummary {
+	const counts = new Map(
+		sections.map((section) => [section.kind, section.count]),
+	);
+
+	return {
+		currentBranchLabel: currentBranchName
+			? refLabelForRemotes(currentBranchName, remotePrefixes)
+			: null,
+		localBranchCount: counts.get("Local") ?? 0,
+		remoteBranchCount: counts.get("Remote") ?? 0,
+		stashCount: counts.get("Stash") ?? 0,
+		tagCount: counts.get("Tag") ?? 0,
+		totalRefCount: sections.reduce(
+			(total, section) => total + section.count,
+			0,
+		),
+	};
 }
 
 export function refPanelItemToRefInfo(item: RefPanelItem): CommitRefInfo {
