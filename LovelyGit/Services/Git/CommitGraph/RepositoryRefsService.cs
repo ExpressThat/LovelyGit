@@ -9,7 +9,6 @@ namespace ExpressThat.LovelyGit.Services.Git.CommitGraph;
 
 internal sealed class RepositoryRefsService
 {
-    private const int InitialTagLimit = 500;
     private readonly KnownGitRepositorysRepository _knownRepositories;
 
     public RepositoryRefsService(KnownGitRepositorysRepository knownRepositories)
@@ -35,7 +34,7 @@ internal sealed class RepositoryRefsService
             .ReadObjectFormatAsync(paths.GitDirectory, cancellationToken)
             .ConfigureAwait(false);
         var summary = await GitRefSummaryReader
-            .ReadAsync(paths.GitDirectory, objectFormat, InitialTagLimit, cancellationToken)
+            .ReadAsync(paths.GitDirectory, objectFormat, GitRefReader.DefaultTagLimit, cancellationToken)
             .ConfigureAwait(false);
         var remoteUrl = await GitRemoteConfigReader
             .ReadPrimaryRemoteUrlAsync(paths.GitDirectory, cancellationToken)

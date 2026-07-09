@@ -2,12 +2,16 @@ namespace ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser.Refs;
 
 internal static class GitRefReader
 {
+    public const int DefaultTagLimit = 500;
+
     public static async Task<Dictionary<string, GitRawRef>> LoadRefsAsync(
         string gitDirectory,
         GitObjectFormat objectFormat,
+        int maxTags,
         CancellationToken cancellationToken)
     {
         var refs = new Dictionary<string, GitRawRef>(StringComparer.Ordinal);
+        var tagCount = 0;
         var refsDirectory = Path.Combine(gitDirectory, "refs");
         if (Directory.Exists(refsDirectory))
         {
@@ -15,9 +19,15 @@ internal static class GitRefReader
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 var text = (await File.ReadAllTextAsync(file, cancellationToken).ConfigureAwait(false)).Trim();
+                var fullName = Path.GetRelativePath(gitDirectory, file).Replace('\\', '/');
                 if (GitObjectId.TryParse(text, objectFormat, out var id))
                 {
-                    refs[Path.GetRelativePath(gitDirectory, file).Replace('\\', '/')] = new GitRawRef(id, null);
+                    if (ShouldSkipTag(fullName, maxTags, ref tagCount))
+                    {
+                        continue;
+                    }
+
+                    refs[fullName] = new GitRawRef(id, null);
                 }
             }
         }
@@ -54,21 +64,32 @@ internal static class GitRefReader
 
                 var hashText = line[..spaceIndex];
                 var name = line[(spaceIndex + 1)..].ToString();
-                if (GitObjectId.TryParse(hashText, objectFormat, out var id))
-                {
-                    refs.TryAdd(name, new GitRawRef(id, null));
-                    lastRefName = name;
-                }
-                else
+                if (refs.ContainsKey(name) ||
+                    !GitObjectId.TryParse(hashText, objectFormat, out var id) ||
+                    ShouldSkipTag(name, maxTags, ref tagCount))
                 {
                     lastRefName = null;
+                    continue;
                 }
+
+                refs.Add(name, new GitRawRef(id, null));
+                lastRefName = name;
             }
         }
 
         await LoadStashReflogRefsAsync(gitDirectory, objectFormat, refs, cancellationToken)
             .ConfigureAwait(false);
         return refs;
+    }
+
+    private static bool ShouldSkipTag(string fullName, int maxTags, ref int tagCount)
+    {
+        if (!fullName.StartsWith("refs/tags/", StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        return tagCount++ >= Math.Max(0, maxTags);
     }
 
     private static async Task LoadStashReflogRefsAsync(

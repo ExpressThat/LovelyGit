@@ -59,7 +59,11 @@ internal sealed partial class LovelyGitRepository : IDisposable
         var objectFormat = await GitRepositoryDiscovery.ReadObjectFormatAsync(gitDirectory, cancellationToken)
             .ConfigureAwait(false);
         var objectStore = new GitObjectStore(gitDirectory, objectFormat);
-        var rawRefs = await GitRefReader.LoadRefsAsync(gitDirectory, objectFormat, cancellationToken)
+        var rawRefs = await GitRefReader.LoadRefsAsync(
+                gitDirectory,
+                objectFormat,
+                GitRefReader.DefaultTagLimit,
+                cancellationToken)
             .ConfigureAwait(false);
         var headTarget = await GitRefReader.ResolveHeadAsync(gitDirectory, objectFormat, rawRefs, cancellationToken)
             .ConfigureAwait(false);
