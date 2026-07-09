@@ -64,6 +64,8 @@ export function CommitRow({
 	return (
 		<button
 			className={`${rowClassName} w-full cursor-pointer border-0 p-0 text-left text-inherit focus-visible:bg-accent focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-ring`}
+			data-lg-perf="commit-row"
+			data-row-index={rowIndex}
 			onClick={() => onSelect(row)}
 			style={{ gridTemplateColumns: templateColumns }}
 			type="button"

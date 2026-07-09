@@ -182,6 +182,7 @@ export function CommitGraphView({
 					<div
 						ref={scrollRef}
 						className="custom-scrollbar relative min-h-0 w-full flex-1 overflow-x-hidden overflow-y-auto bg-[repeating-linear-gradient(to_bottom,var(--background)_0,var(--background)_21px,var(--card)_21px,var(--card)_22px)]"
+						data-lg-perf="commit-graph-scroll"
 					>
 						<div
 							className="relative h-full w-full"
