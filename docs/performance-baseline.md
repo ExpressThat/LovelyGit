@@ -7,9 +7,9 @@ Baseline captured on 2026-07-08 from the real WebView2 desktop app using CMG aga
 | Area | Baseline | Target for merge gate | Notes |
 | --- | ---: | ---: | --- |
 | Frontend production build | 9.8 s | No regression > 15% unless explained | Emits a large chunk warning; startup work should include bundle tracking. |
-| Backend build | 2.4 s | Keep green | `dotnet build LovelyGit/LovelyGit.csproj --verbosity quiet`. |
-| .NET tests | Compile blocked | Not currently enforceable | `dotnet test LovelyGit.Tests/LovelyGit.Tests.csproj --verbosity quiet` fails on this PR head because the test project references missing `Services.Git` branch/tag/checkout/cherry-pick/revert/stash namespaces and native messaging command resolver namespaces. Restore this to "Keep green" only after the test project compiles on the PR head. |
-| Frontend tests | 2.1 s, failing | Must pass | Current failure: `bootstrapApp.test.tsx` mock lacks `getSetting`. Before generating contracts, tests also fail because `src/generated/native-message-contracts` is absent. |
+| Backend build | 5.2 s | Keep green | `dotnet build LovelyGit/LovelyGit.csproj --verbosity quiet` passed after rebasing onto `master` on 2026-07-09. |
+| .NET tests | Compile blocked | Not currently enforceable | `dotnet test LovelyGit.Tests/LovelyGit.Tests.csproj --verbosity quiet` fails on this PR head because the test project references missing `Services.Git` cherry-pick/revert/stash/tag namespaces and native messaging command resolver namespaces. Restore this to "Keep green" only after the test project compiles on the PR head. |
+| Frontend tests | 1.0 s, passing | Must pass | `pnpm --dir LovelyGit/Frontend test` passed after rebasing onto `master` on 2026-07-09; PR #3 fixed the stale `bootstrapApp.test.tsx` `getSetting` mock failure. |
 | Startup DOM loaded | 261 ms | p95 <= 750 ms | From `performance.getEntriesByType('navigation')[0].domContentLoadedEventEnd`. |
 | Startup first contentful paint | 2.876 s | p95 <= 2.5 s, hard fail > 3.5 s | Warm visible launch; target should be validated over at least 5 cold-ish launches. |
 | Startup usable graph | Graph visible after attach; 110 row/control nodes sampled | p95 <= 3.0 s to visible graph/new-tab UI | Use visible app assertion: `COMMIT MESSAGE` or `Open Repo` depending selected repository state. |
@@ -51,7 +51,7 @@ The .NET test command is intentionally excluded from the active gate list until 
 dotnet test LovelyGit.Tests/LovelyGit.Tests.csproj --verbosity quiet
 ```
 
-Observed on 2026-07-09: this command fails during compilation with missing `ExpressThat.LovelyGit.Services.Git.Branches`, `Checkout`, `CherryPick`, `Revert`, `Stashes`, `Tags`, and missing native messaging command resolver namespaces including `Branches`, `Checkout`, `CherryPick`, `Merge`, `Rebase`, `Reset`, `Revert`, and `Tags`.
+Observed again after rebasing onto `master` on 2026-07-09: this command fails during compilation with missing `ExpressThat.LovelyGit.Services.Git.CherryPick`, `Revert`, `Stashes`, `Tags`, and missing native messaging command resolver namespaces including `Branches`, `Checkout`, `CherryPick`, `Merge`, `Rebase`, `Reset`, `Revert`, and `Tags`.
 
 Memory sampling:
 
