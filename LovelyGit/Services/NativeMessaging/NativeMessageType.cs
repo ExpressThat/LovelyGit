@@ -7,6 +7,7 @@ using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Merge;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Rebase;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.RepositoryOperations;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Revert;
+using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Reset;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Tags;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Settings;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.WorkingTree;
@@ -105,6 +106,8 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging
         CherryPickCommit,
         [NativeMessageContract(typeof(RevertCommitCommandArguments), typeof(RepositoryOperationCommandResponse))]
         RevertCommit,
+        [NativeMessageContract(typeof(ResetCurrentBranchToCommitCommandArguments), typeof(EmptyCommandArguments))]
+        ResetCurrentBranchToCommit,
         [NativeMessageContract(typeof(MergeBranchIntoCurrentCommandArguments), typeof(RepositoryOperationCommandResponse))]
         MergeBranchIntoCurrent,
         [NativeMessageContract(typeof(RebaseCurrentBranchOntoBranchCommandArguments), typeof(RepositoryOperationCommandResponse))]

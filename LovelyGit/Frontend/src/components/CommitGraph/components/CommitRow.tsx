@@ -24,6 +24,7 @@ export function CommitRow({
 	onCreateTag,
 	onIntegrateBranch,
 	onRevert,
+	onReset,
 	onSelect,
 	onTagAction,
 	remotePrefixes,
@@ -44,6 +45,7 @@ export function CommitRow({
 	isHead: boolean;
 	onIntegrateBranch: (mode: BranchIntegrationMode, branchName: string) => void;
 	onRevert: (row: CommitGraphRow) => void;
+	onReset: (row: CommitGraphRow) => void;
 	onCherryPick: (row: CommitGraphRow) => void;
 	onBranchAction: (action: BranchAction, branchName: string) => void;
 	onCreateTag: (row: CommitGraphRow) => void;
@@ -135,6 +137,7 @@ export function CommitRow({
 			onCreateTag={onCreateTag}
 			onOpenDetails={onSelect}
 			onRevert={onRevert}
+			onReset={onReset}
 			row={row}
 		>
 			{commitButton}

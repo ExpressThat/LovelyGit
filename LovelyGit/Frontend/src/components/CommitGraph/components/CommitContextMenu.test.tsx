@@ -1,0 +1,66 @@
+// @vitest-environment jsdom
+
+import { fireEvent, render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { describe, expect, it, vi } from "vitest";
+import type { CommitGraphRow } from "@/generated/types";
+import { CommitContextMenu } from "./CommitContextMenu";
+
+describe("CommitContextMenu", () => {
+	it("offers a branch-aware reset for a historical commit", async () => {
+		const user = userEvent.setup();
+		const onReset = vi.fn();
+		renderMenu({ onReset });
+
+		fireEvent.contextMenu(screen.getByRole("button", { name: "commit row" }));
+		const action = await screen.findByText("Reset main to 1111111…");
+		expect(action.closest('[role="menuitem"]')).not.toHaveAttribute(
+			"aria-disabled",
+			"true",
+		);
+		await user.click(action);
+
+		expect(onReset).toHaveBeenCalledWith(row);
+	});
+
+	it("disables reset when the selected commit is HEAD", async () => {
+		renderMenu({ isHead: true });
+		fireEvent.contextMenu(screen.getByRole("button", { name: "commit row" }));
+
+		expect(
+			(await screen.findByText("Reset main to 1111111…")).closest(
+				'[role="menuitem"]',
+			),
+		).toHaveAttribute("aria-disabled", "true");
+	});
+});
+
+function renderMenu({
+	isHead = false,
+	onReset = vi.fn(),
+}: {
+	isHead?: boolean;
+	onReset?: (selected: CommitGraphRow) => void;
+}) {
+	return render(
+		<CommitContextMenu
+			currentBranchName="main"
+			isHead={isHead}
+			onCherryPick={vi.fn()}
+			onCreateTag={vi.fn()}
+			onOpenDetails={vi.fn()}
+			onReset={onReset}
+			onRevert={vi.fn()}
+			row={row}
+		>
+			<button type="button">commit row</button>
+		</CommitContextMenu>,
+	);
+}
+
+const row = {
+	commit: {
+		hash: "1111111111111111111111111111111111111111",
+		message: "Historical commit",
+	},
+} as CommitGraphRow;

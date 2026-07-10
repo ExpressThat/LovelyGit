@@ -1,16 +1,12 @@
 import { useEffect, useState } from "react";
-import {
-	BranchIntegrationDialog,
-	type BranchIntegrationMode,
-} from "@/components/TopNavBar/components/BranchIntegrationDialog";
+import type { BranchIntegrationMode } from "@/components/TopNavBar/components/BranchIntegrationDialog";
 import type { CommitGraphRow as CommitGraphRowModel } from "@/generated/types";
 import { BranchManagementDialogs } from "./components/BranchManagementDialogs";
-import { CherryPickDialog } from "./components/CherryPickDialog";
 import { CommitGraphHeader } from "./components/CommitGraphHeader";
 import { CommitGraphHorizontalScrollbar } from "./components/CommitGraphHorizontalScrollbar";
+import { CommitGraphOperationDialogs } from "./components/CommitGraphOperationDialogs";
 import { CommitRow } from "./components/CommitRow";
 import { RefsPanel } from "./components/RefsPanel";
-import { RevertDialog } from "./components/RevertDialog";
 import { TagManagementDialogs } from "./components/TagManagementDialogs";
 import { ROW_HEIGHT } from "./constants";
 import { useBranchMutations } from "./hooks/useBranchMutations";
@@ -44,6 +40,9 @@ export function CommitGraphView({
 	const [cherryPickCommit, setCherryPickCommit] =
 		useState<CommitGraphRowModel | null>(null);
 	const [revertCommit, setRevertCommit] = useState<CommitGraphRowModel | null>(
+		null,
+	);
+	const [resetCommit, setResetCommit] = useState<CommitGraphRowModel | null>(
 		null,
 	);
 	const [tagCommit, setTagCommit] = useState<CommitGraphRowModel | null>(null);
@@ -173,6 +172,7 @@ export function CommitGraphView({
 											onCreateTag={setTagCommit}
 											onIntegrateBranch={integrateBranch}
 											onRevert={setRevertCommit}
+											onReset={setResetCommit}
 											onSelect={onSelectCommit}
 											onTagAction={manageTag}
 											currentBranchName={currentBranchName}
@@ -196,35 +196,20 @@ export function CommitGraphView({
 					</div>
 				</div>
 			</section>
-			<BranchIntegrationDialog
-				branches={(repositoryRefs.refs?.refs ?? []).filter(
-					(ref) => ref.kind === "Local",
-				)}
+			<CommitGraphOperationDialogs
+				cherryPickCommit={cherryPickCommit}
 				currentBranchName={currentBranchName}
-				mode={integrationTarget?.mode ?? null}
-				onOpenChange={(mode) => {
-					if (mode === null) setIntegrationTarget(null);
-				}}
+				integrationTarget={integrationTarget}
 				onOpenWorkingChanges={onOpenWorkingChanges}
 				onRepositoryChanged={onRepositoryChanged}
 				repositoryId={repositoryId}
-				targetBranchName={integrationTarget?.branchName}
-			/>
-			<CherryPickDialog
-				commit={cherryPickCommit}
-				currentBranchName={currentBranchName}
-				onOpenChange={setCherryPickCommit}
-				onOpenWorkingChanges={onOpenWorkingChanges}
-				onRepositoryChanged={onRepositoryChanged}
-				repositoryId={repositoryId}
-			/>
-			<RevertDialog
-				commit={revertCommit}
-				currentBranchName={currentBranchName}
-				onOpenChange={setRevertCommit}
-				onOpenWorkingChanges={onOpenWorkingChanges}
-				onRepositoryChanged={onRepositoryChanged}
-				repositoryId={repositoryId}
+				repositoryRefs={repositoryRefs.refs}
+				resetCommit={resetCommit}
+				revertCommit={revertCommit}
+				setCherryPickCommit={setCherryPickCommit}
+				setIntegrationTarget={setIntegrationTarget}
+				setResetCommit={setResetCommit}
+				setRevertCommit={setRevertCommit}
 			/>
 			<BranchManagementDialogs
 				branchNames={branchNames}

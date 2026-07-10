@@ -2,6 +2,7 @@ using ExpressThat.LovelyGit.Services.Git.Branches;
 using ExpressThat.LovelyGit.Services.Git.Checkout;
 using ExpressThat.LovelyGit.Services.Git.CherryPick;
 using ExpressThat.LovelyGit.Services.Git.Revert;
+using ExpressThat.LovelyGit.Services.Git.Reset;
 using ExpressThat.LovelyGit.Services.Git.Stashes;
 using ExpressThat.LovelyGit.Services.Git.Tags;
 
@@ -20,6 +21,7 @@ internal static class GitCliServiceCollectionExtensions
         services.AddSingleton<GitRepositoryOperationService>();
         services.AddSingleton<GitStashCommandService>();
         services.AddSingleton<GitRevertCommandService>();
+        services.AddSingleton<GitResetCommandService>();
         services.AddSingleton<GitTagCommandService>();
         services.AddSingleton<GitCloneService>();
         return services;

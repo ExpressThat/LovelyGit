@@ -2,6 +2,7 @@ import {
 	ClipboardCopy,
 	GitCommitHorizontal,
 	Info,
+	ListRestart,
 	Tag,
 	Undo2,
 } from "lucide-react";
@@ -27,6 +28,7 @@ export function CommitContextMenu({
 	onCreateTag,
 	onOpenDetails,
 	onRevert,
+	onReset,
 	row,
 }: {
 	children: ReactNode;
@@ -36,6 +38,7 @@ export function CommitContextMenu({
 	onCreateTag: (row: CommitGraphRow) => void;
 	onOpenDetails: (row: CommitGraphRow) => void;
 	onRevert: (row: CommitGraphRow) => void;
+	onReset: (row: CommitGraphRow) => void;
 	row: CommitGraphRow;
 }) {
 	const abbreviatedHash = shortHash(row.commit.hash);
@@ -99,6 +102,20 @@ export function CommitContextMenu({
 					<GitCommitHorizontal aria-hidden="true" />
 					<span className="min-w-0 truncate">
 						Cherry-pick {abbreviatedHash} onto {currentBranchName ?? "a branch"}
+					</span>
+				</ContextMenuItem>
+				<ContextMenuItem
+					disabled={currentBranchName === null || isHead}
+					onClick={() => onReset(row)}
+					title={
+						currentBranchName
+							? `Reset ${currentBranchName} to ${abbreviatedHash}`
+							: "Check out a branch before resetting"
+					}
+				>
+					<ListRestart aria-hidden="true" />
+					<span className="min-w-0 truncate">
+						Reset {currentBranchName ?? "current branch"} to {abbreviatedHash}…
 					</span>
 				</ContextMenuItem>
 			</ContextMenuContent>
