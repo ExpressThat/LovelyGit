@@ -94,10 +94,21 @@ internal sealed partial class LovelyGitRepository : IDisposable
             }
             else if (kind == GitRefKind.Tag)
             {
-                var commitTarget = rawRef.PeeledTarget ?? rawRef.Target;
-                refsByFullName[fullName] = new GitRef(displayName, commitTarget, kind);
-                AddName(tagNamesByCommit, commitTarget, displayName);
-                AddRef(refsByCommit, commitTarget, displayName, kind);
+                var commitTarget = rawRef.PeeledTarget ??
+                    await ResolveTagCommitTargetAsync(
+                        objectStore,
+                        objectFormat,
+                        rawRef.Target,
+                        cancellationToken).ConfigureAwait(false);
+                refsByFullName[fullName] = new GitRef(
+                    displayName,
+                    commitTarget ?? rawRef.Target,
+                    kind);
+                if (commitTarget is not null)
+                {
+                    AddName(tagNamesByCommit, commitTarget.Value, displayName);
+                    AddRef(refsByCommit, commitTarget.Value, displayName, kind);
+                }
             }
             else if (kind == GitRefKind.Stash)
             {

@@ -1,4 +1,10 @@
-import { ClipboardCopy, GitCommitHorizontal, Info, Undo2 } from "lucide-react";
+import {
+	ClipboardCopy,
+	GitCommitHorizontal,
+	Info,
+	Tag,
+	Undo2,
+} from "lucide-react";
 import type { ReactNode } from "react";
 import {
 	ContextMenu,
@@ -18,6 +24,7 @@ export function CommitContextMenu({
 	currentBranchName,
 	isHead,
 	onCherryPick,
+	onCreateTag,
 	onOpenDetails,
 	onRevert,
 	row,
@@ -26,6 +33,7 @@ export function CommitContextMenu({
 	currentBranchName: string | null;
 	isHead: boolean;
 	onCherryPick: (row: CommitGraphRow) => void;
+	onCreateTag: (row: CommitGraphRow) => void;
 	onOpenDetails: (row: CommitGraphRow) => void;
 	onRevert: (row: CommitGraphRow) => void;
 	row: CommitGraphRow;
@@ -59,6 +67,10 @@ export function CommitContextMenu({
 					Copy commit hash
 				</ContextMenuItem>
 				<ContextMenuSeparator />
+				<ContextMenuItem onClick={() => onCreateTag(row)}>
+					<Tag aria-hidden="true" />
+					Create tag at {abbreviatedHash}
+				</ContextMenuItem>
 				<ContextMenuItem
 					disabled={currentBranchName === null}
 					onClick={() => onRevert(row)}

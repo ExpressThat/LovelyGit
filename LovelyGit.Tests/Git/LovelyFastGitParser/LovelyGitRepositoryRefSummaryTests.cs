@@ -54,6 +54,26 @@ public sealed class LovelyGitRepositoryRefSummaryTests
         Assert.Single(summary.Refs, reference => reference.Kind == GitRefKind.Tag);
     }
 
+    [Fact]
+    public async Task OpenAsync_PeelsLooseAnnotatedTagToItsCommit()
+    {
+        using var temporary = TemporaryGitRepository.Create();
+        await temporary.RunGitAsync(["tag", "--annotate", "release", "--message", "Release"]);
+
+        using var repository = await LovelyGitRepository.OpenAsync(
+            temporary.Path,
+            CancellationToken.None);
+
+        var branchTarget = Assert.Single(
+            repository.GetBranches(),
+            reference => reference is { Kind: GitRefKind.Head, Name: "main" }).Target;
+        var tagTarget = Assert.Single(
+            repository.GetTags(),
+            reference => reference.Name == "release").Target;
+
+        Assert.Equal(branchTarget, tagTarget);
+    }
+
     private sealed class TemporaryGitRepository : IDisposable
     {
         private readonly DirectoryInfo _directory;

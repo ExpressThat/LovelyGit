@@ -1,3 +1,5 @@
+using ExpressThat.LovelyGit.Services.Git.Tags;
+
 namespace ExpressThat.LovelyGit.Services.Git.Cli;
 
 internal static class GitCliServiceCollectionExtensions
@@ -10,6 +12,7 @@ internal static class GitCliServiceCollectionExtensions
         services.AddSingleton<GitBranchCommandService>();
         services.AddSingleton<GitRepositoryOperationService>();
         services.AddSingleton<GitStashCommandService>();
+        services.AddSingleton<GitTagCommandService>();
         services.AddSingleton<GitCloneService>();
         return services;
     }

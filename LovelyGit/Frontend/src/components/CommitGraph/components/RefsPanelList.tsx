@@ -4,6 +4,7 @@ import type { BranchIntegrationMode } from "@/components/TopNavBar/components/Br
 import type { CommitGraphRow } from "@/generated/types";
 import type { RefPanelItem, RefPanelSection } from "./RefsPanelData";
 import { RefPanelRow } from "./RefsPanelSections";
+import type { TagAction } from "./TagContextMenu";
 
 type RefListRow =
 	| { id: string; section: RefPanelSection; type: "header" }
@@ -13,12 +14,18 @@ export function RefsPanelList({
 	onSelectCommit,
 	currentBranchName,
 	onIntegrateBranch,
+	onTagAction,
 	sections,
+	tagMutationBusy,
+	tagRemoteName,
 }: {
 	currentBranchName: string | null;
 	onIntegrateBranch: (mode: BranchIntegrationMode, branchName: string) => void;
 	onSelectCommit: (row: CommitGraphRow) => void;
+	onTagAction: (action: TagAction, tagName: string) => void;
 	sections: RefPanelSection[];
+	tagMutationBusy: boolean;
+	tagRemoteName: string | null;
 }) {
 	const parentRef = useRef<HTMLDivElement>(null);
 	const rows = useMemo(() => flattenSections(sections), [sections]);
@@ -59,6 +66,9 @@ export function RefsPanelList({
 									item={row.item}
 									onIntegrateBranch={onIntegrateBranch}
 									onSelectCommit={onSelectCommit}
+									onTagAction={onTagAction}
+									tagMutationBusy={tagMutationBusy}
+									tagRemoteName={tagRemoteName}
 								/>
 							)}
 						</div>

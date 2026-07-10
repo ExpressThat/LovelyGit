@@ -6,6 +6,7 @@ using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Merge;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Rebase;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.RepositoryOperations;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Revert;
+using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Tags;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Settings;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.WorkingTree;
 using ExpressThat.LovelyGit.Services.NativeMessaging.Commands;
@@ -85,6 +86,12 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging
         CreateBranch,
         [NativeMessageContract(typeof(StashCommandArguments))]
         ManageStash,
+        [NativeMessageContract(typeof(CreateTagAtCommitCommandArguments), typeof(EmptyCommandArguments))]
+        CreateTagAtCommit,
+        [NativeMessageContract(typeof(DeleteTagCommandArguments), typeof(EmptyCommandArguments))]
+        DeleteTag,
+        [NativeMessageContract(typeof(PushTagCommandArguments), typeof(EmptyCommandArguments))]
+        PushTag,
 
         // Multi-step repository operations and their conflict lifecycle.
         [NativeMessageContract(typeof(CherryPickCommitCommandArguments), typeof(RepositoryOperationCommandResponse))]

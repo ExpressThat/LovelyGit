@@ -7,22 +7,29 @@ import type { CommitGraphRow, RepositoryRefsResponse } from "@/generated/types";
 import { setSetting, useSetting } from "@/lib/settings/settingsStore";
 import { buildRefPanelSections, filterRefPanelSections } from "./RefsPanelData";
 import { RefsPanelList } from "./RefsPanelList";
+import type { TagAction } from "./TagContextMenu";
 import { filterWorktrees, WorktreeSection } from "./WorktreeSection";
 
 export function RefsPanel({
 	currentBranchName,
 	onIntegrateBranch,
 	onSelectCommit,
+	onTagAction,
 	remotePrefixes,
 	repositoryRefs,
 	rows,
+	tagMutationBusy,
+	tagRemoteName,
 }: {
 	currentBranchName: string | null;
 	onIntegrateBranch: (mode: BranchIntegrationMode, branchName: string) => void;
 	onSelectCommit: (row: CommitGraphRow) => void;
+	onTagAction: (action: TagAction, tagName: string) => void;
 	remotePrefixes: string[];
 	repositoryRefs: RepositoryRefsResponse | null;
 	rows: Array<CommitGraphRow | null>;
+	tagMutationBusy: boolean;
+	tagRemoteName: string | null;
 }) {
 	const isOpen = useSetting("CommitGraphRefsPanelOpen");
 	const [query, setQuery] = useState("");
@@ -121,6 +128,9 @@ export function RefsPanel({
 						onIntegrateBranch={onIntegrateBranch}
 						onSelectCommit={onSelectCommit}
 						sections={filteredSections}
+						onTagAction={onTagAction}
+						tagMutationBusy={tagMutationBusy}
+						tagRemoteName={tagRemoteName}
 					/>
 				</>
 			) : (

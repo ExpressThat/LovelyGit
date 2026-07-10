@@ -5,17 +5,24 @@ import { shortHash } from "../utils/format";
 import { BranchContextMenu } from "./BranchContextMenu";
 import { RefIcon } from "./RefCellUtils";
 import type { RefPanelItem, RefPanelSection } from "./RefsPanelData";
+import { type TagAction, TagContextMenu } from "./TagContextMenu";
 
 export function RefSection({
 	currentBranchName,
 	onIntegrateBranch,
 	onSelectCommit,
+	onTagAction,
 	section,
+	tagMutationBusy,
+	tagRemoteName,
 }: {
 	currentBranchName: string | null;
 	onIntegrateBranch: (mode: BranchIntegrationMode, branchName: string) => void;
 	onSelectCommit: (row: CommitGraphRow) => void;
+	onTagAction: (action: TagAction, tagName: string) => void;
 	section: RefPanelSection;
+	tagMutationBusy: boolean;
+	tagRemoteName: string | null;
 }) {
 	return (
 		<section className="mb-3 last:mb-0">
@@ -31,6 +38,9 @@ export function RefSection({
 						key={`${item.kind}:${item.name}:${item.commitHash}`}
 						onIntegrateBranch={onIntegrateBranch}
 						onSelectCommit={onSelectCommit}
+						onTagAction={onTagAction}
+						tagMutationBusy={tagMutationBusy}
+						tagRemoteName={tagRemoteName}
 					/>
 				))}
 			</div>
@@ -43,11 +53,17 @@ export function RefPanelRow({
 	item,
 	onIntegrateBranch,
 	onSelectCommit,
+	onTagAction,
+	tagMutationBusy,
+	tagRemoteName,
 }: {
 	currentBranchName: string | null;
 	item: RefPanelItem;
 	onIntegrateBranch: (mode: BranchIntegrationMode, branchName: string) => void;
 	onSelectCommit: (row: CommitGraphRow) => void;
+	onTagAction: (action: TagAction, tagName: string) => void;
+	tagMutationBusy: boolean;
+	tagRemoteName: string | null;
 }) {
 	const row = item.row;
 	const branchButton = (
@@ -73,7 +89,18 @@ export function RefPanelRow({
 	);
 
 	if (item.kind !== "Local") {
-		return branchButton;
+		return item.kind === "Tag" ? (
+			<TagContextMenu
+				disabled={tagMutationBusy}
+				onAction={onTagAction}
+				remoteName={tagRemoteName}
+				tagName={item.name}
+			>
+				{branchButton}
+			</TagContextMenu>
+		) : (
+			branchButton
+		);
 	}
 
 	return (

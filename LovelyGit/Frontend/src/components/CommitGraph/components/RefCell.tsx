@@ -10,17 +10,24 @@ import {
 	refLabelForRemotes,
 	uniqueKinds,
 } from "./RefCellUtils";
+import { type TagAction, TagContextMenu } from "./TagContextMenu";
 
 export function RefCell({
 	currentBranchName,
 	onIntegrateBranch,
+	onTagAction,
 	remotePrefixes,
 	row,
+	tagMutationBusy,
+	tagRemoteName,
 }: {
 	currentBranchName: string | null;
 	onIntegrateBranch: (mode: BranchIntegrationMode, branchName: string) => void;
+	onTagAction: (action: TagAction, tagName: string) => void;
 	remotePrefixes: string[];
 	row: CommitGraphRow;
+	tagMutationBusy: boolean;
+	tagRemoteName: string | null;
 }) {
 	const refs =
 		row.commit.refs.length > 0
@@ -40,7 +47,10 @@ export function RefCell({
 					group={group}
 					key={group.key}
 					onIntegrateBranch={onIntegrateBranch}
+					onTagAction={onTagAction}
 					remotePrefixes={remotePrefixes}
+					tagMutationBusy={tagMutationBusy}
+					tagRemoteName={tagRemoteName}
 				/>
 			))}
 		</div>
@@ -50,12 +60,18 @@ function RefGroupPill({
 	currentBranchName,
 	group,
 	onIntegrateBranch,
+	onTagAction,
 	remotePrefixes,
+	tagMutationBusy,
+	tagRemoteName,
 }: {
 	currentBranchName: string | null;
 	group: RefGroup;
 	onIntegrateBranch: (mode: BranchIntegrationMode, branchName: string) => void;
+	onTagAction: (action: TagAction, tagName: string) => void;
 	remotePrefixes: string[];
+	tagMutationBusy: boolean;
+	tagRemoteName: string | null;
 }) {
 	const icons = uniqueKinds(group.refs);
 	const pill = (
@@ -74,6 +90,7 @@ function RefGroupPill({
 		</span>
 	);
 	const localBranch = group.refs.find((ref) => ref.kind === "Local");
+	const tag = group.refs.find((ref) => ref.kind === "Tag");
 	return localBranch ? (
 		<BranchContextMenu
 			branchName={localBranch.name}
@@ -83,6 +100,16 @@ function RefGroupPill({
 		>
 			{pill}
 		</BranchContextMenu>
+	) : tag ? (
+		<TagContextMenu
+			disabled={tagMutationBusy}
+			inline
+			onAction={onTagAction}
+			remoteName={tagRemoteName}
+			tagName={tag.name}
+		>
+			{pill}
+		</TagContextMenu>
 	) : (
 		pill
 	);

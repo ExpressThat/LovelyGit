@@ -9,6 +9,7 @@ import { GraphCell } from "./GraphCell";
 import { HashCell } from "./HashCell";
 import { RefCell } from "./RefCell";
 import { SkeletonShimmer } from "./SkeletonShimmer";
+import type { TagAction } from "./TagContextMenu";
 
 export function CommitRow({
 	currentBranchName,
@@ -16,12 +17,16 @@ export function CommitRow({
 	isSelected,
 	isHead,
 	onCherryPick,
+	onCreateTag,
 	onIntegrateBranch,
 	onRevert,
 	onSelect,
+	onTagAction,
 	remotePrefixes,
 	row,
 	rowIndex,
+	tagMutationBusy,
+	tagRemoteName,
 	templateColumns,
 }: {
 	currentBranchName: string | null;
@@ -34,10 +39,14 @@ export function CommitRow({
 	onIntegrateBranch: (mode: BranchIntegrationMode, branchName: string) => void;
 	onRevert: (row: CommitGraphRow) => void;
 	onCherryPick: (row: CommitGraphRow) => void;
+	onCreateTag: (row: CommitGraphRow) => void;
 	onSelect: (row: CommitGraphRow) => void;
+	onTagAction: (action: TagAction, tagName: string) => void;
 	remotePrefixes: string[];
 	row: CommitGraphRow | null;
 	rowIndex: number;
+	tagMutationBusy: boolean;
+	tagRemoteName: string | null;
 	templateColumns: string;
 }) {
 	const rowClassName = `grid h-[22px] leading-[22px] ${isSelected ? "bg-primary/12 ring-1 ring-inset ring-primary/35 dark:bg-primary/20" : rowIndex % 2 === 0 ? "bg-background dark:bg-background" : "bg-card/70 dark:bg-card/45"} hover:bg-accent/75 dark:hover:bg-accent/60`;
@@ -82,8 +91,11 @@ export function CommitRow({
 				<RefCell
 					currentBranchName={currentBranchName}
 					onIntegrateBranch={onIntegrateBranch}
+					onTagAction={onTagAction}
 					remotePrefixes={remotePrefixes}
 					row={row}
+					tagMutationBusy={tagMutationBusy}
+					tagRemoteName={tagRemoteName}
 				/>
 			</Column>
 			<Column className="bg-card/60">
@@ -110,6 +122,7 @@ export function CommitRow({
 			currentBranchName={currentBranchName}
 			isHead={isHead}
 			onCherryPick={onCherryPick}
+			onCreateTag={onCreateTag}
 			onOpenDetails={onSelect}
 			onRevert={onRevert}
 			row={row}

@@ -7,12 +7,15 @@ import type { CommitGraphRow as CommitGraphRowModel } from "@/generated/types";
 import { CherryPickDialog } from "./components/CherryPickDialog";
 import { CommitGraphHeader } from "./components/CommitGraphHeader";
 import { CommitRow } from "./components/CommitRow";
+import { CreateTagDialog } from "./components/CreateTagDialog";
+import { DeleteTagDialog } from "./components/DeleteTagDialog";
 import { RefsPanel } from "./components/RefsPanel";
 import { RevertDialog } from "./components/RevertDialog";
 import { ROW_HEIGHT } from "./constants";
 import { useCommitGraphData } from "./hooks/useCommitGraphData";
 import { useCommitGraphViewport } from "./hooks/useCommitGraphViewport";
 import { useRepositoryRefs } from "./hooks/useRepositoryRefs";
+import { useTagMutations } from "./hooks/useTagMutations";
 
 export function CommitGraphView({
 	onCurrentBranchNameChange,
@@ -40,6 +43,7 @@ export function CommitGraphView({
 	const [revertCommit, setRevertCommit] = useState<CommitGraphRowModel | null>(
 		null,
 	);
+	const [tagCommit, setTagCommit] = useState<CommitGraphRowModel | null>(null);
 
 	const {
 		currentBranchName,
@@ -52,6 +56,21 @@ export function CommitGraphView({
 		totalRows,
 	} = useCommitGraphData(refreshToken);
 	const repositoryRefs = useRepositoryRefs(repositoryId, refreshToken);
+	const tagRemoteName =
+		repositoryRefs.refs?.remotePrefixes[0] ?? remotePrefixes[0] ?? null;
+	const existingTagNames = (repositoryRefs.refs?.refs ?? [])
+		.filter((ref) => ref.kind === "Tag")
+		.map((ref) => ref.name);
+	const { busyTag, deleteTag, deleteTagName, pushTag, setDeleteTagName } =
+		useTagMutations({
+			onRepositoryChanged,
+			remoteName: tagRemoteName,
+			repositoryId,
+		});
+	const manageTag = (action: "delete" | "push", tagName: string) => {
+		if (action === "push") void pushTag(tagName);
+		else setDeleteTagName(tagName);
+	};
 	const currentHeadHash =
 		repositoryRefs.refs?.refs.find(
 			(ref) => ref.kind === "Local" && ref.name === currentBranchName,
@@ -85,9 +104,12 @@ export function CommitGraphView({
 						currentBranchName={currentBranchName}
 						onIntegrateBranch={integrateBranch}
 						onSelectCommit={onSelectCommit}
+						onTagAction={manageTag}
 						remotePrefixes={remotePrefixes}
 						repositoryRefs={repositoryRefs.refs}
 						rows={rows}
+						tagMutationBusy={busyTag !== null}
+						tagRemoteName={tagRemoteName}
 					/>
 					<div
 						ref={viewportRef}
@@ -133,14 +155,18 @@ export function CommitGraphView({
 											}
 											isHead={rows[item.index]?.commit.hash === currentHeadHash}
 											onCherryPick={setCherryPickCommit}
+											onCreateTag={setTagCommit}
 											onIntegrateBranch={integrateBranch}
 											onRevert={setRevertCommit}
 											onSelect={onSelectCommit}
+											onTagAction={manageTag}
 											currentBranchName={currentBranchName}
 											remotePrefixes={remotePrefixes}
 											row={rows[item.index] ?? null}
 											rowIndex={item.index}
 											templateColumns={templateColumns}
+											tagMutationBusy={busyTag !== null}
+											tagRemoteName={tagRemoteName}
 										/>
 									</div>
 								))}
@@ -196,6 +222,23 @@ export function CommitGraphView({
 				onOpenWorkingChanges={onOpenWorkingChanges}
 				onRepositoryChanged={onRepositoryChanged}
 				repositoryId={repositoryId}
+			/>
+			{tagCommit ? (
+				<CreateTagDialog
+					commit={tagCommit}
+					existingTagNames={existingTagNames}
+					key={tagCommit.commit.hash}
+					onOpenChange={setTagCommit}
+					onRepositoryChanged={onRepositoryChanged}
+					remoteName={tagRemoteName}
+					repositoryId={repositoryId}
+				/>
+			) : null}
+			<DeleteTagDialog
+				isBusy={busyTag !== null}
+				onConfirm={() => void deleteTag()}
+				onOpenChange={setDeleteTagName}
+				tagName={deleteTagName}
 			/>
 		</>
 	);
