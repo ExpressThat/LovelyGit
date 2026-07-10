@@ -121,7 +121,7 @@ internal sealed partial class WorkingTreeChangeService
         return System.Text.Encoding.UTF8.GetString(bytes).Replace("\r\n", "\n", StringComparison.Ordinal).Split('\n');
     }
 
-    private static bool IsBinary(byte[] bytes)
+    internal static bool IsBinary(byte[] bytes)
     {
         var length = Math.Min(bytes.Length, 8000);
         for (var i = 0; i < length; i++)

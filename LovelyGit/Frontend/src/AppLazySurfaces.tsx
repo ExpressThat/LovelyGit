@@ -3,6 +3,7 @@ import { motion, useReducedMotion } from "motion/react";
 import { type ComponentProps, lazy, Suspense } from "react";
 import type { CommitDetails as CommitDetailsComponent } from "./components/CommitDetails/CommitDetails";
 import type { CommitFileDiffView as CommitFileDiffComponent } from "./components/CommitFileDiff/CommitFileDiffView";
+import type { ConflictResolutionView as ConflictResolutionComponent } from "./components/ConflictResolution/ConflictResolutionView";
 import type { WorkingChangesPanel as WorkingChangesComponent } from "./components/WorkingChanges/WorkingChangesPanel";
 import type { WorkingTreeFileDiffView as WorkingTreeDiffComponent } from "./components/WorkingChanges/WorkingTreeFileDiffView";
 
@@ -24,6 +25,11 @@ const LazyWorkingChanges = lazy(() =>
 const LazyWorkingTreeDiff = lazy(() =>
 	import("./components/WorkingChanges/WorkingTreeFileDiffView").then(
 		(module) => ({ default: module.WorkingTreeFileDiffView }),
+	),
+);
+const LazyConflictResolution = lazy(() =>
+	import("./components/ConflictResolution/ConflictResolutionView").then(
+		(module) => ({ default: module.ConflictResolutionView }),
 	),
 );
 
@@ -60,6 +66,17 @@ export function WorkingChangesSurface(
 export function WorkingTreeDiffSurface(
 	props: ComponentProps<typeof WorkingTreeDiffComponent>,
 ) {
+	if (props.file.group === "Unmerged") {
+		return (
+			<Suspense
+				fallback={<SurfaceLoading label="Preparing conflict resolver" fill />}
+			>
+				<LazyConflictResolution
+					{...(props as ComponentProps<typeof ConflictResolutionComponent>)}
+				/>
+			</Suspense>
+		);
+	}
 	return (
 		<Suspense fallback={<SurfaceLoading label="Preparing working diff" fill />}>
 			<LazyWorkingTreeDiff {...props} />

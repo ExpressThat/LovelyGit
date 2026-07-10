@@ -29,6 +29,7 @@ internal static class WorkingTreeServiceCollectionExtensions
         services.AddLovelyGitJsonTypeInfoResolver(ResetJsonSerializerContext.Default);
         services.AddLovelyGitJsonTypeInfoResolver(TagsJsonSerializerContext.Default);
         services.AddSingleton<WorkingTreeChangeService>();
+        services.AddSingleton<ConflictResolutionService>();
         services.AddSingleton<GitInteractiveRebaseService>();
         services.AddSingleton<WorkingTreeStatusListService>();
         services.AddSingleton<WorkingTreePreliminarySummaryService>();
@@ -45,6 +46,8 @@ internal static class WorkingTreeServiceCollectionExtensions
         services.AddSingleton<ICommandResponder, GetWorkingTreeChangesCommandResolver>();
         services.AddSingleton<ICommandResponder, GetWorkingTreeChangeSummaryCommandResolver>();
         services.AddSingleton<ICommandResponder, GetWorkingTreeFileDiffCommandResolver>();
+        services.AddSingleton<ICommandResponder, GetConflictResolutionCommandResolver>();
+        services.AddSingleton<ICommandResponder, ResolveConflictCommandResolver>();
         services.AddSingleton<ICommandResponder, RevealWorkingTreeFileCommandResolver>();
         services.AddSingleton<ICommandResponder, IgnoreWorkingTreePathCommandResolver>();
         services.AddSingleton<ICommandResponder, StageWorkingTreeFilesCommandResolver>();

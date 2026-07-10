@@ -101,6 +101,10 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging
         GetWorkingTreeChanges,
         [NativeMessageContract(typeof(GetWorkingTreeFileDiffArguments), typeof(CommitFileDiffResponse))]
         GetWorkingTreeFileDiff,
+        [NativeMessageContract(typeof(GetConflictResolutionCommandArguments), typeof(ConflictResolutionResponse))]
+        GetConflictResolution,
+        [NativeMessageContract(typeof(ResolveConflictCommandArguments))]
+        ResolveConflict,
         [NativeMessageContract(typeof(RevealWorkingTreeFileCommandArguments), typeof(EmptyCommandArguments))]
         RevealWorkingTreeFile,
         [NativeMessageContract(typeof(IgnoreWorkingTreePathCommandArguments), typeof(GitIgnoreResult))]

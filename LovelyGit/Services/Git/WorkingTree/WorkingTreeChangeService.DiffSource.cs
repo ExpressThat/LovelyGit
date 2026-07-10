@@ -122,7 +122,7 @@ internal sealed partial class WorkingTreeChangeService
         return common;
     }
 
-    private static CommitFileDiffResponse BuildDiffResponse(
+    internal static CommitFileDiffResponse BuildDiffResponse(
         string commitHash,
         string path,
         string status,
