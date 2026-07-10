@@ -17,7 +17,9 @@ internal static class InteractiveRebaseTodoWriter
         for (var index = 0; index < plan.Count; index++)
         {
             var item = plan[index];
-            var action = item.Action.ToString().ToLowerInvariant();
+            var action = item.Action == InteractiveRebaseAction.Reword
+                ? "pick"
+                : item.Action.ToString().ToLowerInvariant();
             todo.Append(action).Append(' ').Append(item.Hash).Append(' ')
                 .AppendLine(SanitizeSubject(subjects[item.Hash]));
             if (item.Action == InteractiveRebaseAction.Reword)

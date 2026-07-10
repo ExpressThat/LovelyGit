@@ -57,29 +57,32 @@ internal sealed class GitInteractiveRebaseService
                     ["GIT_EDITOR"] = "true",
                 },
                 cancellationToken).ConfigureAwait(false);
-            if (result.IsSuccess)
+            var activeOperation = GitRepositoryOperationStateReader.Read(paths.WorktreeGitDirectory);
+            if (result.IsSuccess && activeOperation != GitRepositoryOperationKind.Rebase)
             {
-                DeleteDirectory(workingDirectory);
+                Cleanup(paths.WorktreeGitDirectory);
                 return new GitRepositoryOperationOutcome(true, null, null);
             }
 
-            var exception = new GitOperationException(result);
-            if (GitRepositoryOperationStateReader.Read(paths.WorktreeGitDirectory) ==
-                GitRepositoryOperationKind.Rebase)
+            if (activeOperation == GitRepositoryOperationKind.Rebase)
             {
                 return new GitRepositoryOperationOutcome(
-                    false, GitRepositoryOperationKind.Rebase, exception.Message);
+                    false,
+                    GitRepositoryOperationKind.Rebase,
+                    result.IsSuccess
+                        ? "Interactive rebase paused. Continue when the current step is ready."
+                        : new GitOperationException(result).Message);
             }
 
-            DeleteDirectory(workingDirectory);
-            throw exception;
+            Cleanup(paths.WorktreeGitDirectory);
+            throw new GitOperationException(result);
         }
         catch
         {
             if (GitRepositoryOperationStateReader.Read(paths.WorktreeGitDirectory) !=
                 GitRepositoryOperationKind.Rebase)
             {
-                DeleteDirectory(workingDirectory);
+                Cleanup(paths.WorktreeGitDirectory);
             }
 
             throw;

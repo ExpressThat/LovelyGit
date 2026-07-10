@@ -14,6 +14,7 @@ public sealed class GitInteractiveRebaseServiceTests
         await CommitFileAsync(repository, "a.txt", "A", "Commit A");
         await CommitFileAsync(repository, "b.txt", "B", "Commit B");
         await CommitFileAsync(repository, "c.txt", "C", "Commit C");
+        var branchName = await CurrentBranchAsync(repository);
         var current = await ReadPlanAsync(repository);
         var plan = new[]
         {
@@ -26,6 +27,8 @@ public sealed class GitInteractiveRebaseServiceTests
             repository.Path, repository.HeadCommitHash, plan, CancellationToken.None);
 
         Assert.True(outcome.IsCompleted);
+        Assert.Equal(branchName, await CurrentBranchAsync(repository));
+        AssertTemporaryPlanRemoved(repository);
         Assert.Equal(
             ["Commit A rewritten", "Commit C", "Initial"],
             await SubjectsAsync(repository));
@@ -39,6 +42,7 @@ public sealed class GitInteractiveRebaseServiceTests
         await CommitFileAsync(repository, "a.txt", "A", "Commit A");
         await CommitFileAsync(repository, "b.txt", "B", "Commit B");
         await CommitFileAsync(repository, "c.txt", "C", "Commit C");
+        var branchName = await CurrentBranchAsync(repository);
         var current = await ReadPlanAsync(repository);
         var plan = new[]
         {
@@ -51,6 +55,8 @@ public sealed class GitInteractiveRebaseServiceTests
             repository.Path, repository.HeadCommitHash, plan, CancellationToken.None);
 
         Assert.True(outcome.IsCompleted);
+        Assert.Equal(branchName, await CurrentBranchAsync(repository));
+        AssertTemporaryPlanRemoved(repository);
         var subjects = await SubjectsAsync(repository);
         Assert.Equal(2, subjects.Count);
         Assert.Equal("Commit A", subjects[0]);
@@ -86,6 +92,12 @@ public sealed class GitInteractiveRebaseServiceTests
         var output = await RunAsync(repository, "log", "--format=%s");
         return output.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
     }
+
+    private static async Task<string> CurrentBranchAsync(TemporaryGitRepository repository) =>
+        (await RunAsync(repository, "branch", "--show-current")).Trim();
+
+    private static void AssertTemporaryPlanRemoved(TemporaryGitRepository repository) =>
+        Assert.False(Directory.Exists(Path.Combine(repository.Path, ".git", "lovelygit", "rebase")));
 
     private static async Task<string> RunAsync(TemporaryGitRepository repository, params string[] arguments)
     {
