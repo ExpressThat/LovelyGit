@@ -9,18 +9,23 @@ export function useBranchMutations({
 	currentBranchName,
 	onCurrentBranchNameChange,
 	onRepositoryChanged,
+	onUpstreamChanged,
 	remoteName,
 	repositoryId,
 }: {
 	currentBranchName: string | null;
 	onCurrentBranchNameChange: (branchName: string) => void;
 	onRepositoryChanged: () => void;
+	onUpstreamChanged: (branchName: string, upstreamName: string | null) => void;
 	remoteName: string | null;
 	repositoryId: string | null;
 }) {
 	const [busyBranch, setBusyBranch] = useState<string | null>(null);
 	const [deleteBranchName, setDeleteBranchName] = useState<string | null>(null);
 	const [renameBranchName, setRenameBranchName] = useState<string | null>(null);
+	const [upstreamBranchName, setUpstreamBranchName] = useState<string | null>(
+		null,
+	);
 
 	const mutate = async (
 		branchName: string,
@@ -86,7 +91,34 @@ export function useBranchMutations({
 		if (action === "checkout") void checkoutBranch(branchName);
 		else if (action === "push") void pushBranch(branchName);
 		else if (action === "rename") setRenameBranchName(branchName);
+		else if (action === "upstream") setUpstreamBranchName(branchName);
 		else setDeleteBranchName(branchName);
+	};
+	const manageUpstream = (upstreamName: string | null) => {
+		if (!upstreamBranchName) return;
+		const branchName = upstreamBranchName;
+		return mutate(
+			branchName,
+			upstreamName
+				? `Setting ${branchName} upstream`
+				: `Unsetting ${branchName} upstream`,
+			upstreamName
+				? `${branchName} now tracks ${upstreamName}`
+				: `Removed ${branchName} upstream`,
+			{
+				arguments: {
+					branchName,
+					repositoryId: repositoryId ?? "",
+					upstreamName,
+				},
+				commandType: NativeMessageType.ManageBranchUpstream,
+			},
+			() => {
+				onUpstreamChanged(branchName, upstreamName);
+				setUpstreamBranchName(null);
+				onRepositoryChanged();
+			},
+		);
 	};
 	const renameBranch = (newBranchName: string) => {
 		if (!renameBranchName) return;
@@ -136,6 +168,7 @@ export function useBranchMutations({
 		deleteBranch,
 		deleteBranchName,
 		manageBranch,
+		manageUpstream,
 		mutate,
 		remoteName,
 		renameBranchName,
@@ -143,6 +176,8 @@ export function useBranchMutations({
 		repositoryId,
 		setDeleteBranchName,
 		setRenameBranchName,
+		setUpstreamBranchName,
+		upstreamBranchName,
 		onCurrentBranchNameChange,
 		onRepositoryChanged,
 	};

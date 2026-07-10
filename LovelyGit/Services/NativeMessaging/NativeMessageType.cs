@@ -99,6 +99,8 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging
         DeleteBranch,
         [NativeMessageContract(typeof(PushBranchCommandArguments), typeof(EmptyCommandArguments))]
         PushBranch,
+        [NativeMessageContract(typeof(ManageBranchUpstreamCommandArguments), typeof(EmptyCommandArguments))]
+        ManageBranchUpstream,
         [NativeMessageContract(typeof(StashCommandArguments))]
         ManageStash,
         [NativeMessageContract(typeof(CreateTagAtCommitCommandArguments), typeof(EmptyCommandArguments))]

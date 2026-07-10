@@ -10,6 +10,14 @@ public sealed record RepositoryRefsResponse
     public List<RepositoryRefItem> Refs { get; init; } = new();
     public List<RepositoryWorktreeItem> Worktrees { get; init; } = new();
     public List<RepositoryStashItem> Stashes { get; init; } = new();
+    public List<RepositoryBranchUpstreamItem> BranchUpstreams { get; init; } = new();
+}
+
+[TypeSharp]
+public sealed record RepositoryBranchUpstreamItem
+{
+    public string BranchName { get; init; } = string.Empty;
+    public string UpstreamName { get; init; } = string.Empty;
 }
 
 [TypeSharp]

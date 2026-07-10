@@ -2,6 +2,7 @@ import {
 	CloudUpload,
 	GitBranch,
 	GitMerge,
+	Link2,
 	ListRestart,
 	Pencil,
 	Trash2,
@@ -70,6 +71,13 @@ export function BranchContextMenu({
 					<CloudUpload aria-hidden="true" />
 					Push to {remoteName ?? "remote"}
 				</ContextMenuItem>
+				<ContextMenuItem
+					disabled={disabled}
+					onClick={() => onAction("upstream", branchName)}
+				>
+					<Link2 aria-hidden="true" />
+					Manage upstream…
+				</ContextMenuItem>
 				<ContextMenuSeparator />
 				<ContextMenuItem
 					disabled={!canIntegrate}
@@ -110,4 +118,9 @@ export function BranchContextMenu({
 	);
 }
 
-export type BranchAction = "checkout" | "delete" | "push" | "rename";
+export type BranchAction =
+	| "checkout"
+	| "delete"
+	| "push"
+	| "rename"
+	| "upstream";

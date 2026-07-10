@@ -25,6 +25,7 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Commit
 [JsonSerializable(typeof(CommitGraphResponse))]
 [JsonSerializable(typeof(RepositoryRefItem))]
 [JsonSerializable(typeof(RepositoryWorktreeItem))]
+[JsonSerializable(typeof(RepositoryBranchUpstreamItem))]
 [JsonSerializable(typeof(RepositoryRefsResponse))]
 [JsonSerializable(typeof(CommitGraphCommandArguments))]
 [JsonSerializable(typeof(GetRepositoryRefsCommandArguments))]

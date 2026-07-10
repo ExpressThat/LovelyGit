@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { DeleteBranchDialog } from "./DeleteBranchDialog";
@@ -54,7 +54,8 @@ describe("DeleteBranchDialog", () => {
 		await user.click(
 			screen.getByRole("button", { name: "Force delete unmerged branch" }),
 		);
-		expect(await screen.findByText(/difficult to recover/i)).toBeVisible();
+		const warning = await screen.findByText(/difficult to recover/i);
+		await waitFor(() => expect(warning).toBeVisible());
 		await user.click(
 			screen.getByRole("button", { name: "Force delete branch" }),
 		);

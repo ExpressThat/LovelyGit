@@ -15,7 +15,7 @@ import { useCommitGraphData } from "./hooks/useCommitGraphData";
 import { useCommitGraphViewport } from "./hooks/useCommitGraphViewport";
 import { useRepositoryRefs } from "./hooks/useRepositoryRefs";
 import { useTagMutations } from "./hooks/useTagMutations";
-import { refNames } from "./utils/refMetadata";
+import { branchTrackingMetadata, refNames } from "./utils/refMetadata";
 
 export function CommitGraphView({
 	onCurrentBranchNameChange,
@@ -63,10 +63,13 @@ export function CommitGraphView({
 		repositoryRefs.refs?.remotePrefixes[0] ?? remotePrefixes[0] ?? null;
 	const existingTagNames = refNames(repositoryRefs.refs, "Tag");
 	const branchNames = refNames(repositoryRefs.refs, "Local");
+	const { remoteBranchNames, upstreams: branchUpstreams } =
+		branchTrackingMetadata(repositoryRefs.refs);
 	const branchController = useBranchMutations({
 		currentBranchName,
 		onCurrentBranchNameChange: (name) => onCurrentBranchNameChange?.(name),
 		onRepositoryChanged,
+		onUpstreamChanged: repositoryRefs.updateBranchUpstream,
 		remoteName: tagRemoteName,
 		repositoryId,
 	});
@@ -223,6 +226,8 @@ export function CommitGraphView({
 			<BranchManagementDialogs
 				branchNames={branchNames}
 				controller={branchController}
+				remoteBranches={remoteBranchNames}
+				upstreams={branchUpstreams}
 			/>
 			<TagManagementDialogs
 				busyTag={busyTag}

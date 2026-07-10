@@ -27,6 +27,14 @@ public sealed record PushBranchCommandArguments
 }
 
 [TypeSharp]
+public sealed record ManageBranchUpstreamCommandArguments
+{
+    public Guid RepositoryId { get; init; }
+    public string BranchName { get; init; } = string.Empty;
+    public string? UpstreamName { get; init; }
+}
+
+[TypeSharp]
 public sealed record CreateBranchFromTagCommandArguments
 {
     public Guid RepositoryId { get; init; }

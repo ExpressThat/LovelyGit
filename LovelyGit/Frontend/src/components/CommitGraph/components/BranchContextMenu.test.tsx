@@ -33,7 +33,7 @@ describe("BranchContextMenu", () => {
 		).toHaveAttribute("aria-disabled", "true");
 	});
 
-	it("routes push and integration actions with the selected branch", async () => {
+	it("routes push, upstream, and integration actions with the selected branch", async () => {
 		const user = userEvent.setup();
 		const onAction = vi.fn<BranchActionCallback>();
 		const onIntegrateBranch = vi.fn<IntegrateBranchCallback>();
@@ -49,6 +49,12 @@ describe("BranchContextMenu", () => {
 		);
 		await user.click(await screen.findByText("Push to origin"));
 		expect(onAction).toHaveBeenCalledWith("push", "feature/demo");
+
+		fireEvent.contextMenu(
+			screen.getByRole("button", { name: "feature/demo ref" }),
+		);
+		await user.click(await screen.findByText("Manage upstream…"));
+		expect(onAction).toHaveBeenCalledWith("upstream", "feature/demo");
 
 		fireEvent.contextMenu(
 			screen.getByRole("button", { name: "feature/demo ref" }),

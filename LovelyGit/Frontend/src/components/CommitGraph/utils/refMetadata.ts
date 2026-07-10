@@ -8,3 +8,35 @@ export function refNames(
 		.filter((reference) => reference.kind === kind)
 		.map((reference) => reference.name);
 }
+
+export function branchTrackingMetadata(
+	response: RepositoryRefsResponse | null,
+) {
+	return {
+		remoteBranchNames: refNames(response, "Remote").filter(
+			(name) => !name.endsWith("/HEAD"),
+		),
+		upstreams: Object.fromEntries(
+			(response?.branchUpstreams ?? []).map((upstream) => [
+				upstream.branchName,
+				upstream.upstreamName,
+			]),
+		),
+	};
+}
+
+export function withBranchUpstream(
+	response: RepositoryRefsResponse,
+	branchName: string,
+	upstreamName: string | null,
+) {
+	return {
+		...response,
+		branchUpstreams: [
+			...(response.branchUpstreams ?? []).filter(
+				(upstream) => upstream.branchName !== branchName,
+			),
+			...(upstreamName ? [{ branchName, upstreamName }] : []),
+		],
+	};
+}

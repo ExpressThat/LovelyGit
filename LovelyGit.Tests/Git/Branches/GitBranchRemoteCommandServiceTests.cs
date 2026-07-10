@@ -45,6 +45,11 @@ public sealed class GitBranchRemoteCommandServiceTests
             ["rev-parse", "--abbrev-ref", $"{repository.DefaultBranchName}@{{upstream}}"])
             .StandardOutput.Trim();
 
+        var nativeUpstream = Assert.Single(
+            await GitBranchUpstreamConfigReader.ReadAsync(
+                Path.Combine(repository.ClonePath, ".git"),
+                CancellationToken.None));
+
         await branchService.UnsetBranchUpstreamAsync(
             repository.ClonePath,
             repository.DefaultBranchName,
@@ -57,7 +62,13 @@ public sealed class GitBranchRemoteCommandServiceTests
             validateExitCode: false);
 
         Assert.Equal(upstreamName, upstream);
+        Assert.Equal(repository.DefaultBranchName, nativeUpstream.BranchName);
+        Assert.Equal(upstreamName, nativeUpstream.UpstreamName);
         Assert.NotEqual(0, missingUpstream.ExitCode);
+        Assert.Empty(
+            await GitBranchUpstreamConfigReader.ReadAsync(
+                Path.Combine(repository.ClonePath, ".git"),
+                CancellationToken.None));
     }
 
     private sealed class TemporaryRemoteGitRepository : IDisposable

@@ -1,5 +1,6 @@
 using ExpressThat.LovelyGit.Services.Data.Repositorys;
 using ExpressThat.LovelyGit.Services.Git.CommitGraph.Models;
+using ExpressThat.LovelyGit.Services.Git.Branches;
 using ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser;
 using ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser.Refs;
 using ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser.Remotes;
@@ -45,6 +46,9 @@ internal sealed class RepositoryRefsService
         var stashes = await GitStashReader
             .ReadAsync(paths.GitDirectory, objectFormat, cancellationToken)
             .ConfigureAwait(false);
+        var upstreams = await GitBranchUpstreamConfigReader
+            .ReadAsync(paths.GitDirectory, cancellationToken)
+            .ConfigureAwait(false);
 
         return new RepositoryRefsResponse
         {
@@ -53,6 +57,13 @@ internal sealed class RepositoryRefsService
             Refs = summary.Refs.Select(reference => ToItem(reference, remoteUrl)).ToList(),
             Worktrees = worktrees.Select(ToItem).ToList(),
             Stashes = stashes.Select(ToItem).ToList(),
+            BranchUpstreams = upstreams
+                .Select(upstream => new RepositoryBranchUpstreamItem
+                {
+                    BranchName = upstream.BranchName,
+                    UpstreamName = upstream.UpstreamName,
+                })
+                .ToList(),
         };
     }
 

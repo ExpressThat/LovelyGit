@@ -5,6 +5,7 @@ import {
 	subscribeToServerEvent,
 } from "@/lib/commands";
 import { NativeMessageType } from "@/lib/nativeMessaging";
+import { withBranchUpstream } from "../utils/refMetadata";
 
 type RepositoryRefsState =
 	| { status: "idle"; refs: null; message?: string }
@@ -60,5 +61,19 @@ export function useRepositoryRefs(
 		};
 	}, [repositoryId, loadKey]);
 
-	return state;
+	const updateBranchUpstream = (
+		branchName: string,
+		upstreamName: string | null,
+	) => {
+		setState((current) =>
+			current.refs
+				? {
+						...current,
+						refs: withBranchUpstream(current.refs, branchName, upstreamName),
+					}
+				: current,
+		);
+	};
+
+	return { ...state, updateBranchUpstream };
 }
