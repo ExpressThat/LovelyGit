@@ -13,6 +13,7 @@ public sealed class GitRemoteConfigReaderTests
                 url = https://github.com/example/upstream.git
             [remote "origin"]
                 url = https://github.com/example/origin.git
+                pushurl = git@github.com:example/origin.git
             """);
 
         var url = await GitRemoteConfigReader.ReadPrimaryRemoteUrlAsync(
@@ -47,6 +48,7 @@ public sealed class GitRemoteConfigReaderTests
                 url = git@gitlab.com:example/upstream.git
             [remote "origin"]
                 url = https://github.com/example/origin.git
+                pushurl = git@github.com:example/origin.git
             """);
 
         var remotes = await GitRemoteConfigReader.ReadRemotesAsync(
@@ -59,12 +61,32 @@ public sealed class GitRemoteConfigReaderTests
             {
                 Assert.Equal("origin", remote.Name);
                 Assert.Equal("https://github.com/example/origin.git", remote.Url);
+                Assert.Equal("git@github.com:example/origin.git", remote.PushUrl);
             },
             remote =>
             {
                 Assert.Equal("upstream", remote.Name);
                 Assert.Equal("git@gitlab.com:example/upstream.git", remote.Url);
+                Assert.Null(remote.PushUrl);
             });
+    }
+
+    [Fact]
+    public async Task ReadRemotesAsync_DoesNotReadUrlsFromLaterSections()
+    {
+        using var directory = TemporaryGitDirectory.Create(
+            """
+            [remote "origin"]
+                url = https://github.com/example/origin.git
+            [credential]
+                url = https://credentials.example.invalid/not-a-remote.git
+            """);
+
+        var remote = Assert.Single(await GitRemoteConfigReader.ReadRemotesAsync(
+            directory.Path,
+            CancellationToken.None));
+
+        Assert.Equal("https://github.com/example/origin.git", remote.Url);
     }
 
     private sealed class TemporaryGitDirectory : IDisposable

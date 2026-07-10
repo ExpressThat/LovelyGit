@@ -15,6 +15,7 @@ using ExpressThat.LovelyGit.Services.NativeMessaging.Commands;
 using ExpressThat.LovelyGit.Services.Data.Models;
 using ExpressThat.LovelyGit.Services.Git.CommitGraph.Models;
 using ExpressThat.LovelyGit.Services.Git.WorkingTree.Models;
+using ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser.Remotes;
 using ExpressThat.LovelyGit.Services.Settings;
 using System.Text.Json;
 
@@ -78,6 +79,10 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging
         CommitStagedChanges,
 
         // Remote synchronization and branch/ref mutations.
+        [NativeMessageContract(typeof(GetRemotesCommandArguments), typeof(List<GitRemote>))]
+        GetRemotes,
+        [NativeMessageContract(typeof(ManageRemoteCommandArguments), typeof(EmptyCommandArguments))]
+        ManageRemote,
         [NativeMessageContract(typeof(GitRemoteCommandArguments))]
         FetchRepository,
         [NativeMessageContract(typeof(GitRemoteCommandArguments))]

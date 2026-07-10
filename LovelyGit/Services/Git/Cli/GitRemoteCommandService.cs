@@ -3,7 +3,7 @@ using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.WorkingTre
 
 namespace ExpressThat.LovelyGit.Services.Git.Cli;
 
-internal sealed class GitRemoteCommandService
+internal sealed partial class GitRemoteCommandService
 {
     private readonly GitCliService _gitCliService;
 

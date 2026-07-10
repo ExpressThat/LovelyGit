@@ -69,6 +69,23 @@ public record GitRemoteCommandArguments
 }
 
 [TypeSharp]
+public record GetRemotesCommandArguments
+{
+    public Guid RepositoryId { get; set; }
+}
+
+[TypeSharp]
+public record ManageRemoteCommandArguments
+{
+    public Guid RepositoryId { get; set; }
+    public RemoteMutationAction Action { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string? NewName { get; set; }
+    public string? Url { get; set; }
+    public string? PushUrl { get; set; }
+}
+
+[TypeSharp]
 public record CheckoutBranchCommandArguments
 {
     public Guid RepositoryId { get; set; }

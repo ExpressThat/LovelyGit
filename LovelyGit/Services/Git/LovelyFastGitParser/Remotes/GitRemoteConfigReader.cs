@@ -6,12 +6,7 @@ internal static class GitRemoteConfigReader
         string gitDirectory,
         CancellationToken cancellationToken)
     {
-        var remotes = new List<GitRemote>();
-        await ReadRemoteConfigAsync(
-                gitDirectory,
-                (name, url) => remotes.Add(new GitRemote { Name = name, Url = url }),
-                cancellationToken)
-            .ConfigureAwait(false);
+        var remotes = await ReadRemoteConfigAsync(gitDirectory, cancellationToken).ConfigureAwait(false);
         remotes.Sort((left, right) => string.Compare(left.Name, right.Name, StringComparison.Ordinal));
         return remotes;
     }
@@ -20,36 +15,32 @@ internal static class GitRemoteConfigReader
         string gitDirectory,
         CancellationToken cancellationToken)
     {
-        string? firstRemoteUrl = null;
-        string? originUrl = null;
-        await ReadRemoteConfigAsync(
-                gitDirectory,
-                (name, url) =>
-                {
-                    firstRemoteUrl ??= url;
-                    if (name.Equals("origin", StringComparison.Ordinal))
-                    {
-                        originUrl = url;
-                    }
-                },
-                cancellationToken)
-            .ConfigureAwait(false);
-        return originUrl ?? firstRemoteUrl;
+        var remotes = await ReadRemoteConfigAsync(gitDirectory, cancellationToken).ConfigureAwait(false);
+        return remotes.Find(remote => remote.Name.Equals("origin", StringComparison.Ordinal))?.Url
+            ?? remotes.FirstOrDefault()?.Url;
     }
 
-    private static async Task ReadRemoteConfigAsync(
+    private static async Task<List<GitRemote>> ReadRemoteConfigAsync(
         string gitDirectory,
-        Action<string, string> onRemote,
         CancellationToken cancellationToken)
     {
+        var remotes = new Dictionary<string, GitRemote>(StringComparer.Ordinal);
         var configPath = Path.Combine(gitDirectory, "config");
         if (!File.Exists(configPath))
         {
-            return;
+            return [];
         }
 
         string? remoteName = null;
-        foreach (var rawLine in await File.ReadAllLinesAsync(configPath, cancellationToken).ConfigureAwait(false))
+        await using var stream = new FileStream(
+            configPath,
+            FileMode.Open,
+            FileAccess.Read,
+            FileShare.ReadWrite | FileShare.Delete,
+            bufferSize: 4096,
+            FileOptions.Asynchronous | FileOptions.SequentialScan);
+        using var reader = new StreamReader(stream);
+        while (await reader.ReadLineAsync(cancellationToken).ConfigureAwait(false) is { } rawLine)
         {
             var line = rawLine.AsSpan().Trim();
             if (line.Length == 0 || line[0] is '#' or ';')
@@ -63,13 +54,33 @@ internal static class GitRemoteConfigReader
                 continue;
             }
 
-            if (remoteName == null || !TryReadConfigValue(line, "url", out var url))
+            if (line[0] == '[' && line[^1] == ']')
+            {
+                remoteName = null;
+                continue;
+            }
+
+            if (remoteName == null)
             {
                 continue;
             }
 
-            onRemote(remoteName, url);
+            if (!remotes.TryGetValue(remoteName, out var remote))
+            {
+                remote = new GitRemote { Name = remoteName };
+                remotes.Add(remoteName, remote);
+            }
+            if (TryReadConfigValue(line, "url", out var url))
+            {
+                remote.Url = url;
+            }
+            else if (TryReadConfigValue(line, "pushurl", out var pushUrl))
+            {
+                remote.PushUrl = pushUrl;
+            }
         }
+
+        return remotes.Values.Where(remote => remote.Url.Length > 0).ToList();
     }
 
     private static bool TryReadRemoteSection(ReadOnlySpan<char> line, out string name)

@@ -1,4 +1,4 @@
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, RadioTower } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,7 @@ import {
 	type RemoteAction,
 } from "./RemoteActions";
 import { RemoteDefaultRow } from "./RemoteDefaultRow";
+import { RemoteManagerDialog } from "./RemoteManagerDialog";
 
 export function RemoteActionsControl({
 	repositoryId,
@@ -31,6 +32,7 @@ export function RemoteActionsControl({
 		null,
 	);
 	const [open, setOpen] = useState(false);
+	const [managerOpen, setManagerOpen] = useState(false);
 	const primaryAction = normalizePrimaryAction(
 		useSetting("RemotePrimaryAction"),
 	);
@@ -152,6 +154,23 @@ export function RemoteActionsControl({
 				/>
 				<span>Push</span>
 			</Button>
+			<Button
+				aria-label="Manage remotes"
+				className="h-9 px-2"
+				disabled={!repositoryId || isBusy}
+				onClick={() => setManagerOpen(true)}
+				size="sm"
+				title="Manage remotes"
+				type="button"
+				variant="ghost"
+			>
+				<RadioTower aria-hidden="true" className="size-5" />
+			</Button>
+			<RemoteManagerDialog
+				onOpenChange={setManagerOpen}
+				open={managerOpen}
+				repositoryId={repositoryId}
+			/>
 		</div>
 	);
 }

@@ -73,6 +73,51 @@ public sealed class GitRemoteCommandServiceTests
                 CancellationToken.None));
     }
 
+    [Fact]
+    public async Task AddUpdateAndRemoveAsync_ManageFetchAndPushUrls()
+    {
+        using var repository = TemporaryRemoteGitRepository.Create();
+        var service = new GitRemoteCommandService(repository.GitCliService);
+        var pushPath = Path.Combine(Path.GetDirectoryName(repository.BarePath)!, "push.git");
+        repository.RunGit(repository.ClonePath, ["init", "--bare", pushPath]);
+
+        await service.AddAsync(
+            repository.ClonePath,
+            "backup",
+            repository.BarePath,
+            pushPath,
+            CancellationToken.None);
+        Assert.Equal(repository.BarePath, repository.RemoteUrl("backup"));
+        Assert.Equal(pushPath, repository.RemoteUrl("backup", push: true));
+
+        await service.UpdateAsync(
+            repository.ClonePath,
+            "backup",
+            "mirror",
+            pushPath,
+            pushUrl: null,
+            CancellationToken.None);
+        Assert.Equal(pushPath, repository.RemoteUrl("mirror"));
+        Assert.Equal(pushPath, repository.RemoteUrl("mirror", push: true));
+        Assert.DoesNotContain("backup", repository.RemoteNames());
+
+        await service.RemoveAsync(repository.ClonePath, "mirror", CancellationToken.None);
+        Assert.DoesNotContain("mirror", repository.RemoteNames());
+    }
+
+    [Theory]
+    [InlineData(" bad", "https://example.invalid/repository.git")]
+    [InlineData("backup", "-unsafe")]
+    [InlineData("backup", "https://example.invalid/repository.git\nunsafe")]
+    public async Task AddAsync_RejectsUnsafeNameOrUrl(string name, string url)
+    {
+        using var repository = TemporaryRemoteGitRepository.Create();
+        var service = new GitRemoteCommandService(repository.GitCliService);
+
+        await Assert.ThrowsAsync<ArgumentException>(() =>
+            service.AddAsync(repository.ClonePath, name, url, null, CancellationToken.None));
+    }
+
     private sealed class TemporaryRemoteGitRepository : IDisposable
     {
         private readonly DirectoryInfo _directory;
@@ -93,6 +138,17 @@ public sealed class GitRemoteCommandServiceTests
         public GitCliService GitCliService { get; }
 
         private string UpdaterPath { get; }
+
+        public string[] RemoteNames() =>
+            RunGit(ClonePath, ["remote"])
+                .StandardOutput
+                .Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries);
+
+        public string RemoteUrl(string name, bool push = false) =>
+            RunGit(ClonePath, push
+                    ? ["remote", "get-url", "--push", name]
+                    : ["remote", "get-url", name])
+                .StandardOutput.Trim();
 
         public void Commit(string path, string fileName, string message)
         {
