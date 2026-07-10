@@ -1,4 +1,6 @@
+import { toast } from "sonner";
 import type {
+	GitIgnoreTarget,
 	WorkingTreeChangedFile,
 	WorkingTreeChangesResponse,
 } from "@/generated/types";
@@ -8,6 +10,44 @@ import { uniquePaths } from "./WorkingChangesPanelParts";
 export type IndexCommandType =
 	| "StageWorkingTreeFiles"
 	| "UnstageWorkingTreeFiles";
+
+export async function ignoreWorkingTreePath({
+	onRefresh,
+	path,
+	repositoryId,
+	setActionError,
+	setIsMutating,
+	target,
+}: {
+	onRefresh: () => Promise<void> | void;
+	path: string;
+	repositoryId: string;
+	setActionError: (message: string | null) => void;
+	setIsMutating: (isMutating: boolean) => void;
+	target: GitIgnoreTarget;
+}) {
+	setIsMutating(true);
+	setActionError(null);
+	try {
+		const result = await sendRequestWithResponse({
+			commandType: "IgnoreWorkingTreePath",
+			arguments: { path, repositoryId, target },
+		});
+		const destination = target === "Local" ? ".git/info/exclude" : ".gitignore";
+		toast.success(
+			result.added
+				? `Ignored ${path} in ${destination}`
+				: `${path} is already listed in ${destination}`,
+		);
+		await onRefresh();
+	} catch (error) {
+		setActionError(
+			error instanceof Error ? error.message : "Failed to ignore this path.",
+		);
+	} finally {
+		setIsMutating(false);
+	}
+}
 
 export async function runIndexCommand({
 	commandType,

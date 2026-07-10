@@ -3,10 +3,12 @@ import type { WorkingTreeChangesResponse } from "@/generated/types";
 import { sendRequestWithResponse } from "@/lib/commands";
 import {
 	commitStagedChanges,
+	ignoreWorkingTreePath,
 	loadHeadCommitMessage,
 } from "./WorkingChangesPanelCommands";
 
 vi.mock("@/lib/commands", () => ({ sendRequestWithResponse: vi.fn() }));
+vi.mock("sonner", () => ({ toast: { success: vi.fn() } }));
 
 describe("working changes commit commands", () => {
 	beforeEach(() => vi.clearAllMocks());
@@ -66,6 +68,38 @@ describe("working changes commit commands", () => {
 			arguments: { repositoryId: "repo" },
 			commandType: "GetHeadCommitMessage",
 		});
+	});
+
+	it("ignores an exact path locally and refreshes the native status", async () => {
+		vi.mocked(sendRequestWithResponse).mockResolvedValueOnce({
+			added: true,
+			pattern: "/notes.local",
+			target: "Local",
+		});
+		const onRefresh = vi.fn();
+		const setActionError = vi.fn();
+		const setIsMutating = vi.fn();
+
+		await ignoreWorkingTreePath({
+			onRefresh,
+			path: "notes.local",
+			repositoryId: "repo",
+			setActionError,
+			setIsMutating,
+			target: "Local",
+		});
+
+		expect(sendRequestWithResponse).toHaveBeenCalledWith({
+			arguments: {
+				path: "notes.local",
+				repositoryId: "repo",
+				target: "Local",
+			},
+			commandType: "IgnoreWorkingTreePath",
+		});
+		expect(onRefresh).toHaveBeenCalledOnce();
+		expect(setIsMutating).toHaveBeenNthCalledWith(1, true);
+		expect(setIsMutating).toHaveBeenLastCalledWith(false);
 	});
 });
 

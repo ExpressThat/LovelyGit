@@ -21,7 +21,6 @@ internal sealed partial class GitIgnoreMatcher
 
         public static GitIgnoreRule Create(string pattern, string baseDirectory, bool isNegation)
         {
-            pattern = pattern.Replace('\\', '/');
             var directoryOnly = pattern.EndsWith("/", StringComparison.Ordinal);
             pattern = pattern.TrimEnd('/');
             var anchored = pattern.StartsWith("/", StringComparison.Ordinal) ||

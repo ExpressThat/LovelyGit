@@ -66,6 +66,18 @@ public sealed class GitIgnoreMatcherTests : IDisposable
     }
 
     [Fact]
+    public async Task EscapedGlobCharacters_AreMatchedLiterally()
+    {
+        await File.WriteAllTextAsync(
+            Path.Combine(_root, ".gitignore"),
+            @"/build/\[draft\]\ file\?.txt" + "\n");
+        var matcher = await LoadAsync();
+
+        Assert.True(matcher.IsIgnored("build/[draft] file?.txt", isDirectory: false));
+        Assert.False(matcher.IsIgnored("build/d file1.txt", isDirectory: false));
+    }
+
+    [Fact]
     public async Task NestedRules_AreScopedToTheirDirectory()
     {
         Directory.CreateDirectory(Path.Combine(_root, "src"));

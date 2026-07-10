@@ -1,6 +1,7 @@
 using System.Text.Json.Serialization;
 using ExpressThat.LovelyGit.Services.Git.CommitGraph.Models;
 using ExpressThat.LovelyGit.Services.Git.WorkingTree.Models;
+using ExpressThat.LovelyGit.Services.Git.WorkingTree;
 using ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser.Remotes;
 using ExpressThat.LovelyGit.Services.NativeMessaging.Commands;
 using ExpressThat.LovelyGit.Services.Data.Models;
@@ -20,6 +21,9 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Workin
 [JsonSerializable(typeof(CommitGraphChangedNotification))]
 [JsonSerializable(typeof(GetWorkingTreeChangesCommandArguments))]
 [JsonSerializable(typeof(RevealWorkingTreeFileCommandArguments))]
+[JsonSerializable(typeof(IgnoreWorkingTreePathCommandArguments))]
+[JsonSerializable(typeof(GitIgnoreTarget))]
+[JsonSerializable(typeof(GitIgnoreResult))]
 [JsonSerializable(typeof(UpdateWorkingTreeIndexCommandArguments))]
 [JsonSerializable(typeof(DiscardWorkingTreeChangesCommandArguments))]
 [JsonSerializable(typeof(StageWorkingTreeLineCommandArguments))]
@@ -57,6 +61,7 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Workin
 [JsonSerializable(typeof(CommandResponse<WorkingTreeChangesResponse>))]
 [JsonSerializable(typeof(CommandResponse<WorkingTreeChangeSummaryResponse>))]
 [JsonSerializable(typeof(CommandResponse<CommitFileDiffResponse>))]
+[JsonSerializable(typeof(CommandResponse<GitIgnoreResult>))]
 [JsonSerializable(typeof(CommandResponse<HeadCommitMessageResponse>))]
 [JsonSerializable(typeof(CommandResponse<List<GitRemote>>))]
 [JsonSerializable(typeof(CommandResponse<WorktreeDestinationResponse>))]

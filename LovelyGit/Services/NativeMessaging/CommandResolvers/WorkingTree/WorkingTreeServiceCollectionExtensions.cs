@@ -34,6 +34,7 @@ internal static class WorkingTreeServiceCollectionExtensions
         services.AddSingleton<WorkingTreePreliminarySummaryService>();
         services.AddSingleton<WorkingTreeSummaryService>();
         services.AddSingleton<WorkingTreeIndexService>();
+        services.AddSingleton<GitIgnoreService>();
         services.AddSingleton<HeadCommitMessageService>();
         services.AddSingleton<PatchPreviewService>();
         services.AddSingleton<PatchApplyService>();
@@ -45,6 +46,7 @@ internal static class WorkingTreeServiceCollectionExtensions
         services.AddSingleton<ICommandResponder, GetWorkingTreeChangeSummaryCommandResolver>();
         services.AddSingleton<ICommandResponder, GetWorkingTreeFileDiffCommandResolver>();
         services.AddSingleton<ICommandResponder, RevealWorkingTreeFileCommandResolver>();
+        services.AddSingleton<ICommandResponder, IgnoreWorkingTreePathCommandResolver>();
         services.AddSingleton<ICommandResponder, StageWorkingTreeFilesCommandResolver>();
         services.AddSingleton<ICommandResponder, UnstageWorkingTreeFilesCommandResolver>();
         services.AddSingleton<ICommandResponder, DiscardWorkingTreeChangesCommandResolver>();

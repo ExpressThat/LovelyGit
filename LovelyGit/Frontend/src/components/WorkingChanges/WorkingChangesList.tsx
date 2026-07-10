@@ -51,6 +51,7 @@ export function WorkingChangesList({
 	onIndexCommand,
 	onOpenFileBlame,
 	onOpenFileHistory,
+	onIgnorePath,
 	onSelectFile,
 	onToggleSelected,
 	selectedKeys,
@@ -69,6 +70,10 @@ export function WorkingChangesList({
 	) => void;
 	onOpenFileBlame: (file: WorkingTreeChangedFile) => void;
 	onOpenFileHistory: (file: WorkingTreeChangedFile) => void;
+	onIgnorePath: (
+		file: WorkingTreeChangedFile,
+		target: "Local" | "Shared",
+	) => void;
 	onSelectFile: (file: WorkingTreeChangedFile) => void;
 	onToggleSelected: (file: WorkingTreeChangedFile) => void;
 	selectedKeys: Set<string>;
@@ -127,6 +132,7 @@ export function WorkingChangesList({
 				onIndexCommand={onIndexCommand}
 				onOpenFileBlame={onOpenFileBlame}
 				onOpenFileHistory={onOpenFileHistory}
+				onIgnorePath={onIgnorePath}
 				onSelectFile={onSelectFile}
 				onToggleSelected={onToggleSelected}
 				selectedKeys={selectedKeys}
@@ -159,6 +165,7 @@ export function WorkingChangesList({
 				onIndexCommand={onIndexCommand}
 				onOpenFileBlame={onOpenFileBlame}
 				onOpenFileHistory={onOpenFileHistory}
+				onIgnorePath={onIgnorePath}
 				onSelectFile={onSelectFile}
 				onToggleSelected={onToggleSelected}
 				selectedKeys={selectedKeys}

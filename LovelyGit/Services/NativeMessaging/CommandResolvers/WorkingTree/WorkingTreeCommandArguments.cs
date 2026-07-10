@@ -1,5 +1,6 @@
 using ExpressThat.LovelyGit.Services.TypeGeneration;
 using ExpressThat.LovelyGit.Services.Git.WorkingTree.Models;
+using ExpressThat.LovelyGit.Services.Git.WorkingTree;
 
 namespace ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.WorkingTree;
 
@@ -52,6 +53,14 @@ public record CommitStagedChangesCommandArguments
     public string Title { get; set; } = string.Empty;
     public string Body { get; set; } = string.Empty;
     public bool Amend { get; set; }
+}
+
+[TypeSharp]
+public record IgnoreWorkingTreePathCommandArguments
+{
+    public Guid RepositoryId { get; set; }
+    public string Path { get; set; } = string.Empty;
+    public GitIgnoreTarget Target { get; set; }
 }
 
 [TypeSharp]

@@ -17,6 +17,7 @@ export function ChangedFileRow({
 	onAction,
 	onOpenBlame,
 	onOpenHistory,
+	onIgnore,
 	onSelect,
 	onToggleSelected,
 	rowActionLabel,
@@ -28,6 +29,7 @@ export function ChangedFileRow({
 	onAction?: () => void;
 	onOpenBlame: () => void;
 	onOpenHistory: () => void;
+	onIgnore?: (target: "Local" | "Shared") => void;
 	onSelect: () => void;
 	onToggleSelected?: () => void;
 	rowActionLabel?: string;
@@ -52,6 +54,16 @@ export function ChangedFileRow({
 			<FileHistoryContextMenu
 				blameLabel="View line blame at HEAD…"
 				canBlame={file.group !== "Untracked" && file.status !== "Added"}
+				onIgnoreLocal={
+					file.group === "Untracked" && onIgnore
+						? () => onIgnore("Local")
+						: undefined
+				}
+				onIgnoreShared={
+					file.group === "Untracked" && onIgnore
+						? () => onIgnore("Shared")
+						: undefined
+				}
 				onOpen={onOpenHistory}
 				onOpenBlame={onOpenBlame}
 				path={file.path}

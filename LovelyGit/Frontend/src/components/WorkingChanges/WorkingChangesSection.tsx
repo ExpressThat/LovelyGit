@@ -15,6 +15,7 @@ export function WorkingChangesSection({
 	onIndexCommand,
 	onOpenFileBlame,
 	onOpenFileHistory,
+	onIgnorePath,
 	onSelectFile,
 	onToggleSelected,
 	selectedKeys,
@@ -31,6 +32,10 @@ export function WorkingChangesSection({
 	) => void;
 	onOpenFileBlame: (file: WorkingTreeChangedFile) => void;
 	onOpenFileHistory: (file: WorkingTreeChangedFile) => void;
+	onIgnorePath: (
+		file: WorkingTreeChangedFile,
+		target: "Local" | "Shared",
+	) => void;
 	onSelectFile: (file: WorkingTreeChangedFile) => void;
 	onToggleSelected: (file: WorkingTreeChangedFile) => void;
 	selectedKeys: Set<string>;
@@ -90,6 +95,7 @@ export function WorkingChangesSection({
 										}
 										onSelect={() => onSelectFile(file)}
 										onOpenHistory={() => onOpenFileHistory(file)}
+										onIgnore={(target) => onIgnorePath(file, target)}
 										onOpenBlame={() => onOpenFileBlame(file)}
 										onToggleSelected={
 											selectable ? () => onToggleSelected(file) : undefined

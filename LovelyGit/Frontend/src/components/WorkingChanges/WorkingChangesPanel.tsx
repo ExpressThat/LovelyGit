@@ -51,6 +51,7 @@ export function WorkingChangesPanel({
 		discardFiles,
 		discardWorkingChanges,
 		isBusy,
+		ignorePath,
 		isAmending,
 		isCommitting,
 		isLoadingAmendMessage,
@@ -104,6 +105,7 @@ export function WorkingChangesPanel({
 						void runIndexCommand(commandType, files, includeAll)
 					}
 					onOpenFileHistory={onOpenFileHistory}
+					onIgnorePath={(file, target) => void ignorePath(file.path, target)}
 					onOpenFileBlame={onOpenFileBlame}
 					onSelectFile={onSelectFile}
 					onToggleSelected={toggleSelected}

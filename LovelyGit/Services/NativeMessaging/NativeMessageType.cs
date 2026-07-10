@@ -15,6 +15,7 @@ using ExpressThat.LovelyGit.Services.NativeMessaging.Commands;
 using ExpressThat.LovelyGit.Services.Data.Models;
 using ExpressThat.LovelyGit.Services.Git.CommitGraph.Models;
 using ExpressThat.LovelyGit.Services.Git.WorkingTree.Models;
+using ExpressThat.LovelyGit.Services.Git.WorkingTree;
 using ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser.Remotes;
 using ExpressThat.LovelyGit.Services.Git.Reflog;
 using ExpressThat.LovelyGit.Services.Git.CommitSearch;
@@ -82,6 +83,8 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging
         GetWorkingTreeFileDiff,
         [NativeMessageContract(typeof(RevealWorkingTreeFileCommandArguments), typeof(EmptyCommandArguments))]
         RevealWorkingTreeFile,
+        [NativeMessageContract(typeof(IgnoreWorkingTreePathCommandArguments), typeof(GitIgnoreResult))]
+        IgnoreWorkingTreePath,
         [NativeMessageContract(typeof(UpdateWorkingTreeIndexCommandArguments))]
         StageWorkingTreeFiles,
         [NativeMessageContract(typeof(UpdateWorkingTreeIndexCommandArguments))]

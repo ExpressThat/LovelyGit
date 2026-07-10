@@ -7,6 +7,7 @@ import {
 	commitStagedChanges,
 	discardWorkingChanges,
 	type IndexCommandType,
+	ignoreWorkingTreePath,
 	loadHeadCommitMessage,
 	runIndexCommand,
 } from "./WorkingChangesPanelCommands";
@@ -91,6 +92,15 @@ export function useWorkingChangesPanelActions({
 				setSelectedKeys,
 			}),
 		isBusy: isMutating || isCommitting || isLoadingAmendMessage,
+		ignorePath: (path: string, target: "Local" | "Shared") =>
+			ignoreWorkingTreePath({
+				onRefresh,
+				path,
+				repositoryId,
+				setActionError,
+				setIsMutating,
+				target,
+			}),
 		isAmending,
 		isCommitting,
 		isLoadingAmendMessage,

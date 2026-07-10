@@ -33,4 +33,34 @@ describe("FileHistoryContextMenu", () => {
 
 		expect(onOpen).toHaveBeenCalledOnce();
 	});
+
+	it("offers shared and local ignore actions when supplied", async () => {
+		const user = userEvent.setup();
+		const onIgnoreLocal = vi.fn();
+		const onIgnoreShared = vi.fn();
+		render(
+			<FileHistoryContextMenu
+				onIgnoreLocal={onIgnoreLocal}
+				onIgnoreShared={onIgnoreShared}
+				onOpen={vi.fn()}
+				onOpenBlame={vi.fn()}
+				path="build/output.log"
+			>
+				<button type="button">build/output.log</button>
+			</FileHistoryContextMenu>,
+		);
+
+		await user.pointer({
+			keys: "[MouseRight]",
+			target: screen.getByRole("button", { name: "build/output.log" }),
+		});
+		await user.click(
+			await screen.findByRole("menuitem", {
+				name: "Add exact path to .gitignore",
+			}),
+		);
+
+		expect(onIgnoreShared).toHaveBeenCalledOnce();
+		expect(onIgnoreLocal).not.toHaveBeenCalled();
+	});
 });
