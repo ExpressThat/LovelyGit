@@ -2,6 +2,7 @@ using ExpressThat.LovelyGit.Services.Data;
 using ExpressThat.LovelyGit.Services.Dialogs;
 using ExpressThat.LovelyGit.Services.Git.Cli;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.CommitGraph;
+using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Bisect;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.KnownRepository;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Settings;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.WorkingTree;
@@ -24,6 +25,7 @@ namespace ExpressThat.LovelyGit.Services
                 .AddLovelyGitCommands()
                 .AddKnownRepositoryCommands()
                 .AddCommitGraphCommands()
+                .AddBisectCommands()
                 .AddWorkingTreeCommands()
                 .AddSettingsCommands();
 

@@ -1,5 +1,6 @@
 using System.Text.Json.Serialization;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.CommitGraph;
+using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Bisect;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.CherryPick;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Branches;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.KnownRepository;
@@ -25,6 +26,7 @@ using ExpressThat.LovelyGit.Services.Settings;
 using ExpressThat.LovelyGit.Services.Git.BranchComparison;
 using ExpressThat.LovelyGit.Services.Git.Patches;
 using ExpressThat.LovelyGit.Services.Git.Submodules;
+using ExpressThat.LovelyGit.Services.Git.Bisect;
 using System.Text.Json;
 
 namespace ExpressThat.LovelyGit.Services.NativeMessaging
@@ -73,6 +75,12 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging
         GetCommitPatch,
         [NativeMessageContract(typeof(GetCommitPatchCommandArguments), typeof(CommitPatchExportResponse))]
         SaveCommitPatch,
+
+        // Native bisect session state and explicit Git CLI progression.
+        [NativeMessageContract(typeof(GetBisectStateCommandArguments), typeof(GitBisectState))]
+        GetBisectState,
+        [NativeMessageContract(typeof(ManageBisectCommandArguments), typeof(GitBisectState))]
+        ManageBisect,
 
         // Working-tree reads and file/index mutations.
         [NativeMessageContract(typeof(GetWorkingTreeChangesCommandArguments), typeof(WorkingTreeChangeSummaryResponse))]

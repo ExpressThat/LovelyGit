@@ -1,5 +1,6 @@
 import { GitCompareArrows, Search } from "lucide-react";
 import { SettingsDialog } from "../Settings/SettingsDialog";
+import { BisectControl } from "./components/BisectControl";
 import { BranchControl } from "./components/BranchControl";
 import { PatchApplyControl } from "./components/PatchApplyControl";
 import { RemoteActionsControl } from "./components/RemoteActionsControl";
@@ -49,6 +50,7 @@ export function TopNavBar({
 					<TerminalActionControl repositoryId={repositoryId} />
 				</div>
 				<div className="flex items-center justify-end gap-1">
+					<BisectControl repositoryId={repositoryId} />
 					<SubmoduleManager repositoryId={repositoryId} />
 					<button
 						aria-label="Search commits"

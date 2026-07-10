@@ -6,6 +6,10 @@ import { describe, expect, it, vi } from "vitest";
 import type { CommitGraphRow } from "@/generated/types";
 import { CommitContextMenu } from "./CommitContextMenu";
 
+vi.mock("@/lib/repositoryContext", () => ({
+	useRepositoryContext: () => ({ currentRepositoryId: "repo" }),
+}));
+
 describe("CommitContextMenu", () => {
 	it("offers a branch-aware reset for a historical commit", async () => {
 		const user = userEvent.setup();
@@ -78,6 +82,22 @@ describe("CommitContextMenu", () => {
 		await user.click(await screen.findByText("Save commit as patch…"));
 
 		expect(onSavePatch).toHaveBeenCalledWith(row);
+	});
+
+	it("opens a commit-aware bisect confirmation", async () => {
+		const user = userEvent.setup();
+		renderMenu({});
+		fireEvent.contextMenu(screen.getByRole("button", { name: "commit row" }));
+
+		await user.click(
+			await screen.findByRole("menuitem", {
+				name: "Start bisect with 1111111 as good",
+			}),
+		);
+
+		expect(
+			await screen.findByRole("heading", { name: "Start a bisect session?" }),
+		).toBeVisible();
 	});
 });
 
