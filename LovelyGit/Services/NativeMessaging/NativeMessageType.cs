@@ -22,6 +22,7 @@ using ExpressThat.LovelyGit.Services.Git.FileHistory;
 using ExpressThat.LovelyGit.Services.Git.FileBlame;
 using ExpressThat.LovelyGit.Services.Settings;
 using ExpressThat.LovelyGit.Services.Git.BranchComparison;
+using ExpressThat.LovelyGit.Services.Git.Patches;
 using System.Text.Json;
 
 namespace ExpressThat.LovelyGit.Services.NativeMessaging
@@ -94,6 +95,10 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging
         GetHeadCommitMessage,
         [NativeMessageContract(typeof(CommitStagedChangesCommandArguments), typeof(EmptyCommandArguments))]
         CommitStagedChanges,
+        [NativeMessageContract(typeof(EmptyCommandArguments), typeof(PatchPreviewResponse))]
+        ChoosePatchFile,
+        [NativeMessageContract(typeof(ApplyPatchCommandArguments), typeof(EmptyCommandArguments))]
+        ApplyPatch,
 
         // Linked worktree creation, navigation, locking, and removal.
         [NativeMessageContract(typeof(EmptyCommandArguments), typeof(WorktreeDestinationResponse))]

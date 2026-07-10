@@ -6,6 +6,7 @@ internal static class DialogServiceCollectionExtensions
     {
         services.AddSingleton<InfiniFrameWindowProvider>();
         services.AddSingleton<IFolderPicker, InfiniFrameFolderPicker>();
+        services.AddSingleton<IOpenFilePicker, InfiniFrameOpenFilePicker>();
         services.AddSingleton<ISaveFilePicker, InfiniFrameSaveFilePicker>();
 
         return services;

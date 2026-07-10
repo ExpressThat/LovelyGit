@@ -1,6 +1,7 @@
 import { GitCompareArrows, Search } from "lucide-react";
 import { SettingsDialog } from "../Settings/SettingsDialog";
 import { BranchControl } from "./components/BranchControl";
+import { PatchApplyControl } from "./components/PatchApplyControl";
 import { RemoteActionsControl } from "./components/RemoteActionsControl";
 import { Tabs } from "./components/Tabs";
 import { TerminalActionControl } from "./components/TerminalActionControl";
@@ -40,6 +41,10 @@ export function TopNavBar({
 				</div>
 				<div className="flex items-center justify-center gap-2">
 					<RemoteActionsControl repositoryId={repositoryId} />
+					<PatchApplyControl
+						onApplied={onOpenWorkingChanges}
+						repositoryId={repositoryId}
+					/>
 					<TerminalActionControl repositoryId={repositoryId} />
 				</div>
 				<div className="flex items-center justify-end gap-1">
