@@ -53,12 +53,12 @@ internal sealed partial class GitBranchCommandService
     public Task CreateBranchAsync(
         string repositoryPath,
         string branchName,
-        string commitHash,
+        string startPoint,
         CancellationToken cancellationToken) =>
         RunAsync(
             repositoryPath,
             "Create branch",
-            ["branch", "--", NormalizeBranchName(branchName), NormalizeCommitHash(commitHash)],
+            ["branch", "--", NormalizeBranchName(branchName), NormalizeStartPoint(startPoint)],
             "Choose a unique valid branch name and verify the target commit exists.",
             cancellationToken);
 
@@ -136,6 +136,18 @@ internal sealed partial class GitBranchCommandService
         }
 
         return normalized;
+    }
+
+    private static string NormalizeStartPoint(string startPoint)
+    {
+        var normalized = startPoint.Trim();
+        if (normalized.Equals("HEAD", StringComparison.Ordinal) ||
+            GitBranchNameValidator.IsValidBranchName(normalized))
+        {
+            return normalized;
+        }
+
+        return NormalizeCommitHash(normalized);
     }
 
     private static string NormalizeTagName(string tagName)

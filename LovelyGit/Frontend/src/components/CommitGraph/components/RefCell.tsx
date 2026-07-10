@@ -17,6 +17,7 @@ export function RefCell({
 	branchRemoteName,
 	currentBranchName,
 	onBranchAction,
+	onCreateBranchFromTag,
 	onIntegrateBranch,
 	onTagAction,
 	remotePrefixes,
@@ -28,6 +29,7 @@ export function RefCell({
 	branchRemoteName: string | null;
 	currentBranchName: string | null;
 	onBranchAction: (action: BranchAction, branchName: string) => void;
+	onCreateBranchFromTag: (tagName: string, commitHash: string) => void;
 	onIntegrateBranch: (mode: BranchIntegrationMode, branchName: string) => void;
 	onTagAction: (action: TagAction, tagName: string) => void;
 	remotePrefixes: string[];
@@ -52,9 +54,11 @@ export function RefCell({
 					branchMutationBusy={branchMutationBusy}
 					branchRemoteName={branchRemoteName}
 					currentBranchName={currentBranchName}
+					commitHash={row.commit.hash}
 					group={group}
 					key={group.key}
 					onBranchAction={onBranchAction}
+					onCreateBranchFromTag={onCreateBranchFromTag}
 					onIntegrateBranch={onIntegrateBranch}
 					onTagAction={onTagAction}
 					remotePrefixes={remotePrefixes}
@@ -69,8 +73,10 @@ function RefGroupPill({
 	branchMutationBusy,
 	branchRemoteName,
 	currentBranchName,
+	commitHash,
 	group,
 	onBranchAction,
+	onCreateBranchFromTag,
 	onIntegrateBranch,
 	onTagAction,
 	remotePrefixes,
@@ -80,9 +86,11 @@ function RefGroupPill({
 	branchMutationBusy: boolean;
 	branchRemoteName: string | null;
 	currentBranchName: string | null;
+	commitHash: string;
 	group: RefGroup;
 	onIntegrateBranch: (mode: BranchIntegrationMode, branchName: string) => void;
 	onBranchAction: (action: BranchAction, branchName: string) => void;
+	onCreateBranchFromTag: (tagName: string, commitHash: string) => void;
 	onTagAction: (action: TagAction, tagName: string) => void;
 	remotePrefixes: string[];
 	tagMutationBusy: boolean;
@@ -120,9 +128,11 @@ function RefGroupPill({
 		</BranchContextMenu>
 	) : tag ? (
 		<TagContextMenu
+			commitHash={commitHash}
 			disabled={tagMutationBusy}
 			inline
 			onAction={onTagAction}
+			onCreateBranch={onCreateBranchFromTag}
 			remoteName={tagRemoteName}
 			tagName={tag.name}
 		>

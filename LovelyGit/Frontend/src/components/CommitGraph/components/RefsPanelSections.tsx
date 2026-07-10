@@ -12,6 +12,7 @@ export function RefSection({
 	branchRemoteName,
 	currentBranchName,
 	onBranchAction,
+	onCreateBranchFromTag,
 	onIntegrateBranch,
 	onSelectCommit,
 	onTagAction,
@@ -24,6 +25,7 @@ export function RefSection({
 	currentBranchName: string | null;
 	onIntegrateBranch: (mode: BranchIntegrationMode, branchName: string) => void;
 	onBranchAction: (action: BranchAction, branchName: string) => void;
+	onCreateBranchFromTag: (tagName: string, commitHash: string) => void;
 	onSelectCommit: (row: CommitGraphRow) => void;
 	onTagAction: (action: TagAction, tagName: string) => void;
 	section: RefPanelSection;
@@ -46,6 +48,7 @@ export function RefSection({
 						key={`${item.kind}:${item.name}:${item.commitHash}`}
 						onIntegrateBranch={onIntegrateBranch}
 						onBranchAction={onBranchAction}
+						onCreateBranchFromTag={onCreateBranchFromTag}
 						onSelectCommit={onSelectCommit}
 						onTagAction={onTagAction}
 						tagMutationBusy={tagMutationBusy}
@@ -63,6 +66,7 @@ export function RefPanelRow({
 	currentBranchName,
 	item,
 	onBranchAction,
+	onCreateBranchFromTag,
 	onIntegrateBranch,
 	onSelectCommit,
 	onTagAction,
@@ -75,6 +79,7 @@ export function RefPanelRow({
 	item: RefPanelItem;
 	onIntegrateBranch: (mode: BranchIntegrationMode, branchName: string) => void;
 	onBranchAction: (action: BranchAction, branchName: string) => void;
+	onCreateBranchFromTag: (tagName: string, commitHash: string) => void;
 	onSelectCommit: (row: CommitGraphRow) => void;
 	onTagAction: (action: TagAction, tagName: string) => void;
 	tagMutationBusy: boolean;
@@ -106,8 +111,10 @@ export function RefPanelRow({
 	if (item.kind !== "Local") {
 		return item.kind === "Tag" ? (
 			<TagContextMenu
+				commitHash={item.commitHash}
 				disabled={tagMutationBusy}
 				onAction={onTagAction}
+				onCreateBranch={onCreateBranchFromTag}
 				remoteName={tagRemoteName}
 				tagName={item.name}
 			>

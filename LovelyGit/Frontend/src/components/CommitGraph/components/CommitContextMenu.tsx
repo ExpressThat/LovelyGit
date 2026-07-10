@@ -1,5 +1,6 @@
 import {
 	ClipboardCopy,
+	GitBranch,
 	GitCommitHorizontal,
 	Info,
 	ListRestart,
@@ -26,6 +27,7 @@ export function CommitContextMenu({
 	isHead,
 	onCherryPick,
 	onCreateTag,
+	onCreateBranch,
 	onOpenDetails,
 	onRevert,
 	onReset,
@@ -36,6 +38,7 @@ export function CommitContextMenu({
 	isHead: boolean;
 	onCherryPick: (row: CommitGraphRow) => void;
 	onCreateTag: (row: CommitGraphRow) => void;
+	onCreateBranch: (row: CommitGraphRow) => void;
 	onOpenDetails: (row: CommitGraphRow) => void;
 	onRevert: (row: CommitGraphRow) => void;
 	onReset: (row: CommitGraphRow) => void;
@@ -73,6 +76,10 @@ export function CommitContextMenu({
 				<ContextMenuItem onClick={() => onCreateTag(row)}>
 					<Tag aria-hidden="true" />
 					Create tag at {abbreviatedHash}
+				</ContextMenuItem>
+				<ContextMenuItem onClick={() => onCreateBranch(row)}>
+					<GitBranch aria-hidden="true" />
+					Create branch at {abbreviatedHash}…
 				</ContextMenuItem>
 				<ContextMenuItem
 					disabled={currentBranchName === null}

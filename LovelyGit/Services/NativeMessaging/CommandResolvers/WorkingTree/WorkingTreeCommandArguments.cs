@@ -74,6 +74,7 @@ public record CreateBranchCommandArguments
     public Guid RepositoryId { get; set; }
     public string BranchName { get; set; } = string.Empty;
     public string? StartPoint { get; set; }
+    public bool Checkout { get; set; } = true;
 }
 
 [TypeSharp]

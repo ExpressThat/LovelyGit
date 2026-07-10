@@ -9,6 +9,7 @@ import { CommitRow } from "./components/CommitRow";
 import { RefsPanel } from "./components/RefsPanel";
 import { TagManagementDialogs } from "./components/TagManagementDialogs";
 import { ROW_HEIGHT } from "./constants";
+import { useBranchCreation } from "./hooks/useBranchCreation";
 import { useBranchMutations } from "./hooks/useBranchMutations";
 import { useCommitGraphData } from "./hooks/useCommitGraphData";
 import { useCommitGraphViewport } from "./hooks/useCommitGraphViewport";
@@ -69,6 +70,7 @@ export function CommitGraphView({
 		remoteName: tagRemoteName,
 		repositoryId,
 	});
+	const branchCreation = useBranchCreation();
 	const { busyTag, deleteTag, deleteTagName, pushTag, setDeleteTagName } =
 		useTagMutations({
 			onRepositoryChanged,
@@ -113,6 +115,7 @@ export function CommitGraphView({
 						branchRemoteName={tagRemoteName}
 						currentBranchName={currentBranchName}
 						onBranchAction={branchController.manageBranch}
+						onCreateBranchFromTag={branchCreation.createFromTag}
 						onIntegrateBranch={integrateBranch}
 						onSelectCommit={onSelectCommit}
 						onTagAction={manageTag}
@@ -169,6 +172,8 @@ export function CommitGraphView({
 											isHead={rows[item.index]?.commit.hash === currentHeadHash}
 											onCherryPick={setCherryPickCommit}
 											onBranchAction={branchController.manageBranch}
+											onCreateBranch={branchCreation.createAtCommit}
+											onCreateBranchFromTag={branchCreation.createFromTag}
 											onCreateTag={setTagCommit}
 											onIntegrateBranch={integrateBranch}
 											onRevert={setRevertCommit}
@@ -197,10 +202,14 @@ export function CommitGraphView({
 				</div>
 			</section>
 			<CommitGraphOperationDialogs
+				branchCreationSource={branchCreation.source}
+				branchNames={branchNames}
 				cherryPickCommit={cherryPickCommit}
 				currentBranchName={currentBranchName}
 				integrationTarget={integrationTarget}
 				onOpenWorkingChanges={onOpenWorkingChanges}
+				onBranchCreationClose={branchCreation.close}
+				onCurrentBranchNameChange={(name) => onCurrentBranchNameChange?.(name)}
 				onRepositoryChanged={onRepositoryChanged}
 				repositoryId={repositoryId}
 				repositoryRefs={repositoryRefs.refs}

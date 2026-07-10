@@ -26,6 +26,35 @@ public sealed class GitBranchCommandServiceTests
     }
 
     [Fact]
+    public async Task CreateBranchAsync_CreatesAtBranchWithoutSwitching()
+    {
+        using var repository = TemporaryGitRepository.Create();
+        var branchService = new GitBranchCommandService(repository.GitCliService);
+        var currentBranch = await repository.GitCliService.ExecuteBufferedAsync(
+            ["branch", "--show-current"],
+            repository.Path,
+            cancellationToken: CancellationToken.None);
+
+        await branchService.CreateBranchAsync(
+            repository.Path,
+            "feature/stay-here",
+            currentBranch.StandardOutput.Trim(),
+            CancellationToken.None);
+
+        var branchRef = await repository.GitCliService.ExecuteBufferedAsync(
+            ["show-ref", "--verify", "refs/heads/feature/stay-here"],
+            repository.Path,
+            cancellationToken: CancellationToken.None);
+        var branchAfter = await repository.GitCliService.ExecuteBufferedAsync(
+            ["branch", "--show-current"],
+            repository.Path,
+            cancellationToken: CancellationToken.None);
+
+        Assert.StartsWith(repository.HeadCommitHash, branchRef.StandardOutput);
+        Assert.Equal(currentBranch.StandardOutput.Trim(), branchAfter.StandardOutput.Trim());
+    }
+
+    [Fact]
     public async Task CreateBranchFromTagAsync_CreatesBranchAtTag()
     {
         using var repository = TemporaryGitRepository.Create();

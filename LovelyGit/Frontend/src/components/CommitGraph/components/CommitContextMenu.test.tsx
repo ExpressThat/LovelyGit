@@ -33,13 +33,26 @@ describe("CommitContextMenu", () => {
 			),
 		).toHaveAttribute("aria-disabled", "true");
 	});
+
+	it("creates a branch from the selected commit", async () => {
+		const user = userEvent.setup();
+		const onCreateBranch = vi.fn();
+		renderMenu({ onCreateBranch });
+		fireEvent.contextMenu(screen.getByRole("button", { name: "commit row" }));
+
+		await user.click(await screen.findByText("Create branch at 1111111…"));
+
+		expect(onCreateBranch).toHaveBeenCalledWith(row);
+	});
 });
 
 function renderMenu({
 	isHead = false,
+	onCreateBranch = vi.fn(),
 	onReset = vi.fn(),
 }: {
 	isHead?: boolean;
+	onCreateBranch?: (selected: CommitGraphRow) => void;
 	onReset?: (selected: CommitGraphRow) => void;
 }) {
 	return render(
@@ -47,6 +60,7 @@ function renderMenu({
 			currentBranchName="main"
 			isHead={isHead}
 			onCherryPick={vi.fn()}
+			onCreateBranch={onCreateBranch}
 			onCreateTag={vi.fn()}
 			onOpenDetails={vi.fn()}
 			onReset={onReset}

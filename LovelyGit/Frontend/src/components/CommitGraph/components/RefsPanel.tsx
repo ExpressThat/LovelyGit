@@ -17,6 +17,7 @@ export function RefsPanel({
 	currentBranchName,
 	onIntegrateBranch,
 	onBranchAction,
+	onCreateBranchFromTag,
 	onSelectCommit,
 	onTagAction,
 	remotePrefixes,
@@ -30,6 +31,7 @@ export function RefsPanel({
 	currentBranchName: string | null;
 	onIntegrateBranch: (mode: BranchIntegrationMode, branchName: string) => void;
 	onBranchAction: (action: BranchAction, branchName: string) => void;
+	onCreateBranchFromTag: (tagName: string, commitHash: string) => void;
 	onSelectCommit: (row: CommitGraphRow) => void;
 	onTagAction: (action: TagAction, tagName: string) => void;
 	remotePrefixes: string[];
@@ -136,6 +138,7 @@ export function RefsPanel({
 						currentBranchName={currentBranchName}
 						onIntegrateBranch={onIntegrateBranch}
 						onBranchAction={onBranchAction}
+						onCreateBranchFromTag={onCreateBranchFromTag}
 						onSelectCommit={onSelectCommit}
 						sections={filteredSections}
 						onTagAction={onTagAction}

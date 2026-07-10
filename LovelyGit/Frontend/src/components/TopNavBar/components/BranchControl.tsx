@@ -227,8 +227,10 @@ export function BranchControl({
 			</DropdownMenu>
 			<CreateBranchDialog
 				currentBranchName={currentBranchName}
+				existingBranchNames={branches.map((branch) => branch.name)}
 				onBranchChanged={onBranchChanged}
 				onOpenChange={setCreateOpen}
+				onRepositoryChanged={onRepositoryChanged}
 				open={createOpen}
 				repositoryId={repositoryId}
 			/>

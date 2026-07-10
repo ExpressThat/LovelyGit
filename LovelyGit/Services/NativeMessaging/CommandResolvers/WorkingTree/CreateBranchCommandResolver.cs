@@ -43,11 +43,22 @@ internal sealed class CreateBranchCommandResolver : CommandResponder<CreateBranc
 
         try
         {
-            await _branchCommands.CreateAsync(
-                foundRepo.Path,
-                arguments.BranchName,
-                arguments.StartPoint,
-                CancellationToken.None).ConfigureAwait(false);
+            if (arguments.Checkout)
+            {
+                await _branchCommands.CreateAsync(
+                    foundRepo.Path,
+                    arguments.BranchName,
+                    arguments.StartPoint,
+                    CancellationToken.None).ConfigureAwait(false);
+            }
+            else
+            {
+                await _branchCommands.CreateBranchAsync(
+                    foundRepo.Path,
+                    arguments.BranchName,
+                    arguments.StartPoint ?? "HEAD",
+                    CancellationToken.None).ConfigureAwait(false);
+            }
             return Success(command);
         }
         catch (Exception ex)

@@ -1,5 +1,9 @@
 import type { BranchIntegrationMode } from "@/components/TopNavBar/components/BranchIntegrationDialog";
 import { BranchIntegrationDialog } from "@/components/TopNavBar/components/BranchIntegrationDialog";
+import {
+	type BranchCreationSource,
+	CreateBranchDialog,
+} from "@/components/TopNavBar/components/CreateBranchDialog";
 import type { CommitGraphRow, RepositoryRefsResponse } from "@/generated/types";
 import { CherryPickDialog } from "./CherryPickDialog";
 import { ResetCommitDialog } from "./ResetCommitDialog";
@@ -12,9 +16,13 @@ type IntegrationTarget = {
 
 export function CommitGraphOperationDialogs({
 	cherryPickCommit,
+	branchCreationSource,
+	branchNames,
 	currentBranchName,
 	integrationTarget,
 	onOpenWorkingChanges,
+	onBranchCreationClose,
+	onCurrentBranchNameChange,
 	onRepositoryChanged,
 	repositoryId,
 	repositoryRefs,
@@ -26,9 +34,13 @@ export function CommitGraphOperationDialogs({
 	setRevertCommit,
 }: {
 	cherryPickCommit: CommitGraphRow | null;
+	branchCreationSource: BranchCreationSource | null;
+	branchNames: string[];
 	currentBranchName: string | null;
 	integrationTarget: IntegrationTarget;
 	onOpenWorkingChanges: () => void;
+	onBranchCreationClose: () => void;
+	onCurrentBranchNameChange: (branchName: string) => void;
 	onRepositoryChanged: () => void;
 	repositoryId: string | null;
 	repositoryRefs: RepositoryRefsResponse | null;
@@ -41,6 +53,19 @@ export function CommitGraphOperationDialogs({
 }) {
 	return (
 		<>
+			<CreateBranchDialog
+				currentBranchName={currentBranchName}
+				existingBranchNames={branchNames}
+				onBranchChanged={(branchName) => {
+					onCurrentBranchNameChange(branchName);
+					onRepositoryChanged();
+				}}
+				onOpenChange={(open) => !open && onBranchCreationClose()}
+				onRepositoryChanged={onRepositoryChanged}
+				open={branchCreationSource !== null}
+				repositoryId={repositoryId}
+				source={branchCreationSource ?? undefined}
+			/>
 			<BranchIntegrationDialog
 				branches={(repositoryRefs?.refs ?? []).filter(
 					(ref) => ref.kind === "Local",

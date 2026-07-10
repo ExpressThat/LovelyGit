@@ -18,6 +18,7 @@ export function RefsPanelList({
 	currentBranchName,
 	onIntegrateBranch,
 	onBranchAction,
+	onCreateBranchFromTag,
 	onTagAction,
 	sections,
 	tagMutationBusy,
@@ -28,6 +29,7 @@ export function RefsPanelList({
 	currentBranchName: string | null;
 	onIntegrateBranch: (mode: BranchIntegrationMode, branchName: string) => void;
 	onBranchAction: (action: BranchAction, branchName: string) => void;
+	onCreateBranchFromTag: (tagName: string, commitHash: string) => void;
 	onSelectCommit: (row: CommitGraphRow) => void;
 	onTagAction: (action: TagAction, tagName: string) => void;
 	sections: RefPanelSection[];
@@ -75,6 +77,7 @@ export function RefsPanelList({
 									item={row.item}
 									onIntegrateBranch={onIntegrateBranch}
 									onBranchAction={onBranchAction}
+									onCreateBranchFromTag={onCreateBranchFromTag}
 									onSelectCommit={onSelectCommit}
 									onTagAction={onTagAction}
 									tagMutationBusy={tagMutationBusy}

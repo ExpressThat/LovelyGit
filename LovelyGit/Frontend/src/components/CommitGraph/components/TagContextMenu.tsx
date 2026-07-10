@@ -1,4 +1,4 @@
-import { CloudUpload, Copy, Trash2 } from "lucide-react";
+import { CloudUpload, Copy, GitBranch, Trash2 } from "lucide-react";
 import type { ReactNode } from "react";
 import {
 	ContextMenu,
@@ -16,15 +16,19 @@ export type TagAction = "delete" | "push";
 export function TagContextMenu({
 	children,
 	disabled,
+	commitHash,
 	inline = false,
 	onAction,
+	onCreateBranch,
 	remoteName,
 	tagName,
 }: {
 	children: ReactNode;
 	disabled: boolean;
+	commitHash: string;
 	inline?: boolean;
 	onAction: (action: TagAction, tagName: string) => void;
+	onCreateBranch: (tagName: string, commitHash: string) => void;
 	remoteName: string | null;
 	tagName: string;
 }) {
@@ -49,6 +53,10 @@ export function TagContextMenu({
 				>
 					<Copy aria-hidden="true" />
 					Copy tag name
+				</ContextMenuItem>
+				<ContextMenuItem onClick={() => onCreateBranch(tagName, commitHash)}>
+					<GitBranch aria-hidden="true" />
+					Create branch from {tagName}…
 				</ContextMenuItem>
 				<ContextMenuItem
 					disabled={disabled || remoteName === null}
