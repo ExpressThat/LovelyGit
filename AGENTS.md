@@ -34,6 +34,8 @@
 - Use `accessibilitySnapshot` or `expectAccessible` when validating dialogs, context menus, custom controls, or regressions in keyboard/label behavior, and save the JSON under `artifacts/` when it is useful evidence.
 - Prefer assertions against visible app UI such as `COMMIT MESSAGE`, `HASH`, `AUTHOR`, repository tabs, details panels, and working-tree controls; the new-tab `Open Repo` button only appears when no current repository is selected.
 - Save screenshots/GIFs under `artifacts/` and inspect screenshots before reporting visual success. If the app shows `Missing file: index.html`, it was launched from the wrong working directory.
+- Never use the LovelyGit working repository, one of its real branches/worktrees, or another user repository as mutable test data. Do not switch branches, create test commits or branches, rebase, reset, merge, cherry-pick, stash, discard changes, or otherwise alter a real repository merely to exercise the UI.
+- Run destructive or history-rewriting CMG journeys only against a purpose-built disposable repository under `artifacts/` or the operating system's temporary directory. Seed it with isolated test commits, add/select it without replacing user data, verify the expected Git state directly, and remove it from LovelyGit and disk after the journey. Read-only visual checks may use a real repository only when they cannot change its Git or working-tree state.
 
 ## Project Shape
 - Single .NET solution: `LovelyGit.slnx` contains `LovelyGit/LovelyGit.csproj`, a `net10.0` Web SDK app with warnings treated as errors and AOT publishing enabled.
