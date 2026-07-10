@@ -190,7 +190,9 @@ function fallbackForFamily(family: string) {
 	if (
 		lower.includes("mono") ||
 		lower.includes("console") ||
-		lower.includes("code")
+		lower.includes("code") ||
+		lower.includes("consolas") ||
+		lower.includes("courier")
 	) {
 		return "monospace";
 	}

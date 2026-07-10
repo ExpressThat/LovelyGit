@@ -21,24 +21,21 @@ internal sealed partial class GitIgnoreMatcher
 
         public static GitIgnoreRule Create(string pattern, string baseDirectory, bool isNegation)
         {
-            pattern = NormalizePath(pattern);
+            pattern = pattern.Replace('\\', '/');
             var directoryOnly = pattern.EndsWith("/", StringComparison.Ordinal);
             pattern = pattern.TrimEnd('/');
-            var anchored = pattern.Contains('/', StringComparison.Ordinal);
-            if (pattern.StartsWith("/", StringComparison.Ordinal))
-            {
-                anchored = true;
-                pattern = pattern.TrimStart('/');
-            }
+            var anchored = pattern.StartsWith("/", StringComparison.Ordinal) ||
+                pattern.Contains('/', StringComparison.Ordinal);
+            pattern = pattern.TrimStart('/');
 
             var prefix = string.IsNullOrEmpty(baseDirectory)
                 ? string.Empty
                 : Regex.Escape(baseDirectory.Trim('/') + "/");
-            var regexPattern = anchored
-                ? "^" + prefix + ConvertGlob(pattern)
-                : "^(?:" + prefix + ")?(?:.*/)?" + ConvertGlob(pattern);
+            var regexPattern = anchored || prefix.Length > 0
+                ? "^" + prefix + (anchored ? string.Empty : "(?:.*/)?") + ConvertGlob(pattern)
+                : "^(?:.*/)?" + ConvertGlob(pattern);
 
-            regexPattern += directoryOnly ? "(?:/.*)?$" : "(?:/.*)?$";
+            regexPattern += "(?:/.*)?$";
             return new GitIgnoreRule(
                 new Regex(regexPattern, RegexOptions.CultureInvariant | RegexOptions.Compiled),
                 isNegation,

@@ -121,6 +121,7 @@
 - Do not hand-test a behavior in place of unit coverage when it can be automated. CMG real-app testing remains required for WebView2 integration, lazy overlays, motion, accessibility, and full user journeys, but it complements rather than replaces C# and frontend unit tests.
 - Do not delete, weaken, skip, or broadly mock a failing test merely to make the suite green. First determine whether it exposes a production regression or a stale contract; fix production when the behavior is valid, and rewrite the test only when the desired current behavior is explicitly preserved by the replacement assertion.
 - Coverage is a gap detector, not permission to write assertion-free tests. Cover success, validation, cancellation/error, and destructive-confirmation paths where they materially differ. Keep coverage reports under `artifacts/coverage/` and inspect uncovered first-party hot paths when planning the next tests.
+- Coverage thresholds are a ratchet, not a target. Never lower or remove the configured frontend or backend coverage gates to accommodate new code; add meaningful tests and raise the thresholds as coverage improves. A passing global percentage does not excuse leaving newly changed behavior uncovered.
 
 ## Release/Runtime Gotchas
 - Release CI requires Node 24, .NET 10.x and 8.x, restored .NET tools, frozen pnpm install, frontend `pnpm run prod`, then runtime-specific `dotnet publish` and Velopack packaging.

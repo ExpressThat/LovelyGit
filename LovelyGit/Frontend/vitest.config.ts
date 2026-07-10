@@ -22,6 +22,12 @@ export default defineConfig({
 			provider: "v8",
 			reporter: ["text", "json-summary", "html"],
 			reportsDirectory: "../../artifacts/coverage/frontend",
+			thresholds: {
+				branches: 23,
+				functions: 17,
+				lines: 25,
+				statements: 27,
+			},
 		},
 		environment: "node",
 		setupFiles: ["./src/test/setup.ts"],

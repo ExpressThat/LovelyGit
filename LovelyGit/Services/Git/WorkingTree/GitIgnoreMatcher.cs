@@ -56,7 +56,6 @@ internal sealed partial class GitIgnoreMatcher
     public bool IsIgnored(string relativePath, bool isDirectory)
     {
         relativePath = NormalizePath(relativePath).TrimStart('/');
-        var ignored = false;
         var parentIgnored = false;
         foreach (var parent in EnumerateParents(relativePath))
         {
@@ -66,6 +65,8 @@ internal sealed partial class GitIgnoreMatcher
                 break;
             }
         }
+
+        var ignored = parentIgnored;
 
         foreach (var rule in _rules)
         {
