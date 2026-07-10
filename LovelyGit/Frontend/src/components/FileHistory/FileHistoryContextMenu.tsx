@@ -40,11 +40,15 @@ export function FileHistoryContextMenu({
 						{path}
 					</ContextMenuLabel>
 				</ContextMenuGroup>
-				<ContextMenuItem onClick={onOpen}>
+				<ContextMenuItem aria-label="View file history" onClick={onOpen}>
 					<History aria-hidden="true" />
 					View file history…
 				</ContextMenuItem>
-				<ContextMenuItem disabled={!canBlame} onClick={onOpenBlame}>
+				<ContextMenuItem
+					aria-label={blameLabel.replace(/…$/, "")}
+					disabled={!canBlame}
+					onClick={onOpenBlame}
+				>
 					<FileSearch aria-hidden="true" />
 					{blameLabel}
 				</ContextMenuItem>

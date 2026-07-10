@@ -25,10 +25,10 @@ describe("FileHistoryContextMenu", () => {
 			target: screen.getByRole("button", { name: "src/file.ts" }),
 		});
 		expect(
-			await screen.findByRole("menuitem", { name: "View line blame…" }),
+			await screen.findByRole("menuitem", { name: "View line blame" }),
 		).toBeVisible();
 		await user.click(
-			await screen.findByRole("menuitem", { name: "View file history…" }),
+			await screen.findByRole("menuitem", { name: "View file history" }),
 		);
 
 		expect(onOpen).toHaveBeenCalledOnce();

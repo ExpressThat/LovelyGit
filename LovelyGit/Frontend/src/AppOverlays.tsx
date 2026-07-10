@@ -1,13 +1,24 @@
-import { CommitSearchDialog } from "./components/CommitSearch/CommitSearchDialog";
-import {
-	FileBlameDialog,
-	type FileBlameTarget,
-} from "./components/FileBlame/FileBlameDialog";
-import {
-	FileHistoryDialog,
-	type FileHistoryTarget,
-} from "./components/FileHistory/FileHistoryDialog";
+import { lazy, Suspense, useEffect, useState } from "react";
+import { SurfaceLoading } from "./AppLazySurfaces";
+import type { FileBlameTarget } from "./components/FileBlame/FileBlameDialog";
+import type { FileHistoryTarget } from "./components/FileHistory/FileHistoryDialog";
 import { Toaster } from "./components/ui/sonner";
+
+const CommitSearchDialog = lazy(() =>
+	import("./components/CommitSearch/CommitSearchDialog").then((module) => ({
+		default: module.CommitSearchDialog,
+	})),
+);
+const FileHistoryDialog = lazy(() =>
+	import("./components/FileHistory/FileHistoryDialog").then((module) => ({
+		default: module.FileHistoryDialog,
+	})),
+);
+const FileBlameDialog = lazy(() =>
+	import("./components/FileBlame/FileBlameDialog").then((module) => ({
+		default: module.FileBlameDialog,
+	})),
+);
 
 export function AppOverlays({
 	fileHistoryTarget,
@@ -28,27 +39,46 @@ export function AppOverlays({
 	onSelectCommit: (commitHash: string) => void;
 	repositoryId: string | null;
 }) {
+	const retainSearch = useRetainedSurface(isCommitSearchOpen);
+	const retainHistory = useRetainedSurface(fileHistoryTarget !== null);
+	const retainBlame = useRetainedSurface(fileBlameTarget !== null);
 	return (
 		<>
-			<CommitSearchDialog
-				onOpenChange={onSearchOpenChange}
-				onSelectCommit={onSelectCommit}
-				open={isCommitSearchOpen && Boolean(repositoryId)}
-				repositoryId={repositoryId}
-			/>
-			<FileHistoryDialog
-				onOpenChange={onFileHistoryOpenChange}
-				onSelectCommit={onSelectCommit}
-				repositoryId={repositoryId}
-				target={fileHistoryTarget}
-			/>
-			<FileBlameDialog
-				onOpenChange={onFileBlameOpenChange}
-				onSelectCommit={onSelectCommit}
-				repositoryId={repositoryId}
-				target={fileBlameTarget}
-			/>
+			<Suspense fallback={<SurfaceLoading label="Opening tool" overlay />}>
+				{retainSearch ? (
+					<CommitSearchDialog
+						onOpenChange={onSearchOpenChange}
+						onSelectCommit={onSelectCommit}
+						open={isCommitSearchOpen && Boolean(repositoryId)}
+						repositoryId={repositoryId}
+					/>
+				) : null}
+				{retainHistory ? (
+					<FileHistoryDialog
+						onOpenChange={onFileHistoryOpenChange}
+						onSelectCommit={onSelectCommit}
+						repositoryId={repositoryId}
+						target={fileHistoryTarget}
+					/>
+				) : null}
+				{retainBlame ? (
+					<FileBlameDialog
+						onOpenChange={onFileBlameOpenChange}
+						onSelectCommit={onSelectCommit}
+						repositoryId={repositoryId}
+						target={fileBlameTarget}
+					/>
+				) : null}
+			</Suspense>
 			<Toaster />
 		</>
 	);
+}
+
+function useRetainedSurface(active: boolean) {
+	const [retained, setRetained] = useState(active);
+	useEffect(() => {
+		if (active) setRetained(true);
+	}, [active]);
+	return retained;
 }

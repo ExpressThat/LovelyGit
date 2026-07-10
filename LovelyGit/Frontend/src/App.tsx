@@ -1,18 +1,15 @@
 import "./App.css";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useState } from "react";
+import * as LazySurfaces from "./AppLazySurfaces";
 import { AppOverlays } from "./AppOverlays";
 import { type DetailsPanelState, panelTitle } from "./AppPanelState";
-import { CommitDetails } from "./components/CommitDetails/CommitDetails";
-import { CommitFileDiffView } from "./components/CommitFileDiff/CommitFileDiffView";
 import { CommitGraphLayer } from "./components/CommitGraph/CommitGraphLayer";
 import { isCommitSearchShortcut } from "./components/CommitSearch/commitSearchShortcut";
 import { SlidingDetailsPanel } from "./components/DetailsPanel/SlidingDetailsPanel";
 import { NewTab } from "./components/NewTab/NewTab";
 import { TopNavBar } from "./components/TopNavBar/TopNavBar";
 import { useWorkingTreeChanges } from "./components/WorkingChanges/useWorkingTreeChanges";
-import { WorkingChangesPanel } from "./components/WorkingChanges/WorkingChangesPanel";
-import { WorkingTreeFileDiffView } from "./components/WorkingChanges/WorkingTreeFileDiffView";
 import type { CommitGraphRow } from "./generated/types";
 import { RepositoryProvider } from "./lib/repositoryContext";
 import { useApplyFont } from "./lib/settings/font/useApplyFont";
@@ -116,7 +113,7 @@ function App() {
 												ease: [0.22, 1, 0.36, 1],
 											}}
 										>
-											<CommitFileDiffView
+											<LazySurfaces.CommitFileDiffSurface
 												commitHash={detailsPanel.commitHash}
 												file={detailsPanel.selectedFile}
 												onClose={() =>
@@ -143,7 +140,7 @@ function App() {
 												ease: [0.22, 1, 0.36, 1],
 											}}
 										>
-											<WorkingTreeFileDiffView
+											<LazySurfaces.WorkingTreeDiffSurface
 												file={detailsPanel.selectedFile}
 												onChange={() => workingTreeChanges.reload()}
 												onClose={() =>
@@ -175,7 +172,7 @@ function App() {
 						title={panelTitle(detailsPanel)}
 					>
 						{detailsPanel?.kind === "commit" && currentGitRepositoryId ? (
-							<CommitDetails
+							<LazySurfaces.CommitDetailsSurface
 								commitHash={detailsPanel.commitHash}
 								onOpenFileBlame={(file) =>
 									fileDiscovery.openBlame(file.path, detailsPanel.commitHash)
@@ -196,7 +193,7 @@ function App() {
 						) : null}
 						{detailsPanel?.kind === "workingChanges" &&
 						currentGitRepositoryId ? (
-							<WorkingChangesPanel
+							<LazySurfaces.WorkingChangesSurface
 								changes={workingTreeChanges.changes}
 								error={
 									workingTreeChanges.status === "error"
