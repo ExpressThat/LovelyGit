@@ -4,18 +4,20 @@ import {
 	type BranchIntegrationMode,
 } from "@/components/TopNavBar/components/BranchIntegrationDialog";
 import type { CommitGraphRow as CommitGraphRowModel } from "@/generated/types";
+import { BranchManagementDialogs } from "./components/BranchManagementDialogs";
 import { CherryPickDialog } from "./components/CherryPickDialog";
 import { CommitGraphHeader } from "./components/CommitGraphHeader";
 import { CommitRow } from "./components/CommitRow";
-import { CreateTagDialog } from "./components/CreateTagDialog";
-import { DeleteTagDialog } from "./components/DeleteTagDialog";
 import { RefsPanel } from "./components/RefsPanel";
 import { RevertDialog } from "./components/RevertDialog";
+import { TagManagementDialogs } from "./components/TagManagementDialogs";
 import { ROW_HEIGHT } from "./constants";
+import { useBranchMutations } from "./hooks/useBranchMutations";
 import { useCommitGraphData } from "./hooks/useCommitGraphData";
 import { useCommitGraphViewport } from "./hooks/useCommitGraphViewport";
 import { useRepositoryRefs } from "./hooks/useRepositoryRefs";
 import { useTagMutations } from "./hooks/useTagMutations";
+import { refNames } from "./utils/refMetadata";
 
 export function CommitGraphView({
 	onCurrentBranchNameChange,
@@ -58,9 +60,15 @@ export function CommitGraphView({
 	const repositoryRefs = useRepositoryRefs(repositoryId, refreshToken);
 	const tagRemoteName =
 		repositoryRefs.refs?.remotePrefixes[0] ?? remotePrefixes[0] ?? null;
-	const existingTagNames = (repositoryRefs.refs?.refs ?? [])
-		.filter((ref) => ref.kind === "Tag")
-		.map((ref) => ref.name);
+	const existingTagNames = refNames(repositoryRefs.refs, "Tag");
+	const branchNames = refNames(repositoryRefs.refs, "Local");
+	const branchController = useBranchMutations({
+		currentBranchName,
+		onCurrentBranchNameChange: (name) => onCurrentBranchNameChange?.(name),
+		onRepositoryChanged,
+		remoteName: tagRemoteName,
+		repositoryId,
+	});
 	const { busyTag, deleteTag, deleteTagName, pushTag, setDeleteTagName } =
 		useTagMutations({
 			onRepositoryChanged,
@@ -101,7 +109,10 @@ export function CommitGraphView({
 			<section className="h-full w-full overflow-hidden bg-background">
 				<div className="flex h-full w-full min-w-0">
 					<RefsPanel
+						branchMutationBusy={branchController.busyBranch !== null}
+						branchRemoteName={tagRemoteName}
 						currentBranchName={currentBranchName}
+						onBranchAction={branchController.manageBranch}
 						onIntegrateBranch={integrateBranch}
 						onSelectCommit={onSelectCommit}
 						onTagAction={manageTag}
@@ -145,6 +156,8 @@ export function CommitGraphView({
 										}}
 									>
 										<CommitRow
+											branchMutationBusy={branchController.busyBranch !== null}
+											branchRemoteName={tagRemoteName}
 											graph={{
 												contentWidth: graphContentWidth,
 												scrollLeft: graphScrollLeft,
@@ -155,6 +168,7 @@ export function CommitGraphView({
 											}
 											isHead={rows[item.index]?.commit.hash === currentHeadHash}
 											onCherryPick={setCherryPickCommit}
+											onBranchAction={branchController.manageBranch}
 											onCreateTag={setTagCommit}
 											onIntegrateBranch={integrateBranch}
 											onRevert={setRevertCommit}
@@ -223,22 +237,21 @@ export function CommitGraphView({
 				onRepositoryChanged={onRepositoryChanged}
 				repositoryId={repositoryId}
 			/>
-			{tagCommit ? (
-				<CreateTagDialog
-					commit={tagCommit}
-					existingTagNames={existingTagNames}
-					key={tagCommit.commit.hash}
-					onOpenChange={setTagCommit}
-					onRepositoryChanged={onRepositoryChanged}
-					remoteName={tagRemoteName}
-					repositoryId={repositoryId}
-				/>
-			) : null}
-			<DeleteTagDialog
-				isBusy={busyTag !== null}
-				onConfirm={() => void deleteTag()}
-				onOpenChange={setDeleteTagName}
-				tagName={deleteTagName}
+			<BranchManagementDialogs
+				branchNames={branchNames}
+				controller={branchController}
+			/>
+			<TagManagementDialogs
+				busyTag={busyTag}
+				deleteTagName={deleteTagName}
+				existingTagNames={existingTagNames}
+				onCreateOpenChange={setTagCommit}
+				onDelete={() => void deleteTag()}
+				onDeleteOpenChange={setDeleteTagName}
+				onRepositoryChanged={onRepositoryChanged}
+				remoteName={tagRemoteName}
+				repositoryId={repositoryId}
+				tagCommit={tagCommit}
 			/>
 		</>
 	);

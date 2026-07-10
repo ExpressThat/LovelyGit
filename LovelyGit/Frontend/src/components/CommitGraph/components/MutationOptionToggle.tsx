@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 
-interface TagOptionToggleProps {
+interface MutationOptionToggleProps {
 	accessibleName: string;
 	checked: boolean;
 	children: ReactNode;
@@ -10,16 +10,14 @@ interface TagOptionToggleProps {
 	onCheckedChange: (checked: boolean) => void;
 }
 
-export function TagOptionToggle({
+export function MutationOptionToggle({
 	accessibleName,
 	checked,
 	children,
 	icon,
 	id,
 	onCheckedChange,
-}: TagOptionToggleProps) {
-	const toggle = () => onCheckedChange(!checked);
-
+}: MutationOptionToggleProps) {
 	return (
 		<div className="flex items-center gap-2 text-sm">
 			<Checkbox
@@ -28,7 +26,12 @@ export function TagOptionToggle({
 				onCheckedChange={onCheckedChange}
 			/>
 			{icon}
-			<button className="text-left" id={id} onClick={toggle} type="button">
+			<button
+				className="text-left"
+				id={id}
+				onClick={() => onCheckedChange(!checked)}
+				type="button"
+			>
 				{children}
 			</button>
 		</div>

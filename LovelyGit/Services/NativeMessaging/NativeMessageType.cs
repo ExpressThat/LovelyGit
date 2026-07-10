@@ -1,6 +1,7 @@
 using System.Text.Json.Serialization;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.CommitGraph;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.CherryPick;
+using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Branches;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.KnownRepository;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Merge;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Rebase;
@@ -80,10 +81,16 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging
         PullRepository,
         [NativeMessageContract(typeof(GitRemoteCommandArguments))]
         PushRepository,
-        [NativeMessageContract(typeof(CheckoutBranchCommandArguments))]
+        [NativeMessageContract(typeof(CheckoutBranchCommandArguments), typeof(EmptyCommandArguments))]
         CheckoutBranch,
-        [NativeMessageContract(typeof(CreateBranchCommandArguments))]
+        [NativeMessageContract(typeof(CreateBranchCommandArguments), typeof(EmptyCommandArguments))]
         CreateBranch,
+        [NativeMessageContract(typeof(RenameBranchCommandArguments), typeof(EmptyCommandArguments))]
+        RenameBranch,
+        [NativeMessageContract(typeof(DeleteBranchCommandArguments), typeof(EmptyCommandArguments))]
+        DeleteBranch,
+        [NativeMessageContract(typeof(PushBranchCommandArguments), typeof(EmptyCommandArguments))]
+        PushBranch,
         [NativeMessageContract(typeof(StashCommandArguments))]
         ManageStash,
         [NativeMessageContract(typeof(CreateTagAtCommitCommandArguments), typeof(EmptyCommandArguments))]

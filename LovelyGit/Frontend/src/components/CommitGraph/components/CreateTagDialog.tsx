@@ -17,7 +17,7 @@ import { sendRequestWithResponse } from "@/lib/commands";
 import { gitMutationTimeoutMs } from "@/lib/gitMutationTimeout";
 import { NativeMessageType } from "@/lib/nativeMessaging";
 import { shortHash } from "../utils/format";
-import { TagOptionToggle } from "./TagOptionToggle";
+import { MutationOptionToggle } from "./MutationOptionToggle";
 
 export function CreateTagDialog({
 	commit,
@@ -139,14 +139,14 @@ export function CreateTagDialog({
 								</p>
 							) : null}
 						</div>
-						<TagOptionToggle
+						<MutationOptionToggle
 							accessibleName="Annotated tag with a message"
 							checked={isAnnotated}
 							id="toggle-annotated-tag"
 							onCheckedChange={setIsAnnotated}
 						>
 							Annotated tag with a message
-						</TagOptionToggle>
+						</MutationOptionToggle>
 						<AnimatePresence initial={false}>
 							{isAnnotated ? (
 								<motion.div
@@ -186,7 +186,7 @@ export function CreateTagDialog({
 							) : null}
 						</AnimatePresence>
 						{remoteName ? (
-							<TagOptionToggle
+							<MutationOptionToggle
 								accessibleName={`Push to ${remoteName} after creating`}
 								checked={pushAfterCreate}
 								icon={
@@ -199,7 +199,7 @@ export function CreateTagDialog({
 								onCheckedChange={setPushAfterCreate}
 							>
 								Push to {remoteName} after creating
-							</TagOptionToggle>
+							</MutationOptionToggle>
 						) : null}
 					</div>
 					<DialogFooter className="mx-0 mb-0 px-0 pb-0">

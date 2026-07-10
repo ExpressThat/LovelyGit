@@ -1,6 +1,6 @@
 import type { BranchIntegrationMode } from "@/components/TopNavBar/components/BranchIntegrationDialog";
 import type { CommitGraphRow } from "@/generated/types";
-import { BranchContextMenu } from "./BranchContextMenu";
+import { type BranchAction, BranchContextMenu } from "./BranchContextMenu";
 import {
 	buildLegacyRefs,
 	groupRefs,
@@ -13,7 +13,10 @@ import {
 import { type TagAction, TagContextMenu } from "./TagContextMenu";
 
 export function RefCell({
+	branchMutationBusy,
+	branchRemoteName,
 	currentBranchName,
+	onBranchAction,
 	onIntegrateBranch,
 	onTagAction,
 	remotePrefixes,
@@ -21,7 +24,10 @@ export function RefCell({
 	tagMutationBusy,
 	tagRemoteName,
 }: {
+	branchMutationBusy: boolean;
+	branchRemoteName: string | null;
 	currentBranchName: string | null;
+	onBranchAction: (action: BranchAction, branchName: string) => void;
 	onIntegrateBranch: (mode: BranchIntegrationMode, branchName: string) => void;
 	onTagAction: (action: TagAction, tagName: string) => void;
 	remotePrefixes: string[];
@@ -43,9 +49,12 @@ export function RefCell({
 		<div className="flex min-w-0 gap-1 overflow-hidden">
 			{groups.map((group) => (
 				<RefGroupPill
+					branchMutationBusy={branchMutationBusy}
+					branchRemoteName={branchRemoteName}
 					currentBranchName={currentBranchName}
 					group={group}
 					key={group.key}
+					onBranchAction={onBranchAction}
 					onIntegrateBranch={onIntegrateBranch}
 					onTagAction={onTagAction}
 					remotePrefixes={remotePrefixes}
@@ -57,17 +66,23 @@ export function RefCell({
 	);
 }
 function RefGroupPill({
+	branchMutationBusy,
+	branchRemoteName,
 	currentBranchName,
 	group,
+	onBranchAction,
 	onIntegrateBranch,
 	onTagAction,
 	remotePrefixes,
 	tagMutationBusy,
 	tagRemoteName,
 }: {
+	branchMutationBusy: boolean;
+	branchRemoteName: string | null;
 	currentBranchName: string | null;
 	group: RefGroup;
 	onIntegrateBranch: (mode: BranchIntegrationMode, branchName: string) => void;
+	onBranchAction: (action: BranchAction, branchName: string) => void;
 	onTagAction: (action: TagAction, tagName: string) => void;
 	remotePrefixes: string[];
 	tagMutationBusy: boolean;
@@ -95,8 +110,11 @@ function RefGroupPill({
 		<BranchContextMenu
 			branchName={localBranch.name}
 			currentBranchName={currentBranchName}
+			disabled={branchMutationBusy}
 			inline
+			onAction={onBranchAction}
 			onIntegrateBranch={onIntegrateBranch}
+			remoteName={branchRemoteName}
 		>
 			{pill}
 		</BranchContextMenu>

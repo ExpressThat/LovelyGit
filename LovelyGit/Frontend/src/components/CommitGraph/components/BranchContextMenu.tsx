@@ -1,4 +1,11 @@
-import { GitMerge, ListRestart } from "lucide-react";
+import {
+	CloudUpload,
+	GitBranch,
+	GitMerge,
+	ListRestart,
+	Pencil,
+	Trash2,
+} from "lucide-react";
 import type { ReactNode } from "react";
 import type { BranchIntegrationMode } from "@/components/TopNavBar/components/BranchIntegrationDialog";
 import {
@@ -15,17 +22,24 @@ export function BranchContextMenu({
 	branchName,
 	children,
 	currentBranchName,
+	disabled,
 	inline = false,
+	onAction,
 	onIntegrateBranch,
+	remoteName,
 }: {
 	branchName: string;
 	children: ReactNode;
 	currentBranchName: string | null;
+	disabled: boolean;
 	inline?: boolean;
+	onAction: (action: BranchAction, branchName: string) => void;
 	onIntegrateBranch: (mode: BranchIntegrationMode, branchName: string) => void;
+	remoteName: string | null;
 }) {
 	const canIntegrate =
-		currentBranchName !== null && branchName !== currentBranchName;
+		!disabled && currentBranchName !== null && branchName !== currentBranchName;
+	const isCurrent = branchName === currentBranchName;
 	return (
 		<ContextMenu>
 			<ContextMenuTrigger
@@ -41,6 +55,21 @@ export function BranchContextMenu({
 						{branchName}
 					</ContextMenuLabel>
 				</ContextMenuGroup>
+				<ContextMenuSeparator />
+				<ContextMenuItem
+					disabled={disabled || isCurrent}
+					onClick={() => onAction("checkout", branchName)}
+				>
+					<GitBranch aria-hidden="true" />
+					Switch to {branchName}
+				</ContextMenuItem>
+				<ContextMenuItem
+					disabled={disabled || remoteName === null}
+					onClick={() => onAction("push", branchName)}
+				>
+					<CloudUpload aria-hidden="true" />
+					Push to {remoteName ?? "remote"}
+				</ContextMenuItem>
 				<ContextMenuSeparator />
 				<ContextMenuItem
 					disabled={!canIntegrate}
@@ -60,7 +89,25 @@ export function BranchContextMenu({
 						Rebase {currentBranchName ?? "current branch"} onto {branchName}
 					</span>
 				</ContextMenuItem>
+				<ContextMenuSeparator />
+				<ContextMenuItem
+					disabled={disabled}
+					onClick={() => onAction("rename", branchName)}
+				>
+					<Pencil aria-hidden="true" />
+					Rename branch…
+				</ContextMenuItem>
+				<ContextMenuItem
+					className="text-destructive focus:bg-destructive/10 focus:text-destructive"
+					disabled={disabled || isCurrent}
+					onClick={() => onAction("delete", branchName)}
+				>
+					<Trash2 aria-hidden="true" />
+					Delete local branch…
+				</ContextMenuItem>
 			</ContextMenuContent>
 		</ContextMenu>
 	);
 }
+
+export type BranchAction = "checkout" | "delete" | "push" | "rename";

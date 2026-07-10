@@ -5,14 +5,18 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { CommitGraphRow, RepositoryRefsResponse } from "@/generated/types";
 import { setSetting, useSetting } from "@/lib/settings/settingsStore";
+import type { BranchAction } from "./BranchContextMenu";
 import { buildRefPanelSections, filterRefPanelSections } from "./RefsPanelData";
 import { RefsPanelList } from "./RefsPanelList";
 import type { TagAction } from "./TagContextMenu";
 import { filterWorktrees, WorktreeSection } from "./WorktreeSection";
 
 export function RefsPanel({
+	branchMutationBusy,
+	branchRemoteName,
 	currentBranchName,
 	onIntegrateBranch,
+	onBranchAction,
 	onSelectCommit,
 	onTagAction,
 	remotePrefixes,
@@ -21,8 +25,11 @@ export function RefsPanel({
 	tagMutationBusy,
 	tagRemoteName,
 }: {
+	branchMutationBusy: boolean;
+	branchRemoteName: string | null;
 	currentBranchName: string | null;
 	onIntegrateBranch: (mode: BranchIntegrationMode, branchName: string) => void;
+	onBranchAction: (action: BranchAction, branchName: string) => void;
 	onSelectCommit: (row: CommitGraphRow) => void;
 	onTagAction: (action: TagAction, tagName: string) => void;
 	remotePrefixes: string[];
@@ -124,8 +131,11 @@ export function RefsPanel({
 						/>
 					</div>
 					<RefsPanelList
+						branchMutationBusy={branchMutationBusy}
+						branchRemoteName={branchRemoteName}
 						currentBranchName={currentBranchName}
 						onIntegrateBranch={onIntegrateBranch}
+						onBranchAction={onBranchAction}
 						onSelectCommit={onSelectCommit}
 						sections={filteredSections}
 						onTagAction={onTagAction}

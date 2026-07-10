@@ -2,13 +2,16 @@ import type { BranchIntegrationMode } from "@/components/TopNavBar/components/Br
 import { Button } from "@/components/ui/button";
 import type { CommitGraphRow } from "@/generated/types";
 import { shortHash } from "../utils/format";
-import { BranchContextMenu } from "./BranchContextMenu";
+import { type BranchAction, BranchContextMenu } from "./BranchContextMenu";
 import { RefIcon } from "./RefCellUtils";
 import type { RefPanelItem, RefPanelSection } from "./RefsPanelData";
 import { type TagAction, TagContextMenu } from "./TagContextMenu";
 
 export function RefSection({
+	branchMutationBusy,
+	branchRemoteName,
 	currentBranchName,
+	onBranchAction,
 	onIntegrateBranch,
 	onSelectCommit,
 	onTagAction,
@@ -16,8 +19,11 @@ export function RefSection({
 	tagMutationBusy,
 	tagRemoteName,
 }: {
+	branchMutationBusy: boolean;
+	branchRemoteName: string | null;
 	currentBranchName: string | null;
 	onIntegrateBranch: (mode: BranchIntegrationMode, branchName: string) => void;
+	onBranchAction: (action: BranchAction, branchName: string) => void;
 	onSelectCommit: (row: CommitGraphRow) => void;
 	onTagAction: (action: TagAction, tagName: string) => void;
 	section: RefPanelSection;
@@ -33,10 +39,13 @@ export function RefSection({
 			<div className="grid gap-1">
 				{section.items.map((item) => (
 					<RefPanelRow
+						branchMutationBusy={branchMutationBusy}
+						branchRemoteName={branchRemoteName}
 						currentBranchName={currentBranchName}
 						item={item}
 						key={`${item.kind}:${item.name}:${item.commitHash}`}
 						onIntegrateBranch={onIntegrateBranch}
+						onBranchAction={onBranchAction}
 						onSelectCommit={onSelectCommit}
 						onTagAction={onTagAction}
 						tagMutationBusy={tagMutationBusy}
@@ -49,17 +58,23 @@ export function RefSection({
 }
 
 export function RefPanelRow({
+	branchMutationBusy,
+	branchRemoteName,
 	currentBranchName,
 	item,
+	onBranchAction,
 	onIntegrateBranch,
 	onSelectCommit,
 	onTagAction,
 	tagMutationBusy,
 	tagRemoteName,
 }: {
+	branchMutationBusy: boolean;
+	branchRemoteName: string | null;
 	currentBranchName: string | null;
 	item: RefPanelItem;
 	onIntegrateBranch: (mode: BranchIntegrationMode, branchName: string) => void;
+	onBranchAction: (action: BranchAction, branchName: string) => void;
 	onSelectCommit: (row: CommitGraphRow) => void;
 	onTagAction: (action: TagAction, tagName: string) => void;
 	tagMutationBusy: boolean;
@@ -107,7 +122,10 @@ export function RefPanelRow({
 		<BranchContextMenu
 			branchName={item.name}
 			currentBranchName={currentBranchName}
+			disabled={branchMutationBusy}
+			onAction={onBranchAction}
 			onIntegrateBranch={onIntegrateBranch}
+			remoteName={branchRemoteName}
 		>
 			{branchButton}
 		</BranchContextMenu>

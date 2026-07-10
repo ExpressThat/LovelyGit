@@ -1,3 +1,4 @@
+using ExpressThat.LovelyGit.Services.Git.Branches;
 using ExpressThat.LovelyGit.Services.Git.Tags;
 
 namespace ExpressThat.LovelyGit.Services.Git.Cli;

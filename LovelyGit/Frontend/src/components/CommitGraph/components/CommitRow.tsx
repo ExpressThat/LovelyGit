@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import type { BranchIntegrationMode } from "@/components/TopNavBar/components/BranchIntegrationDialog";
 import type { CommitGraphRow } from "@/generated/types";
 import { AuthorCell } from "./AuthorCell";
+import type { BranchAction } from "./BranchContextMenu";
 import { CommitContextMenu } from "./CommitContextMenu";
 import { CommitMessage } from "./CommitMessage";
 import { GraphCell } from "./GraphCell";
@@ -12,11 +13,14 @@ import { SkeletonShimmer } from "./SkeletonShimmer";
 import type { TagAction } from "./TagContextMenu";
 
 export function CommitRow({
+	branchMutationBusy,
+	branchRemoteName,
 	currentBranchName,
 	graph,
 	isSelected,
 	isHead,
 	onCherryPick,
+	onBranchAction,
 	onCreateTag,
 	onIntegrateBranch,
 	onRevert,
@@ -29,6 +33,8 @@ export function CommitRow({
 	tagRemoteName,
 	templateColumns,
 }: {
+	branchMutationBusy: boolean;
+	branchRemoteName: string | null;
 	currentBranchName: string | null;
 	graph: {
 		contentWidth: number;
@@ -39,6 +45,7 @@ export function CommitRow({
 	onIntegrateBranch: (mode: BranchIntegrationMode, branchName: string) => void;
 	onRevert: (row: CommitGraphRow) => void;
 	onCherryPick: (row: CommitGraphRow) => void;
+	onBranchAction: (action: BranchAction, branchName: string) => void;
 	onCreateTag: (row: CommitGraphRow) => void;
 	onSelect: (row: CommitGraphRow) => void;
 	onTagAction: (action: TagAction, tagName: string) => void;
@@ -89,7 +96,10 @@ export function CommitRow({
 		>
 			<Column className="px-[6px] py-[2px]">
 				<RefCell
+					branchMutationBusy={branchMutationBusy}
+					branchRemoteName={branchRemoteName}
 					currentBranchName={currentBranchName}
+					onBranchAction={onBranchAction}
 					onIntegrateBranch={onIntegrateBranch}
 					onTagAction={onTagAction}
 					remotePrefixes={remotePrefixes}

@@ -1,12 +1,13 @@
 using ExpressThat.LovelyGit.Services.Git.WorkingTree;
+using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Branches;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.CherryPick;
-using ExpressThat.LovelyGit.Services.NativeMessaging.Commands;
-using ExpressThat.LovelyGit.Services.Json;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Merge;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Rebase;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.RepositoryOperations;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Revert;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Tags;
+using ExpressThat.LovelyGit.Services.NativeMessaging.Commands;
+using ExpressThat.LovelyGit.Services.Json;
 
 namespace ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.WorkingTree;
 
@@ -15,6 +16,7 @@ internal static class WorkingTreeServiceCollectionExtensions
     public static IServiceCollection AddWorkingTreeCommands(this IServiceCollection services)
     {
         services.AddLovelyGitJsonTypeInfoResolver(WorkingTreeJsonSerializerContext.Default);
+        services.AddLovelyGitJsonTypeInfoResolver(BranchesJsonSerializerContext.Default);
         services.AddLovelyGitJsonTypeInfoResolver(CherryPickJsonSerializerContext.Default);
         services.AddLovelyGitJsonTypeInfoResolver(MergeJsonSerializerContext.Default);
         services.AddLovelyGitJsonTypeInfoResolver(RebaseJsonSerializerContext.Default);
@@ -43,6 +45,9 @@ internal static class WorkingTreeServiceCollectionExtensions
         services.AddSingleton<ICommandResponder, PushRepositoryCommandResolver>();
         services.AddSingleton<ICommandResponder, CheckoutBranchCommandResolver>();
         services.AddSingleton<ICommandResponder, CreateBranchCommandResolver>();
+        services.AddSingleton<ICommandResponder, RenameBranchCommandResolver>();
+        services.AddSingleton<ICommandResponder, DeleteBranchCommandResolver>();
+        services.AddSingleton<ICommandResponder, PushBranchCommandResolver>();
         services.AddSingleton<ICommandResponder, StashCommandResolver>();
         services.AddSingleton<ICommandResponder, CherryPickCommitCommandResolver>();
         services.AddSingleton<ICommandResponder, MergeBranchIntoCurrentCommandResolver>();

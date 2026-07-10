@@ -2,6 +2,7 @@ import { useVirtualizer } from "@tanstack/react-virtual";
 import { useMemo, useRef } from "react";
 import type { BranchIntegrationMode } from "@/components/TopNavBar/components/BranchIntegrationDialog";
 import type { CommitGraphRow } from "@/generated/types";
+import type { BranchAction } from "./BranchContextMenu";
 import type { RefPanelItem, RefPanelSection } from "./RefsPanelData";
 import { RefPanelRow } from "./RefsPanelSections";
 import type { TagAction } from "./TagContextMenu";
@@ -11,16 +12,22 @@ type RefListRow =
 	| { id: string; item: RefPanelItem; type: "item" };
 
 export function RefsPanelList({
+	branchMutationBusy,
+	branchRemoteName,
 	onSelectCommit,
 	currentBranchName,
 	onIntegrateBranch,
+	onBranchAction,
 	onTagAction,
 	sections,
 	tagMutationBusy,
 	tagRemoteName,
 }: {
+	branchMutationBusy: boolean;
+	branchRemoteName: string | null;
 	currentBranchName: string | null;
 	onIntegrateBranch: (mode: BranchIntegrationMode, branchName: string) => void;
+	onBranchAction: (action: BranchAction, branchName: string) => void;
 	onSelectCommit: (row: CommitGraphRow) => void;
 	onTagAction: (action: TagAction, tagName: string) => void;
 	sections: RefPanelSection[];
@@ -62,9 +69,12 @@ export function RefsPanelList({
 								<RefHeader section={row.section} />
 							) : (
 								<RefPanelRow
+									branchMutationBusy={branchMutationBusy}
+									branchRemoteName={branchRemoteName}
 									currentBranchName={currentBranchName}
 									item={row.item}
 									onIntegrateBranch={onIntegrateBranch}
+									onBranchAction={onBranchAction}
 									onSelectCommit={onSelectCommit}
 									onTagAction={onTagAction}
 									tagMutationBusy={tagMutationBusy}
