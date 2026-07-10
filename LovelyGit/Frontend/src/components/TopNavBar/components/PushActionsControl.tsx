@@ -8,6 +8,7 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import type { GitPushMode } from "@/generated/types";
+import { SyncCountBadge, syncActionLabel } from "./SyncCountBadge";
 
 const LazyForcePushDialog = lazy(() =>
 	import("./ForcePushDialog").then((module) => ({
@@ -19,12 +20,16 @@ export function PushActionsControl({
 	canRun,
 	currentBranchName,
 	isBusy,
+	isHistoryPartial,
 	onPush,
+	outgoingCount,
 }: {
 	canRun: boolean;
 	currentBranchName: string | null;
 	isBusy: boolean;
+	isHistoryPartial: boolean;
 	onPush: (mode: GitPushMode) => Promise<boolean>;
+	outgoingCount: number;
 }) {
 	const [menuOpen, setMenuOpen] = useState(false);
 	const [forcePushOpen, setForcePushOpen] = useState(false);
@@ -32,12 +37,22 @@ export function PushActionsControl({
 		<>
 			<div className="inline-flex h-9 overflow-hidden rounded-md border bg-background">
 				<Button
-					aria-label="Push"
+					aria-label={syncActionLabel(
+						"Push",
+						outgoingCount,
+						"outgoing",
+						isHistoryPartial,
+					)}
 					className="h-full rounded-none border-0 px-3"
 					disabled={!canRun}
 					onClick={() => void onPush("Normal")}
 					size="sm"
-					title="Push"
+					title={syncActionLabel(
+						"Push",
+						outgoingCount,
+						"outgoing",
+						isHistoryPartial,
+					)}
 					type="button"
 					variant="ghost"
 				>
@@ -46,6 +61,11 @@ export function PushActionsControl({
 						className={`size-6 ${isBusy ? "animate-pulse" : ""}`}
 					/>
 					<span>Push</span>
+					<SyncCountBadge
+						count={outgoingCount}
+						direction="outgoing"
+						isPartial={isHistoryPartial}
+					/>
 				</Button>
 				<DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
 					<DropdownMenuTrigger

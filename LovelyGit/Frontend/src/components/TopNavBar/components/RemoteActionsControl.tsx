@@ -23,6 +23,8 @@ import {
 } from "./RemoteActions";
 import { RemoteDefaultRow } from "./RemoteDefaultRow";
 import { RemoteManagerDialog } from "./RemoteManagerDialog";
+import { SyncCountBadge, syncActionLabel } from "./SyncCountBadge";
+import { useRemoteSyncStatus } from "./useRemoteSyncStatus";
 
 export function RemoteActionsControl({
 	currentBranchName,
@@ -36,6 +38,7 @@ export function RemoteActionsControl({
 	);
 	const [open, setOpen] = useState(false);
 	const [managerOpen, setManagerOpen] = useState(false);
+	const sync = useRemoteSyncStatus(repositoryId, currentBranchName);
 	const primaryAction = normalizePrimaryAction(
 		useSetting("RemotePrimaryAction"),
 	);
@@ -76,6 +79,7 @@ export function RemoteActionsControl({
 				},
 			);
 			toast.success(`${action.label} complete`, { id: toastId });
+			void sync.reload();
 			return true;
 		} catch (error) {
 			toast.error(
@@ -94,12 +98,22 @@ export function RemoteActionsControl({
 		<div className="inline-flex items-center gap-1">
 			<div className="inline-flex h-9 overflow-hidden rounded-md border bg-background">
 				<Button
-					aria-label={primaryIconTitle(primary)}
+					aria-label={syncActionLabel(
+						primaryIconTitle(primary),
+						sync.status?.behindCount ?? 0,
+						"incoming",
+						sync.status?.isHistoryPartial,
+					)}
 					className="h-full min-w-28 rounded-none border-0 px-3"
 					disabled={!canRunRemoteAction}
 					onClick={() => void runAction(primary)}
 					size="sm"
-					title={primaryIconTitle(primary)}
+					title={syncActionLabel(
+						primaryIconTitle(primary),
+						sync.status?.behindCount ?? 0,
+						"incoming",
+						sync.status?.isHistoryPartial,
+					)}
 					type="button"
 					variant="ghost"
 				>
@@ -108,6 +122,11 @@ export function RemoteActionsControl({
 						className={`size-6 ${busyAction === primary.value ? "animate-pulse" : ""}`}
 					/>
 					<span>{primary.toolbarLabel}</span>
+					<SyncCountBadge
+						count={sync.status?.behindCount ?? 0}
+						direction="incoming"
+						isPartial={sync.status?.isHistoryPartial}
+					/>
 				</Button>
 				<DropdownMenu open={open} onOpenChange={setOpen}>
 					<DropdownMenuTrigger
@@ -150,7 +169,9 @@ export function RemoteActionsControl({
 				canRun={canRunRemoteAction}
 				currentBranchName={currentBranchName}
 				isBusy={busyAction === "Push"}
+				isHistoryPartial={sync.status?.isHistoryPartial ?? false}
 				onPush={(mode) => runAction(pushRemoteAction, mode)}
+				outgoingCount={sync.status?.aheadCount ?? 0}
 			/>
 			<Button
 				aria-label="Manage remotes"

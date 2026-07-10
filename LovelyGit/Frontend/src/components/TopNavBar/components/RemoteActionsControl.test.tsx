@@ -11,6 +11,14 @@ const toast = vi.hoisted(() => ({
 	loading: vi.fn(() => "toast-1"),
 	success: vi.fn(),
 }));
+const sync = vi.hoisted(() => ({
+	reload: vi.fn(async () => undefined),
+	status: null as null | {
+		aheadCount: number;
+		behindCount: number;
+		isHistoryPartial: boolean;
+	},
+}));
 
 vi.mock("sonner", () => ({ toast }));
 vi.mock("@/lib/commands", () => ({ sendRequestWithResponse: vi.fn() }));
@@ -18,6 +26,7 @@ vi.mock("@/lib/settings/settingsStore", () => ({
 	setSetting: vi.fn(),
 	useSetting: () => "Fetch",
 }));
+vi.mock("./useRemoteSyncStatus", () => ({ useRemoteSyncStatus: () => sync }));
 
 const send = vi.mocked(sendRequestWithResponse);
 
@@ -27,6 +36,8 @@ describe("RemoteActionsControl", () => {
 		toast.error.mockReset();
 		toast.loading.mockClear();
 		toast.success.mockReset();
+		sync.reload.mockClear();
+		sync.status = null;
 	});
 
 	it("keeps normal push one click and disables remote controls while busy", async () => {
@@ -64,6 +75,7 @@ describe("RemoteActionsControl", () => {
 		expect(toast.success).toHaveBeenCalledWith("Push complete", {
 			id: "toast-1",
 		});
+		expect(sync.reload).toHaveBeenCalledOnce();
 	});
 
 	it("confirms force-with-lease, keeps the dialog retryable on failure, then closes", async () => {
@@ -133,6 +145,22 @@ describe("RemoteActionsControl", () => {
 		expect(
 			screen.getByRole("button", { name: "More push actions" }),
 		).toBeDisabled();
+	});
+
+	it("adds accessible animated incoming and outgoing counts", () => {
+		sync.status = { aheadCount: 2, behindCount: 1, isHistoryPartial: false };
+		render(
+			<RemoteActionsControl currentBranchName="main" repositoryId="repo-1" />,
+		);
+
+		expect(
+			screen.getByRole("button", { name: "Fetch all, 1 incoming commit" }),
+		).toBeEnabled();
+		expect(
+			screen.getByRole("button", { name: "Push, 2 outgoing commits" }),
+		).toBeEnabled();
+		expect(screen.getByText("1")).toBeInTheDocument();
+		expect(screen.getByText("2")).toBeInTheDocument();
 	});
 });
 

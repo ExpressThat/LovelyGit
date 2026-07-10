@@ -7,6 +7,7 @@ using ExpressThat.LovelyGit.Services.NativeMessaging.Commands;
 using ExpressThat.LovelyGit.Services.Data.Models;
 using ExpressThat.LovelyGit.Services.Git.Patches;
 using ExpressThat.LovelyGit.Services.Git.Submodules;
+using ExpressThat.LovelyGit.Services.Git.RemoteSync;
 
 namespace ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.WorkingTree;
 
@@ -42,6 +43,8 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Workin
 [JsonSerializable(typeof(WorktreeMutationAction))]
 [JsonSerializable(typeof(WorktreeDestinationResponse))]
 [JsonSerializable(typeof(GitRemoteCommandArguments))]
+[JsonSerializable(typeof(GetRemoteSyncStatusCommandArguments))]
+[JsonSerializable(typeof(RemoteSyncStatusResponse))]
 [JsonSerializable(typeof(GitPushMode))]
 [JsonSerializable(typeof(GetRemotesCommandArguments))]
 [JsonSerializable(typeof(ManageRemoteCommandArguments))]
@@ -71,6 +74,7 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Workin
 [JsonSerializable(typeof(CommandResponse<GitIgnoreResult>))]
 [JsonSerializable(typeof(CommandResponse<HeadCommitMessageResponse>))]
 [JsonSerializable(typeof(CommandResponse<List<GitRemote>>))]
+[JsonSerializable(typeof(CommandResponse<RemoteSyncStatusResponse>))]
 [JsonSerializable(typeof(CommandResponse<WorktreeDestinationResponse>))]
 [JsonSerializable(typeof(CommandResponse<KnownGitRepository>))]
 [JsonSerializable(typeof(CommandResponse<PatchPreviewResponse>))]

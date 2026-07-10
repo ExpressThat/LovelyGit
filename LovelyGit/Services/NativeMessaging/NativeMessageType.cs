@@ -29,6 +29,7 @@ using ExpressThat.LovelyGit.Services.Git.Patches;
 using ExpressThat.LovelyGit.Services.Git.Submodules;
 using ExpressThat.LovelyGit.Services.Git.Bisect;
 using ExpressThat.LovelyGit.Services.Git.Configuration;
+using ExpressThat.LovelyGit.Services.Git.RemoteSync;
 using System.Text.Json;
 
 namespace ExpressThat.LovelyGit.Services.NativeMessaging
@@ -101,6 +102,8 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging
         GetWorkingTreeChanges,
         [NativeMessageContract(typeof(GetWorkingTreeFileDiffArguments), typeof(CommitFileDiffResponse))]
         GetWorkingTreeFileDiff,
+        [NativeMessageContract(typeof(GetRemoteSyncStatusCommandArguments), typeof(RemoteSyncStatusResponse))]
+        GetRemoteSyncStatus,
         [NativeMessageContract(typeof(GetConflictResolutionCommandArguments), typeof(ConflictResolutionResponse))]
         GetConflictResolution,
         [NativeMessageContract(typeof(ResolveConflictCommandArguments))]

@@ -165,6 +165,16 @@ internal sealed partial class LovelyGitRepository : IDisposable
             .ToList();
     }
 
+    public bool TryGetBranch(string displayName, out GitRef? reference)
+    {
+        if (_refsByFullName.TryGetValue($"refs/heads/{displayName}", out reference))
+        {
+            return true;
+        }
+
+        return _refsByFullName.TryGetValue($"refs/remotes/{displayName}", out reference);
+    }
+
     public IReadOnlyList<GitRef> GetTags()
     {
         return _refsByFullName.Values

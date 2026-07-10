@@ -65,6 +65,7 @@ internal static class WorkingTreeServiceCollectionExtensions
         services.AddSingleton<ICommandResponder, CreateWorktreeCommandResolver>();
         services.AddSingleton<ICommandResponder, ManageWorktreeCommandResolver>();
         services.AddSingleton<ICommandResponder, GetRemotesCommandResolver>();
+        services.AddSingleton<ICommandResponder, GetRemoteSyncStatusCommandResolver>();
         services.AddSingleton<ICommandResponder, ManageRemoteCommandResolver>();
         services.AddSingleton<ICommandResponder, FetchRepositoryCommandResolver>();
         services.AddSingleton<ICommandResponder, PullRepositoryCommandResolver>();
