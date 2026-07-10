@@ -59,6 +59,12 @@ describe("BranchContextMenu", () => {
 		fireEvent.contextMenu(
 			screen.getByRole("button", { name: "feature/demo ref" }),
 		);
+		await user.click(await screen.findByText("Create linked worktree…"));
+		expect(onAction).toHaveBeenCalledWith("worktree", "feature/demo");
+
+		fireEvent.contextMenu(
+			screen.getByRole("button", { name: "feature/demo ref" }),
+		);
 		await user.click(await screen.findByText("Merge feature/demo into main"));
 		expect(onIntegrateBranch).toHaveBeenCalledWith("merge", "feature/demo");
 	});

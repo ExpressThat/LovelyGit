@@ -1,5 +1,6 @@
 import {
 	CloudUpload,
+	FolderGit2,
 	GitBranch,
 	GitMerge,
 	Link2,
@@ -78,6 +79,13 @@ export function BranchContextMenu({
 					<Link2 aria-hidden="true" />
 					Manage upstream…
 				</ContextMenuItem>
+				<ContextMenuItem
+					disabled={disabled}
+					onClick={() => onAction("worktree", branchName)}
+				>
+					<FolderGit2 aria-hidden="true" />
+					Create linked worktree…
+				</ContextMenuItem>
 				<ContextMenuSeparator />
 				<ContextMenuItem
 					disabled={!canIntegrate}
@@ -123,4 +131,5 @@ export type BranchAction =
 	| "delete"
 	| "push"
 	| "rename"
-	| "upstream";
+	| "upstream"
+	| "worktree";

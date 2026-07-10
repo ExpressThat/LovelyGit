@@ -65,9 +65,11 @@ internal sealed partial class LovelyGitRepository : IDisposable
                 GitRefReader.DefaultTagLimit,
                 cancellationToken)
             .ConfigureAwait(false);
-        var headTarget = await GitRefReader.ResolveHeadAsync(gitDirectory, objectFormat, rawRefs, cancellationToken)
+        var headTarget = await GitRefReader.ResolveHeadAsync(
+                paths.WorktreeGitDirectory, objectFormat, rawRefs, cancellationToken)
             .ConfigureAwait(false);
-        var currentBranchName = await GitRefReader.ResolveHeadBranchNameAsync(gitDirectory, cancellationToken)
+        var currentBranchName = await GitRefReader
+            .ResolveHeadBranchNameAsync(paths.WorktreeGitDirectory, cancellationToken)
             .ConfigureAwait(false);
 
         var refsByFullName = new Dictionary<string, GitRef>(StringComparer.Ordinal);

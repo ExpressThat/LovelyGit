@@ -64,6 +64,10 @@ export function useTagMutations({
 			setBusyTag(null);
 		}
 	};
+	const manageTag = (action: "delete" | "push", tagName: string) => {
+		if (action === "push") void pushTag(tagName);
+		else setDeleteTagName(tagName);
+	};
 
-	return { busyTag, deleteTag, deleteTagName, pushTag, setDeleteTagName };
+	return { busyTag, deleteTag, deleteTagName, manageTag, setDeleteTagName };
 }

@@ -114,6 +114,13 @@ internal sealed partial class WorkingTreeWatcherService : IDisposable
 
             AddWorkTreeWatchers(workTreeWatchRoots);
             AddWatcher(paths.GitDirectory, "*", includeSubdirectories: false);
+            if (!string.Equals(
+                    paths.GitDirectory,
+                    paths.WorktreeGitDirectory,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                AddWatcher(paths.WorktreeGitDirectory, "*", includeSubdirectories: false);
+            }
             var refsPath = Path.Combine(paths.GitDirectory, "refs");
             if (Directory.Exists(refsPath))
             {

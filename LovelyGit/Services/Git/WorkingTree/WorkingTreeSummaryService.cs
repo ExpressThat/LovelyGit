@@ -28,7 +28,7 @@ internal sealed class WorkingTreeSummaryService
         if (allowIncomplete)
         {
             return await _preliminarySummaryService
-                .GetSummaryAsync(paths.WorkTreeDirectory, paths.GitDirectory, cancellationToken)
+                .GetSummaryAsync(paths.WorkTreeDirectory, paths.WorktreeGitDirectory, cancellationToken)
                 .ConfigureAwait(false);
         }
 

@@ -15,13 +15,16 @@ internal static class GitRepositoryDiscovery
 
         if (Path.GetFileName(fullPath).Equals(".git", StringComparison.OrdinalIgnoreCase))
         {
-            return new GitRepositoryPaths(fullPath, Directory.GetParent(fullPath)?.FullName ?? fullPath);
+            return await CreatePathsAsync(
+                fullPath,
+                Directory.GetParent(fullPath)?.FullName ?? fullPath,
+                cancellationToken).ConfigureAwait(false);
         }
 
         var dotGitPath = Path.Combine(fullPath, ".git");
         if (Directory.Exists(dotGitPath))
         {
-            return new GitRepositoryPaths(dotGitPath, fullPath);
+            return await CreatePathsAsync(dotGitPath, fullPath, cancellationToken).ConfigureAwait(false);
         }
 
         if (File.Exists(dotGitPath))
@@ -34,9 +37,10 @@ internal static class GitRepositoryDiscovery
             }
 
             var gitDir = text.AsSpan(prefix.Length).Trim().ToString();
-            return new GitRepositoryPaths(
-                Path.GetFullPath(Path.IsPathRooted(gitDir) ? gitDir : Path.Combine(fullPath, gitDir)),
-                fullPath);
+            var worktreeGitDirectory = Path.GetFullPath(
+                Path.IsPathRooted(gitDir) ? gitDir : Path.Combine(fullPath, gitDir));
+            return await CreatePathsAsync(worktreeGitDirectory, fullPath, cancellationToken)
+                .ConfigureAwait(false);
         }
 
         throw new DirectoryNotFoundException($"Could not find .git directory for: {path}");
@@ -45,6 +49,35 @@ internal static class GitRepositoryDiscovery
     public static async Task<string> ResolveGitDirectoryAsync(string path, CancellationToken cancellationToken)
     {
         return (await ResolveRepositoryPathsAsync(path, cancellationToken).ConfigureAwait(false)).GitDirectory;
+    }
+
+    private static async Task<GitRepositoryPaths> CreatePathsAsync(
+        string worktreeGitDirectory,
+        string workTreeDirectory,
+        CancellationToken cancellationToken)
+    {
+        var commonDirectory = worktreeGitDirectory;
+        var commonDirPath = Path.Combine(worktreeGitDirectory, "commondir");
+        if (File.Exists(commonDirPath))
+        {
+            var value = (await File.ReadAllTextAsync(commonDirPath, cancellationToken)
+                    .ConfigureAwait(false))
+                .AsSpan()
+                .Trim();
+            if (value.Length > 0)
+            {
+                var path = value.ToString();
+                commonDirectory = Path.GetFullPath(
+                    Path.IsPathRooted(path)
+                        ? path
+                        : Path.Combine(worktreeGitDirectory, path));
+            }
+        }
+
+        return new GitRepositoryPaths(
+            commonDirectory,
+            worktreeGitDirectory,
+            workTreeDirectory);
     }
 
     public static async Task<GitObjectFormat> ReadObjectFormatAsync(
@@ -113,4 +146,7 @@ internal static class GitRepositoryDiscovery
     }
 }
 
-internal sealed record GitRepositoryPaths(string GitDirectory, string WorkTreeDirectory);
+internal sealed record GitRepositoryPaths(
+    string GitDirectory,
+    string WorktreeGitDirectory,
+    string WorkTreeDirectory);

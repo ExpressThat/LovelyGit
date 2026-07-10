@@ -34,7 +34,7 @@ internal sealed partial class WorkingTreeStatusListService
         var objectFormat = await GitRepositoryDiscovery.ReadObjectFormatAsync(paths.GitDirectory, cancellationToken)
             .ConfigureAwait(false);
         var rootTracking = await new GitIndexRootTracker()
-            .ReadAsync(paths.GitDirectory, objectFormat, cancellationToken)
+            .ReadAsync(paths.WorktreeGitDirectory, objectFormat, cancellationToken)
             .ConfigureAwait(false);
         var fastResponse = new WorkingTreeChangesResponse();
         var rootUntracked = await FindUntrackedFilesAsync(
@@ -67,13 +67,18 @@ internal sealed partial class WorkingTreeStatusListService
         var scanner = new GitIndexStatusScanner();
         var fullScan = await scanner
             .ScanAsync(
-                paths.GitDirectory,
+                paths.WorktreeGitDirectory,
                 paths.WorkTreeDirectory,
                 objectFormat,
                 cancellationToken,
                 collectRootTracking: true)
             .ConfigureAwait(false);
-        if (await HasStagedChangesAsync(paths.GitDirectory, objectFormat, fullScan, cancellationToken)
+        if (await HasStagedChangesAsync(
+                paths.WorktreeGitDirectory,
+                paths.GitDirectory,
+                objectFormat,
+                fullScan,
+                cancellationToken)
                 .ConfigureAwait(false))
         {
             return null;
@@ -107,120 +112,6 @@ internal sealed partial class WorkingTreeStatusListService
         {
             TotalCount = changes.TotalCount,
         };
-    }
-
-    private static async Task<bool> HasStagedChangesAsync(
-        string gitDirectory,
-        GitObjectFormat objectFormat,
-        GitIndexStatusScan scan,
-        CancellationToken cancellationToken)
-    {
-        if (scan.Response.Unmerged.Count > 0)
-        {
-            return false;
-        }
-
-        var headTreeId = await ReadHeadTreeIdAsync(gitDirectory, objectFormat, cancellationToken)
-            .ConfigureAwait(false);
-        if (headTreeId == null)
-        {
-            return scan.RootTreeId != null;
-        }
-
-        return scan.RootTreeId != headTreeId;
-    }
-
-    private static async Task<GitObjectId?> ReadHeadTreeIdAsync(
-        string gitDirectory,
-        GitObjectFormat objectFormat,
-        CancellationToken cancellationToken)
-    {
-        var headTarget = await ReadHeadTargetAsync(gitDirectory, objectFormat, cancellationToken)
-            .ConfigureAwait(false);
-        if (headTarget == null)
-        {
-            return null;
-        }
-
-        using var objectStore = new GitObjectStore(gitDirectory, objectFormat);
-        var data = await objectStore.ReadObjectAsync(headTarget.Value, cancellationToken)
-            .ConfigureAwait(false);
-        return data.Kind == GitObjectKind.Commit
-            ? GitObjectParsers.ParseCommit(headTarget.Value, data.Data).TreeHash
-            : null;
-    }
-
-    private static async Task<GitObjectId?> ReadHeadTargetAsync(
-        string gitDirectory,
-        GitObjectFormat objectFormat,
-        CancellationToken cancellationToken)
-    {
-        var headPath = Path.Combine(gitDirectory, "HEAD");
-        if (!File.Exists(headPath))
-        {
-            return null;
-        }
-
-        var text = (await File.ReadAllTextAsync(headPath, cancellationToken).ConfigureAwait(false)).Trim();
-        const string refPrefix = "ref:";
-        if (!text.StartsWith(refPrefix, StringComparison.OrdinalIgnoreCase))
-        {
-            return GitObjectId.TryParse(text, objectFormat, out var detachedId) ? detachedId : null;
-        }
-
-        var refName = text.AsSpan(refPrefix.Length).Trim().ToString();
-        return await ReadRefTargetAsync(gitDirectory, objectFormat, refName, cancellationToken)
-            .ConfigureAwait(false);
-    }
-
-    private static async Task<GitObjectId?> ReadRefTargetAsync(
-        string gitDirectory,
-        GitObjectFormat objectFormat,
-        string refName,
-        CancellationToken cancellationToken)
-    {
-        var looseRefPath = Path.Combine(gitDirectory, refName.Replace('/', Path.DirectorySeparatorChar));
-        if (File.Exists(looseRefPath))
-        {
-            var text = (await File.ReadAllTextAsync(looseRefPath, cancellationToken).ConfigureAwait(false)).Trim();
-            return GitObjectId.TryParse(text, objectFormat, out var id) ? id : null;
-        }
-
-        return ReadPackedRefTarget(gitDirectory, objectFormat, refName, cancellationToken);
-    }
-
-    private static GitObjectId? ReadPackedRefTarget(
-        string gitDirectory,
-        GitObjectFormat objectFormat,
-        string refName,
-        CancellationToken cancellationToken)
-    {
-        var packedRefsPath = Path.Combine(gitDirectory, "packed-refs");
-        if (!File.Exists(packedRefsPath))
-        {
-            return null;
-        }
-
-        foreach (var line in File.ReadLines(packedRefsPath))
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            if (line.Length == 0 || line[0] == '#' || line[0] == '^')
-            {
-                continue;
-            }
-
-            var spaceIndex = line.IndexOf(' ');
-            if (spaceIndex <= 0
-                || !line.AsSpan(spaceIndex + 1).SequenceEqual(refName)
-                || !GitObjectId.TryParse(line.AsSpan(0, spaceIndex), objectFormat, out var id))
-            {
-                continue;
-            }
-
-            return id;
-        }
-
-        return null;
     }
 
     private static WorkingTreeChangedFile Create(

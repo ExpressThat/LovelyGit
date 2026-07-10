@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import type { BranchIntegrationMode } from "@/components/TopNavBar/components/BranchIntegrationDialog";
 import type { CommitGraphRow as CommitGraphRowModel } from "@/generated/types";
 import { BranchManagementDialogs } from "./components/BranchManagementDialogs";
@@ -8,10 +8,12 @@ import { CommitGraphOperationDialogs } from "./components/CommitGraphOperationDi
 import { CommitRow } from "./components/CommitRow";
 import { RefsPanel } from "./components/RefsPanel";
 import { TagManagementDialogs } from "./components/TagManagementDialogs";
+import { WorktreeManagementDialogs } from "./components/WorktreeManagementDialogs";
 import { ROW_HEIGHT } from "./constants";
 import { useBranchCreation } from "./hooks/useBranchCreation";
-import { useBranchMutations } from "./hooks/useBranchMutations";
+import { useBranchWorktreeControllers } from "./hooks/useBranchWorktreeControllers";
 import { useCommitGraphData } from "./hooks/useCommitGraphData";
+import { useCommitGraphDialogs } from "./hooks/useCommitGraphDialogs";
 import { useCommitGraphViewport } from "./hooks/useCommitGraphViewport";
 import { useRepositoryRefs } from "./hooks/useRepositoryRefs";
 import { useTagMutations } from "./hooks/useTagMutations";
@@ -34,19 +36,18 @@ export function CommitGraphView({
 	repositoryId: string | null;
 	selectedCommitHash: string | null;
 }) {
-	const [integrationTarget, setIntegrationTarget] = useState<{
-		branchName: string;
-		mode: BranchIntegrationMode;
-	} | null>(null);
-	const [cherryPickCommit, setCherryPickCommit] =
-		useState<CommitGraphRowModel | null>(null);
-	const [revertCommit, setRevertCommit] = useState<CommitGraphRowModel | null>(
-		null,
-	);
-	const [resetCommit, setResetCommit] = useState<CommitGraphRowModel | null>(
-		null,
-	);
-	const [tagCommit, setTagCommit] = useState<CommitGraphRowModel | null>(null);
+	const {
+		cherryPickCommit,
+		integrationTarget,
+		resetCommit,
+		revertCommit,
+		setCherryPickCommit,
+		setIntegrationTarget,
+		setResetCommit,
+		setRevertCommit,
+		setTagCommit,
+		tagCommit,
+	} = useCommitGraphDialogs();
 
 	const {
 		currentBranchName,
@@ -65,25 +66,23 @@ export function CommitGraphView({
 	const branchNames = refNames(repositoryRefs.refs, "Local");
 	const { remoteBranchNames, upstreams: branchUpstreams } =
 		branchTrackingMetadata(repositoryRefs.refs);
-	const branchController = useBranchMutations({
-		currentBranchName,
-		onCurrentBranchNameChange: (name) => onCurrentBranchNameChange?.(name),
-		onRepositoryChanged,
-		onUpstreamChanged: repositoryRefs.updateBranchUpstream,
-		remoteName: tagRemoteName,
-		repositoryId,
-	});
+	const { branchController, manageBranch, worktreeController } =
+		useBranchWorktreeControllers({
+			currentBranchName,
+			onCurrentBranchNameChange: (name) => onCurrentBranchNameChange?.(name),
+			onRepositoryChanged,
+			onUpstreamChanged: repositoryRefs.updateBranchUpstream,
+			onWorktreesChanged: repositoryRefs.refresh,
+			remoteName: tagRemoteName,
+			repositoryId,
+		});
 	const branchCreation = useBranchCreation();
-	const { busyTag, deleteTag, deleteTagName, pushTag, setDeleteTagName } =
+	const { busyTag, deleteTag, deleteTagName, manageTag, setDeleteTagName } =
 		useTagMutations({
 			onRepositoryChanged,
 			remoteName: tagRemoteName,
 			repositoryId,
 		});
-	const manageTag = (action: "delete" | "push", tagName: string) => {
-		if (action === "push") void pushTag(tagName);
-		else setDeleteTagName(tagName);
-	};
 	const currentHeadHash =
 		repositoryRefs.refs?.refs.find(
 			(ref) => ref.kind === "Local" && ref.name === currentBranchName,
@@ -117,7 +116,7 @@ export function CommitGraphView({
 						branchMutationBusy={branchController.busyBranch !== null}
 						branchRemoteName={tagRemoteName}
 						currentBranchName={currentBranchName}
-						onBranchAction={branchController.manageBranch}
+						onBranchAction={manageBranch}
 						onCreateBranchFromTag={branchCreation.createFromTag}
 						onIntegrateBranch={integrateBranch}
 						onSelectCommit={onSelectCommit}
@@ -127,6 +126,7 @@ export function CommitGraphView({
 						rows={rows}
 						tagMutationBusy={busyTag !== null}
 						tagRemoteName={tagRemoteName}
+						worktreeController={worktreeController}
 					/>
 					<div
 						ref={viewportRef}
@@ -174,7 +174,7 @@ export function CommitGraphView({
 											}
 											isHead={rows[item.index]?.commit.hash === currentHeadHash}
 											onCherryPick={setCherryPickCommit}
-											onBranchAction={branchController.manageBranch}
+											onBranchAction={manageBranch}
 											onCreateBranch={branchCreation.createAtCommit}
 											onCreateBranchFromTag={branchCreation.createFromTag}
 											onCreateTag={setTagCommit}
@@ -240,6 +240,10 @@ export function CommitGraphView({
 				remoteName={tagRemoteName}
 				repositoryId={repositoryId}
 				tagCommit={tagCommit}
+			/>
+			<WorktreeManagementDialogs
+				controller={worktreeController}
+				worktrees={repositoryRefs.refs?.worktrees ?? []}
 			/>
 		</>
 	);

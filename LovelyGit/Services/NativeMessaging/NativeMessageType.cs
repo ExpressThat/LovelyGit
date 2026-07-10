@@ -78,6 +78,14 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging
         [NativeMessageContract(typeof(CommitStagedChangesCommandArguments), typeof(EmptyCommandArguments))]
         CommitStagedChanges,
 
+        // Linked worktree creation, navigation, locking, and removal.
+        [NativeMessageContract(typeof(EmptyCommandArguments), typeof(WorktreeDestinationResponse))]
+        ChooseWorktreeDestination,
+        [NativeMessageContract(typeof(CreateWorktreeCommandArguments), typeof(EmptyCommandArguments))]
+        CreateWorktree,
+        [NativeMessageContract(typeof(ManageWorktreeCommandArguments), typeof(KnownGitRepository))]
+        ManageWorktree,
+
         // Remote synchronization and branch/ref mutations.
         [NativeMessageContract(typeof(GetRemotesCommandArguments), typeof(List<GitRemote>))]
         GetRemotes,

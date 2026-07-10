@@ -64,7 +64,8 @@ internal sealed partial class WorkingTreeStatusListService
         string path)
     {
         var relative = NormalizeWorkTreePath(workTreeDirectory, path);
-        if (relative.StartsWith(".git/", StringComparison.Ordinal)
+        if (relative.Equals(".git", StringComparison.Ordinal)
+            || relative.StartsWith(".git/", StringComparison.Ordinal)
             || rootTrackedFiles.Contains(relative)
             || matcher.IsIgnored(relative, isDirectory: false))
         {

@@ -17,7 +17,11 @@ internal sealed class HeadCommitMessageService
             .ReadObjectFormatAsync(paths.GitDirectory, cancellationToken)
             .ConfigureAwait(false);
         var headTarget = await GitHeadReader
-            .ResolveAsync(paths.GitDirectory, objectFormat, cancellationToken)
+            .ResolveAsync(
+                paths.WorktreeGitDirectory,
+                paths.GitDirectory,
+                objectFormat,
+                cancellationToken)
             .ConfigureAwait(false);
         if (headTarget is not { } commitId)
         {

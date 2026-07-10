@@ -1,11 +1,15 @@
 import { GitBranch, HardDrive, LockKeyhole } from "lucide-react";
 import type { RepositoryWorktreeItem } from "@/generated/types";
+import type { WorktreeMutationController } from "../hooks/useWorktreeMutations";
+import { WorktreeContextMenu } from "./WorktreeContextMenu";
 
 export function WorktreeSection({
 	query,
+	controller,
 	worktrees,
 }: {
 	query: string;
+	controller: WorktreeMutationController;
 	worktrees: RepositoryWorktreeItem[];
 }) {
 	const filtered = filterWorktrees(worktrees, query);
@@ -21,14 +25,24 @@ export function WorktreeSection({
 			</div>
 			<div className="grid gap-1">
 				{filtered.map((worktree) => (
-					<WorktreeRow key={worktree.path} worktree={worktree} />
+					<WorktreeRow
+						controller={controller}
+						key={worktree.path}
+						worktree={worktree}
+					/>
 				))}
 			</div>
 		</section>
 	);
 }
 
-function WorktreeRow({ worktree }: { worktree: RepositoryWorktreeItem }) {
+function WorktreeRow({
+	controller,
+	worktree,
+}: {
+	controller: WorktreeMutationController;
+	worktree: RepositoryWorktreeItem;
+}) {
 	const label = worktree.branchName ?? "Detached HEAD";
 	const title = [
 		label,
@@ -41,15 +55,22 @@ function WorktreeRow({ worktree }: { worktree: RepositoryWorktreeItem }) {
 		.filter(Boolean)
 		.join(". ");
 
-	return (
-		<div
+	const row = (
+		<button
+			aria-label={`${label} worktree at ${worktree.path}`}
 			aria-current={worktree.isCurrent ? "true" : undefined}
 			className={`flex min-w-0 items-center gap-2 rounded-lg px-2 py-1.5 text-sm ${
 				worktree.isCurrent
 					? "bg-secondary text-secondary-foreground"
 					: "text-sidebar-foreground"
 			}`}
+			onDoubleClick={() => {
+				if (!worktree.isCurrent && controller.busyPath === null) {
+					controller.manage("Open", worktree);
+				}
+			}}
 			title={title}
+			type="button"
 		>
 			<HardDrive
 				aria-hidden="true"
@@ -73,7 +94,16 @@ function WorktreeRow({ worktree }: { worktree: RepositoryWorktreeItem }) {
 					className="size-3.5 shrink-0 text-amber-500"
 				/>
 			) : null}
-		</div>
+		</button>
+	);
+	return (
+		<WorktreeContextMenu
+			disabled={controller.busyPath !== null}
+			onAction={controller.manage}
+			worktree={worktree}
+		>
+			{row}
+		</WorktreeContextMenu>
 	);
 }
 

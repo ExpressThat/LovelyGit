@@ -68,7 +68,7 @@ internal sealed class GitRepositoryOperationService
         var paths = await GitRepositoryDiscovery
             .ResolveRepositoryPathsAsync(repositoryPath, cancellationToken)
             .ConfigureAwait(false);
-        EnsureExpectedOperation(paths.GitDirectory, expectedOperation);
+        EnsureExpectedOperation(paths.WorktreeGitDirectory, expectedOperation);
         var arguments = expectedOperation switch
         {
             GitRepositoryOperationKind.CherryPick =>
@@ -97,7 +97,7 @@ internal sealed class GitRepositoryOperationService
         var paths = await GitRepositoryDiscovery
             .ResolveRepositoryPathsAsync(repositoryPath, cancellationToken)
             .ConfigureAwait(false);
-        EnsureExpectedOperation(paths.GitDirectory, expectedOperation);
+        EnsureExpectedOperation(paths.WorktreeGitDirectory, expectedOperation);
         var arguments = expectedOperation switch
         {
             GitRepositoryOperationKind.CherryPick => new[] { "cherry-pick", "--abort" },
@@ -122,7 +122,7 @@ internal sealed class GitRepositoryOperationService
         var paths = await GitRepositoryDiscovery
             .ResolveRepositoryPathsAsync(repositoryPath, cancellationToken)
             .ConfigureAwait(false);
-        return GitRepositoryOperationStateReader.Read(paths.GitDirectory);
+        return GitRepositoryOperationStateReader.Read(paths.WorktreeGitDirectory);
     }
 
     private async Task<GitRepositoryOperationOutcome> RunAsync(
@@ -136,7 +136,7 @@ internal sealed class GitRepositoryOperationService
         var paths = await GitRepositoryDiscovery
             .ResolveRepositoryPathsAsync(repositoryPath, cancellationToken)
             .ConfigureAwait(false);
-        if (GitRepositoryOperationStateReader.Read(paths.GitDirectory) is { } activeOperation)
+        if (GitRepositoryOperationStateReader.Read(paths.WorktreeGitDirectory) is { } activeOperation)
         {
             throw new InvalidOperationException(
                 $"A {FormatOperationName(activeOperation)} is already in progress.");
@@ -171,7 +171,7 @@ internal sealed class GitRepositoryOperationService
         }
 
         var exception = new GitOperationException(result);
-        var activeOperation = GitRepositoryOperationStateReader.Read(paths.GitDirectory);
+        var activeOperation = GitRepositoryOperationStateReader.Read(paths.WorktreeGitDirectory);
         if (activeOperation == operation)
         {
             return new GitRepositoryOperationOutcome(

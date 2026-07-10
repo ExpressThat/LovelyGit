@@ -5,6 +5,7 @@ using ExpressThat.LovelyGit.Services.Git.Revert;
 using ExpressThat.LovelyGit.Services.Git.Reset;
 using ExpressThat.LovelyGit.Services.Git.Stashes;
 using ExpressThat.LovelyGit.Services.Git.Tags;
+using ExpressThat.LovelyGit.Services.Git.Worktrees;
 
 namespace ExpressThat.LovelyGit.Services.Git.Cli;
 
@@ -23,6 +24,7 @@ internal static class GitCliServiceCollectionExtensions
         services.AddSingleton<GitRevertCommandService>();
         services.AddSingleton<GitResetCommandService>();
         services.AddSingleton<GitTagCommandService>();
+        services.AddSingleton<GitWorktreeCommandService>();
         services.AddSingleton<GitCloneService>();
         return services;
     }

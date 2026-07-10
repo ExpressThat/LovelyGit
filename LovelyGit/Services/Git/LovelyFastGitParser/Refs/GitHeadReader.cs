@@ -5,9 +5,17 @@ internal static class GitHeadReader
     public static async Task<GitObjectId?> ResolveAsync(
         string gitDirectory,
         GitObjectFormat objectFormat,
+        CancellationToken cancellationToken) =>
+        await ResolveAsync(gitDirectory, gitDirectory, objectFormat, cancellationToken)
+            .ConfigureAwait(false);
+
+    public static async Task<GitObjectId?> ResolveAsync(
+        string headGitDirectory,
+        string commonGitDirectory,
+        GitObjectFormat objectFormat,
         CancellationToken cancellationToken)
     {
-        var headPath = Path.Combine(gitDirectory, "HEAD");
+        var headPath = Path.Combine(headGitDirectory, "HEAD");
         if (!File.Exists(headPath))
         {
             return null;
@@ -21,7 +29,7 @@ internal static class GitHeadReader
         }
 
         var refName = head[RefPrefix.Length..].Trim().ToString();
-        var looseRefPath = Path.Combine(gitDirectory, refName.Replace('/', Path.DirectorySeparatorChar));
+        var looseRefPath = Path.Combine(commonGitDirectory, refName.Replace('/', Path.DirectorySeparatorChar));
         if (File.Exists(looseRefPath))
         {
             var value = (await File.ReadAllTextAsync(looseRefPath, cancellationToken).ConfigureAwait(false))
@@ -31,7 +39,7 @@ internal static class GitHeadReader
         }
 
         return await ResolvePackedRefAsync(
-            gitDirectory,
+            commonGitDirectory,
             refName,
             objectFormat,
             cancellationToken).ConfigureAwait(false);

@@ -24,14 +24,14 @@ internal sealed class GitResetCommandService
         var paths = await GitRepositoryDiscovery
             .ResolveRepositoryPathsAsync(repositoryPath, cancellationToken)
             .ConfigureAwait(false);
-        if (GitRepositoryOperationStateReader.Read(paths.GitDirectory) is { } operation)
+        if (GitRepositoryOperationStateReader.Read(paths.WorktreeGitDirectory) is { } operation)
         {
             throw new InvalidOperationException(
                 $"Finish or abort the active {FormatOperation(operation)} before resetting.");
         }
 
         var branchName = await GitRefReader
-            .ResolveHeadBranchNameAsync(paths.GitDirectory, cancellationToken)
+            .ResolveHeadBranchNameAsync(paths.WorktreeGitDirectory, cancellationToken)
             .ConfigureAwait(false);
         if (branchName is null)
         {

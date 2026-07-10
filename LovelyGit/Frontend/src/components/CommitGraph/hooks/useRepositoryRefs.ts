@@ -74,6 +74,7 @@ export function useRepositoryRefs(
 				: current,
 		);
 	};
+	const refresh = () => setInvalidationToken((token) => token + 1);
 
-	return { ...state, updateBranchUpstream };
+	return { ...state, refresh, updateBranchUpstream };
 }

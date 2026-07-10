@@ -37,11 +37,14 @@ internal sealed class RepositoryRefsService
         var summary = await GitRefSummaryReader
             .ReadAsync(paths.GitDirectory, objectFormat, GitRefReader.DefaultTagLimit, cancellationToken)
             .ConfigureAwait(false);
+        var currentBranchName = await GitRefReader
+            .ResolveHeadBranchNameAsync(paths.WorktreeGitDirectory, cancellationToken)
+            .ConfigureAwait(false);
         var remoteUrl = await GitRemoteConfigReader
             .ReadPrimaryRemoteUrlAsync(paths.GitDirectory, cancellationToken)
             .ConfigureAwait(false);
         var worktrees = await GitWorktreeReader
-            .ReadAsync(paths.GitDirectory, paths.WorkTreeDirectory, cancellationToken)
+            .ReadAsync(paths.WorktreeGitDirectory, paths.WorkTreeDirectory, cancellationToken)
             .ConfigureAwait(false);
         var stashes = await GitStashReader
             .ReadAsync(paths.GitDirectory, objectFormat, cancellationToken)
@@ -52,7 +55,7 @@ internal sealed class RepositoryRefsService
 
         return new RepositoryRefsResponse
         {
-            CurrentBranchName = summary.CurrentBranchName,
+            CurrentBranchName = currentBranchName,
             RemotePrefixes = summary.RemotePrefixes.ToList(),
             Refs = summary.Refs.Select(reference => ToItem(reference, remoteUrl)).ToList(),
             Worktrees = worktrees.Select(ToItem).ToList(),

@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { CommitGraphRow, RepositoryRefsResponse } from "@/generated/types";
 import { setSetting, useSetting } from "@/lib/settings/settingsStore";
+import type { WorktreeMutationController } from "../hooks/useWorktreeMutations";
 import type { BranchAction } from "./BranchContextMenu";
 import { buildRefPanelSections, filterRefPanelSections } from "./RefsPanelData";
 import { RefsPanelList } from "./RefsPanelList";
@@ -25,6 +26,7 @@ export function RefsPanel({
 	rows,
 	tagMutationBusy,
 	tagRemoteName,
+	worktreeController,
 }: {
 	branchMutationBusy: boolean;
 	branchRemoteName: string | null;
@@ -39,6 +41,7 @@ export function RefsPanel({
 	rows: Array<CommitGraphRow | null>;
 	tagMutationBusy: boolean;
 	tagRemoteName: string | null;
+	worktreeController: WorktreeMutationController;
 }) {
 	const isOpen = useSetting("CommitGraphRefsPanelOpen");
 	const [query, setQuery] = useState("");
@@ -128,6 +131,7 @@ export function RefsPanel({
 				<>
 					<div className="custom-scrollbar max-h-36 overflow-y-auto p-2 pb-0">
 						<WorktreeSection
+							controller={worktreeController}
 							query={query}
 							worktrees={repositoryRefs?.worktrees ?? []}
 						/>
