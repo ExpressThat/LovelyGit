@@ -1,10 +1,85 @@
 using ExpressThat.LovelyGit.Services.Git.Cli;
 using ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser.Operations;
 
-namespace LovelyGit.Tests.Git.BranchIntegration;
+namespace LovelyGit.Tests.Git.RepositoryOperations;
 
-public sealed class GitBranchIntegrationServiceTests
+public sealed class GitRepositoryOperationServiceTests
 {
+    [Fact]
+    public async Task CherryPickAsync_AppliesCommitToCurrentBranch()
+    {
+        using var repository = TestRepository.Create();
+        await repository.CreateBranchCommitAsync("feature", "feature.txt", "feature");
+        var featureCommit = await repository.GetHeadHashAsync();
+        await repository.SwitchAsync("main");
+        await repository.CommitFileAsync("main.txt", "main", "main change");
+
+        var outcome = await repository.Service.CherryPickAsync(
+            repository.Path,
+            featureCommit,
+            CancellationToken.None);
+
+        Assert.True(outcome.IsCompleted);
+        Assert.Null(outcome.Operation);
+        Assert.True(File.Exists(Path.Combine(repository.Path, "feature.txt")));
+        Assert.NotEqual(featureCommit, await repository.GetHeadHashAsync());
+    }
+
+    [Fact]
+    public async Task CherryPickConflict_IsDetectedAndCanBeAborted()
+    {
+        using var repository = TestRepository.Create();
+        await repository.CreateBranchCommitAsync("conflict", "shared.txt", "feature");
+        var conflictCommit = await repository.GetHeadHashAsync();
+        await repository.SwitchAsync("main");
+        await repository.CommitFileAsync("shared.txt", "main", "main conflict");
+
+        var outcome = await repository.Service.CherryPickAsync(
+            repository.Path,
+            conflictCommit,
+            CancellationToken.None);
+
+        Assert.False(outcome.IsCompleted);
+        Assert.Equal(GitRepositoryOperationKind.CherryPick, outcome.Operation);
+        Assert.Equal(
+            GitRepositoryOperationKind.CherryPick,
+            await repository.Service.GetOperationAsync(repository.Path, CancellationToken.None));
+
+        await repository.Service.AbortAsync(
+            repository.Path,
+            GitRepositoryOperationKind.CherryPick,
+            CancellationToken.None);
+
+        Assert.Null(await repository.Service.GetOperationAsync(repository.Path, CancellationToken.None));
+        Assert.Equal("main", await File.ReadAllTextAsync(Path.Combine(repository.Path, "shared.txt")));
+    }
+
+    [Fact]
+    public async Task CherryPickConflict_CanBeResolvedAndContinued()
+    {
+        using var repository = TestRepository.Create();
+        await repository.CreateBranchCommitAsync("conflict", "shared.txt", "feature");
+        var conflictCommit = await repository.GetHeadHashAsync();
+        await repository.SwitchAsync("main");
+        await repository.CommitFileAsync("shared.txt", "main", "main conflict");
+        var paused = await repository.Service.CherryPickAsync(
+            repository.Path,
+            conflictCommit,
+            CancellationToken.None);
+        Assert.False(paused.IsCompleted);
+
+        await File.WriteAllTextAsync(Path.Combine(repository.Path, "shared.txt"), "resolved");
+        await repository.RunGitAsync("add", "--", "shared.txt");
+        var completed = await repository.Service.ContinueAsync(
+            repository.Path,
+            GitRepositoryOperationKind.CherryPick,
+            CancellationToken.None);
+
+        Assert.True(completed.IsCompleted);
+        Assert.Null(await repository.Service.GetOperationAsync(repository.Path, CancellationToken.None));
+        Assert.Equal("resolved", await File.ReadAllTextAsync(Path.Combine(repository.Path, "shared.txt")));
+    }
+
     [Fact]
     public async Task MergeAsync_MergesDivergedBranch()
     {
@@ -99,76 +174,4 @@ public sealed class GitBranchIntegrationServiceTests
         Assert.Equal("resolved", await File.ReadAllTextAsync(Path.Combine(repository.Path, "shared.txt")));
     }
 
-    private sealed class TestRepository : IDisposable
-    {
-        private readonly DirectoryInfo _directory;
-
-        private TestRepository(DirectoryInfo directory, GitCliService git)
-        {
-            _directory = directory;
-            Git = git;
-            Path = directory.FullName;
-            Service = new GitBranchIntegrationService(new GitOperationService(git));
-        }
-
-        public GitCliService Git { get; }
-
-        public string Path { get; }
-
-        public GitBranchIntegrationService Service { get; }
-
-        public static TestRepository Create()
-        {
-            var directory = Directory.CreateTempSubdirectory("lovelygit-integration-");
-            var repository = new TestRepository(directory, new GitCliService());
-            repository.RunAsync("init", "--initial-branch=main").GetAwaiter().GetResult();
-            repository.RunAsync("config", "user.name", "LovelyGit Test").GetAwaiter().GetResult();
-            repository.RunAsync("config", "user.email", "test@example.invalid").GetAwaiter().GetResult();
-            File.WriteAllText(System.IO.Path.Combine(repository.Path, "shared.txt"), "base");
-            repository.RunAsync("add", ".").GetAwaiter().GetResult();
-            repository.RunAsync("commit", "-m", "initial").GetAwaiter().GetResult();
-            return repository;
-        }
-
-        public async Task CommitFileAsync(
-            string relativePath,
-            string content,
-            string message)
-        {
-            await File.WriteAllTextAsync(System.IO.Path.Combine(Path, relativePath), content);
-            await RunAsync("add", "--", relativePath);
-            await RunAsync("commit", "-m", message);
-        }
-
-        public async Task CreateBranchCommitAsync(
-            string branchName,
-            string relativePath,
-            string content)
-        {
-            await RunAsync("switch", "--create", branchName);
-            await CommitFileAsync(relativePath, content, $"{branchName} change");
-        }
-
-        public Task SwitchAsync(string branchName) => RunAsync("switch", branchName);
-
-        public Task RunGitAsync(params string[] arguments) => RunAsync(arguments);
-
-        public void Dispose()
-        {
-            foreach (var file in _directory.EnumerateFiles("*", SearchOption.AllDirectories))
-            {
-                file.Attributes = FileAttributes.Normal;
-            }
-
-            _directory.Delete(recursive: true);
-        }
-
-        private async Task RunAsync(params string[] arguments)
-        {
-            await Git.ExecuteBufferedAsync(
-                arguments,
-                Path,
-                cancellationToken: CancellationToken.None);
-        }
-    }
 }

@@ -3,16 +3,16 @@ using ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser.Operations;
 
 namespace ExpressThat.LovelyGit.Services.Git.Cli;
 
-internal sealed class GitBranchIntegrationService
+internal sealed class GitRepositoryOperationService
 {
     private readonly GitOperationService _gitOperationService;
 
-    public GitBranchIntegrationService(GitOperationService gitOperationService)
+    public GitRepositoryOperationService(GitOperationService gitOperationService)
     {
         _gitOperationService = gitOperationService;
     }
 
-    public Task<GitBranchIntegrationOutcome> MergeAsync(
+    public Task<GitRepositoryOperationOutcome> MergeAsync(
         string repositoryPath,
         string branchName,
         CancellationToken cancellationToken) =>
@@ -24,7 +24,19 @@ internal sealed class GitBranchIntegrationService
             "Resolve and stage merge conflicts, then continue or abort the merge.",
             cancellationToken);
 
-    public Task<GitBranchIntegrationOutcome> RebaseAsync(
+    public Task<GitRepositoryOperationOutcome> CherryPickAsync(
+        string repositoryPath,
+        string commitHash,
+        CancellationToken cancellationToken) =>
+        RunAsync(
+            repositoryPath,
+            GitRepositoryOperationKind.CherryPick,
+            "Cherry-pick commit",
+            ["cherry-pick", "--no-edit", "--", NormalizeCommitHash(commitHash)],
+            "Resolve and stage cherry-pick conflicts, then continue or abort the cherry-pick.",
+            cancellationToken);
+
+    public Task<GitRepositoryOperationOutcome> RebaseAsync(
         string repositoryPath,
         string branchName,
         CancellationToken cancellationToken) =>
@@ -36,7 +48,7 @@ internal sealed class GitBranchIntegrationService
             "Resolve and stage rebase conflicts, then continue or abort the rebase.",
             cancellationToken);
 
-    public async Task<GitBranchIntegrationOutcome> ContinueAsync(
+    public async Task<GitRepositoryOperationOutcome> ContinueAsync(
         string repositoryPath,
         GitRepositoryOperationKind expectedOperation,
         CancellationToken cancellationToken)
@@ -47,6 +59,8 @@ internal sealed class GitBranchIntegrationService
         EnsureExpectedOperation(paths.GitDirectory, expectedOperation);
         var arguments = expectedOperation switch
         {
+            GitRepositoryOperationKind.CherryPick =>
+                new[] { "-c", "core.editor=true", "cherry-pick", "--continue" },
             GitRepositoryOperationKind.Merge => new[] { "-c", "core.editor=true", "merge", "--continue" },
             GitRepositoryOperationKind.Rebase => ["-c", "core.editor=true", "rebase", "--continue"],
             _ => throw new ArgumentOutOfRangeException(nameof(expectedOperation)),
@@ -55,7 +69,7 @@ internal sealed class GitBranchIntegrationService
         return await ExecuteAsync(
             paths,
             expectedOperation,
-            $"Continue {expectedOperation.ToString().ToLowerInvariant()}",
+            $"Continue {FormatOperationName(expectedOperation)}",
             arguments,
             "Resolve and stage every conflict before continuing.",
             cancellationToken).ConfigureAwait(false);
@@ -72,13 +86,14 @@ internal sealed class GitBranchIntegrationService
         EnsureExpectedOperation(paths.GitDirectory, expectedOperation);
         var arguments = expectedOperation switch
         {
+            GitRepositoryOperationKind.CherryPick => new[] { "cherry-pick", "--abort" },
             GitRepositoryOperationKind.Merge => new[] { "merge", "--abort" },
             GitRepositoryOperationKind.Rebase => ["rebase", "--abort"],
             _ => throw new ArgumentOutOfRangeException(nameof(expectedOperation)),
         };
 
         await _gitOperationService.ExecuteRequiredBufferedAsync(
-            $"Abort {expectedOperation.ToString().ToLowerInvariant()}",
+            $"Abort {FormatOperationName(expectedOperation)}",
             arguments,
             paths.WorkTreeDirectory,
             "Use the repository terminal to inspect and recover the operation state.",
@@ -95,7 +110,7 @@ internal sealed class GitBranchIntegrationService
         return GitRepositoryOperationStateReader.Read(paths.GitDirectory);
     }
 
-    private async Task<GitBranchIntegrationOutcome> RunAsync(
+    private async Task<GitRepositoryOperationOutcome> RunAsync(
         string repositoryPath,
         GitRepositoryOperationKind operation,
         string operationName,
@@ -109,7 +124,7 @@ internal sealed class GitBranchIntegrationService
         if (GitRepositoryOperationStateReader.Read(paths.GitDirectory) is { } activeOperation)
         {
             throw new InvalidOperationException(
-                $"A {activeOperation.ToString().ToLowerInvariant()} is already in progress.");
+                $"A {FormatOperationName(activeOperation)} is already in progress.");
         }
 
         return await ExecuteAsync(
@@ -121,7 +136,7 @@ internal sealed class GitBranchIntegrationService
             cancellationToken).ConfigureAwait(false);
     }
 
-    private async Task<GitBranchIntegrationOutcome> ExecuteAsync(
+    private async Task<GitRepositoryOperationOutcome> ExecuteAsync(
         GitRepositoryPaths paths,
         GitRepositoryOperationKind operation,
         string operationName,
@@ -137,14 +152,14 @@ internal sealed class GitBranchIntegrationService
             cancellationToken).ConfigureAwait(false);
         if (result.IsSuccess)
         {
-            return new GitBranchIntegrationOutcome(IsCompleted: true, Operation: null, Message: null);
+            return new GitRepositoryOperationOutcome(IsCompleted: true, Operation: null, Message: null);
         }
 
         var exception = new GitOperationException(result);
         var activeOperation = GitRepositoryOperationStateReader.Read(paths.GitDirectory);
         if (activeOperation == operation)
         {
-            return new GitBranchIntegrationOutcome(
+            return new GitRepositoryOperationOutcome(
                 IsCompleted: false,
                 Operation: activeOperation,
                 Message: exception.Message);
@@ -162,8 +177,8 @@ internal sealed class GitBranchIntegrationService
         {
             throw new InvalidOperationException(
                 activeOperation is null
-                    ? "No merge or rebase is currently in progress."
-                    : $"A {activeOperation.Value.ToString().ToLowerInvariant()} is in progress instead.");
+                    ? "No cherry-pick, merge, or rebase is currently in progress."
+                    : $"A {FormatOperationName(activeOperation.Value)} is in progress instead.");
         }
     }
 
@@ -182,9 +197,26 @@ internal sealed class GitBranchIntegrationService
 
         return normalized;
     }
+
+    private static string NormalizeCommitHash(string commitHash)
+    {
+        var normalized = commitHash.Trim();
+        if ((normalized.Length is not 40 and not 64) ||
+            normalized.Any(character => !Uri.IsHexDigit(character)))
+        {
+            throw new ArgumentException("Commit hash is not valid.", nameof(commitHash));
+        }
+
+        return normalized;
+    }
+
+    private static string FormatOperationName(GitRepositoryOperationKind operation) =>
+        operation == GitRepositoryOperationKind.CherryPick
+            ? "cherry-pick"
+            : operation.ToString().ToLowerInvariant();
 }
 
-internal sealed record GitBranchIntegrationOutcome(
+internal sealed record GitRepositoryOperationOutcome(
     bool IsCompleted,
     GitRepositoryOperationKind? Operation,
     string? Message);

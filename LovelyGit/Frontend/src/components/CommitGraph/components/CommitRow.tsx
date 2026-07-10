@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import type { BranchIntegrationMode } from "@/components/TopNavBar/components/BranchIntegrationDialog";
 import type { CommitGraphRow } from "@/generated/types";
 import { AuthorCell } from "./AuthorCell";
+import { CommitContextMenu } from "./CommitContextMenu";
 import { CommitMessage } from "./CommitMessage";
 import { GraphCell } from "./GraphCell";
 import { HashCell } from "./HashCell";
@@ -13,6 +14,8 @@ export function CommitRow({
 	currentBranchName,
 	graph,
 	isSelected,
+	isHead,
+	onCherryPick,
 	onIntegrateBranch,
 	onSelect,
 	remotePrefixes,
@@ -26,7 +29,9 @@ export function CommitRow({
 		scrollLeft: number;
 	};
 	isSelected: boolean;
+	isHead: boolean;
 	onIntegrateBranch: (mode: BranchIntegrationMode, branchName: string) => void;
+	onCherryPick: (row: CommitGraphRow) => void;
 	onSelect: (row: CommitGraphRow) => void;
 	remotePrefixes: string[];
 	row: CommitGraphRow | null;
@@ -64,7 +69,7 @@ export function CommitRow({
 		);
 	}
 
-	return (
+	const commitButton = (
 		<button
 			className={`${rowClassName} w-full cursor-pointer border-0 p-0 text-left text-inherit focus-visible:bg-accent focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-ring`}
 			onClick={() => onSelect(row)}
@@ -96,6 +101,18 @@ export function CommitRow({
 				<AuthorCell row={row} />
 			</Column>
 		</button>
+	);
+
+	return (
+		<CommitContextMenu
+			currentBranchName={currentBranchName}
+			isHead={isHead}
+			onCherryPick={onCherryPick}
+			onOpenDetails={onSelect}
+			row={row}
+		>
+			{commitButton}
+		</CommitContextMenu>
 	);
 }
 

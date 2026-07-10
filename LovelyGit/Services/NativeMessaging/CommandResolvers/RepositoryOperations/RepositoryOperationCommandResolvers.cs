@@ -10,14 +10,14 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Reposi
 internal sealed class GetRepositoryOperationStateCommandResolver
     : CommandResponder<GetRepositoryOperationStateCommandArguments>
 {
-    private readonly GitBranchIntegrationService _branchIntegration;
+    private readonly GitRepositoryOperationService _repositoryOperations;
     private readonly KnownGitRepositorysRepository _knownRepositories;
 
     public GetRepositoryOperationStateCommandResolver(
-        GitBranchIntegrationService branchIntegration,
+        GitRepositoryOperationService repositoryOperations,
         KnownGitRepositorysRepository knownRepositories)
     {
-        _branchIntegration = branchIntegration;
+        _repositoryOperations = repositoryOperations;
         _knownRepositories = knownRepositories;
     }
 
@@ -39,7 +39,7 @@ internal sealed class GetRepositoryOperationStateCommandResolver
 
         try
         {
-            var operation = await _branchIntegration
+            var operation = await _repositoryOperations
                 .GetOperationAsync(repository.Path!, CancellationToken.None)
                 .ConfigureAwait(false);
             return new CommandResponse<RepositoryOperationStateResponse>
@@ -82,14 +82,14 @@ internal sealed class GetRepositoryOperationStateCommandResolver
 internal sealed class ContinueRepositoryOperationCommandResolver
     : CommandResponder<RepositoryOperationCommandArguments>
 {
-    private readonly GitBranchIntegrationService _branchIntegration;
+    private readonly GitRepositoryOperationService _repositoryOperations;
     private readonly KnownGitRepositorysRepository _knownRepositories;
 
     public ContinueRepositoryOperationCommandResolver(
-        GitBranchIntegrationService branchIntegration,
+        GitRepositoryOperationService repositoryOperations,
         KnownGitRepositorysRepository knownRepositories)
     {
-        _branchIntegration = branchIntegration;
+        _repositoryOperations = repositoryOperations;
         _knownRepositories = knownRepositories;
     }
 
@@ -111,7 +111,7 @@ internal sealed class ContinueRepositoryOperationCommandResolver
 
         try
         {
-            var result = await _branchIntegration.ContinueAsync(
+            var result = await _repositoryOperations.ContinueAsync(
                     repository.Path!,
                     command.Arguments.Operation,
                     CancellationToken.None)
@@ -137,13 +137,13 @@ internal sealed class ContinueRepositoryOperationCommandResolver
 
     private static CommandResponseBase Success(
         NativeCommand<RepositoryOperationCommandArguments> command,
-        GitBranchIntegrationOutcome result) =>
-        new CommandResponse<BranchIntegrationCommandResponse>
+        GitRepositoryOperationOutcome result) =>
+        new CommandResponse<RepositoryOperationCommandResponse>
         {
             CommandUniqueId = command.CommandUniqueId,
             CommandType = command.CommandType,
             IsSuccess = true,
-            Result = new BranchIntegrationCommandResponse
+            Result = new RepositoryOperationCommandResponse
             {
                 IsCompleted = result.IsCompleted,
                 Operation = result.Operation,
@@ -166,14 +166,14 @@ internal sealed class ContinueRepositoryOperationCommandResolver
 internal sealed class AbortRepositoryOperationCommandResolver
     : CommandResponder<RepositoryOperationCommandArguments>
 {
-    private readonly GitBranchIntegrationService _branchIntegration;
+    private readonly GitRepositoryOperationService _repositoryOperations;
     private readonly KnownGitRepositorysRepository _knownRepositories;
 
     public AbortRepositoryOperationCommandResolver(
-        GitBranchIntegrationService branchIntegration,
+        GitRepositoryOperationService repositoryOperations,
         KnownGitRepositorysRepository knownRepositories)
     {
-        _branchIntegration = branchIntegration;
+        _repositoryOperations = repositoryOperations;
         _knownRepositories = knownRepositories;
     }
 
@@ -195,7 +195,7 @@ internal sealed class AbortRepositoryOperationCommandResolver
 
         try
         {
-            await _branchIntegration.AbortAsync(
+            await _repositoryOperations.AbortAsync(
                     repository.Path!,
                     command.Arguments.Operation,
                     CancellationToken.None)

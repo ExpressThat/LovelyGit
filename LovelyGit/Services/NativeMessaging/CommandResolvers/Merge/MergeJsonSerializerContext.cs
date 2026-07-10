@@ -6,5 +6,5 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Merge;
 
 [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
 [JsonSerializable(typeof(MergeBranchIntoCurrentCommandArguments))]
-[JsonSerializable(typeof(CommandResponse<BranchIntegrationCommandResponse>))]
+[JsonSerializable(typeof(CommandResponse<RepositoryOperationCommandResponse>))]
 internal partial class MergeJsonSerializerContext : JsonSerializerContext;

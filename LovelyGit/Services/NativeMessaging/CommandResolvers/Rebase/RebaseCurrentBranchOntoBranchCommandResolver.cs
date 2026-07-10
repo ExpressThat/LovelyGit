@@ -10,14 +10,14 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Rebase
 internal sealed class RebaseCurrentBranchOntoBranchCommandResolver
     : CommandResponder<RebaseCurrentBranchOntoBranchCommandArguments>
 {
-    private readonly GitBranchIntegrationService _branchIntegration;
+    private readonly GitRepositoryOperationService _repositoryOperations;
     private readonly KnownGitRepositorysRepository _knownRepositories;
 
     public RebaseCurrentBranchOntoBranchCommandResolver(
-        GitBranchIntegrationService branchIntegration,
+        GitRepositoryOperationService repositoryOperations,
         KnownGitRepositorysRepository knownRepositories)
     {
-        _branchIntegration = branchIntegration;
+        _repositoryOperations = repositoryOperations;
         _knownRepositories = knownRepositories;
     }
 
@@ -45,7 +45,7 @@ internal sealed class RebaseCurrentBranchOntoBranchCommandResolver
 
         try
         {
-            var result = await _branchIntegration.RebaseAsync(
+            var result = await _repositoryOperations.RebaseAsync(
                     repository.Path,
                     arguments.BranchName,
                     CancellationToken.None)
@@ -60,13 +60,13 @@ internal sealed class RebaseCurrentBranchOntoBranchCommandResolver
 
     private static CommandResponseBase Success(
         NativeCommand<RebaseCurrentBranchOntoBranchCommandArguments> command,
-        GitBranchIntegrationOutcome result) =>
-        new CommandResponse<BranchIntegrationCommandResponse>
+        GitRepositoryOperationOutcome result) =>
+        new CommandResponse<RepositoryOperationCommandResponse>
         {
             CommandUniqueId = command.CommandUniqueId,
             CommandType = command.CommandType,
             IsSuccess = true,
-            Result = new BranchIntegrationCommandResponse
+            Result = new RepositoryOperationCommandResponse
             {
                 IsCompleted = result.IsCompleted,
                 Operation = result.Operation,

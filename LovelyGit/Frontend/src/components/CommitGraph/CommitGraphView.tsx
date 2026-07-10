@@ -1,26 +1,17 @@
-import { useVirtualizer } from "@tanstack/react-virtual";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import {
 	BranchIntegrationDialog,
 	type BranchIntegrationMode,
 } from "@/components/TopNavBar/components/BranchIntegrationDialog";
 import type { CommitGraphRow as CommitGraphRowModel } from "@/generated/types";
+import { CherryPickDialog } from "./components/CherryPickDialog";
 import { CommitGraphHeader } from "./components/CommitGraphHeader";
 import { CommitRow } from "./components/CommitRow";
 import { RefsPanel } from "./components/RefsPanel";
-import type { ColKey } from "./constants";
-import {
-	COL_DEFAULT,
-	COL_MIN,
-	COL_ORDER,
-	GRAPH_PADDING_LEFT,
-	LANE_GAP,
-	OVERSCAN,
-	ROW_HEIGHT,
-} from "./constants";
+import { ROW_HEIGHT } from "./constants";
 import { useCommitGraphData } from "./hooks/useCommitGraphData";
+import { useCommitGraphViewport } from "./hooks/useCommitGraphViewport";
 import { useRepositoryRefs } from "./hooks/useRepositoryRefs";
-import { resolveWidths } from "./utils/columns";
 
 export function CommitGraphView({
 	onCurrentBranchNameChange,
@@ -39,17 +30,12 @@ export function CommitGraphView({
 	repositoryId: string | null;
 	selectedCommitHash: string | null;
 }) {
-	const viewportRef = useRef<HTMLDivElement | null>(null);
-	const scrollRef = useRef<HTMLDivElement | null>(null);
-	const [containerWidth, setContainerWidth] = useState(0);
-	const [graphScrollLeft, setGraphScrollLeft] = useState(0);
-	const [preferredWidths, setPreferredWidths] =
-		useState<Record<ColKey, number>>(COL_DEFAULT);
-	const graphScrollerRef = useRef<HTMLDivElement | null>(null);
 	const [integrationTarget, setIntegrationTarget] = useState<{
 		branchName: string;
 		mode: BranchIntegrationMode;
 	} | null>(null);
+	const [cherryPickCommit, setCherryPickCommit] =
+		useState<CommitGraphRowModel | null>(null);
 
 	const {
 		currentBranchName,
@@ -62,111 +48,27 @@ export function CommitGraphView({
 		totalRows,
 	} = useCommitGraphData(refreshToken);
 	const repositoryRefs = useRepositoryRefs(repositoryId, refreshToken);
+	const currentHeadHash =
+		repositoryRefs.refs?.refs.find(
+			(ref) => ref.kind === "Local" && ref.name === currentBranchName,
+		)?.commitHash ?? null;
 
 	useEffect(() => {
 		onCurrentBranchNameChange?.(currentBranchName);
 	}, [currentBranchName, onCurrentBranchNameChange]);
 
-	useEffect(() => {
-		const node = viewportRef.current;
-		if (!node) {
-			return;
-		}
-
-		const observer = new ResizeObserver((entries) => {
-			const nextWidth = Math.floor(entries[0]?.contentRect.width ?? 0);
-			setContainerWidth((current) =>
-				current === nextWidth ? current : nextWidth,
-			);
-		});
-		observer.observe(node);
-		return () => {
-			observer.disconnect();
-		};
-	}, []);
-
-	const widths = useMemo(
-		() => resolveWidths(containerWidth, preferredWidths),
-		[containerWidth, preferredWidths],
-	);
-	const templateColumns = useMemo(
-		() =>
-			`${widths.branch}px ${widths.graph}px ${widths.message}px ${widths.hash}px ${widths.author}px`,
-		[widths],
-	);
-	const graphContentWidth = useMemo(
-		() =>
-			Math.max(widths.graph, GRAPH_PADDING_LEFT + (laneCount + 2) * LANE_GAP),
-		[laneCount, widths.graph],
-	);
-
-	useEffect(() => {
-		if (graphScrollLeft <= Math.max(0, graphContentWidth - widths.graph)) {
-			return;
-		}
-		setGraphScrollLeft(Math.max(0, graphContentWidth - widths.graph));
-	}, [graphContentWidth, graphScrollLeft, widths.graph]);
-
-	const rowCount = totalRows > 0 ? totalRows : 140;
-	const virtualizer = useVirtualizer({
-		count: rowCount,
-		estimateSize: () => ROW_HEIGHT,
-		getScrollElement: () => scrollRef.current,
-		overscan: OVERSCAN,
-	});
-	const virtualItems = virtualizer.getVirtualItems();
-
-	useEffect(() => {
-		const first = virtualItems[0];
-		const last = virtualItems[virtualItems.length - 1];
-
-		if (!first || !last) {
-			return;
-		}
-		ensureRangeLoaded(first.index, last.index);
-	}, [ensureRangeLoaded, virtualItems]);
-
-	const handleResizeStart = (
-		leftKey: ColKey,
-		event: React.PointerEvent<HTMLButtonElement>,
-	) => {
-		const leftIndex = COL_ORDER.indexOf(leftKey);
-		if (leftIndex < 0 || leftIndex >= COL_ORDER.length - 1) {
-			return;
-		}
-
-		event.preventDefault();
-		const rightKey = COL_ORDER[leftIndex + 1];
-		const startX = event.clientX;
-		const startLeft = widths[leftKey];
-		const startRight = widths[rightKey];
-
-		const onMove = (moveEvent: PointerEvent) => {
-			const dx = moveEvent.clientX - startX;
-			const minLeft = COL_MIN[leftKey];
-			const minRight = COL_MIN[rightKey];
-			const pair = startLeft + startRight;
-			const nextLeft = Math.min(
-				Math.max(startLeft + dx, minLeft),
-				pair - minRight,
-			);
-			const nextRight = pair - nextLeft;
-
-			setPreferredWidths((current) => ({
-				...current,
-				[leftKey]: nextLeft,
-				[rightKey]: nextRight,
-			}));
-		};
-
-		const onUp = () => {
-			window.removeEventListener("pointermove", onMove);
-			window.removeEventListener("pointerup", onUp);
-		};
-
-		window.addEventListener("pointermove", onMove);
-		window.addEventListener("pointerup", onUp, { once: true });
-	};
+	const {
+		graphContentWidth,
+		graphScrollerRef,
+		graphScrollLeft,
+		handleResizeStart,
+		scrollRef,
+		setGraphScrollLeft,
+		templateColumns,
+		virtualItems,
+		virtualizer,
+		viewportRef,
+	} = useCommitGraphViewport({ ensureRangeLoaded, laneCount, totalRows });
 
 	const integrateBranch = (mode: BranchIntegrationMode, branchName: string) =>
 		setIntegrationTarget({ branchName, mode });
@@ -225,6 +127,8 @@ export function CommitGraphView({
 												Boolean(rows[item.index]) &&
 												rows[item.index]?.commit.hash === selectedCommitHash
 											}
+											isHead={rows[item.index]?.commit.hash === currentHeadHash}
+											onCherryPick={setCherryPickCommit}
 											onIntegrateBranch={integrateBranch}
 											onSelect={onSelectCommit}
 											currentBranchName={currentBranchName}
@@ -271,6 +175,14 @@ export function CommitGraphView({
 				onRepositoryChanged={onRepositoryChanged}
 				repositoryId={repositoryId}
 				targetBranchName={integrationTarget?.branchName}
+			/>
+			<CherryPickDialog
+				commit={cherryPickCommit}
+				currentBranchName={currentBranchName}
+				onOpenChange={setCherryPickCommit}
+				onOpenWorkingChanges={onOpenWorkingChanges}
+				onRepositoryChanged={onRepositoryChanged}
+				repositoryId={repositoryId}
 			/>
 		</>
 	);

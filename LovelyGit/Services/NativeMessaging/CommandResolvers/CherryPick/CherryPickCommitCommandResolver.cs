@@ -5,15 +5,15 @@ using ExpressThat.LovelyGit.Services.Git.Cli;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.RepositoryOperations;
 using ExpressThat.LovelyGit.Services.NativeMessaging.Commands;
 
-namespace ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Merge;
+namespace ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.CherryPick;
 
-internal sealed class MergeBranchIntoCurrentCommandResolver
-    : CommandResponder<MergeBranchIntoCurrentCommandArguments>
+internal sealed class CherryPickCommitCommandResolver
+    : CommandResponder<CherryPickCommitCommandArguments>
 {
     private readonly GitRepositoryOperationService _repositoryOperations;
     private readonly KnownGitRepositorysRepository _knownRepositories;
 
-    public MergeBranchIntoCurrentCommandResolver(
+    public CherryPickCommitCommandResolver(
         GitRepositoryOperationService repositoryOperations,
         KnownGitRepositorysRepository knownRepositories)
     {
@@ -21,14 +21,14 @@ internal sealed class MergeBranchIntoCurrentCommandResolver
         _knownRepositories = knownRepositories;
     }
 
-    protected override JsonTypeInfo<MergeBranchIntoCurrentCommandArguments> ArgumentsJsonTypeInfo =>
-        MergeJsonSerializerContext.Default.MergeBranchIntoCurrentCommandArguments;
+    protected override JsonTypeInfo<CherryPickCommitCommandArguments> ArgumentsJsonTypeInfo =>
+        CherryPickJsonSerializerContext.Default.CherryPickCommitCommandArguments;
 
     public override bool CanRespondTo(NativeCommand<JsonElement> command) =>
-        command.CommandType == NativeMessageType.MergeBranchIntoCurrent;
+        command.CommandType == NativeMessageType.CherryPickCommit;
 
     public override async Task<CommandResponseBase> Resolve(
-        NativeCommand<MergeBranchIntoCurrentCommandArguments> command)
+        NativeCommand<CherryPickCommitCommandArguments> command)
     {
         var arguments = command.Arguments;
         if (arguments is null || arguments.RepositoryId == Guid.Empty)
@@ -45,9 +45,9 @@ internal sealed class MergeBranchIntoCurrentCommandResolver
 
         try
         {
-            var result = await _repositoryOperations.MergeAsync(
+            var result = await _repositoryOperations.CherryPickAsync(
                     repository.Path,
-                    arguments.BranchName,
+                    arguments.CommitHash,
                     CancellationToken.None)
                 .ConfigureAwait(false);
             return Success(command, result);
@@ -59,7 +59,7 @@ internal sealed class MergeBranchIntoCurrentCommandResolver
     }
 
     private static CommandResponseBase Success(
-        NativeCommand<MergeBranchIntoCurrentCommandArguments> command,
+        NativeCommand<CherryPickCommitCommandArguments> command,
         GitRepositoryOperationOutcome result) =>
         new CommandResponse<RepositoryOperationCommandResponse>
         {
@@ -75,7 +75,7 @@ internal sealed class MergeBranchIntoCurrentCommandResolver
         };
 
     private static CommandResponseBase Failure(
-        NativeCommand<MergeBranchIntoCurrentCommandArguments> command,
+        NativeCommand<CherryPickCommitCommandArguments> command,
         string message) =>
         new()
         {

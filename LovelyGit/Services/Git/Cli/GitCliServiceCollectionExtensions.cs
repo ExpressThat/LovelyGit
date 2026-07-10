@@ -8,7 +8,7 @@ internal static class GitCliServiceCollectionExtensions
         services.AddSingleton<GitOperationService>();
         services.AddSingleton<GitRemoteCommandService>();
         services.AddSingleton<GitBranchCommandService>();
-        services.AddSingleton<GitBranchIntegrationService>();
+        services.AddSingleton<GitRepositoryOperationService>();
         services.AddSingleton<GitStashCommandService>();
         services.AddSingleton<GitCloneService>();
         return services;

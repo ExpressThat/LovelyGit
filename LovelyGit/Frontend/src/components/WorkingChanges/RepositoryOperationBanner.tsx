@@ -1,4 +1,11 @@
-import { GitMerge, ListRestart, LoaderCircle, Play, X } from "lucide-react";
+import {
+	GitCommitHorizontal,
+	GitMerge,
+	ListRestart,
+	LoaderCircle,
+	Play,
+	X,
+} from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
@@ -64,7 +71,12 @@ export function RepositoryOperationBanner({
 		return null;
 	}
 
-	const label = operation === "Rebase" ? "Rebase" : "Merge";
+	const label =
+		operation === "CherryPick"
+			? "Cherry-pick"
+			: operation === "Rebase"
+				? "Rebase"
+				: "Merge";
 	const refreshAfterMutation = async () => {
 		await Promise.all([onRefresh(), onRepositoryChanged()]);
 		await loadOperation();
@@ -140,7 +152,12 @@ export function RepositoryOperationBanner({
 		<>
 			<div className="grid gap-3 rounded-lg border border-primary/30 bg-primary/5 p-3">
 				<div className="flex items-start gap-2">
-					{operation === "Rebase" ? (
+					{operation === "CherryPick" ? (
+						<GitCommitHorizontal
+							aria-hidden="true"
+							className="mt-0.5 size-4 text-primary"
+						/>
+					) : operation === "Rebase" ? (
 						<ListRestart
 							aria-hidden="true"
 							className="mt-0.5 size-4 text-primary"

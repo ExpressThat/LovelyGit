@@ -30,6 +30,7 @@ export function BranchContextMenu({
 		<ContextMenu>
 			<ContextMenuTrigger
 				className={inline ? "inline-flex min-w-0" : "w-full"}
+				onContextMenu={(event) => event.stopPropagation()}
 				render={inline ? <span /> : undefined}
 			>
 				{children}

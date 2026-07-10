@@ -4,7 +4,7 @@ using ExpressThat.LovelyGit.Services.TypeGeneration;
 namespace ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.RepositoryOperations;
 
 [TypeSharp]
-public sealed record BranchIntegrationCommandResponse
+public sealed record RepositoryOperationCommandResponse
 {
     public bool IsCompleted { get; init; }
     public GitRepositoryOperationKind? Operation { get; init; }

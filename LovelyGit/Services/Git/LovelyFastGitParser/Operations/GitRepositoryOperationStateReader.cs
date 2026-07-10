@@ -4,6 +4,11 @@ internal static class GitRepositoryOperationStateReader
 {
     public static GitRepositoryOperationKind? Read(string gitDirectory)
     {
+        if (File.Exists(Path.Combine(gitDirectory, "CHERRY_PICK_HEAD")))
+        {
+            return GitRepositoryOperationKind.CherryPick;
+        }
+
         if (File.Exists(Path.Combine(gitDirectory, "MERGE_HEAD")))
         {
             return GitRepositoryOperationKind.Merge;

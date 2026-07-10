@@ -6,10 +6,10 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Reposi
 
 [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
 [JsonSerializable(typeof(GitRepositoryOperationKind))]
-[JsonSerializable(typeof(BranchIntegrationCommandResponse))]
+[JsonSerializable(typeof(RepositoryOperationCommandResponse))]
 [JsonSerializable(typeof(GetRepositoryOperationStateCommandArguments))]
 [JsonSerializable(typeof(RepositoryOperationCommandArguments))]
 [JsonSerializable(typeof(RepositoryOperationStateResponse))]
-[JsonSerializable(typeof(CommandResponse<BranchIntegrationCommandResponse>))]
+[JsonSerializable(typeof(CommandResponse<RepositoryOperationCommandResponse>))]
 [JsonSerializable(typeof(CommandResponse<RepositoryOperationStateResponse>))]
 internal partial class RepositoryOperationsJsonSerializerContext : JsonSerializerContext;

@@ -1,4 +1,5 @@
 using ExpressThat.LovelyGit.Services.Git.WorkingTree;
+using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.CherryPick;
 using ExpressThat.LovelyGit.Services.NativeMessaging.Commands;
 using ExpressThat.LovelyGit.Services.Json;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Merge;
@@ -12,6 +13,7 @@ internal static class WorkingTreeServiceCollectionExtensions
     public static IServiceCollection AddWorkingTreeCommands(this IServiceCollection services)
     {
         services.AddLovelyGitJsonTypeInfoResolver(WorkingTreeJsonSerializerContext.Default);
+        services.AddLovelyGitJsonTypeInfoResolver(CherryPickJsonSerializerContext.Default);
         services.AddLovelyGitJsonTypeInfoResolver(MergeJsonSerializerContext.Default);
         services.AddLovelyGitJsonTypeInfoResolver(RebaseJsonSerializerContext.Default);
         services.AddLovelyGitJsonTypeInfoResolver(RepositoryOperationsJsonSerializerContext.Default);
@@ -38,6 +40,7 @@ internal static class WorkingTreeServiceCollectionExtensions
         services.AddSingleton<ICommandResponder, CheckoutBranchCommandResolver>();
         services.AddSingleton<ICommandResponder, CreateBranchCommandResolver>();
         services.AddSingleton<ICommandResponder, StashCommandResolver>();
+        services.AddSingleton<ICommandResponder, CherryPickCommitCommandResolver>();
         services.AddSingleton<ICommandResponder, MergeBranchIntoCurrentCommandResolver>();
         services.AddSingleton<ICommandResponder, RebaseCurrentBranchOntoBranchCommandResolver>();
         services.AddSingleton<ICommandResponder, GetRepositoryOperationStateCommandResolver>();

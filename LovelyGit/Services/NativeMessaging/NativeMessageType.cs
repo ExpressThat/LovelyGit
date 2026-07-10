@@ -1,5 +1,6 @@
 using System.Text.Json.Serialization;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.CommitGraph;
+using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.CherryPick;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.KnownRepository;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Merge;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Rebase;
@@ -18,6 +19,7 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging
     [JsonConverter(typeof(JsonStringEnumConverter<NativeMessageType>))]
     public enum NativeMessageType
     {
+        // Repository discovery, tabs, local launching, and cloning.
         [NativeMessageContract(typeof(EmptyCommandArguments), typeof(List<KnownGitRepository>))]
         KnownGitRepositorys,
         [NativeMessageContract(typeof(EmptyCommandArguments), typeof(KnownGitRepository))]
@@ -34,6 +36,8 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging
         CloneRepository,
         [NativeMessageContract(typeof(CancelCloneRepositoryCommandArguments))]
         CancelCloneRepository,
+
+        // Fast native commit graph, commit metadata, patch, and diff reads.
         [NativeMessageContract(typeof(CommitGraphCommandArguments), typeof(CommitGraphResponse))]
         CommitGraph,
         [NativeMessageContract(typeof(GetRepositoryRefsCommandArguments), typeof(RepositoryRefsResponse))]
@@ -44,6 +48,8 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging
         GetCommitFileDiff,
         [NativeMessageContract(typeof(GetCommitPatchCommandArguments), typeof(CommitPatchResponse))]
         GetCommitPatch,
+
+        // Working-tree reads and file/index mutations.
         [NativeMessageContract(typeof(GetWorkingTreeChangesCommandArguments), typeof(WorkingTreeChangeSummaryResponse))]
         GetWorkingTreeChangeSummary,
         [NativeMessageContract(typeof(GetWorkingTreeChangesCommandArguments), typeof(WorkingTreeChangesResponse))]
@@ -64,6 +70,8 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging
         UnstageWorkingTreeLine,
         [NativeMessageContract(typeof(CommitStagedChangesCommandArguments))]
         CommitStagedChanges,
+
+        // Remote synchronization and branch/ref mutations.
         [NativeMessageContract(typeof(GitRemoteCommandArguments))]
         FetchRepository,
         [NativeMessageContract(typeof(GitRemoteCommandArguments))]
@@ -76,16 +84,22 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging
         CreateBranch,
         [NativeMessageContract(typeof(StashCommandArguments))]
         ManageStash,
-        [NativeMessageContract(typeof(MergeBranchIntoCurrentCommandArguments), typeof(BranchIntegrationCommandResponse))]
+
+        // Multi-step repository operations and their conflict lifecycle.
+        [NativeMessageContract(typeof(CherryPickCommitCommandArguments), typeof(RepositoryOperationCommandResponse))]
+        CherryPickCommit,
+        [NativeMessageContract(typeof(MergeBranchIntoCurrentCommandArguments), typeof(RepositoryOperationCommandResponse))]
         MergeBranchIntoCurrent,
-        [NativeMessageContract(typeof(RebaseCurrentBranchOntoBranchCommandArguments), typeof(BranchIntegrationCommandResponse))]
+        [NativeMessageContract(typeof(RebaseCurrentBranchOntoBranchCommandArguments), typeof(RepositoryOperationCommandResponse))]
         RebaseCurrentBranchOntoBranch,
         [NativeMessageContract(typeof(GetRepositoryOperationStateCommandArguments), typeof(RepositoryOperationStateResponse))]
         GetRepositoryOperationState,
-        [NativeMessageContract(typeof(RepositoryOperationCommandArguments), typeof(BranchIntegrationCommandResponse))]
+        [NativeMessageContract(typeof(RepositoryOperationCommandArguments), typeof(RepositoryOperationCommandResponse))]
         ContinueRepositoryOperation,
         [NativeMessageContract(typeof(RepositoryOperationCommandArguments))]
         AbortRepositoryOperation,
+
+        // User preferences and bulk settings hydration.
         [NativeMessageContract(typeof(GetSettingsCommandArguments), typeof(JsonElement))]
         GetSetting,
         [NativeMessageContract(typeof(SetSettingsCommandArguments))]
@@ -94,6 +108,8 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging
         GetAllSettings,
         [NativeMessageContract(typeof(SetMultipleSettingsCommandArguments))]
         SetMultipleSettings,
+
+        // Push notifications that invalidate or update live frontend state.
         [NativeMessageContract(ResponseType = typeof(WorkingTreeChangedNotification))]
         WorkingTreeChanged,
         [NativeMessageContract(ResponseType = typeof(CommitGraphChangedNotification))]

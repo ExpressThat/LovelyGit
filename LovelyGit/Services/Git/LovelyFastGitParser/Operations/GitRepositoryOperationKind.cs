@@ -10,4 +10,5 @@ public enum GitRepositoryOperationKind
 {
     Merge,
     Rebase,
+    CherryPick,
 }
