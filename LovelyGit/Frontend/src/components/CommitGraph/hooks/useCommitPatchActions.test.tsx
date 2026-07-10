@@ -1,0 +1,56 @@
+// @vitest-environment jsdom
+
+import { act, renderHook, waitFor } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { CommitGraphRow } from "@/generated/types";
+import { sendRequestWithResponse } from "@/lib/commands";
+import { copyToClipboard } from "../utils/clipboard";
+import { useCommitPatchActions } from "./useCommitPatchActions";
+
+vi.mock("@/lib/commands", () => ({ sendRequestWithResponse: vi.fn() }));
+vi.mock("../utils/clipboard", () => ({ copyToClipboard: vi.fn() }));
+
+describe("useCommitPatchActions", () => {
+	beforeEach(() => vi.clearAllMocks());
+
+	it("requests the native patch and copies it", async () => {
+		vi.mocked(sendRequestWithResponse).mockResolvedValue({
+			commitHash: row.commit.hash,
+			isTruncated: false,
+			patch: "diff --git a/file.txt b/file.txt\n",
+		});
+		const { result } = renderHook(() => useCommitPatchActions("repository-id"));
+
+		await act(() => result.current.copyPatch(row));
+
+		expect(sendRequestWithResponse).toHaveBeenCalledWith({
+			arguments: {
+				commitHash: row.commit.hash,
+				repositoryId: "repository-id",
+			},
+			commandType: "GetCommitPatch",
+		});
+		expect(copyToClipboard).toHaveBeenCalledWith(
+			"diff --git a/file.txt b/file.txt\n",
+			"Commit patch",
+		);
+		await waitFor(() => expect(result.current.copyingCommitHash).toBeNull());
+	});
+
+	it("does not copy a truncated patch", async () => {
+		vi.mocked(sendRequestWithResponse).mockResolvedValue({
+			commitHash: row.commit.hash,
+			isTruncated: true,
+			patch: "partial",
+		});
+		const { result } = renderHook(() => useCommitPatchActions("repository-id"));
+
+		await act(() => result.current.copyPatch(row));
+
+		expect(copyToClipboard).not.toHaveBeenCalled();
+	});
+});
+
+const row = {
+	commit: { hash: "1".repeat(40), message: "Patch me" },
+} as CommitGraphRow;

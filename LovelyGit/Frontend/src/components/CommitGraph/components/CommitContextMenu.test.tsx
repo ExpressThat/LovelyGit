@@ -57,25 +57,40 @@ describe("CommitContextMenu", () => {
 
 		expect(onInteractiveRebase).toHaveBeenCalledWith(row);
 	});
+
+	it("copies the selected commit as a patch", async () => {
+		const user = userEvent.setup();
+		const onCopyPatch = vi.fn();
+		renderMenu({ onCopyPatch });
+		fireEvent.contextMenu(screen.getByRole("button", { name: "commit row" }));
+
+		await user.click(await screen.findByText("Copy commit as patch"));
+
+		expect(onCopyPatch).toHaveBeenCalledWith(row);
+	});
 });
 
 function renderMenu({
 	isHead = false,
 	onCreateBranch = vi.fn(),
 	onInteractiveRebase = vi.fn(),
+	onCopyPatch = vi.fn(),
 	onReset = vi.fn(),
 }: {
 	isHead?: boolean;
 	onCreateBranch?: (selected: CommitGraphRow) => void;
 	onInteractiveRebase?: (selected: CommitGraphRow) => void;
+	onCopyPatch?: (selected: CommitGraphRow) => void;
 	onReset?: (selected: CommitGraphRow) => void;
 }) {
 	return render(
 		<CommitContextMenu
+			copyPatchBusy={false}
 			currentBranchName="main"
 			isHead={isHead}
 			onCherryPick={vi.fn()}
 			onCreateBranch={onCreateBranch}
+			onCopyPatch={onCopyPatch}
 			onCreateTag={vi.fn()}
 			onOpenDetails={vi.fn()}
 			onInteractiveRebase={onInteractiveRebase}

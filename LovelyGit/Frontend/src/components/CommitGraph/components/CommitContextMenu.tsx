@@ -1,5 +1,6 @@
 import {
 	ClipboardCopy,
+	Copy,
 	GitBranch,
 	GitCommitHorizontal,
 	Info,
@@ -24,11 +25,13 @@ import { shortHash } from "../utils/format";
 
 export function CommitContextMenu({
 	children,
+	copyPatchBusy,
 	currentBranchName,
 	isHead,
 	onCherryPick,
 	onCreateTag,
 	onCreateBranch,
+	onCopyPatch,
 	onOpenDetails,
 	onInteractiveRebase,
 	onRevert,
@@ -36,11 +39,13 @@ export function CommitContextMenu({
 	row,
 }: {
 	children: ReactNode;
+	copyPatchBusy: boolean;
 	currentBranchName: string | null;
 	isHead: boolean;
 	onCherryPick: (row: CommitGraphRow) => void;
 	onCreateTag: (row: CommitGraphRow) => void;
 	onCreateBranch: (row: CommitGraphRow) => void;
+	onCopyPatch: (row: CommitGraphRow) => void;
 	onOpenDetails: (row: CommitGraphRow) => void;
 	onInteractiveRebase: (row: CommitGraphRow) => void;
 	onRevert: (row: CommitGraphRow) => void;
@@ -89,6 +94,13 @@ export function CommitContextMenu({
 				>
 					<ClipboardCopy aria-hidden="true" />
 					Copy commit hash
+				</ContextMenuItem>
+				<ContextMenuItem
+					disabled={copyPatchBusy}
+					onClick={() => onCopyPatch(row)}
+				>
+					<Copy aria-hidden="true" />
+					{copyPatchBusy ? "Creating commit patch…" : "Copy commit as patch"}
 				</ContextMenuItem>
 				<ContextMenuSeparator />
 				<ContextMenuItem onClick={() => onCreateTag(row)}>

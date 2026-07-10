@@ -15,6 +15,7 @@ import type { TagAction } from "./TagContextMenu";
 export function CommitRow({
 	branchMutationBusy,
 	branchRemoteName,
+	copyPatchBusy,
 	currentBranchName,
 	graph,
 	isSelected,
@@ -23,6 +24,7 @@ export function CommitRow({
 	onBranchAction,
 	onCreateTag,
 	onCreateBranch,
+	onCopyPatch,
 	onCreateBranchFromTag,
 	onIntegrateBranch,
 	onInteractiveRebase,
@@ -39,6 +41,7 @@ export function CommitRow({
 }: {
 	branchMutationBusy: boolean;
 	branchRemoteName: string | null;
+	copyPatchBusy: boolean;
 	currentBranchName: string | null;
 	graph: {
 		contentWidth: number;
@@ -54,6 +57,7 @@ export function CommitRow({
 	onBranchAction: (action: BranchAction, branchName: string) => void;
 	onCreateTag: (row: CommitGraphRow) => void;
 	onCreateBranch: (row: CommitGraphRow) => void;
+	onCopyPatch: (row: CommitGraphRow) => void;
 	onCreateBranchFromTag: (tagName: string, commitHash: string) => void;
 	onSelect: (row: CommitGraphRow) => void;
 	onTagAction: (action: TagAction, tagName: string) => void;
@@ -138,11 +142,13 @@ export function CommitRow({
 
 	return (
 		<CommitContextMenu
+			copyPatchBusy={copyPatchBusy}
 			currentBranchName={currentBranchName}
 			isHead={isHead}
 			onCherryPick={onCherryPick}
 			onCreateTag={onCreateTag}
 			onCreateBranch={onCreateBranch}
+			onCopyPatch={onCopyPatch}
 			onOpenDetails={onSelect}
 			onInteractiveRebase={onInteractiveRebase}
 			onRevert={onRevert}

@@ -1,4 +1,4 @@
-import type { CommitGraphRow as CommitGraphRowModel } from "@/generated/types";
+import type { CommitGraphViewProps } from "./CommitGraphViewProps";
 import { BranchManagementDialogs } from "./components/BranchManagementDialogs";
 import { CommitGraphHeader } from "./components/CommitGraphHeader";
 import { CommitGraphHorizontalScrollbar } from "./components/CommitGraphHorizontalScrollbar";
@@ -16,6 +16,7 @@ import {
 	useNotifyCurrentBranch,
 } from "./hooks/useCommitGraphDialogs";
 import { useCommitGraphViewport } from "./hooks/useCommitGraphViewport";
+import { useCommitPatchActions } from "./hooks/useCommitPatchActions";
 import { useRepositoryRefs } from "./hooks/useRepositoryRefs";
 import { buildCommitGraphRefView } from "./utils/commitGraphRefView";
 
@@ -27,16 +28,9 @@ export function CommitGraphView({
 	refreshToken = 0,
 	repositoryId,
 	selectedCommitHash,
-}: {
-	onCurrentBranchNameChange?: (branchName: string | null) => void;
-	onOpenWorkingChanges: () => void;
-	onRepositoryChanged: () => void;
-	onSelectCommit: (row: CommitGraphRowModel) => void;
-	refreshToken?: number;
-	repositoryId: string | null;
-	selectedCommitHash: string | null;
-}) {
+}: CommitGraphViewProps) {
 	const dialogs = useCommitGraphDialogs();
+	const patchActions = useCommitPatchActions(repositoryId);
 
 	const {
 		currentBranchName,
@@ -150,6 +144,10 @@ export function CommitGraphView({
 										<CommitRow
 											branchMutationBusy={branchController.busyBranch !== null}
 											branchRemoteName={tagRemoteName}
+											copyPatchBusy={
+												patchActions.copyingCommitHash ===
+												rows[item.index]?.commit.hash
+											}
 											graph={{
 												contentWidth: graphContentWidth,
 												scrollLeft: graphScrollLeft,
@@ -162,6 +160,7 @@ export function CommitGraphView({
 											onCherryPick={dialogs.setCherryPickCommit}
 											onBranchAction={manageBranch}
 											onCreateBranch={branchCreation.createAtCommit}
+											onCopyPatch={patchActions.copyPatch}
 											onCreateBranchFromTag={branchCreation.createFromTag}
 											onCreateTag={dialogs.setTagCommit}
 											onIntegrateBranch={dialogs.integrateBranch}
