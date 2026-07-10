@@ -8,17 +8,8 @@ import {
 	Plus,
 	Search,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -29,7 +20,6 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
-import type { RepositoryRefItem } from "@/generated/types";
 import { sendRequestWithResponse } from "@/lib/commands";
 import { gitMutationTimeoutMs } from "@/lib/gitMutationTimeout";
 import { NativeMessageType } from "@/lib/nativeMessaging";
@@ -37,6 +27,8 @@ import {
 	BranchIntegrationDialog,
 	type BranchIntegrationMode,
 } from "./BranchIntegrationDialog";
+import { CreateBranchDialog } from "./CreateBranchDialog";
+import { useLocalBranches } from "./useLocalBranches";
 
 type BranchControlProps = {
 	currentBranchName: string | null;
@@ -53,53 +45,16 @@ export function BranchControl({
 	onRepositoryChanged,
 	repositoryId,
 }: BranchControlProps) {
-	const [branches, setBranches] = useState<RepositoryRefItem[]>([]);
 	const [busyBranch, setBusyBranch] = useState<string | null>(null);
 	const [createOpen, setCreateOpen] = useState(false);
-	const [error, setError] = useState<string | null>(null);
-	const [isLoading, setIsLoading] = useState(false);
 	const [integrationMode, setIntegrationMode] =
 		useState<BranchIntegrationMode | null>(null);
 	const [menuOpen, setMenuOpen] = useState(false);
 	const [query, setQuery] = useState("");
-
-	useEffect(() => {
-		if (!menuOpen || !repositoryId) {
-			return;
-		}
-
-		let isActive = true;
-		setIsLoading(true);
-		setError(null);
-		sendRequestWithResponse({
-			arguments: { knownRepositoryId: repositoryId },
-			commandType: NativeMessageType.GetRepositoryRefs,
-		})
-			.then((response) => {
-				if (!isActive) {
-					return;
-				}
-				setBranches(response.refs.filter((ref) => ref.kind === "Local"));
-			})
-			.catch((loadError) => {
-				if (isActive) {
-					setError(
-						loadError instanceof Error
-							? loadError.message
-							: "Failed to load branches.",
-					);
-				}
-			})
-			.finally(() => {
-				if (isActive) {
-					setIsLoading(false);
-				}
-			});
-
-		return () => {
-			isActive = false;
-		};
-	}, [menuOpen, repositoryId]);
+	const { branches, error, isLoading } = useLocalBranches(
+		menuOpen,
+		repositoryId,
+	);
 
 	const filteredBranches = useMemo(() => {
 		const normalizedQuery = query.trim().toLocaleLowerCase();
@@ -287,111 +242,5 @@ export function BranchControl({
 				repositoryId={repositoryId}
 			/>
 		</>
-	);
-}
-
-function CreateBranchDialog({
-	currentBranchName,
-	onBranchChanged,
-	onOpenChange,
-	open,
-	repositoryId,
-}: {
-	currentBranchName: string | null;
-	onBranchChanged: (branchName: string) => void;
-	onOpenChange: (open: boolean) => void;
-	open: boolean;
-	repositoryId: string | null;
-}) {
-	const [branchName, setBranchName] = useState("");
-	const [isCreating, setIsCreating] = useState(false);
-
-	useEffect(() => {
-		if (!open) {
-			setBranchName("");
-		}
-	}, [open]);
-
-	const createBranch = async () => {
-		const normalizedName = branchName.trim();
-		if (!repositoryId || normalizedName.length === 0 || isCreating) {
-			return;
-		}
-
-		setIsCreating(true);
-		const toastId = toast.loading(`Creating ${normalizedName}`);
-		try {
-			await sendRequestWithResponse(
-				{
-					arguments: {
-						branchName: normalizedName,
-						repositoryId,
-						startPoint: currentBranchName ?? "HEAD",
-					},
-					commandType: NativeMessageType.CreateBranch,
-				},
-				{ timeoutMs: gitMutationTimeoutMs },
-			);
-			onOpenChange(false);
-			onBranchChanged(normalizedName);
-			toast.success(`Created and switched to ${normalizedName}`, {
-				id: toastId,
-			});
-		} catch (createError) {
-			toast.error(
-				createError instanceof Error
-					? createError.message
-					: `Could not create ${normalizedName}.`,
-				{ id: toastId },
-			);
-		} finally {
-			setIsCreating(false);
-		}
-	};
-
-	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent>
-				<form
-					onSubmit={(event) => {
-						event.preventDefault();
-						void createBranch();
-					}}
-				>
-					<DialogHeader>
-						<DialogTitle>Create branch</DialogTitle>
-						<DialogDescription>
-							Create from {currentBranchName ?? "HEAD"} and switch to it.
-						</DialogDescription>
-					</DialogHeader>
-					<div className="py-4">
-						<label className="grid gap-2 text-sm" htmlFor="new-branch-name">
-							<span className="font-medium">Branch name</span>
-							<Input
-								autoFocus
-								id="new-branch-name"
-								onChange={(event) => setBranchName(event.currentTarget.value)}
-								onInput={(event) => setBranchName(event.currentTarget.value)}
-								placeholder="feature/my-change"
-								value={branchName}
-							/>
-						</label>
-					</div>
-					<DialogFooter className="mx-0 mb-0 px-0 pb-0">
-						<Button
-							disabled={branchName.trim().length === 0 || isCreating}
-							type="submit"
-						>
-							{isCreating ? (
-								<LoaderCircle aria-hidden="true" className="animate-spin" />
-							) : (
-								<GitBranch aria-hidden="true" />
-							)}
-							Create and switch
-						</Button>
-					</DialogFooter>
-				</form>
-			</DialogContent>
-		</Dialog>
 	);
 }

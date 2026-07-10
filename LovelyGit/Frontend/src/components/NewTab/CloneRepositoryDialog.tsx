@@ -1,6 +1,4 @@
-import { Check, Download, FolderOpen, LoaderCircle, X } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
-import { toast } from "sonner";
+import { Download, FolderOpen, LoaderCircle, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -13,158 +11,32 @@ import {
 	DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import type { CloneRepositoryProgressNotification } from "@/generated/types";
-import {
-	sendRequestWithResponse,
-	subscribeToServerEvent,
-} from "@/lib/commands";
-import { NativeMessageType } from "@/lib/nativeMessaging";
-import { useRepositoryContext } from "@/lib/repositoryContext";
-import { inferCloneDirectoryName } from "./CloneRepositoryHelpers";
-
-const cloneTimeoutMs = 12 * 60 * 60 * 1000;
-
-type CloneStatus = "idle" | "cloning" | "canceling";
+import { CloneProgress } from "./CloneProgress";
+import { useCloneRepository } from "./useCloneRepository";
 
 export function CloneRepositoryDialog() {
-	const repositories = useRepositoryContext();
-	const cancelRequestedRef = useRef(false);
-	const operationIdRef = useRef<string | null>(null);
-	const [directoryName, setDirectoryName] = useState("");
-	const [directoryNameEdited, setDirectoryNameEdited] = useState(false);
-	const [open, setOpen] = useState(false);
-	const [parentPath, setParentPath] = useState("");
-	const [progress, setProgress] =
-		useState<CloneRepositoryProgressNotification | null>(null);
-	const [recurseSubmodules, setRecurseSubmodules] = useState(false);
-	const [remoteUrl, setRemoteUrl] = useState("");
-	const [shallow, setShallow] = useState(false);
-	const [status, setStatus] = useState<CloneStatus>("idle");
-	const isBusy = status !== "idle";
-	const canClone =
-		remoteUrl.trim().length > 0 &&
-		parentPath.trim().length > 0 &&
-		directoryName.trim().length > 0 &&
-		!isBusy;
-
-	useEffect(() => {
-		return subscribeToServerEvent("CloneRepositoryProgress", (notification) => {
-			if (notification.operationId === operationIdRef.current) {
-				setProgress(notification);
-			}
-		});
-	}, []);
-
-	const updateRemoteUrl = (value: string) => {
-		setRemoteUrl(value);
-		if (!directoryNameEdited) {
-			setDirectoryName(inferCloneDirectoryName(value));
-		}
-	};
-
-	const chooseDestination = async () => {
-		try {
-			const result = await sendRequestWithResponse({
-				commandType: NativeMessageType.ChooseCloneDestination,
-			});
-			if (result?.parentPath) {
-				setParentPath(result.parentPath);
-			}
-		} catch (error) {
-			toast.error(
-				error instanceof Error
-					? error.message
-					: "Could not choose a destination folder.",
-			);
-		}
-	};
-
-	const cloneRepository = async () => {
-		if (!canClone) {
-			return;
-		}
-
-		const operationId = crypto.randomUUID();
-		operationIdRef.current = operationId;
-		cancelRequestedRef.current = false;
-		setProgress({
-			message: "Preparing destination",
-			operationId,
-			phasePercent: null,
-			percent: null,
-			stage: "Preparing",
-		});
-		setStatus("cloning");
-		try {
-			const repository = await sendRequestWithResponse(
-				{
-					arguments: {
-						directoryName: directoryName.trim(),
-						operationId,
-						parentPath: parentPath.trim(),
-						recurseSubmodules,
-						remoteUrl: remoteUrl.trim(),
-						shallow,
-					},
-					commandType: NativeMessageType.CloneRepository,
-				},
-				{ timeoutMs: cloneTimeoutMs },
-			);
-			await repositories.reloadRepositories();
-			await repositories.setCurrentRepositoryId(repository.id);
-			setOpen(false);
-			toast.success(`Cloned ${repository.name || directoryName.trim()}`);
-			resetForm();
-		} catch (error) {
-			if (cancelRequestedRef.current) {
-				toast.info("Clone canceled");
-			} else {
-				toast.error(
-					error instanceof Error ? error.message : "Repository clone failed.",
-				);
-			}
-		} finally {
-			operationIdRef.current = null;
-			setStatus("idle");
-		}
-	};
-
-	const cancelClone = async () => {
-		const operationId = operationIdRef.current;
-		if (!operationId || status !== "cloning") {
-			return;
-		}
-
-		cancelRequestedRef.current = true;
-		setStatus("canceling");
-		setProgress((current) =>
-			current
-				? { ...current, message: "Stopping clone…", stage: "Canceling" }
-				: current,
-		);
-		try {
-			await sendRequestWithResponse({
-				arguments: { operationId },
-				commandType: NativeMessageType.CancelCloneRepository,
-			});
-		} catch (error) {
-			cancelRequestedRef.current = false;
-			setStatus("cloning");
-			toast.error(
-				error instanceof Error ? error.message : "Could not cancel the clone.",
-			);
-		}
-	};
-
-	const resetForm = () => {
-		setRemoteUrl("");
-		setParentPath("");
-		setDirectoryName("");
-		setDirectoryNameEdited(false);
-		setShallow(false);
-		setRecurseSubmodules(false);
-		setProgress(null);
-	};
+	const clone = useCloneRepository();
+	const {
+		canClone,
+		cancelClone,
+		chooseDestination,
+		cloneRepository,
+		directoryName,
+		isBusy,
+		open,
+		parentPath,
+		progress,
+		recurseSubmodules,
+		remoteUrl,
+		setOpen,
+		setParentPath,
+		setRecurseSubmodules,
+		setShallow,
+		shallow,
+		status,
+		updateDirectoryName,
+		updateRemoteUrl,
+	} = clone;
 
 	return (
 		<Dialog
@@ -239,14 +111,9 @@ export function CloneRepositoryDialog() {
 							aria-label="Repository folder name"
 							disabled={isBusy}
 							id="clone-directory-name"
-							onChange={(event) => {
-								setDirectoryNameEdited(true);
-								setDirectoryName(event.currentTarget.value);
-							}}
-							onInput={(event) => {
-								setDirectoryNameEdited(true);
-								setDirectoryName(event.currentTarget.value);
-							}}
+							onChange={(event) =>
+								updateDirectoryName(event.currentTarget.value)
+							}
 							placeholder="repository"
 							spellCheck={false}
 							value={directoryName}
@@ -310,78 +177,5 @@ export function CloneRepositoryDialog() {
 				</DialogFooter>
 			</DialogContent>
 		</Dialog>
-	);
-}
-
-function CloneProgress({
-	progress,
-}: {
-	progress: CloneRepositoryProgressNotification;
-}) {
-	return (
-		<div className="grid gap-2 rounded-lg border bg-muted/40 p-3" role="status">
-			<div className="flex items-center gap-2">
-				{progress.percent === 100 ? (
-					<Check aria-hidden="true" className="size-4 text-primary" />
-				) : (
-					<LoaderCircle
-						aria-hidden="true"
-						className="size-4 animate-spin text-primary"
-					/>
-				)}
-				<span className="min-w-0 flex-1 truncate font-medium text-sm">
-					{progress.stage}
-				</span>
-			</div>
-			<CloneProgressBar label="Overall progress" percent={progress.percent} />
-			<CloneProgressBar
-				label={`Current phase: ${progress.stage}`}
-				percent={progress.phasePercent}
-			/>
-			<p
-				className="truncate text-muted-foreground text-xs"
-				title={progress.message}
-			>
-				{progress.message}
-			</p>
-		</div>
-	);
-}
-
-function CloneProgressBar({
-	label,
-	percent,
-}: {
-	label: string;
-	percent: number | null;
-}) {
-	return (
-		<div className="grid gap-1">
-			<div className="flex items-center gap-2 text-muted-foreground text-xs">
-				<span className="min-w-0 flex-1 truncate">{label}</span>
-				{percent != null ? (
-					<span className="shrink-0 font-mono">{percent}%</span>
-				) : (
-					<span className="shrink-0">Waiting for Git…</span>
-				)}
-			</div>
-			<div
-				aria-label={label}
-				aria-valuemax={100}
-				aria-valuemin={0}
-				aria-valuenow={percent ?? undefined}
-				className="h-1.5 overflow-hidden rounded-full bg-muted"
-				role="progressbar"
-			>
-				<div
-					className={
-						percent == null
-							? "h-full w-1/3 animate-pulse rounded-full bg-primary"
-							: "h-full rounded-full bg-primary transition-[width] duration-150"
-					}
-					style={percent == null ? undefined : { width: `${percent}%` }}
-				/>
-			</div>
-		</div>
 	);
 }

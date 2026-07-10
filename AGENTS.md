@@ -76,6 +76,13 @@
 - React Compiler is enabled through `@vitejs/plugin-react` plus `@rolldown/plugin-babel` in `vite.config.ts`; avoid unnecessary manual memoization unless measurements or existing patterns justify it.
 - UI uses Tailwind v4 plus shadcn `base-nova` config in `components.json`; local VS Code settings suppress Tailwind canonical-class suggestions.
 
+## File Size
+- Keep every first-party authored source, test, script, stylesheet, configuration, and Markdown file at or below 250 physical lines. Split by responsibility before a file reaches the limit; do not compress formatting or combine statements merely to reduce the count.
+- Run `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/Test-FileLength.ps1` before committing. A feature is not complete while this gate fails for a first-party file it added or changed.
+- Do not edit generated, vendored, or third-party-owned files solely to satisfy the limit. The gate explicitly exempts generated frontend contracts, built assets, and the existing shadcn component directory (`LovelyGit/Frontend/src/components/ui/`). New app-specific composition should live outside the shadcn directory when it would otherwise require modifying third-party-derived primitives.
+- Intentionally centralized registries may be exempt when splitting them would destroy a useful single source of truth. `LovelyGit/Services/NativeMessaging/NativeMessageType.cs` is the canonical command registry and `LovelyGit/Frontend/src/lib/settings/theme/themeCatalog.ts` is the canonical theme catalog; both are explicitly exempt. Keep long registries grouped and easy to navigate.
+- Keep exemptions narrow and path-based in `scripts/Test-FileLength.ps1`. Do not exempt an ordinary app directory or a first-party file because splitting it is inconvenient.
+
 ## Base UI And Lazy Overlay Safety
 - LovelyGit's shadcn components use Base UI. Preserve Base UI's required component hierarchy when adding or adapting dialogs, dropdowns, context menus, popovers, tooltips, and other portals. In particular, `ContextMenu.GroupLabel`/`Menu.GroupLabel` must be nested inside the matching `ContextMenu.Group`/`Menu.Group`. Rendering a group label directly in a popup throws Base UI production error 31.
 - This class of mistake can pass TypeScript and production builds because portal content is lazy-rendered. The failure appears only when the user opens the menu or overlay; in the desktop WebView it can leave the entire content area blank. A successful build is therefore not a sufficient test for a new or changed overlay.

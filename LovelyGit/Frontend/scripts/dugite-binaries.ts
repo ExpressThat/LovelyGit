@@ -1,18 +1,13 @@
 import { createHash } from "node:crypto";
 import {
 	createWriteStream,
-	existsSync,
-	mkdirSync,
 	readFileSync,
-	rmSync,
-	statSync,
-	unlinkSync,
 	writeFileSync,
 } from "node:fs";
-import { readdir } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { pipeline } from "node:stream/promises";
 import { fileURLToPath } from "node:url";
+import { assertGitLfsExists, clearDirectory } from "./dugite-filesystem";
 
 export type DugiteRuntime = {
 	rid: string;
@@ -233,39 +228,11 @@ export function detectLocalRid(): string {
 }
 
 export async function clearBundledGitDirectory(): Promise<void> {
-	mkdirSync(bundledGitPath, { recursive: true });
-
-	for (const entry of await readdir(bundledGitPath)) {
-		if (
-			entry === ".gitignore" ||
-			entry === "README.md" ||
-			entry === "dugite-native.json"
-		) {
-			continue;
-		}
-
-		const entryPath = resolve(bundledGitPath, entry);
-		const stats = statSync(entryPath);
-		if (stats.isDirectory()) {
-			rmSync(entryPath, { recursive: true, force: true });
-		} else {
-			unlinkSync(entryPath);
-		}
-	}
+	await clearDirectory(bundledGitPath);
 }
 
 export function ensureGitLfsExists(root: string): void {
-	const candidates = [
-		resolve(root, "mingw64", "libexec", "git-core", "git-lfs.exe"),
-		resolve(root, "libexec", "git-core", "git-lfs"),
-		resolve(root, "bin", "git-lfs"),
-	];
-
-	if (!candidates.some((path) => existsSync(path))) {
-		throw new Error(
-			"Downloaded dugite-native payload does not include Git LFS.",
-		);
-	}
+	assertGitLfsExists(root);
 }
 
 export function escapeRegExp(value: string): string {

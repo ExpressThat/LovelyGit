@@ -95,121 +95,6 @@ internal sealed partial class GitObjectStore : IDisposable
         return ParseLooseObject(inflated.ToArray());
     }
 
-    private async Task<GitObjectData?> TryReadPackedObjectAsync(
-        GitObjectId id,
-        CancellationToken cancellationToken)
-    {
-        for (var attempt = 0; attempt < 2; attempt++)
-        {
-            var result = await TryReadPackedObjectFromCurrentIndexesAsync(id, cancellationToken).ConfigureAwait(false);
-            if (result.ObjectData != null)
-            {
-                return result.ObjectData;
-            }
-
-            if (!result.PackIndexesStale)
-            {
-                return null;
-            }
-
-            await ReloadPackIndexesAsync(cancellationToken).ConfigureAwait(false);
-        }
-
-        return null;
-    }
-
-    private async Task<PackedObjectReadResult> TryReadPackedObjectFromCurrentIndexesAsync(
-        GitObjectId id,
-        CancellationToken cancellationToken)
-    {
-        foreach (var index in await GetPackIndexesAsync(cancellationToken).ConfigureAwait(false))
-        {
-            var offset = index.TryFindOffset(id, cancellationToken);
-            if (offset == null)
-            {
-                continue;
-            }
-
-            if (!File.Exists(index.PackPath))
-            {
-                return new PackedObjectReadResult(null, PackIndexesStale: true);
-            }
-
-            var objectData = await _packReader
-                .ReadObjectAtAsync(
-                    index.PackPath,
-                    offset.Value,
-                    ReadObjectAsync,
-                    cancellationToken)
-                .ConfigureAwait(false);
-
-            return new PackedObjectReadResult(objectData, PackIndexesStale: false);
-        }
-
-        return new PackedObjectReadResult(null, PackIndexesStale: false);
-    }
-
-    private async Task<IReadOnlyList<GitPackIndex>> GetPackIndexesAsync(CancellationToken cancellationToken)
-    {
-        var cachedIndexes = Volatile.Read(ref _packIndexes);
-        if (cachedIndexes != null)
-        {
-            return cachedIndexes;
-        }
-
-        await _packIndexesLock.WaitAsync(cancellationToken).ConfigureAwait(false);
-        try
-        {
-            cachedIndexes = Volatile.Read(ref _packIndexes);
-            if (cachedIndexes != null)
-            {
-                return cachedIndexes;
-            }
-
-            var packDirectory = Path.Combine(_gitDirectory, "objects", "pack");
-            var indexes = new List<GitPackIndex>();
-            if (Directory.Exists(packDirectory))
-            {
-                foreach (var indexPath in Directory.EnumerateFiles(packDirectory, "*.idx"))
-                {
-                    cancellationToken.ThrowIfCancellationRequested();
-                    if (!File.Exists(indexPath) || !File.Exists(Path.ChangeExtension(indexPath, ".pack")))
-                    {
-                        continue;
-                    }
-
-                    indexes.Add(await GitPackIndex.OpenAsync(indexPath, _objectFormat, cancellationToken).ConfigureAwait(false));
-                }
-            }
-
-            Volatile.Write(ref _packIndexes, indexes);
-            return indexes;
-        }
-        finally
-        {
-            _packIndexesLock.Release();
-        }
-    }
-
-    private async Task ReloadPackIndexesAsync(CancellationToken cancellationToken)
-    {
-        await _packIndexesLock.WaitAsync(cancellationToken).ConfigureAwait(false);
-        try
-        {
-            if (Volatile.Read(ref _packIndexes) is { } indexes)
-            {
-                _retiredPackIndexes.AddRange(indexes);
-            }
-
-            _packReader.ClearObjectCache();
-            Volatile.Write(ref _packIndexes, null);
-        }
-        finally
-        {
-            _packIndexesLock.Release();
-        }
-    }
-
     private static GitObjectData ParseLooseObject(ReadOnlySpan<byte> inflated)
     {
         var zeroIndex = inflated.IndexOf((byte)0);
@@ -259,8 +144,6 @@ internal sealed partial class GitObjectStore : IDisposable
     {
         return data.Data.LongLength;
     }
-
-    private readonly record struct PackedObjectReadResult(GitObjectData? ObjectData, bool PackIndexesStale);
 
     public void Dispose()
     {
