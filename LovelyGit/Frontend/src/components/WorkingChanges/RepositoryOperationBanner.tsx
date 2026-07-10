@@ -1,11 +1,4 @@
-import {
-	GitCommitHorizontal,
-	GitMerge,
-	ListRestart,
-	LoaderCircle,
-	Play,
-	X,
-} from "lucide-react";
+import { LoaderCircle, Play, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
@@ -24,6 +17,10 @@ import type { GitRepositoryOperationKind } from "@/generated/types";
 import { sendRequestWithResponse } from "@/lib/commands";
 import { gitMutationTimeoutMs } from "@/lib/gitMutationTimeout";
 import { NativeMessageType } from "@/lib/nativeMessaging";
+import {
+	RepositoryOperationIcon,
+	repositoryOperationLabel,
+} from "./RepositoryOperationPresentation";
 
 export function RepositoryOperationBanner({
 	conflictCount,
@@ -71,12 +68,9 @@ export function RepositoryOperationBanner({
 		return null;
 	}
 
-	const label =
-		operation === "CherryPick"
-			? "Cherry-pick"
-			: operation === "Rebase"
-				? "Rebase"
-				: "Merge";
+	const label = operation
+		? repositoryOperationLabel(operation)
+		: "Repository operation";
 	const refreshAfterMutation = async () => {
 		await Promise.all([onRefresh(), onRepositoryChanged()]);
 		await loadOperation();
@@ -152,22 +146,7 @@ export function RepositoryOperationBanner({
 		<>
 			<div className="grid gap-3 rounded-lg border border-primary/30 bg-primary/5 p-3">
 				<div className="flex items-start gap-2">
-					{operation === "CherryPick" ? (
-						<GitCommitHorizontal
-							aria-hidden="true"
-							className="mt-0.5 size-4 text-primary"
-						/>
-					) : operation === "Rebase" ? (
-						<ListRestart
-							aria-hidden="true"
-							className="mt-0.5 size-4 text-primary"
-						/>
-					) : (
-						<GitMerge
-							aria-hidden="true"
-							className="mt-0.5 size-4 text-primary"
-						/>
-					)}
+					{operation ? <RepositoryOperationIcon operation={operation} /> : null}
 					<div className="min-w-0 flex-1">
 						<p className="font-medium text-sm">{label} in progress</p>
 						<p className="mt-0.5 text-muted-foreground text-xs">

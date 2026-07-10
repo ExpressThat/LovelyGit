@@ -1,4 +1,4 @@
-import { ClipboardCopy, GitCommitHorizontal, Info } from "lucide-react";
+import { ClipboardCopy, GitCommitHorizontal, Info, Undo2 } from "lucide-react";
 import type { ReactNode } from "react";
 import {
 	ContextMenu,
@@ -19,6 +19,7 @@ export function CommitContextMenu({
 	isHead,
 	onCherryPick,
 	onOpenDetails,
+	onRevert,
 	row,
 }: {
 	children: ReactNode;
@@ -26,6 +27,7 @@ export function CommitContextMenu({
 	isHead: boolean;
 	onCherryPick: (row: CommitGraphRow) => void;
 	onOpenDetails: (row: CommitGraphRow) => void;
+	onRevert: (row: CommitGraphRow) => void;
 	row: CommitGraphRow;
 }) {
 	const abbreviatedHash = shortHash(row.commit.hash);
@@ -57,6 +59,20 @@ export function CommitContextMenu({
 					Copy commit hash
 				</ContextMenuItem>
 				<ContextMenuSeparator />
+				<ContextMenuItem
+					disabled={currentBranchName === null}
+					onClick={() => onRevert(row)}
+					title={
+						currentBranchName === null
+							? "Check out a branch before reverting"
+							: `Revert ${abbreviatedHash} on ${currentBranchName}`
+					}
+				>
+					<Undo2 aria-hidden="true" />
+					<span className="min-w-0 truncate">
+						Revert {abbreviatedHash} on {currentBranchName ?? "a branch"}
+					</span>
+				</ContextMenuItem>
 				<ContextMenuItem
 					disabled={currentBranchName === null || isHead}
 					onClick={() => onCherryPick(row)}

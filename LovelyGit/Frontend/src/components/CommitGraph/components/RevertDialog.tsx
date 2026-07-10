@@ -1,7 +1,7 @@
 import type { CommitGraphRow } from "@/generated/types";
 import { CommitOperationDialog } from "./CommitOperationDialog";
 
-export function CherryPickDialog({
+export function RevertDialog({
 	commit,
 	currentBranchName,
 	onOpenChange,
@@ -20,7 +20,7 @@ export function CherryPickDialog({
 		<CommitOperationDialog
 			commit={commit}
 			currentBranchName={currentBranchName}
-			mode="cherry-pick"
+			mode="revert"
 			onOpenChange={onOpenChange}
 			onOpenWorkingChanges={onOpenWorkingChanges}
 			onRepositoryChanged={onRepositoryChanged}

@@ -17,6 +17,7 @@ export function CommitRow({
 	isHead,
 	onCherryPick,
 	onIntegrateBranch,
+	onRevert,
 	onSelect,
 	remotePrefixes,
 	row,
@@ -31,6 +32,7 @@ export function CommitRow({
 	isSelected: boolean;
 	isHead: boolean;
 	onIntegrateBranch: (mode: BranchIntegrationMode, branchName: string) => void;
+	onRevert: (row: CommitGraphRow) => void;
 	onCherryPick: (row: CommitGraphRow) => void;
 	onSelect: (row: CommitGraphRow) => void;
 	remotePrefixes: string[];
@@ -109,6 +111,7 @@ export function CommitRow({
 			isHead={isHead}
 			onCherryPick={onCherryPick}
 			onOpenDetails={onSelect}
+			onRevert={onRevert}
 			row={row}
 		>
 			{commitButton}

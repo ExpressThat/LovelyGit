@@ -48,6 +48,18 @@ internal sealed class GitRepositoryOperationService
             "Resolve and stage rebase conflicts, then continue or abort the rebase.",
             cancellationToken);
 
+    public Task<GitRepositoryOperationOutcome> RevertAsync(
+        string repositoryPath,
+        string commitHash,
+        CancellationToken cancellationToken) =>
+        RunAsync(
+            repositoryPath,
+            GitRepositoryOperationKind.Revert,
+            "Revert commit",
+            ["revert", "--no-edit", "--", NormalizeCommitHash(commitHash)],
+            "Resolve and stage revert conflicts, then continue or abort the revert.",
+            cancellationToken);
+
     public async Task<GitRepositoryOperationOutcome> ContinueAsync(
         string repositoryPath,
         GitRepositoryOperationKind expectedOperation,
@@ -63,6 +75,8 @@ internal sealed class GitRepositoryOperationService
                 new[] { "-c", "core.editor=true", "cherry-pick", "--continue" },
             GitRepositoryOperationKind.Merge => new[] { "-c", "core.editor=true", "merge", "--continue" },
             GitRepositoryOperationKind.Rebase => ["-c", "core.editor=true", "rebase", "--continue"],
+            GitRepositoryOperationKind.Revert =>
+                new[] { "-c", "core.editor=true", "revert", "--continue" },
             _ => throw new ArgumentOutOfRangeException(nameof(expectedOperation)),
         };
 
@@ -89,6 +103,7 @@ internal sealed class GitRepositoryOperationService
             GitRepositoryOperationKind.CherryPick => new[] { "cherry-pick", "--abort" },
             GitRepositoryOperationKind.Merge => new[] { "merge", "--abort" },
             GitRepositoryOperationKind.Rebase => ["rebase", "--abort"],
+            GitRepositoryOperationKind.Revert => new[] { "revert", "--abort" },
             _ => throw new ArgumentOutOfRangeException(nameof(expectedOperation)),
         };
 
@@ -177,7 +192,7 @@ internal sealed class GitRepositoryOperationService
         {
             throw new InvalidOperationException(
                 activeOperation is null
-                    ? "No cherry-pick, merge, or rebase is currently in progress."
+                    ? "No cherry-pick, merge, rebase, or revert is currently in progress."
                     : $"A {FormatOperationName(activeOperation.Value)} is in progress instead.");
         }
     }

@@ -8,6 +8,7 @@ import { CherryPickDialog } from "./components/CherryPickDialog";
 import { CommitGraphHeader } from "./components/CommitGraphHeader";
 import { CommitRow } from "./components/CommitRow";
 import { RefsPanel } from "./components/RefsPanel";
+import { RevertDialog } from "./components/RevertDialog";
 import { ROW_HEIGHT } from "./constants";
 import { useCommitGraphData } from "./hooks/useCommitGraphData";
 import { useCommitGraphViewport } from "./hooks/useCommitGraphViewport";
@@ -36,6 +37,9 @@ export function CommitGraphView({
 	} | null>(null);
 	const [cherryPickCommit, setCherryPickCommit] =
 		useState<CommitGraphRowModel | null>(null);
+	const [revertCommit, setRevertCommit] = useState<CommitGraphRowModel | null>(
+		null,
+	);
 
 	const {
 		currentBranchName,
@@ -130,6 +134,7 @@ export function CommitGraphView({
 											isHead={rows[item.index]?.commit.hash === currentHeadHash}
 											onCherryPick={setCherryPickCommit}
 											onIntegrateBranch={integrateBranch}
+											onRevert={setRevertCommit}
 											onSelect={onSelectCommit}
 											currentBranchName={currentBranchName}
 											remotePrefixes={remotePrefixes}
@@ -180,6 +185,14 @@ export function CommitGraphView({
 				commit={cherryPickCommit}
 				currentBranchName={currentBranchName}
 				onOpenChange={setCherryPickCommit}
+				onOpenWorkingChanges={onOpenWorkingChanges}
+				onRepositoryChanged={onRepositoryChanged}
+				repositoryId={repositoryId}
+			/>
+			<RevertDialog
+				commit={revertCommit}
+				currentBranchName={currentBranchName}
+				onOpenChange={setRevertCommit}
 				onOpenWorkingChanges={onOpenWorkingChanges}
 				onRepositoryChanged={onRepositoryChanged}
 				repositoryId={repositoryId}

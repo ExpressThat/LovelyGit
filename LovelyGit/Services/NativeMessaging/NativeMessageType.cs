@@ -5,6 +5,7 @@ using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.KnownRepos
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Merge;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Rebase;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.RepositoryOperations;
+using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Revert;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Settings;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.WorkingTree;
 using ExpressThat.LovelyGit.Services.NativeMessaging.Commands;
@@ -88,6 +89,8 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging
         // Multi-step repository operations and their conflict lifecycle.
         [NativeMessageContract(typeof(CherryPickCommitCommandArguments), typeof(RepositoryOperationCommandResponse))]
         CherryPickCommit,
+        [NativeMessageContract(typeof(RevertCommitCommandArguments), typeof(RepositoryOperationCommandResponse))]
+        RevertCommit,
         [NativeMessageContract(typeof(MergeBranchIntoCurrentCommandArguments), typeof(RepositoryOperationCommandResponse))]
         MergeBranchIntoCurrent,
         [NativeMessageContract(typeof(RebaseCurrentBranchOntoBranchCommandArguments), typeof(RepositoryOperationCommandResponse))]
