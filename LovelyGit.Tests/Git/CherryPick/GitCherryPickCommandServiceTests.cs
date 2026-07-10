@@ -25,6 +25,28 @@ public sealed class GitCherryPickCommandServiceTests
         Assert.Equal("feature", File.ReadAllText(Path.Combine(repository.Path, "feature.txt")));
     }
 
+    [Theory]
+    [InlineData("not-a-hash", typeof(ArgumentException))]
+    [InlineData("0000000000000000000000000000000000000000", typeof(GitOperationException))]
+    public async Task CherryPickCommitAsync_InvalidTargetLeavesHeadAndWorkingTreeUnchanged(
+        string commitHash,
+        Type expectedException)
+    {
+        using var repository = TemporaryGitRepository.Create();
+        var before = await repository.ReadHeadAsync();
+
+        var exception = await Record.ExceptionAsync(() =>
+            new GitCherryPickCommandService(repository.GitCliService).CherryPickCommitAsync(
+                repository.Path,
+                commitHash,
+                CancellationToken.None));
+
+        Assert.IsType(expectedException, exception);
+        Assert.Equal(before, await repository.ReadHeadAsync());
+        Assert.False(File.Exists(Path.Combine(repository.Path, "feature.txt")));
+        Assert.False(Directory.Exists(Path.Combine(repository.Path, ".git", "sequencer")));
+    }
+
     private sealed class TemporaryGitRepository : IDisposable
     {
         private readonly DirectoryInfo _directory;
@@ -45,6 +67,13 @@ public sealed class GitCherryPickCommandServiceTests
         public string FeatureCommitHash { get; }
 
         public string Path { get; }
+
+        public async Task<string> ReadHeadAsync()
+        {
+            var result = await GitCliService.ExecuteBufferedAsync(
+                ["rev-parse", "HEAD"], Path, cancellationToken: CancellationToken.None);
+            return result.StandardOutput.Trim();
+        }
 
         public static TemporaryGitRepository Create()
         {

@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { act, renderHook, waitFor } from "@testing-library/react";
+import { toast } from "sonner";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
 	sendRequestWithResponse,
@@ -50,5 +51,40 @@ describe("useBisectSession", () => {
 			"CommitGraphChanged",
 			expect.any(Function),
 		);
+	});
+
+	it("surfaces initial load failure and can load successfully on retry", async () => {
+		vi.mocked(sendRequestWithResponse)
+			.mockRejectedValueOnce(new Error("Repository disappeared"))
+			.mockResolvedValueOnce(activeState);
+		const { result } = renderHook(() => useBisectSession("repo"));
+
+		await waitFor(() => expect(result.current.isLoading).toBe(false));
+		expect(result.current.state).toBeNull();
+		expect(toast.error).toHaveBeenCalledWith("Repository disappeared");
+
+		await act(() => result.current.load());
+		expect(result.current.state).toEqual(activeState);
+	});
+
+	it("failed progression preserves state, re-enables controls, and permits retry", async () => {
+		vi.mocked(sendRequestWithResponse)
+			.mockResolvedValueOnce(activeState)
+			.mockRejectedValueOnce(new Error("Git bisect failed"))
+			.mockResolvedValueOnce(activeState);
+		const { result } = renderHook(() => useBisectSession("repo"));
+		await waitFor(() => expect(result.current.state).toEqual(activeState));
+
+		await act(() => result.current.run("MarkBad"));
+
+		expect(result.current.state).toEqual(activeState);
+		expect(result.current.busyAction).toBeNull();
+		expect(toast.error).toHaveBeenCalledWith("Git bisect failed", {
+			id: "toast",
+		});
+
+		await act(() => result.current.run("MarkBad"));
+		expect(sendRequestWithResponse).toHaveBeenCalledTimes(3);
+		expect(toast.success).toHaveBeenCalled();
 	});
 });

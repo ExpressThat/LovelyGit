@@ -25,6 +25,28 @@ public sealed class GitRevertCommandServiceTests
         Assert.Equal("before", File.ReadAllText(System.IO.Path.Combine(repository.Path, "file.txt")));
     }
 
+    [Theory]
+    [InlineData("not-a-hash", typeof(ArgumentException))]
+    [InlineData("0000000000000000000000000000000000000000", typeof(GitOperationException))]
+    public async Task RevertCommitAsync_InvalidTargetLeavesHistoryAndFileUnchanged(
+        string commitHash,
+        Type expectedException)
+    {
+        using var repository = TemporaryGitRepository.Create();
+        var before = await repository.ReadHeadAsync();
+
+        var exception = await Record.ExceptionAsync(() =>
+            new GitRevertCommandService(repository.GitCliService).RevertCommitAsync(
+                repository.Path,
+                commitHash,
+                CancellationToken.None));
+
+        Assert.IsType(expectedException, exception);
+        Assert.Equal(before, await repository.ReadHeadAsync());
+        Assert.Equal("after", File.ReadAllText(Path.Combine(repository.Path, "file.txt")));
+        Assert.False(File.Exists(Path.Combine(repository.Path, ".git", "REVERT_HEAD")));
+    }
+
     private sealed class TemporaryGitRepository : IDisposable
     {
         private readonly DirectoryInfo _directory;
@@ -45,6 +67,13 @@ public sealed class GitRevertCommandServiceTests
         public string ChangeCommitHash { get; }
 
         public string Path { get; }
+
+        public async Task<string> ReadHeadAsync()
+        {
+            var result = await GitCliService.ExecuteBufferedAsync(
+                ["rev-parse", "HEAD"], Path, cancellationToken: CancellationToken.None);
+            return result.StandardOutput.Trim();
+        }
 
         public static TemporaryGitRepository Create()
         {

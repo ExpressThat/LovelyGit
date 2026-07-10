@@ -12,7 +12,7 @@ internal sealed class GitTagCommandService
         _gitOperationService = gitOperationService;
     }
 
-    public Task CreateTagAsync(
+    public async Task CreateTagAsync(
         string repositoryPath,
         string tagName,
         string commitHash,
@@ -22,15 +22,17 @@ internal sealed class GitTagCommandService
     {
         var name = NormalizeTagName(tagName);
         var target = NormalizeCommitHash(commitHash);
+        await EnsureCommitExistsAsync(repositoryPath, target, cancellationToken)
+            .ConfigureAwait(false);
         IReadOnlyList<string> arguments = isAnnotated
             ? ["tag", "--annotate", "--message", NormalizeMessage(message), "--", name, target]
             : ["tag", "--", name, target];
-        return RunAsync(
+        await RunAsync(
             repositoryPath,
             "Create tag",
             arguments,
             "Choose a unique valid tag name and verify the target commit exists.",
-            cancellationToken);
+            cancellationToken).ConfigureAwait(false);
     }
 
     public Task DeleteTagAsync(
@@ -95,6 +97,33 @@ internal sealed class GitTagCommandService
             throw new ArgumentException("Commit hash is not valid.", nameof(commitHash));
         }
         return normalized;
+    }
+
+    private static async Task EnsureCommitExistsAsync(
+        string repositoryPath,
+        string commitHash,
+        CancellationToken cancellationToken)
+    {
+        using var repository = await LovelyGitRepository
+            .OpenAsync(repositoryPath, cancellationToken)
+            .ConfigureAwait(false);
+        if (!GitObjectId.TryParse(commitHash, repository.ObjectFormat, out var id))
+        {
+            throw new ArgumentException("Commit hash does not match this repository.", nameof(commitHash));
+        }
+
+        try
+        {
+            if (await repository.GetCommitAsync(id, cancellationToken).ConfigureAwait(false) is not null)
+            {
+                return;
+            }
+        }
+        catch (FileNotFoundException)
+        {
+        }
+
+        throw new ArgumentException("Target commit does not exist.", nameof(commitHash));
     }
 
     private static string NormalizeRemoteName(string remoteName) =>

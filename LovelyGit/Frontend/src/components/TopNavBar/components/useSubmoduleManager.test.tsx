@@ -1,11 +1,13 @@
 // @vitest-environment jsdom
 
 import { act, renderHook } from "@testing-library/react";
+import { toast } from "sonner";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { sendRequestWithResponse } from "@/lib/commands";
 import { useSubmoduleManager } from "./useSubmoduleManager";
 
 vi.mock("@/lib/commands", () => ({ sendRequestWithResponse: vi.fn() }));
+vi.mock("sonner", () => ({ toast: { error: vi.fn(), success: vi.fn() } }));
 
 describe("useSubmoduleManager", () => {
 	beforeEach(() => vi.clearAllMocks());
@@ -44,6 +46,44 @@ describe("useSubmoduleManager", () => {
 			{ timeoutMs: 120_000 },
 		);
 		expect(result.current.submodules[0]?.state).toBe("Current");
+	});
+
+	it("surfaces load failure, re-enables loading, and permits retry", async () => {
+		vi.mocked(sendRequestWithResponse)
+			.mockRejectedValueOnce(new Error("Malformed .gitmodules"))
+			.mockResolvedValueOnce([submodule]);
+		const { result } = renderHook(() => useSubmoduleManager("repository-id"));
+
+		await act(() => result.current.load());
+
+		expect(result.current.error).toBe("Malformed .gitmodules");
+		expect(result.current.isLoading).toBe(false);
+		expect(result.current.submodules).toEqual([]);
+
+		await act(() => result.current.load());
+		expect(result.current.error).toBeNull();
+		expect(result.current.submodules).toEqual([submodule]);
+	});
+
+	it("failed mutation preserves state, clears busy path, and permits retry", async () => {
+		vi.mocked(sendRequestWithResponse)
+			.mockResolvedValueOnce([submodule])
+			.mockRejectedValueOnce(new Error("Submodule checkout failed"))
+			.mockResolvedValueOnce(undefined)
+			.mockResolvedValueOnce([{ ...submodule, state: "Current" }]);
+		const { result } = renderHook(() => useSubmoduleManager("repository-id"));
+		await act(() => result.current.load());
+
+		await act(() => result.current.run("deps/library", "Initialize"));
+		expect(result.current.submodules).toEqual([submodule]);
+		expect(result.current.busyPath).toBeNull();
+		expect(toast.error).toHaveBeenCalledWith("Submodule checkout failed", {
+			duration: 8_000,
+		});
+
+		await act(() => result.current.run("deps/library", "Initialize"));
+		expect(result.current.submodules[0]?.state).toBe("Current");
+		expect(toast.success).toHaveBeenCalledWith("Submodule initialized");
 	});
 });
 

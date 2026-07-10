@@ -44,6 +44,25 @@ describe("CommitStagedForm", () => {
 		expect(screen.getByLabelText("Loading last commit")).toBeVisible();
 		expect(screen.queryByRole("switch")).not.toBeInTheDocument();
 	});
+
+	it("rejects blank titles and unavailable commit state", () => {
+		renderForm({ commitTitle: "   " });
+		expect(screen.getByRole("button", { name: "Commit" })).toBeDisabled();
+
+		renderForm({ canCommit: false, commitTitle: "Ready" });
+		expect(screen.getAllByRole("button", { name: "Commit" })[1]).toBeDisabled();
+	});
+
+	it("disables every editable control while a mutation is active", () => {
+		renderForm({ isBusy: true });
+
+		expect(screen.getByLabelText("Commit title")).toBeDisabled();
+		expect(screen.getByLabelText("Commit body")).toBeDisabled();
+		expect(
+			screen.getByRole("switch", { name: /^Amend last commit/ }),
+		).toHaveAttribute("aria-disabled", "true");
+		expect(screen.getByRole("button", { name: "Commit" })).toBeDisabled();
+	});
 });
 
 function renderForm(

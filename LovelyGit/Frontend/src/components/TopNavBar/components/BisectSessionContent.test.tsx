@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { BisectSessionContent } from "./BisectSessionContent";
@@ -30,7 +30,9 @@ describe("BisectSessionContent", () => {
 				state={state({ firstBadCommit: "d".repeat(40) })}
 			/>,
 		);
-		expect(screen.getByText("First bad commit found")).toBeVisible();
+		await waitFor(() =>
+			expect(screen.getByText("First bad commit found")).toBeVisible(),
+		);
 		expect(
 			screen.getByRole("button", { name: "Reset bisect session" }),
 		).toBeVisible();
