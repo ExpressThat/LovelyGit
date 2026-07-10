@@ -141,6 +141,10 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging
         MergeBranchIntoCurrent,
         [NativeMessageContract(typeof(RebaseCurrentBranchOntoBranchCommandArguments), typeof(RepositoryOperationCommandResponse))]
         RebaseCurrentBranchOntoBranch,
+        [NativeMessageContract(typeof(GetInteractiveRebasePlanCommandArguments), typeof(InteractiveRebasePlanResponse))]
+        GetInteractiveRebasePlan,
+        [NativeMessageContract(typeof(StartInteractiveRebaseCommandArguments), typeof(RepositoryOperationCommandResponse))]
+        StartInteractiveRebase,
         [NativeMessageContract(typeof(GetRepositoryOperationStateCommandArguments), typeof(RepositoryOperationStateResponse))]
         GetRepositoryOperationState,
         [NativeMessageContract(typeof(RepositoryOperationCommandArguments), typeof(RepositoryOperationCommandResponse))]

@@ -4,6 +4,7 @@ import {
 	GitCommitHorizontal,
 	Info,
 	ListRestart,
+	ListTree,
 	Tag,
 	Undo2,
 } from "lucide-react";
@@ -29,6 +30,7 @@ export function CommitContextMenu({
 	onCreateTag,
 	onCreateBranch,
 	onOpenDetails,
+	onInteractiveRebase,
 	onRevert,
 	onReset,
 	row,
@@ -40,6 +42,7 @@ export function CommitContextMenu({
 	onCreateTag: (row: CommitGraphRow) => void;
 	onCreateBranch: (row: CommitGraphRow) => void;
 	onOpenDetails: (row: CommitGraphRow) => void;
+	onInteractiveRebase: (row: CommitGraphRow) => void;
 	onRevert: (row: CommitGraphRow) => void;
 	onReset: (row: CommitGraphRow) => void;
 	row: CommitGraphRow;
@@ -65,6 +68,21 @@ export function CommitContextMenu({
 				<ContextMenuItem onClick={() => onOpenDetails(row)}>
 					<Info aria-hidden="true" />
 					Open commit details
+				</ContextMenuItem>
+				<ContextMenuItem
+					disabled={currentBranchName === null || isHead}
+					onClick={() => onInteractiveRebase(row)}
+					title={
+						isHead
+							? "Select an earlier commit as the rebase base"
+							: `Edit commits after ${abbreviatedHash} on ${currentBranchName}`
+					}
+				>
+					<ListTree aria-hidden="true" />
+					<span className="min-w-0 truncate">
+						Interactively rebase {currentBranchName ?? "current branch"} after{" "}
+						{abbreviatedHash}…
+					</span>
 				</ContextMenuItem>
 				<ContextMenuItem
 					onClick={() => void copyToClipboard(row.commit.hash, "Commit hash")}

@@ -11,6 +11,7 @@ import type {
 } from "@/generated/types";
 import type { ReflogManagementController } from "../hooks/useReflogManagement";
 import { CherryPickDialog } from "./CherryPickDialog";
+import { InteractiveRebaseDialog } from "./InteractiveRebaseDialog";
 import { ReflogDialog } from "./ReflogDialog";
 import { ReflogResetDialog } from "./ReflogResetDialog";
 import { ResetCommitDialog } from "./ResetCommitDialog";
@@ -27,6 +28,7 @@ export function CommitGraphOperationDialogs({
 	branchNames,
 	currentBranchName,
 	integrationTarget,
+	interactiveRebaseBase,
 	onOpenWorkingChanges,
 	onCreateBranchFromReflog,
 	onBranchCreationClose,
@@ -39,6 +41,7 @@ export function CommitGraphOperationDialogs({
 	revertCommit,
 	setCherryPickCommit,
 	setIntegrationTarget,
+	setInteractiveRebaseBase,
 	setResetCommit,
 	setRevertCommit,
 }: {
@@ -47,6 +50,7 @@ export function CommitGraphOperationDialogs({
 	branchNames: string[];
 	currentBranchName: string | null;
 	integrationTarget: IntegrationTarget;
+	interactiveRebaseBase: CommitGraphRow | null;
 	onOpenWorkingChanges: () => void;
 	onCreateBranchFromReflog: (entry: GitReflogEntry) => void;
 	onBranchCreationClose: () => void;
@@ -59,6 +63,7 @@ export function CommitGraphOperationDialogs({
 	revertCommit: CommitGraphRow | null;
 	setCherryPickCommit: (commit: CommitGraphRow | null) => void;
 	setIntegrationTarget: (target: IntegrationTarget) => void;
+	setInteractiveRebaseBase: (commit: CommitGraphRow | null) => void;
 	setResetCommit: (commit: CommitGraphRow | null) => void;
 	setRevertCommit: (commit: CommitGraphRow | null) => void;
 }) {
@@ -111,6 +116,14 @@ export function CommitGraphOperationDialogs({
 				commit={resetCommit}
 				currentBranchName={currentBranchName}
 				onOpenChange={setResetCommit}
+				onOpenWorkingChanges={onOpenWorkingChanges}
+				onRepositoryChanged={onRepositoryChanged}
+				repositoryId={repositoryId}
+			/>
+			<InteractiveRebaseDialog
+				baseCommit={interactiveRebaseBase}
+				currentBranchName={currentBranchName}
+				onOpenChange={setInteractiveRebaseBase}
 				onOpenWorkingChanges={onOpenWorkingChanges}
 				onRepositoryChanged={onRepositoryChanged}
 				repositoryId={repositoryId}

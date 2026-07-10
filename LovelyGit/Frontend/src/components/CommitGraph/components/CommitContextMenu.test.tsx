@@ -44,15 +44,30 @@ describe("CommitContextMenu", () => {
 
 		expect(onCreateBranch).toHaveBeenCalledWith(row);
 	});
+
+	it("starts an interactive rebase from a historical commit", async () => {
+		const user = userEvent.setup();
+		const onInteractiveRebase = vi.fn();
+		renderMenu({ onInteractiveRebase });
+		fireEvent.contextMenu(screen.getByRole("button", { name: "commit row" }));
+
+		await user.click(
+			await screen.findByText(/Interactively rebase main after/),
+		);
+
+		expect(onInteractiveRebase).toHaveBeenCalledWith(row);
+	});
 });
 
 function renderMenu({
 	isHead = false,
 	onCreateBranch = vi.fn(),
+	onInteractiveRebase = vi.fn(),
 	onReset = vi.fn(),
 }: {
 	isHead?: boolean;
 	onCreateBranch?: (selected: CommitGraphRow) => void;
+	onInteractiveRebase?: (selected: CommitGraphRow) => void;
 	onReset?: (selected: CommitGraphRow) => void;
 }) {
 	return render(
@@ -63,6 +78,7 @@ function renderMenu({
 			onCreateBranch={onCreateBranch}
 			onCreateTag={vi.fn()}
 			onOpenDetails={vi.fn()}
+			onInteractiveRebase={onInteractiveRebase}
 			onReset={onReset}
 			onRevert={vi.fn()}
 			row={row}

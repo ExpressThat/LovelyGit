@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import type { CommitGraphRow as CommitGraphRowModel } from "@/generated/types";
 import { BranchManagementDialogs } from "./components/BranchManagementDialogs";
 import { CommitGraphHeader } from "./components/CommitGraphHeader";
@@ -12,10 +11,13 @@ import { ROW_HEIGHT } from "./constants";
 import { useBranchCreation } from "./hooks/useBranchCreation";
 import { useBranchWorktreeControllers } from "./hooks/useBranchWorktreeControllers";
 import { useCommitGraphData } from "./hooks/useCommitGraphData";
-import { useCommitGraphDialogs } from "./hooks/useCommitGraphDialogs";
+import {
+	useCommitGraphDialogs,
+	useNotifyCurrentBranch,
+} from "./hooks/useCommitGraphDialogs";
 import { useCommitGraphViewport } from "./hooks/useCommitGraphViewport";
 import { useRepositoryRefs } from "./hooks/useRepositoryRefs";
-import * as refMetadata from "./utils/refMetadata";
+import { buildCommitGraphRefView } from "./utils/commitGraphRefView";
 
 export function CommitGraphView({
 	onCurrentBranchNameChange,
@@ -34,19 +36,7 @@ export function CommitGraphView({
 	repositoryId: string | null;
 	selectedCommitHash: string | null;
 }) {
-	const {
-		cherryPickCommit,
-		integrateBranch,
-		integrationTarget,
-		resetCommit,
-		revertCommit,
-		setCherryPickCommit,
-		setIntegrationTarget,
-		setResetCommit,
-		setRevertCommit,
-		setTagCommit,
-		tagCommit,
-	} = useCommitGraphDialogs();
+	const dialogs = useCommitGraphDialogs();
 
 	const {
 		currentBranchName,
@@ -59,12 +49,18 @@ export function CommitGraphView({
 		totalRows,
 	} = useCommitGraphData(refreshToken);
 	const repositoryRefs = useRepositoryRefs(repositoryId, refreshToken);
-	const tagRemoteName =
-		repositoryRefs.refs?.remotePrefixes[0] ?? remotePrefixes[0] ?? null;
-	const existingTagNames = refMetadata.refNames(repositoryRefs.refs, "Tag");
-	const branchNames = refMetadata.refNames(repositoryRefs.refs, "Local");
-	const { remoteBranchNames, upstreams: branchUpstreams } =
-		refMetadata.branchTrackingMetadata(repositoryRefs.refs);
+	const {
+		branchNames,
+		branchUpstreams,
+		currentHeadHash,
+		existingTagNames,
+		remoteBranchNames,
+		tagRemoteName,
+	} = buildCommitGraphRefView(
+		repositoryRefs.refs,
+		remotePrefixes,
+		currentBranchName,
+	);
 	const {
 		branchController,
 		manageBranch,
@@ -83,15 +79,7 @@ export function CommitGraphView({
 	const branchCreation = useBranchCreation();
 	const { busyTag, deleteTag, deleteTagName, manageTag, setDeleteTagName } =
 		tagController;
-	const currentHeadHash = refMetadata.refCommitHash(
-		repositoryRefs.refs,
-		"Local",
-		currentBranchName,
-	);
-
-	useEffect(() => {
-		onCurrentBranchNameChange?.(currentBranchName);
-	}, [currentBranchName, onCurrentBranchNameChange]);
+	useNotifyCurrentBranch(currentBranchName, onCurrentBranchNameChange);
 
 	const {
 		graphContentWidth,
@@ -116,7 +104,7 @@ export function CommitGraphView({
 						currentBranchName={currentBranchName}
 						onBranchAction={manageBranch}
 						onCreateBranchFromTag={branchCreation.createFromTag}
-						onIntegrateBranch={integrateBranch}
+						onIntegrateBranch={dialogs.integrateBranch}
 						onSelectCommit={onSelectCommit}
 						onTagAction={manageTag}
 						remotePrefixes={remotePrefixes}
@@ -171,14 +159,15 @@ export function CommitGraphView({
 												rows[item.index]?.commit.hash === selectedCommitHash
 											}
 											isHead={rows[item.index]?.commit.hash === currentHeadHash}
-											onCherryPick={setCherryPickCommit}
+											onCherryPick={dialogs.setCherryPickCommit}
 											onBranchAction={manageBranch}
 											onCreateBranch={branchCreation.createAtCommit}
 											onCreateBranchFromTag={branchCreation.createFromTag}
-											onCreateTag={setTagCommit}
-											onIntegrateBranch={integrateBranch}
-											onRevert={setRevertCommit}
-											onReset={setResetCommit}
+											onCreateTag={dialogs.setTagCommit}
+											onIntegrateBranch={dialogs.integrateBranch}
+											onInteractiveRebase={dialogs.setInteractiveRebaseBase}
+											onRevert={dialogs.setRevertCommit}
+											onReset={dialogs.setResetCommit}
 											onSelect={onSelectCommit}
 											onTagAction={manageTag}
 											currentBranchName={currentBranchName}
@@ -205,9 +194,10 @@ export function CommitGraphView({
 			<CommitGraphOperationDialogs
 				branchCreationSource={branchCreation.source}
 				branchNames={branchNames}
-				cherryPickCommit={cherryPickCommit}
+				cherryPickCommit={dialogs.cherryPickCommit}
 				currentBranchName={currentBranchName}
-				integrationTarget={integrationTarget}
+				integrationTarget={dialogs.integrationTarget}
+				interactiveRebaseBase={dialogs.interactiveRebaseBase}
 				onCreateBranchFromReflog={branchCreation.createFromReflog}
 				onOpenWorkingChanges={onOpenWorkingChanges}
 				onBranchCreationClose={branchCreation.close}
@@ -216,12 +206,13 @@ export function CommitGraphView({
 				repositoryId={repositoryId}
 				repositoryRefs={repositoryRefs.refs}
 				reflogController={reflogController}
-				resetCommit={resetCommit}
-				revertCommit={revertCommit}
-				setCherryPickCommit={setCherryPickCommit}
-				setIntegrationTarget={setIntegrationTarget}
-				setResetCommit={setResetCommit}
-				setRevertCommit={setRevertCommit}
+				resetCommit={dialogs.resetCommit}
+				revertCommit={dialogs.revertCommit}
+				setCherryPickCommit={dialogs.setCherryPickCommit}
+				setIntegrationTarget={dialogs.setIntegrationTarget}
+				setInteractiveRebaseBase={dialogs.setInteractiveRebaseBase}
+				setResetCommit={dialogs.setResetCommit}
+				setRevertCommit={dialogs.setRevertCommit}
 			/>
 			<BranchManagementDialogs
 				branchNames={branchNames}
@@ -233,13 +224,13 @@ export function CommitGraphView({
 				busyTag={busyTag}
 				deleteTagName={deleteTagName}
 				existingTagNames={existingTagNames}
-				onCreateOpenChange={setTagCommit}
+				onCreateOpenChange={dialogs.setTagCommit}
 				onDelete={() => void deleteTag()}
 				onDeleteOpenChange={setDeleteTagName}
 				onRepositoryChanged={onRepositoryChanged}
 				remoteName={tagRemoteName}
 				repositoryId={repositoryId}
-				tagCommit={tagCommit}
+				tagCommit={dialogs.tagCommit}
 			/>
 			<WorktreeManagementDialogs
 				controller={worktreeController}

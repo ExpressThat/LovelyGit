@@ -13,12 +13,14 @@ internal sealed partial class GitCliService
     public Command CreateCommand(
         IReadOnlyList<string> arguments,
         string? workingDirectory = null,
-        bool validateExitCode = true)
+        bool validateExitCode = true,
+        IReadOnlyDictionary<string, string?>? environmentVariables = null)
     {
         var installation = Installation;
         var command = global::CliWrap.Cli.Wrap(installation.GitExecutablePath)
             .WithArguments(arguments)
-            .WithEnvironmentVariables(environment => ConfigureEnvironment(environment, installation));
+            .WithEnvironmentVariables(environment =>
+                ConfigureEnvironment(environment, installation, environmentVariables));
 
         if (!string.IsNullOrWhiteSpace(workingDirectory))
         {
@@ -45,10 +47,20 @@ internal sealed partial class GitCliService
 
     private static void ConfigureEnvironment(
         EnvironmentVariablesBuilder environment,
-        GitCliInstallation installation)
+        GitCliInstallation installation,
+        IReadOnlyDictionary<string, string?>? additionalVariables)
     {
         environment.Set("GIT_TERMINAL_PROMPT", "0");
         environment.Set("PATH", BuildPathValue(installation.PathDirectories));
+        if (additionalVariables == null)
+        {
+            return;
+        }
+
+        foreach (var (name, value) in additionalVariables)
+        {
+            environment.Set(name, value);
+        }
     }
 
     private static string BuildPathValue(IReadOnlyList<string> pathDirectories)

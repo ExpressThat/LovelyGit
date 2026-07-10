@@ -6,5 +6,8 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Rebase
 
 [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
 [JsonSerializable(typeof(RebaseCurrentBranchOntoBranchCommandArguments))]
+[JsonSerializable(typeof(GetInteractiveRebasePlanCommandArguments))]
+[JsonSerializable(typeof(StartInteractiveRebaseCommandArguments))]
+[JsonSerializable(typeof(CommandResponse<InteractiveRebasePlanResponse>))]
 [JsonSerializable(typeof(CommandResponse<RepositoryOperationCommandResponse>))]
 internal partial class RebaseJsonSerializerContext : JsonSerializerContext;

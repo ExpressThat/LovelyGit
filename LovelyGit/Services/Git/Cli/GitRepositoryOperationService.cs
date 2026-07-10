@@ -1,5 +1,6 @@
 using ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser;
 using ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser.Operations;
+using ExpressThat.LovelyGit.Services.Git.Rebase;
 
 namespace ExpressThat.LovelyGit.Services.Git.Cli;
 
@@ -80,13 +81,19 @@ internal sealed class GitRepositoryOperationService
             _ => throw new ArgumentOutOfRangeException(nameof(expectedOperation)),
         };
 
-        return await ExecuteAsync(
+        var outcome = await ExecuteAsync(
             paths,
             expectedOperation,
             $"Continue {FormatOperationName(expectedOperation)}",
             arguments,
             "Resolve and stage every conflict before continuing.",
             cancellationToken).ConfigureAwait(false);
+        if (expectedOperation == GitRepositoryOperationKind.Rebase && outcome.IsCompleted)
+        {
+            GitInteractiveRebaseService.Cleanup(paths.WorktreeGitDirectory);
+        }
+
+        return outcome;
     }
 
     public async Task AbortAsync(
@@ -113,6 +120,10 @@ internal sealed class GitRepositoryOperationService
             paths.WorkTreeDirectory,
             "Use the repository terminal to inspect and recover the operation state.",
             cancellationToken).ConfigureAwait(false);
+        if (expectedOperation == GitRepositoryOperationKind.Rebase)
+        {
+            GitInteractiveRebaseService.Cleanup(paths.WorktreeGitDirectory);
+        }
     }
 
     public async Task<GitRepositoryOperationKind?> GetOperationAsync(

@@ -56,6 +56,23 @@ internal sealed class GitOperationService
         return result;
     }
 
+    public async Task<GitOperationResult> ExecuteBufferedWithEnvironmentAsync(
+        string operationName,
+        IReadOnlyList<string> arguments,
+        string workingDirectory,
+        string? recoveryHint,
+        IReadOnlyDictionary<string, string?> environmentVariables,
+        CancellationToken cancellationToken)
+    {
+        var startedAt = DateTimeOffset.UtcNow;
+        var result = await _gitCliService
+            .CreateCommand(arguments, workingDirectory, validateExitCode: false, environmentVariables)
+            .ExecuteBufferedAsync(cancellationToken)
+            .ConfigureAwait(false);
+        return CreateResult(
+            operationName, arguments, workingDirectory, recoveryHint, startedAt, result);
+    }
+
     private static GitOperationResult CreateResult(
         string operationName,
         IReadOnlyList<string> arguments,
