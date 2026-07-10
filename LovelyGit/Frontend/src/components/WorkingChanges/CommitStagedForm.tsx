@@ -1,6 +1,7 @@
 import { GitCommitHorizontal, LoaderCircle, PencilLine } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { Switch } from "@/components/ui/switch";
+import { CommitIdentityControl } from "./CommitIdentityControl";
 import { ActionButton } from "./WorkingChangesPanelParts";
 
 const COMMIT_TITLE_LIMIT = 72;
@@ -17,6 +18,7 @@ export function CommitStagedForm({
 	onCommit,
 	onCommitBodyChange,
 	onCommitTitleChange,
+	repositoryId,
 }: {
 	canCommit: boolean;
 	commitBody: string;
@@ -29,6 +31,7 @@ export function CommitStagedForm({
 	onCommit: () => void;
 	onCommitBodyChange: (value: string) => void;
 	onCommitTitleChange: (value: string) => void;
+	repositoryId: string;
 }) {
 	const reduceMotion = useReducedMotion();
 	return (
@@ -77,6 +80,7 @@ export function CommitStagedForm({
 					/>
 				</label>
 			</div>
+			<CommitIdentityControl disabled={isBusy} repositoryId={repositoryId} />
 			<label
 				className="flex cursor-pointer items-center justify-between gap-3 rounded-md border bg-background px-3 py-2"
 				htmlFor="amend-last-commit"

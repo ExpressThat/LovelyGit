@@ -5,6 +5,10 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { CommitStagedForm } from "./CommitStagedForm";
 
+vi.mock("./CommitIdentityControl", () => ({
+	CommitIdentityControl: () => <div>Commit identity</div>,
+}));
+
 describe("CommitStagedForm", () => {
 	it("offers amend mode with an explicit history rewrite warning", async () => {
 		const user = userEvent.setup();
@@ -58,6 +62,7 @@ function renderForm(
 			onCommit={vi.fn()}
 			onCommitBodyChange={vi.fn()}
 			onCommitTitleChange={vi.fn()}
+			repositoryId="repository-1"
 			{...overrides}
 		/>,
 	);

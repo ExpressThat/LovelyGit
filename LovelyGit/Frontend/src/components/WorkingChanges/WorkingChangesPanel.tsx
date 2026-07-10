@@ -127,6 +127,7 @@ export function WorkingChangesPanel({
 				onCommit={() => void commitStagedChanges()}
 				onCommitBodyChange={setCommitBody}
 				onCommitTitleChange={setCommitTitle}
+				repositoryId={repositoryId}
 			/>
 			<DiscardWorkingTreeChangesDialog
 				files={discardFiles}
