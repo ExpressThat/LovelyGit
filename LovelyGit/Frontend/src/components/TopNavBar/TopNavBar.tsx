@@ -1,4 +1,4 @@
-import { GitCompareArrows } from "lucide-react";
+import { GitCompareArrows, Search } from "lucide-react";
 import { SettingsDialog } from "../Settings/SettingsDialog";
 import { BranchControl } from "./components/BranchControl";
 import { RemoteActionsControl } from "./components/RemoteActionsControl";
@@ -9,12 +9,14 @@ export function TopNavBar({
 	currentBranchName,
 	onBranchChanged,
 	onOpenWorkingChanges,
+	onSearchCommits,
 	repositoryId,
 	workingChangesCount,
 }: {
 	currentBranchName: string | null;
 	onBranchChanged: (branchName: string) => void;
 	onOpenWorkingChanges: () => void;
+	onSearchCommits: () => void;
 	repositoryId: string | null;
 	workingChangesCount: number;
 }) {
@@ -41,6 +43,16 @@ export function TopNavBar({
 					<TerminalActionControl repositoryId={repositoryId} />
 				</div>
 				<div className="flex items-center justify-end gap-1">
+					<button
+						aria-label="Search commits"
+						className="inline-flex size-9 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground disabled:pointer-events-none disabled:opacity-40"
+						disabled={!repositoryId}
+						onClick={onSearchCommits}
+						title="Search commits (Ctrl+F)"
+						type="button"
+					>
+						<Search aria-hidden="true" className="size-5" />
+					</button>
 					<button
 						aria-label="Open working changes"
 						className="relative inline-flex size-9 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground"

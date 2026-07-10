@@ -23,4 +23,13 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Commit
         public string? BranchName { get; set; }
         public int Limit { get; set; } = 200;
     }
+
+    [TypeSharp]
+    public record SearchCommitsCommandArguments
+    {
+        public Guid KnownRepositoryId { get; set; }
+        public string Query { get; set; } = string.Empty;
+        public int Limit { get; set; } = 50;
+        public bool Deep { get; set; }
+    }
 }

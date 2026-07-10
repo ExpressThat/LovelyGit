@@ -4,13 +4,15 @@ namespace ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser;
 
 internal sealed partial class LovelyGitRepository
 {
-    public async Task<IReadOnlyList<GitCommit>> GetStartingCommitsAsync(CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<GitCommit>> GetStartingCommitsAsync(
+        CancellationToken cancellationToken,
+        bool includeTags = false)
     {
-        var orderedIds = GetOrderedStartingCommitIds();
+        var orderedIds = GetOrderedStartingCommitIds(includeTags);
         return await ResolveStartingCommitsAsync(orderedIds, cancellationToken).ConfigureAwait(false);
     }
 
-    private List<GitObjectId> GetOrderedStartingCommitIds()
+    private List<GitObjectId> GetOrderedStartingCommitIds(bool includeTags)
     {
         var seenIds = new HashSet<GitObjectId>();
         var orderedIds = new List<GitObjectId>();
@@ -20,7 +22,7 @@ internal sealed partial class LovelyGitRepository
         }
 
         foreach (var reference in _refsByFullName.Values
-                     .Where(reference => reference.Kind != GitRefKind.Tag)
+                     .Where(reference => includeTags || reference.Kind != GitRefKind.Tag)
                      .OrderBy(reference => reference.Kind == GitRefKind.Stash ? 0 : 1))
         {
             if (seenIds.Add(reference.Target))

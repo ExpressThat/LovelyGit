@@ -1,4 +1,5 @@
 using ExpressThat.LovelyGit.Services.Git.CommitGraph;
+using ExpressThat.LovelyGit.Services.Git.CommitSearch;
 using ExpressThat.LovelyGit.Services.Git.CommitGraph.Queries;
 using ExpressThat.LovelyGit.Services.NativeMessaging.Commands;
 using ExpressThat.LovelyGit.Services.Json;
@@ -16,12 +17,14 @@ internal static class CommitGraphServiceCollectionExtensions
         services.AddSingleton<RepositoryRefsService>();
         services.AddSingleton<CommitDetailsPreloadService>();
         services.AddSingleton<CommitGraphPageService>();
+        services.AddSingleton<CommitSearchService>();
         services.AddSingleton<ICommandResponder, CommitGraphCommandResolver>();
         services.AddSingleton<ICommandResponder, GetCommitDetailsCommandResolver>();
         services.AddSingleton<ICommandResponder, GetCommitFileDiffCommandResolver>();
         services.AddSingleton<ICommandResponder, GetCommitPatchCommandResolver>();
         services.AddSingleton<ICommandResponder, GetRepositoryRefsCommandResolver>();
         services.AddSingleton<ICommandResponder, GetReflogCommandResolver>();
+        services.AddSingleton<ICommandResponder, SearchCommitsCommandResolver>();
 
         return services;
     }

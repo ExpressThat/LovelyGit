@@ -104,6 +104,24 @@ internal sealed class GitCommit
     }
 }
 
+internal readonly record struct GitCommitSearchHeader(
+    GitObjectId FirstParentHash,
+    GitObjectId[]? AdditionalParentHashes,
+    int ParentHashCount,
+    long AuthorUnixSeconds,
+    bool IsMatch)
+{
+    public GitObjectId GetParentHash(int index)
+    {
+        if ((uint)index >= (uint)ParentHashCount)
+        {
+            throw new ArgumentOutOfRangeException(nameof(index));
+        }
+
+        return index == 0 ? FirstParentHash : AdditionalParentHashes![index - 1];
+    }
+}
+
 internal sealed record GitTreeFile(string Path, GitObjectId ObjectId, string Mode);
 
 internal sealed record GitTreeComparison(
