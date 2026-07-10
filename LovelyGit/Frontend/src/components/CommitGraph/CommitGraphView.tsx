@@ -7,6 +7,7 @@ import type { CommitGraphRow as CommitGraphRowModel } from "@/generated/types";
 import { BranchManagementDialogs } from "./components/BranchManagementDialogs";
 import { CherryPickDialog } from "./components/CherryPickDialog";
 import { CommitGraphHeader } from "./components/CommitGraphHeader";
+import { CommitGraphHorizontalScrollbar } from "./components/CommitGraphHorizontalScrollbar";
 import { CommitRow } from "./components/CommitRow";
 import { RefsPanel } from "./components/RefsPanel";
 import { RevertDialog } from "./components/RevertDialog";
@@ -186,24 +187,12 @@ export function CommitGraphView({
 								))}
 							</div>
 						</div>
-						<div
-							className="grid h-3 border-t bg-background"
-							style={{ gridTemplateColumns: templateColumns }}
-						>
-							<div />
-							<div
-								className="custom-scrollbar overflow-x-auto overflow-y-hidden"
-								ref={graphScrollerRef}
-								onScroll={(event) =>
-									setGraphScrollLeft(event.currentTarget.scrollLeft)
-								}
-							>
-								<div style={{ height: 1, width: graphContentWidth }} />
-							</div>
-							<div />
-							<div />
-							<div />
-						</div>
+						<CommitGraphHorizontalScrollbar
+							contentWidth={graphContentWidth}
+							onScrollLeftChange={setGraphScrollLeft}
+							scrollerRef={graphScrollerRef}
+							templateColumns={templateColumns}
+						/>
 					</div>
 				</div>
 			</section>

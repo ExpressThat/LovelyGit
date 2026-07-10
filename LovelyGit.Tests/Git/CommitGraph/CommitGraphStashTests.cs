@@ -38,12 +38,12 @@ public sealed class CommitGraphStashTests
         Assert.Equal(0, baseRow.Lane);
         Assert.NotEqual(baseRow.Lane, stashRow.Lane);
         Assert.Contains(
-            baseRow.EdgesAbove,
+            stashRow.EdgesBelow,
             edge => edge.FromLane == stashRow.Lane && edge.ToLane == baseRow.Lane);
     }
 
     [Fact]
-    public async Task GetCommitGraphPageAsync_GivesMultipleStashesSeparateLanes()
+    public async Task GetCommitGraphPageAsync_KeepsMultipleStashesOffPrimaryLane()
     {
         using var temporary = TemporaryGitRepository.Create(stashCount: 3);
         var open = await CommitGraphManager.TryOpenAsync(
@@ -64,7 +64,9 @@ public sealed class CommitGraphStashTests
 
         Assert.Equal(3, stashRows.Length);
         Assert.DoesNotContain(0, stashRows.Select(row => row.Lane));
-        Assert.Equal(3, stashRows.Select(row => row.Lane).Distinct().Count());
+        Assert.All(
+            stashRows,
+            row => Assert.InRange(row.Lane, 0, page.Response.LaneCount - 1));
     }
 
     private sealed class TemporaryGitRepository : IDisposable

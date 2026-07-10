@@ -25,3 +25,11 @@ public sealed record PushBranchCommandArguments
     public string BranchName { get; init; } = string.Empty;
     public string RemoteName { get; init; } = string.Empty;
 }
+
+[TypeSharp]
+public sealed record CreateBranchFromTagCommandArguments
+{
+    public Guid RepositoryId { get; init; }
+    public string TagName { get; init; } = string.Empty;
+    public string BranchName { get; init; } = string.Empty;
+}

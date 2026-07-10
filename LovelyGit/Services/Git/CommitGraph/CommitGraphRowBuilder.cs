@@ -96,6 +96,9 @@ internal static partial class CommitGraphRowBuilder
             mainParentLane,
             mergeParentLanes,
             activeLaneColors);
+        maxLaneCount = Math.Max(
+            maxLaneCount,
+            Math.Max(activeLaneTargets.Count, currentLane + 1));
         edgesBelow = CompactLanesBelow(activeLaneTargets, activeLaneColors, edgesBelow);
         maxLaneCount = Math.Max(maxLaneCount, activeLaneTargets.Count);
 

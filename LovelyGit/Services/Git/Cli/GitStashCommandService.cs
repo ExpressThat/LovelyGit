@@ -1,8 +1,9 @@
 using System.Text.RegularExpressions;
+using ExpressThat.LovelyGit.Services.Git.Cli;
 using ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.WorkingTree;
 
-namespace ExpressThat.LovelyGit.Services.Git.Cli;
+namespace ExpressThat.LovelyGit.Services.Git.Stashes;
 
 internal sealed partial class GitStashCommandService
 {
@@ -33,6 +34,45 @@ internal sealed partial class GitStashCommandService
 
         return RunAsync(repositoryPath, action, arguments, cancellationToken);
     }
+
+    public Task StashChangesAsync(
+        string repositoryPath,
+        string message,
+        bool includeUntracked,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(message))
+        {
+            throw new ArgumentException("Stash message is required.", nameof(message));
+        }
+
+        return ExecuteAsync(
+            repositoryPath,
+            StashAction.Create,
+            selector: null,
+            message,
+            includeUntracked,
+            restoreIndex: false,
+            cancellationToken);
+    }
+
+    public Task ApplyStashAsync(
+        string repositoryPath,
+        string selector,
+        CancellationToken cancellationToken) =>
+        ExecuteAsync(repositoryPath, StashAction.Apply, NormalizeAlias(selector), null, false, false, cancellationToken);
+
+    public Task PopStashAsync(
+        string repositoryPath,
+        string selector,
+        CancellationToken cancellationToken) =>
+        ExecuteAsync(repositoryPath, StashAction.Pop, NormalizeAlias(selector), null, false, false, cancellationToken);
+
+    public Task DropStashAsync(
+        string repositoryPath,
+        string selector,
+        CancellationToken cancellationToken) =>
+        ExecuteAsync(repositoryPath, StashAction.Drop, NormalizeAlias(selector), null, false, false, cancellationToken);
 
     private async Task RunAsync(
         string repositoryPath,
@@ -95,4 +135,9 @@ internal sealed partial class GitStashCommandService
 
     [GeneratedRegex("^stash@\\{[0-9]+\\}$", RegexOptions.CultureInvariant)]
     private static partial Regex StashSelectorRegex();
+
+    private static string NormalizeAlias(string selector) =>
+        selector.Trim().Equals("stash", StringComparison.Ordinal)
+            ? "stash@{0}"
+            : selector;
 }

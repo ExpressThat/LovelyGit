@@ -1,0 +1,78 @@
+name: Test
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - sol
+
+permissions:
+  contents: read
+
+concurrency:
+  group: test-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Backend and frontend
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.3.0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: LovelyGit/Frontend/pnpm-lock.yaml
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            10.0.x
+            8.0.x
+
+      - name: Restore .NET tools
+        working-directory: LovelyGit
+        run: dotnet tool restore
+
+      - name: Install frontend dependencies
+        working-directory: LovelyGit/Frontend
+        run: pnpm install --frozen-lockfile
+
+      - name: Enforce file-size rules
+        shell: powershell
+        run: ./scripts/Test-FileLength.ps1
+
+      - name: Test frontend with coverage
+        working-directory: LovelyGit/Frontend
+        run: pnpm test:coverage
+
+      - name: Build production frontend
+        working-directory: LovelyGit/Frontend
+        run: pnpm prod
+
+      - name: Test backend with coverage
+        run: >
+          dotnet test LovelyGit.slnx
+          --settings coverlet.runsettings
+          --collect:"XPlat Code Coverage"
+          --results-directory artifacts/coverage/backend
+
+      - name: Upload coverage reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-reports
+          path: artifacts/coverage
+          if-no-files-found: warn
