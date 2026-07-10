@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { BranchCreationSource } from "@/components/TopNavBar/components/CreateBranchDialog";
-import type { CommitGraphRow } from "@/generated/types";
+import type { CommitGraphRow, GitReflogEntry } from "@/generated/types";
 import { shortHash } from "../utils/format";
 
 export function useBranchCreation() {
@@ -23,10 +23,18 @@ export function useBranchCreation() {
 			startPoint: commitHash,
 		});
 	};
+	const createFromReflog = (entry: GitReflogEntry) => {
+		setSource({
+			description: entry.message || `Recovery point ${entry.selector}`,
+			label: entry.selector,
+			startPoint: entry.newHash,
+		});
+	};
 
 	return {
 		close: () => setSource(null),
 		createAtCommit,
+		createFromReflog,
 		createFromTag,
 		source,
 	};

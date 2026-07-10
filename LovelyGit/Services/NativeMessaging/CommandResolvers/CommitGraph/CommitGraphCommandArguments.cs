@@ -15,4 +15,12 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Commit
     {
         public Guid KnownRepositoryId { get; set; }
     }
+
+    [TypeSharp]
+    public record GetReflogCommandArguments
+    {
+        public Guid KnownRepositoryId { get; set; }
+        public string? BranchName { get; set; }
+        public int Limit { get; set; } = 200;
+    }
 }

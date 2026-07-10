@@ -1,5 +1,4 @@
 import { useEffect } from "react";
-import type { BranchIntegrationMode } from "@/components/TopNavBar/components/BranchIntegrationDialog";
 import type { CommitGraphRow as CommitGraphRowModel } from "@/generated/types";
 import { BranchManagementDialogs } from "./components/BranchManagementDialogs";
 import { CommitGraphHeader } from "./components/CommitGraphHeader";
@@ -16,8 +15,7 @@ import { useCommitGraphData } from "./hooks/useCommitGraphData";
 import { useCommitGraphDialogs } from "./hooks/useCommitGraphDialogs";
 import { useCommitGraphViewport } from "./hooks/useCommitGraphViewport";
 import { useRepositoryRefs } from "./hooks/useRepositoryRefs";
-import { useTagMutations } from "./hooks/useTagMutations";
-import { branchTrackingMetadata, refNames } from "./utils/refMetadata";
+import * as refMetadata from "./utils/refMetadata";
 
 export function CommitGraphView({
 	onCurrentBranchNameChange,
@@ -38,6 +36,7 @@ export function CommitGraphView({
 }) {
 	const {
 		cherryPickCommit,
+		integrateBranch,
 		integrationTarget,
 		resetCommit,
 		revertCommit,
@@ -62,31 +61,33 @@ export function CommitGraphView({
 	const repositoryRefs = useRepositoryRefs(repositoryId, refreshToken);
 	const tagRemoteName =
 		repositoryRefs.refs?.remotePrefixes[0] ?? remotePrefixes[0] ?? null;
-	const existingTagNames = refNames(repositoryRefs.refs, "Tag");
-	const branchNames = refNames(repositoryRefs.refs, "Local");
+	const existingTagNames = refMetadata.refNames(repositoryRefs.refs, "Tag");
+	const branchNames = refMetadata.refNames(repositoryRefs.refs, "Local");
 	const { remoteBranchNames, upstreams: branchUpstreams } =
-		branchTrackingMetadata(repositoryRefs.refs);
-	const { branchController, manageBranch, worktreeController } =
-		useBranchWorktreeControllers({
-			currentBranchName,
-			onCurrentBranchNameChange: (name) => onCurrentBranchNameChange?.(name),
-			onRepositoryChanged,
-			onUpstreamChanged: repositoryRefs.updateBranchUpstream,
-			onWorktreesChanged: repositoryRefs.refresh,
-			remoteName: tagRemoteName,
-			repositoryId,
-		});
+		refMetadata.branchTrackingMetadata(repositoryRefs.refs);
+	const {
+		branchController,
+		manageBranch,
+		reflogController,
+		tagController,
+		worktreeController,
+	} = useBranchWorktreeControllers({
+		currentBranchName,
+		onCurrentBranchNameChange: (name) => onCurrentBranchNameChange?.(name),
+		onRepositoryChanged,
+		onUpstreamChanged: repositoryRefs.updateBranchUpstream,
+		onWorktreesChanged: repositoryRefs.refresh,
+		remoteName: tagRemoteName,
+		repositoryId,
+	});
 	const branchCreation = useBranchCreation();
 	const { busyTag, deleteTag, deleteTagName, manageTag, setDeleteTagName } =
-		useTagMutations({
-			onRepositoryChanged,
-			remoteName: tagRemoteName,
-			repositoryId,
-		});
-	const currentHeadHash =
-		repositoryRefs.refs?.refs.find(
-			(ref) => ref.kind === "Local" && ref.name === currentBranchName,
-		)?.commitHash ?? null;
+		tagController;
+	const currentHeadHash = refMetadata.refCommitHash(
+		repositoryRefs.refs,
+		"Local",
+		currentBranchName,
+	);
 
 	useEffect(() => {
 		onCurrentBranchNameChange?.(currentBranchName);
@@ -104,9 +105,6 @@ export function CommitGraphView({
 		virtualizer,
 		viewportRef,
 	} = useCommitGraphViewport({ ensureRangeLoaded, laneCount, totalRows });
-
-	const integrateBranch = (mode: BranchIntegrationMode, branchName: string) =>
-		setIntegrationTarget({ branchName, mode });
 
 	return (
 		<>
@@ -210,12 +208,14 @@ export function CommitGraphView({
 				cherryPickCommit={cherryPickCommit}
 				currentBranchName={currentBranchName}
 				integrationTarget={integrationTarget}
+				onCreateBranchFromReflog={branchCreation.createFromReflog}
 				onOpenWorkingChanges={onOpenWorkingChanges}
 				onBranchCreationClose={branchCreation.close}
 				onCurrentBranchNameChange={(name) => onCurrentBranchNameChange?.(name)}
 				onRepositoryChanged={onRepositoryChanged}
 				repositoryId={repositoryId}
 				repositoryRefs={repositoryRefs.refs}
+				reflogController={reflogController}
 				resetCommit={resetCommit}
 				revertCommit={revertCommit}
 				setCherryPickCommit={setCherryPickCommit}

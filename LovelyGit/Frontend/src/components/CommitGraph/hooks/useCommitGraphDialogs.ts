@@ -12,10 +12,13 @@ export function useCommitGraphDialogs() {
 	const [revertCommit, setRevertCommit] = useState<CommitGraphRow | null>(null);
 	const [resetCommit, setResetCommit] = useState<CommitGraphRow | null>(null);
 	const [tagCommit, setTagCommit] = useState<CommitGraphRow | null>(null);
+	const integrateBranch = (mode: BranchIntegrationMode, branchName: string) =>
+		setIntegrationTarget({ branchName, mode });
 
 	return {
 		cherryPickCommit,
 		integrationTarget,
+		integrateBranch,
 		resetCommit,
 		revertCommit,
 		setCherryPickCommit,

@@ -1,5 +1,6 @@
 using ExpressThat.LovelyGit.Services.Git.CommitGraph.Models;
 using ExpressThat.LovelyGit.Services.NativeMessaging.Commands;
+using ExpressThat.LovelyGit.Services.Git.Reflog;
 using System.Text.Json.Serialization;
 
 namespace ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.CommitGraph;
@@ -29,11 +30,15 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Commit
 [JsonSerializable(typeof(RepositoryRefsResponse))]
 [JsonSerializable(typeof(CommitGraphCommandArguments))]
 [JsonSerializable(typeof(GetRepositoryRefsCommandArguments))]
+[JsonSerializable(typeof(GetReflogCommandArguments))]
+[JsonSerializable(typeof(GitReflogEntry))]
+[JsonSerializable(typeof(GitReflogResponse))]
 [JsonSerializable(typeof(GetCommitDetailsCommandArguments))]
 [JsonSerializable(typeof(GetCommitFileDiffCommandArguments))]
 [JsonSerializable(typeof(GetCommitPatchCommandArguments))]
 [JsonSerializable(typeof(CommandResponse<CommitGraphResponse>))]
 [JsonSerializable(typeof(CommandResponse<RepositoryRefsResponse>))]
+[JsonSerializable(typeof(CommandResponse<GitReflogResponse>))]
 [JsonSerializable(typeof(CommandResponse<CommitDetailsResponse>))]
 [JsonSerializable(typeof(CommandResponse<CommitFileDiffResponse>))]
 [JsonSerializable(typeof(CommandResponse<CommitPatchResponse>))]

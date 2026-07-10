@@ -16,6 +16,7 @@ using ExpressThat.LovelyGit.Services.Data.Models;
 using ExpressThat.LovelyGit.Services.Git.CommitGraph.Models;
 using ExpressThat.LovelyGit.Services.Git.WorkingTree.Models;
 using ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser.Remotes;
+using ExpressThat.LovelyGit.Services.Git.Reflog;
 using ExpressThat.LovelyGit.Services.Settings;
 using System.Text.Json;
 
@@ -47,6 +48,8 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging
         CommitGraph,
         [NativeMessageContract(typeof(GetRepositoryRefsCommandArguments), typeof(RepositoryRefsResponse))]
         GetRepositoryRefs,
+        [NativeMessageContract(typeof(GetReflogCommandArguments), typeof(GitReflogResponse))]
+        GetReflog,
         [NativeMessageContract(typeof(GetCommitDetailsCommandArguments), typeof(CommitDetailsResponse))]
         GetCommitDetails,
         [NativeMessageContract(typeof(GetCommitFileDiffCommandArguments), typeof(CommitFileDiffResponse))]

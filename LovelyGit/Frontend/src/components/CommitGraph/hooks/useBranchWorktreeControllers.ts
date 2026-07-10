@@ -1,5 +1,7 @@
 import type { BranchAction } from "../components/BranchContextMenu";
 import { useBranchMutations } from "./useBranchMutations";
+import { useReflogManagement } from "./useReflogManagement";
+import { useTagMutations } from "./useTagMutations";
 import { useWorktreeMutations } from "./useWorktreeMutations";
 
 export function useBranchWorktreeControllers({
@@ -31,11 +33,24 @@ export function useBranchWorktreeControllers({
 		onRepositoryChanged: onWorktreesChanged,
 		repositoryId,
 	});
+	const reflogController = useReflogManagement();
+	const tagController = useTagMutations({
+		onRepositoryChanged,
+		remoteName,
+		repositoryId,
+	});
 	const manageBranch = (action: BranchAction, branchName: string) => {
-		if (action === "worktree")
+		if (action === "reflog") reflogController.open(branchName);
+		else if (action === "worktree")
 			worktreeController.setCreateBranchName(branchName);
 		else branchController.manageBranch(action, branchName);
 	};
 
-	return { branchController, manageBranch, worktreeController };
+	return {
+		branchController,
+		manageBranch,
+		reflogController,
+		tagController,
+		worktreeController,
+	};
 }

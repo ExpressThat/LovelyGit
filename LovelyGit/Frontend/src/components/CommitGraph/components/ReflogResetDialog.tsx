@@ -13,46 +13,26 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import {
-	type CommitGraphRow,
+	type GitReflogEntry,
 	GitResetMode,
 	type GitResetMode as GitResetModeValue,
 } from "@/generated/types";
 import { sendRequestWithResponse } from "@/lib/commands";
 import { gitMutationTimeoutMs } from "@/lib/gitMutationTimeout";
-import { NativeMessageType } from "@/lib/nativeMessaging";
 import { shortHash } from "../utils/format";
 import { ResetModeOption, resetOptions } from "./ResetModeOption";
 
-export function ResetCommitDialog(props: {
-	commit: CommitGraphRow | null;
-	currentBranchName: string | null;
-	onOpenChange: (commit: CommitGraphRow | null) => void;
-	onOpenWorkingChanges: () => void;
-	onRepositoryChanged: () => void;
-	repositoryId: string | null;
-}) {
-	if (!props.commit || !props.currentBranchName) return null;
-	return (
-		<ResetCommitDialogContent
-			key={`${props.commit.commit.hash}:${props.currentBranchName}`}
-			{...props}
-			commit={props.commit}
-			currentBranchName={props.currentBranchName}
-		/>
-	);
-}
-
-function ResetCommitDialogContent({
-	commit,
+export function ReflogResetDialog({
 	currentBranchName,
-	onOpenChange,
+	entry,
+	onClose,
 	onOpenWorkingChanges,
 	onRepositoryChanged,
 	repositoryId,
 }: {
-	commit: CommitGraphRow;
 	currentBranchName: string;
-	onOpenChange: (commit: CommitGraphRow | null) => void;
+	entry: GitReflogEntry;
+	onClose: () => void;
 	onOpenWorkingChanges: () => void;
 	onRepositoryChanged: () => void;
 	repositoryId: string | null;
@@ -61,30 +41,30 @@ function ResetCommitDialogContent({
 	const [isRunning, setIsRunning] = useState(false);
 	const [mode, setMode] = useState<GitResetModeValue>(GitResetMode.Mixed);
 	const reduceMotion = useReducedMotion();
-	const hash = shortHash(commit.commit.hash);
 	const isHard = mode === GitResetMode.Hard;
 	const canSubmit =
 		Boolean(repositoryId) &&
 		!isRunning &&
 		(!isHard || confirmation === currentBranchName);
-
-	const resetBranch = async () => {
+	const reset = async () => {
 		if (!repositoryId || !canSubmit) return;
 		setIsRunning(true);
-		const toastId = toast.loading(`Resetting ${currentBranchName} to ${hash}`);
+		const toastId = toast.loading(
+			`Resetting ${currentBranchName} to ${entry.selector}`,
+		);
 		try {
 			await sendRequestWithResponse(
 				{
 					arguments: {
-						commitHash: commit.commit.hash,
+						commitHash: entry.newHash,
 						repositoryId,
 						resetMode: mode,
 					},
-					commandType: NativeMessageType.ResetCurrentBranchToCommit,
+					commandType: "ResetCurrentBranchToCommit",
 				},
 				{ timeoutMs: gitMutationTimeoutMs },
 			);
-			onOpenChange(null);
+			onClose();
 			onRepositoryChanged();
 			toast.success(`${mode} reset completed on ${currentBranchName}`, {
 				id: toastId,
@@ -98,25 +78,22 @@ function ResetCommitDialogContent({
 			setIsRunning(false);
 		}
 	};
-
 	return (
-		<Dialog
-			onOpenChange={(open) => !open && !isRunning && onOpenChange(null)}
-			open
-		>
+		<Dialog open onOpenChange={(open) => !open && !isRunning && onClose()}>
 			<DialogContent>
 				<form
 					onSubmit={(event) => {
 						event.preventDefault();
-						void resetBranch();
+						void reset();
 					}}
 				>
 					<DialogHeader>
 						<DialogTitle>
-							Reset {currentBranchName} to {hash}?
+							Reset {currentBranchName} to {entry.selector}?
 						</DialogTitle>
 						<DialogDescription>
-							Choose what happens to staged and working-tree changes.
+							Move the current branch to {shortHash(entry.newHash)} from its
+							reflog history.
 						</DialogDescription>
 					</DialogHeader>
 					<fieldset className="grid gap-2 py-4">
@@ -134,9 +111,9 @@ function ResetCommitDialogContent({
 							{isHard ? (
 								<motion.div
 									animate={{ height: "auto", opacity: 1, y: 0 }}
+									className="grid gap-2 overflow-hidden rounded-lg border border-destructive/35 bg-destructive/8 p-3"
 									exit={{ height: 0, opacity: 0, y: reduceMotion ? 0 : -4 }}
 									initial={{ height: 0, opacity: 0, y: reduceMotion ? 0 : -4 }}
-									className="grid gap-2 overflow-hidden rounded-lg border border-destructive/35 bg-destructive/8 p-3"
 								>
 									<p className="text-destructive text-xs">
 										Hard reset permanently discards tracked staged and
@@ -144,8 +121,9 @@ function ResetCommitDialogContent({
 									</p>
 									<Input
 										aria-label={`Type ${currentBranchName} to confirm hard reset`}
-										autoComplete="off"
-										onChange={(event) => setConfirmation(event.target.value)}
+										onChange={(event) =>
+											setConfirmation(event.currentTarget.value)
+										}
 										onInput={(event) =>
 											setConfirmation(event.currentTarget.value)
 										}
@@ -156,16 +134,16 @@ function ResetCommitDialogContent({
 							) : null}
 						</AnimatePresence>
 					</fieldset>
-					<DialogFooter className="mx-0 mb-0 px-0 pb-0">
+					<DialogFooter>
 						<Button
 							disabled={!canSubmit}
 							type="submit"
 							variant={isHard ? "destructive" : "default"}
 						>
 							{isRunning ? (
-								<LoaderCircle aria-hidden="true" className="animate-spin" />
+								<LoaderCircle className="animate-spin" />
 							) : (
-								<ListRestart aria-hidden="true" />
+								<ListRestart />
 							)}
 							{isRunning ? "Resetting" : `${mode} reset`}
 						</Button>

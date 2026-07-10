@@ -3,6 +3,7 @@ import {
 	FolderGit2,
 	GitBranch,
 	GitMerge,
+	History,
 	Link2,
 	ListRestart,
 	Pencil,
@@ -81,6 +82,13 @@ export function BranchContextMenu({
 				</ContextMenuItem>
 				<ContextMenuItem
 					disabled={disabled}
+					onClick={() => onAction("reflog", branchName)}
+				>
+					<History aria-hidden="true" />
+					View reflog…
+				</ContextMenuItem>
+				<ContextMenuItem
+					disabled={disabled}
 					onClick={() => onAction("worktree", branchName)}
 				>
 					<FolderGit2 aria-hidden="true" />
@@ -130,6 +138,7 @@ export type BranchAction =
 	| "checkout"
 	| "delete"
 	| "push"
+	| "reflog"
 	| "rename"
 	| "upstream"
 	| "worktree";

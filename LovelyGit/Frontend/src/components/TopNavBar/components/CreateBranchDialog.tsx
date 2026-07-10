@@ -132,6 +132,7 @@ export function CreateBranchDialog({
 								autoFocus
 								id="new-branch-name"
 								onChange={(event) => setBranchName(event.currentTarget.value)}
+								onInput={(event) => setBranchName(event.currentTarget.value)}
 								placeholder="feature/my-change"
 								value={branchName}
 							/>

@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import type { RepositoryRefsResponse } from "@/generated/types";
-import { branchTrackingMetadata, withBranchUpstream } from "./refMetadata";
+import {
+	branchTrackingMetadata,
+	refCommitHash,
+	withBranchUpstream,
+} from "./refMetadata";
 
 describe("branchTrackingMetadata", () => {
 	it("maps upstreams and excludes symbolic remote HEAD refs", () => {
@@ -24,6 +28,17 @@ describe("branchTrackingMetadata", () => {
 			remoteBranchNames: [],
 			upstreams: {},
 		});
+	});
+});
+
+describe("refCommitHash", () => {
+	it("finds the matching named ref", () => {
+		const response = {
+			refs: [{ commitHash: "abc123", kind: "Local", name: "main" }],
+		} as RepositoryRefsResponse;
+
+		expect(refCommitHash(response, "Local", "main")).toBe("abc123");
+		expect(refCommitHash(response, "Local", "missing")).toBeNull();
 	});
 });
 

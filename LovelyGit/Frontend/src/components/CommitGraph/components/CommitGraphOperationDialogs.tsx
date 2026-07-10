@@ -4,8 +4,15 @@ import {
 	type BranchCreationSource,
 	CreateBranchDialog,
 } from "@/components/TopNavBar/components/CreateBranchDialog";
-import type { CommitGraphRow, RepositoryRefsResponse } from "@/generated/types";
+import type {
+	CommitGraphRow,
+	GitReflogEntry,
+	RepositoryRefsResponse,
+} from "@/generated/types";
+import type { ReflogManagementController } from "../hooks/useReflogManagement";
 import { CherryPickDialog } from "./CherryPickDialog";
+import { ReflogDialog } from "./ReflogDialog";
+import { ReflogResetDialog } from "./ReflogResetDialog";
 import { ResetCommitDialog } from "./ResetCommitDialog";
 import { RevertDialog } from "./RevertDialog";
 
@@ -21,11 +28,13 @@ export function CommitGraphOperationDialogs({
 	currentBranchName,
 	integrationTarget,
 	onOpenWorkingChanges,
+	onCreateBranchFromReflog,
 	onBranchCreationClose,
 	onCurrentBranchNameChange,
 	onRepositoryChanged,
 	repositoryId,
 	repositoryRefs,
+	reflogController,
 	resetCommit,
 	revertCommit,
 	setCherryPickCommit,
@@ -39,11 +48,13 @@ export function CommitGraphOperationDialogs({
 	currentBranchName: string | null;
 	integrationTarget: IntegrationTarget;
 	onOpenWorkingChanges: () => void;
+	onCreateBranchFromReflog: (entry: GitReflogEntry) => void;
 	onBranchCreationClose: () => void;
 	onCurrentBranchNameChange: (branchName: string) => void;
 	onRepositoryChanged: () => void;
 	repositoryId: string | null;
 	repositoryRefs: RepositoryRefsResponse | null;
+	reflogController: ReflogManagementController;
 	resetCommit: CommitGraphRow | null;
 	revertCommit: CommitGraphRow | null;
 	setCherryPickCommit: (commit: CommitGraphRow | null) => void;
@@ -104,6 +115,28 @@ export function CommitGraphOperationDialogs({
 				onRepositoryChanged={onRepositoryChanged}
 				repositoryId={repositoryId}
 			/>
+			{reflogController.branchName ? (
+				<ReflogDialog
+					branchName={reflogController.branchName}
+					onClose={reflogController.close}
+					onCreateBranch={(entry) => {
+						reflogController.close();
+						onCreateBranchFromReflog(entry);
+					}}
+					onReset={reflogController.startReset}
+					repositoryId={repositoryId}
+				/>
+			) : null}
+			{reflogController.resetTarget && currentBranchName ? (
+				<ReflogResetDialog
+					currentBranchName={currentBranchName}
+					entry={reflogController.resetTarget}
+					onClose={reflogController.closeReset}
+					onOpenWorkingChanges={onOpenWorkingChanges}
+					onRepositoryChanged={onRepositoryChanged}
+					repositoryId={repositoryId}
+				/>
+			) : null}
 		</>
 	);
 }

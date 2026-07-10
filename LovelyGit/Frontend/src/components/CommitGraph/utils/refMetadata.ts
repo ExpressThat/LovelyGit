@@ -9,6 +9,17 @@ export function refNames(
 		.map((reference) => reference.name);
 }
 
+export function refCommitHash(
+	response: RepositoryRefsResponse | null,
+	kind: CommitRefKind,
+	name: string | null,
+) {
+	return (
+		response?.refs.find((ref) => ref.kind === kind && ref.name === name)
+			?.commitHash ?? null
+	);
+}
+
 export function branchTrackingMetadata(
 	response: RepositoryRefsResponse | null,
 ) {
