@@ -21,6 +21,7 @@ using ExpressThat.LovelyGit.Services.Git.CommitSearch;
 using ExpressThat.LovelyGit.Services.Git.FileHistory;
 using ExpressThat.LovelyGit.Services.Git.FileBlame;
 using ExpressThat.LovelyGit.Services.Settings;
+using ExpressThat.LovelyGit.Services.Git.BranchComparison;
 using System.Text.Json;
 
 namespace ExpressThat.LovelyGit.Services.NativeMessaging
@@ -51,6 +52,8 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging
         CommitGraph,
         [NativeMessageContract(typeof(GetRepositoryRefsCommandArguments), typeof(RepositoryRefsResponse))]
         GetRepositoryRefs,
+        [NativeMessageContract(typeof(GetBranchComparisonCommandArguments), typeof(BranchComparisonResponse))]
+        GetBranchComparison,
         [NativeMessageContract(typeof(GetReflogCommandArguments), typeof(GitReflogResponse))]
         GetReflog,
         [NativeMessageContract(typeof(SearchCommitsCommandArguments), typeof(CommitSearchResponse))]

@@ -21,6 +21,9 @@ export function useBranchMutations({
 	repositoryId: string | null;
 }) {
 	const [busyBranch, setBusyBranch] = useState<string | null>(null);
+	const [comparisonBranchName, setComparisonBranchName] = useState<
+		string | null
+	>(null);
 	const [deleteBranchName, setDeleteBranchName] = useState<string | null>(null);
 	const [renameBranchName, setRenameBranchName] = useState<string | null>(null);
 	const [upstreamBranchName, setUpstreamBranchName] = useState<string | null>(
@@ -88,7 +91,8 @@ export function useBranchMutations({
 	};
 
 	const manageBranch = (action: BranchAction, branchName: string) => {
-		if (action === "checkout") void checkoutBranch(branchName);
+		if (action === "compare") setComparisonBranchName(branchName);
+		else if (action === "checkout") void checkoutBranch(branchName);
 		else if (action === "push") void pushBranch(branchName);
 		else if (action === "rename") setRenameBranchName(branchName);
 		else if (action === "upstream") setUpstreamBranchName(branchName);
@@ -164,6 +168,7 @@ export function useBranchMutations({
 
 	return {
 		busyBranch,
+		comparisonBranchName,
 		currentBranchName,
 		deleteBranch,
 		deleteBranchName,
@@ -175,6 +180,7 @@ export function useBranchMutations({
 		renameBranch,
 		repositoryId,
 		setDeleteBranchName,
+		setComparisonBranchName,
 		setRenameBranchName,
 		setUpstreamBranchName,
 		upstreamBranchName,

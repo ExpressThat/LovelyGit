@@ -217,7 +217,10 @@ export function CommitGraphView({
 			<BranchManagementDialogs
 				branchNames={branchNames}
 				controller={branchController}
+				currentBranchName={currentBranchName}
+				onIntegrateBranch={dialogs.integrateBranch}
 				remoteBranches={remoteBranchNames}
+				repositoryId={repositoryId}
 				upstreams={branchUpstreams}
 			/>
 			<TagManagementDialogs

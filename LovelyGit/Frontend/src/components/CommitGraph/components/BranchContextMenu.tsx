@@ -2,6 +2,7 @@ import {
 	CloudUpload,
 	FolderGit2,
 	GitBranch,
+	GitCompareArrows,
 	GitMerge,
 	History,
 	Link2,
@@ -59,6 +60,15 @@ export function BranchContextMenu({
 					</ContextMenuLabel>
 				</ContextMenuGroup>
 				<ContextMenuSeparator />
+				<ContextMenuItem
+					disabled={!canIntegrate}
+					onClick={() => onAction("compare", branchName)}
+				>
+					<GitCompareArrows aria-hidden="true" />
+					<span className="min-w-0 truncate">
+						Compare {currentBranchName ?? "current branch"} with {branchName}…
+					</span>
+				</ContextMenuItem>
 				<ContextMenuItem
 					disabled={disabled || isCurrent}
 					onClick={() => onAction("checkout", branchName)}
@@ -136,6 +146,7 @@ export function BranchContextMenu({
 
 export type BranchAction =
 	| "checkout"
+	| "compare"
 	| "delete"
 	| "push"
 	| "reflog"

@@ -73,6 +73,14 @@ describe("BranchContextMenu", () => {
 		);
 		await user.click(await screen.findByText("Merge feature/demo into main"));
 		expect(onIntegrateBranch).toHaveBeenCalledWith("merge", "feature/demo");
+
+		fireEvent.contextMenu(
+			screen.getByRole("button", { name: "feature/demo ref" }),
+		);
+		await user.click(
+			await screen.findByText("Compare main with feature/demo…"),
+		);
+		expect(onAction).toHaveBeenCalledWith("compare", "feature/demo");
 	});
 });
 

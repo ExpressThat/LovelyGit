@@ -1,4 +1,6 @@
+import type { BranchIntegrationMode } from "@/components/TopNavBar/components/BranchIntegrationDialog";
 import type { BranchMutationController } from "../hooks/useBranchMutations";
+import { BranchComparisonDialog } from "./BranchComparisonDialog";
 import { BranchUpstreamDialog } from "./BranchUpstreamDialog";
 import { DeleteBranchDialog } from "./DeleteBranchDialog";
 import { RenameBranchDialog } from "./RenameBranchDialog";
@@ -6,16 +8,31 @@ import { RenameBranchDialog } from "./RenameBranchDialog";
 export function BranchManagementDialogs({
 	branchNames,
 	controller,
+	currentBranchName,
+	onIntegrateBranch,
+	repositoryId,
 	remoteBranches,
 	upstreams,
 }: {
 	branchNames: string[];
 	controller: BranchMutationController;
+	currentBranchName: string | null;
+	onIntegrateBranch: (mode: BranchIntegrationMode, branchName: string) => void;
+	repositoryId: string | null;
 	remoteBranches: string[];
 	upstreams: Record<string, string>;
 }) {
 	return (
 		<>
+			{controller.comparisonBranchName ? (
+				<BranchComparisonDialog
+					currentBranchName={currentBranchName}
+					onClose={() => controller.setComparisonBranchName(null)}
+					onIntegrate={onIntegrateBranch}
+					repositoryId={repositoryId}
+					targetBranchName={controller.comparisonBranchName}
+				/>
+			) : null}
 			{controller.renameBranchName ? (
 				<RenameBranchDialog
 					branchName={controller.renameBranchName}
