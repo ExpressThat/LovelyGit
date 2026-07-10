@@ -68,6 +68,17 @@ describe("CommitContextMenu", () => {
 
 		expect(onCopyPatch).toHaveBeenCalledWith(row);
 	});
+
+	it("saves the selected commit as a patch", async () => {
+		const user = userEvent.setup();
+		const onSavePatch = vi.fn();
+		renderMenu({ onSavePatch });
+		fireEvent.contextMenu(screen.getByRole("button", { name: "commit row" }));
+
+		await user.click(await screen.findByText("Save commit as patch…"));
+
+		expect(onSavePatch).toHaveBeenCalledWith(row);
+	});
 });
 
 function renderMenu({
@@ -75,22 +86,26 @@ function renderMenu({
 	onCreateBranch = vi.fn(),
 	onInteractiveRebase = vi.fn(),
 	onCopyPatch = vi.fn(),
+	onSavePatch = vi.fn(),
 	onReset = vi.fn(),
 }: {
 	isHead?: boolean;
 	onCreateBranch?: (selected: CommitGraphRow) => void;
 	onInteractiveRebase?: (selected: CommitGraphRow) => void;
 	onCopyPatch?: (selected: CommitGraphRow) => void;
+	onSavePatch?: (selected: CommitGraphRow) => void;
 	onReset?: (selected: CommitGraphRow) => void;
 }) {
 	return render(
 		<CommitContextMenu
 			copyPatchBusy={false}
+			savePatchBusy={false}
 			currentBranchName="main"
 			isHead={isHead}
 			onCherryPick={vi.fn()}
 			onCreateBranch={onCreateBranch}
 			onCopyPatch={onCopyPatch}
+			onSavePatch={onSavePatch}
 			onCreateTag={vi.fn()}
 			onOpenDetails={vi.fn()}
 			onInteractiveRebase={onInteractiveRebase}

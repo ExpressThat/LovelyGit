@@ -23,6 +23,7 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Commit
 [JsonSerializable(typeof(CommitFileDiffLine))]
 [JsonSerializable(typeof(CommitFileDiffResponse))]
 [JsonSerializable(typeof(CommitPatchResponse))]
+[JsonSerializable(typeof(CommitPatchExportResponse))]
 [JsonSerializable(typeof(CommitLaneColor))]
 [JsonSerializable(typeof(CommitLaneEdge))]
 [JsonSerializable(typeof(CommitGraphRow))]
@@ -58,6 +59,7 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Commit
 [JsonSerializable(typeof(CommandResponse<CommitDetailsResponse>))]
 [JsonSerializable(typeof(CommandResponse<CommitFileDiffResponse>))]
 [JsonSerializable(typeof(CommandResponse<CommitPatchResponse>))]
+[JsonSerializable(typeof(CommandResponse<CommitPatchExportResponse>))]
 internal partial class CommitGraphJsonSerializerContext : JsonSerializerContext
 {
 }

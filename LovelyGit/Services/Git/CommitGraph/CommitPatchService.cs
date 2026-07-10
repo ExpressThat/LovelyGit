@@ -41,9 +41,10 @@ internal sealed class CommitPatchService
             .ToList();
 
         var truncated = changedPaths.Count > MaxFiles;
+        var hasUnsupportedBinaryChanges = false;
         foreach (var path in changedPaths.Take(MaxFiles))
         {
-            await AppendFilePatchAsync(
+            hasUnsupportedBinaryChanges |= await AppendFilePatchAsync(
                     patch,
                     path,
                     comparison.ParentFiles.GetValueOrDefault(path),
@@ -70,10 +71,11 @@ internal sealed class CommitPatchService
             CommitHash = commit.Hash.ToString(),
             Patch = patch.ToString(),
             IsTruncated = truncated,
+            HasUnsupportedBinaryChanges = hasUnsupportedBinaryChanges,
         };
     }
 
-    private static async Task AppendFilePatchAsync(
+    private static async Task<bool> AppendFilePatchAsync(
         StringBuilder patch,
         string path,
         GitTreeFile? oldFile,
@@ -97,7 +99,7 @@ internal sealed class CommitPatchService
                 .Append(" and b/")
                 .Append(path)
                 .AppendLine(" differ");
-            return;
+            return true;
         }
 
         var unified = UnidiffRenderer.GenerateUnidiff(
@@ -109,6 +111,7 @@ internal sealed class CommitPatchService
             ignoreCase: false,
             ContextLines);
         patch.Append(NormalizeNewLines(unified).TrimEnd()).AppendLine();
+        return false;
     }
 
     private static void AppendModeLine(StringBuilder patch, string label, GitTreeFile? file)

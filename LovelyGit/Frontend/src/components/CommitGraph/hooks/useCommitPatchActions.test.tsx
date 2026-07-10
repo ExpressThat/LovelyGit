@@ -16,6 +16,7 @@ describe("useCommitPatchActions", () => {
 	it("requests the native patch and copies it", async () => {
 		vi.mocked(sendRequestWithResponse).mockResolvedValue({
 			commitHash: row.commit.hash,
+			hasUnsupportedBinaryChanges: false,
 			isTruncated: false,
 			patch: "diff --git a/file.txt b/file.txt\n",
 		});
@@ -34,12 +35,13 @@ describe("useCommitPatchActions", () => {
 			"diff --git a/file.txt b/file.txt\n",
 			"Commit patch",
 		);
-		await waitFor(() => expect(result.current.copyingCommitHash).toBeNull());
+		await waitFor(() => expect(result.current.busyCommitHash).toBeNull());
 	});
 
 	it("does not copy a truncated patch", async () => {
 		vi.mocked(sendRequestWithResponse).mockResolvedValue({
 			commitHash: row.commit.hash,
+			hasUnsupportedBinaryChanges: false,
 			isTruncated: true,
 			patch: "partial",
 		});
@@ -48,6 +50,25 @@ describe("useCommitPatchActions", () => {
 		await act(() => result.current.copyPatch(row));
 
 		expect(copyToClipboard).not.toHaveBeenCalled();
+	});
+
+	it("opens the native save flow for the selected commit", async () => {
+		vi.mocked(sendRequestWithResponse).mockResolvedValue({
+			path: "C:/patches/change.patch",
+			saved: true,
+		});
+		const { result } = renderHook(() => useCommitPatchActions("repository-id"));
+
+		await act(() => result.current.savePatch(row));
+
+		expect(sendRequestWithResponse).toHaveBeenCalledWith({
+			arguments: {
+				commitHash: row.commit.hash,
+				repositoryId: "repository-id",
+			},
+			commandType: "SaveCommitPatch",
+		});
+		await waitFor(() => expect(result.current.busyCommitHash).toBeNull());
 	});
 });
 

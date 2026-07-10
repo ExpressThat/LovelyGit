@@ -68,6 +68,8 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging
         GetCommitFileDiff,
         [NativeMessageContract(typeof(GetCommitPatchCommandArguments), typeof(CommitPatchResponse))]
         GetCommitPatch,
+        [NativeMessageContract(typeof(GetCommitPatchCommandArguments), typeof(CommitPatchExportResponse))]
+        SaveCommitPatch,
 
         // Working-tree reads and file/index mutations.
         [NativeMessageContract(typeof(GetWorkingTreeChangesCommandArguments), typeof(WorkingTreeChangeSummaryResponse))]

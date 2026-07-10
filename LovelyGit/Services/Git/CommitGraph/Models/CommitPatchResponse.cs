@@ -8,4 +8,5 @@ public record CommitPatchResponse
     public string CommitHash { get; set; } = string.Empty;
     public string Patch { get; set; } = string.Empty;
     public bool IsTruncated { get; set; }
+    public bool HasUnsupportedBinaryChanges { get; set; }
 }

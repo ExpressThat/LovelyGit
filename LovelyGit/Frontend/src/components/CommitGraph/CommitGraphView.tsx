@@ -145,8 +145,14 @@ export function CommitGraphView({
 											branchMutationBusy={branchController.busyBranch !== null}
 											branchRemoteName={tagRemoteName}
 											copyPatchBusy={
-												patchActions.copyingCommitHash ===
-												rows[item.index]?.commit.hash
+												patchActions.busyAction === "copy" &&
+												patchActions.busyCommitHash ===
+													rows[item.index]?.commit.hash
+											}
+											savePatchBusy={
+												patchActions.busyAction === "save" &&
+												patchActions.busyCommitHash ===
+													rows[item.index]?.commit.hash
 											}
 											graph={{
 												contentWidth: graphContentWidth,
@@ -161,6 +167,7 @@ export function CommitGraphView({
 											onBranchAction={manageBranch}
 											onCreateBranch={branchCreation.createAtCommit}
 											onCopyPatch={patchActions.copyPatch}
+											onSavePatch={patchActions.savePatch}
 											onCreateBranchFromTag={branchCreation.createFromTag}
 											onCreateTag={dialogs.setTagCommit}
 											onIntegrateBranch={dialogs.integrateBranch}

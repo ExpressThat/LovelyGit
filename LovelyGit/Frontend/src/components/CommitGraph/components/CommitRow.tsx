@@ -16,6 +16,7 @@ export function CommitRow({
 	branchMutationBusy,
 	branchRemoteName,
 	copyPatchBusy,
+	savePatchBusy,
 	currentBranchName,
 	graph,
 	isSelected,
@@ -25,6 +26,7 @@ export function CommitRow({
 	onCreateTag,
 	onCreateBranch,
 	onCopyPatch,
+	onSavePatch,
 	onCreateBranchFromTag,
 	onIntegrateBranch,
 	onInteractiveRebase,
@@ -42,6 +44,7 @@ export function CommitRow({
 	branchMutationBusy: boolean;
 	branchRemoteName: string | null;
 	copyPatchBusy: boolean;
+	savePatchBusy: boolean;
 	currentBranchName: string | null;
 	graph: {
 		contentWidth: number;
@@ -58,6 +61,7 @@ export function CommitRow({
 	onCreateTag: (row: CommitGraphRow) => void;
 	onCreateBranch: (row: CommitGraphRow) => void;
 	onCopyPatch: (row: CommitGraphRow) => void;
+	onSavePatch: (row: CommitGraphRow) => void;
 	onCreateBranchFromTag: (tagName: string, commitHash: string) => void;
 	onSelect: (row: CommitGraphRow) => void;
 	onTagAction: (action: TagAction, tagName: string) => void;
@@ -143,12 +147,14 @@ export function CommitRow({
 	return (
 		<CommitContextMenu
 			copyPatchBusy={copyPatchBusy}
+			savePatchBusy={savePatchBusy}
 			currentBranchName={currentBranchName}
 			isHead={isHead}
 			onCherryPick={onCherryPick}
 			onCreateTag={onCreateTag}
 			onCreateBranch={onCreateBranch}
 			onCopyPatch={onCopyPatch}
+			onSavePatch={onSavePatch}
 			onOpenDetails={onSelect}
 			onInteractiveRebase={onInteractiveRebase}
 			onRevert={onRevert}

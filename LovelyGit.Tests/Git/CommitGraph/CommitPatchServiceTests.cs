@@ -29,6 +29,22 @@ public sealed class CommitPatchServiceTests
         Assert.Contains("+new line", response.Patch);
     }
 
+    [Fact]
+    public async Task GetCommitPatchAsync_FlagsUnsupportedBinaryChanges()
+    {
+        using var repository = TemporaryGitRepository.Create();
+        repository.WriteBytes("image.bin", [0x00, 0x01, 0x02]);
+        var commitHash = repository.Commit("Add binary");
+
+        var response = await new CommitPatchService().GetCommitPatchAsync(
+            repository.Path,
+            GitObjectId.Parse(commitHash),
+            CancellationToken.None);
+
+        Assert.True(response.HasUnsupportedBinaryChanges);
+        Assert.Contains("Binary files", response.Patch);
+    }
+
     private sealed class TemporaryGitRepository : IDisposable
     {
         private readonly DirectoryInfo _directory;
@@ -74,6 +90,13 @@ public sealed class CommitPatchServiceTests
             var path = System.IO.Path.Combine(Path, relativePath);
             Directory.CreateDirectory(System.IO.Path.GetDirectoryName(path)!);
             File.WriteAllText(path, contents);
+        }
+
+        public void WriteBytes(string relativePath, byte[] contents)
+        {
+            var path = System.IO.Path.Combine(Path, relativePath);
+            Directory.CreateDirectory(System.IO.Path.GetDirectoryName(path)!);
+            File.WriteAllBytes(path, contents);
         }
 
         private CliWrap.Buffered.BufferedCommandResult RunGit(IReadOnlyList<string> arguments)
