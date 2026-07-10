@@ -5,6 +5,7 @@ using ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser.Remotes;
 using ExpressThat.LovelyGit.Services.NativeMessaging.Commands;
 using ExpressThat.LovelyGit.Services.Data.Models;
 using ExpressThat.LovelyGit.Services.Git.Patches;
+using ExpressThat.LovelyGit.Services.Git.Submodules;
 
 namespace ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.WorkingTree;
 
@@ -27,6 +28,11 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Workin
 [JsonSerializable(typeof(ApplyPatchCommandArguments))]
 [JsonSerializable(typeof(PatchFilePreview))]
 [JsonSerializable(typeof(PatchPreviewResponse))]
+[JsonSerializable(typeof(ManageSubmoduleCommandArguments))]
+[JsonSerializable(typeof(SubmoduleAction))]
+[JsonSerializable(typeof(SubmoduleState))]
+[JsonSerializable(typeof(GitSubmodule))]
+[JsonSerializable(typeof(List<GitSubmodule>))]
 [JsonSerializable(typeof(CreateWorktreeCommandArguments))]
 [JsonSerializable(typeof(ManageWorktreeCommandArguments))]
 [JsonSerializable(typeof(WorktreeMutationAction))]
@@ -56,6 +62,7 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Workin
 [JsonSerializable(typeof(CommandResponse<WorktreeDestinationResponse>))]
 [JsonSerializable(typeof(CommandResponse<KnownGitRepository>))]
 [JsonSerializable(typeof(CommandResponse<PatchPreviewResponse>))]
+[JsonSerializable(typeof(CommandResponse<List<GitSubmodule>>))]
 internal partial class WorkingTreeJsonSerializerContext : JsonSerializerContext
 {
 }

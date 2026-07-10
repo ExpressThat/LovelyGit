@@ -3,6 +3,7 @@ import { SettingsDialog } from "../Settings/SettingsDialog";
 import { BranchControl } from "./components/BranchControl";
 import { PatchApplyControl } from "./components/PatchApplyControl";
 import { RemoteActionsControl } from "./components/RemoteActionsControl";
+import { SubmoduleManager } from "./components/SubmoduleManager";
 import { Tabs } from "./components/Tabs";
 import { TerminalActionControl } from "./components/TerminalActionControl";
 
@@ -48,6 +49,7 @@ export function TopNavBar({
 					<TerminalActionControl repositoryId={repositoryId} />
 				</div>
 				<div className="flex items-center justify-end gap-1">
+					<SubmoduleManager repositoryId={repositoryId} />
 					<button
 						aria-label="Search commits"
 						className="inline-flex size-9 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground disabled:pointer-events-none disabled:opacity-40"

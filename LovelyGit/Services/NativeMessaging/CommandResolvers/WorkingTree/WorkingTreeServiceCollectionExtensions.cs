@@ -1,6 +1,7 @@
 using ExpressThat.LovelyGit.Services.Git.WorkingTree;
 using ExpressThat.LovelyGit.Services.Git.Rebase;
 using ExpressThat.LovelyGit.Services.Git.Patches;
+using ExpressThat.LovelyGit.Services.Git.Submodules;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Branches;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.CherryPick;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Merge;
@@ -36,6 +37,8 @@ internal static class WorkingTreeServiceCollectionExtensions
         services.AddSingleton<HeadCommitMessageService>();
         services.AddSingleton<PatchPreviewService>();
         services.AddSingleton<PatchApplyService>();
+        services.AddSingleton<NativeSubmoduleReader>();
+        services.AddSingleton<SubmoduleCommandService>();
         services.AddSingleton<WorkingTreeWatcherService>();
         services.AddHostedService<ActiveRepositorySettingsWatcher>();
         services.AddSingleton<ICommandResponder, GetWorkingTreeChangesCommandResolver>();
@@ -51,6 +54,8 @@ internal static class WorkingTreeServiceCollectionExtensions
         services.AddSingleton<ICommandResponder, CommitStagedChangesCommandResolver>();
         services.AddSingleton<ICommandResponder, ChoosePatchFileCommandResolver>();
         services.AddSingleton<ICommandResponder, ApplyPatchCommandResolver>();
+        services.AddSingleton<ICommandResponder, GetSubmodulesCommandResolver>();
+        services.AddSingleton<ICommandResponder, ManageSubmoduleCommandResolver>();
         services.AddSingleton<ICommandResponder, ChooseWorktreeDestinationCommandResolver>();
         services.AddSingleton<ICommandResponder, CreateWorktreeCommandResolver>();
         services.AddSingleton<ICommandResponder, ManageWorktreeCommandResolver>();

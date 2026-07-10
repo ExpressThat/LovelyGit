@@ -23,6 +23,7 @@ using ExpressThat.LovelyGit.Services.Git.FileBlame;
 using ExpressThat.LovelyGit.Services.Settings;
 using ExpressThat.LovelyGit.Services.Git.BranchComparison;
 using ExpressThat.LovelyGit.Services.Git.Patches;
+using ExpressThat.LovelyGit.Services.Git.Submodules;
 using System.Text.Json;
 
 namespace ExpressThat.LovelyGit.Services.NativeMessaging
@@ -99,6 +100,12 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging
         ChoosePatchFile,
         [NativeMessageContract(typeof(ApplyPatchCommandArguments), typeof(EmptyCommandArguments))]
         ApplyPatch,
+
+        // Native submodule discovery and explicit lifecycle mutations.
+        [NativeMessageContract(typeof(GetRemotesCommandArguments), typeof(List<GitSubmodule>))]
+        GetSubmodules,
+        [NativeMessageContract(typeof(ManageSubmoduleCommandArguments), typeof(EmptyCommandArguments))]
+        ManageSubmodule,
 
         // Linked worktree creation, navigation, locking, and removal.
         [NativeMessageContract(typeof(EmptyCommandArguments), typeof(WorktreeDestinationResponse))]
