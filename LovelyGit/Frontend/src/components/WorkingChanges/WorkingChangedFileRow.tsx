@@ -15,6 +15,7 @@ export function ChangedFileRow({
 	isBusy = false,
 	isSelected = false,
 	onAction,
+	onOpenBlame,
 	onOpenHistory,
 	onSelect,
 	onToggleSelected,
@@ -25,6 +26,7 @@ export function ChangedFileRow({
 	isBusy?: boolean;
 	isSelected?: boolean;
 	onAction?: () => void;
+	onOpenBlame: () => void;
 	onOpenHistory: () => void;
 	onSelect: () => void;
 	onToggleSelected?: () => void;
@@ -47,7 +49,13 @@ export function ChangedFileRow({
 					/>
 				</div>
 			) : null}
-			<FileHistoryContextMenu onOpen={onOpenHistory} path={file.path}>
+			<FileHistoryContextMenu
+				blameLabel="View line blame at HEAD…"
+				canBlame={file.group !== "Untracked" && file.status !== "Added"}
+				onOpen={onOpenHistory}
+				onOpenBlame={onOpenBlame}
+				path={file.path}
+			>
 				<button
 					className="flex min-w-0 flex-1 items-center gap-2 py-1.5 text-left"
 					onClick={handleFileClick}

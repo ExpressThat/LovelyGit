@@ -1,4 +1,4 @@
-import { History } from "lucide-react";
+import { FileSearch, History } from "lucide-react";
 import type { ReactNode } from "react";
 import {
 	ContextMenu,
@@ -11,12 +11,18 @@ import {
 
 export function FileHistoryContextMenu({
 	children,
+	canBlame = true,
+	onOpenBlame,
 	onOpen,
 	path,
+	blameLabel = "View line blame…",
 }: {
 	children: ReactNode;
+	canBlame?: boolean;
+	onOpenBlame: () => void;
 	onOpen: () => void;
 	path: string;
+	blameLabel?: string;
 }) {
 	return (
 		<ContextMenu>
@@ -32,6 +38,10 @@ export function FileHistoryContextMenu({
 				<ContextMenuItem onClick={onOpen}>
 					<History aria-hidden="true" />
 					View file history…
+				</ContextMenuItem>
+				<ContextMenuItem disabled={!canBlame} onClick={onOpenBlame}>
+					<FileSearch aria-hidden="true" />
+					{blameLabel}
 				</ContextMenuItem>
 			</ContextMenuContent>
 		</ContextMenu>

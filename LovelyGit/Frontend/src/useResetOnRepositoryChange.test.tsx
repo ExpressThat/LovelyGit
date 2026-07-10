@@ -4,7 +4,6 @@ import { act, renderHook } from "@testing-library/react";
 import { useState } from "react";
 import { describe, expect, it } from "vitest";
 import type { DetailsPanelState } from "./AppPanelState";
-import type { FileHistoryTarget } from "./components/FileHistory/FileHistoryDialog";
 import { useResetOnRepositoryChange } from "./useResetOnRepositoryChange";
 
 describe("useResetOnRepositoryChange", () => {
@@ -16,19 +15,16 @@ describe("useResetOnRepositoryChange", () => {
 					commitHash: "abc",
 					kind: "commit",
 				});
-				const [history, setHistory] = useState<FileHistoryTarget | null>({
-					path: "file.ts",
-					startCommitHash: null,
-				});
+				const [fileDiscoveryOpen, setFileDiscoveryOpen] = useState(true);
 				const [searchOpen, setSearchOpen] = useState(true);
 				useResetOnRepositoryChange(
 					repositoryId,
 					setBranch,
 					setDetails,
-					setHistory,
 					setSearchOpen,
+					() => setFileDiscoveryOpen(false),
 				);
-				return { branch, details, history, searchOpen };
+				return { branch, details, fileDiscoveryOpen, searchOpen };
 			},
 			{ initialProps: { repositoryId: "one" } },
 		);
@@ -38,7 +34,7 @@ describe("useResetOnRepositoryChange", () => {
 		expect(result.current).toEqual({
 			branch: null,
 			details: null,
-			history: null,
+			fileDiscoveryOpen: false,
 			searchOpen: false,
 		});
 	});

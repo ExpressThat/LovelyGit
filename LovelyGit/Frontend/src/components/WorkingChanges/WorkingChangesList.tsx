@@ -49,6 +49,7 @@ export function WorkingChangesList({
 	onDiscardAll,
 	onDiscardSelected,
 	onIndexCommand,
+	onOpenFileBlame,
 	onOpenFileHistory,
 	onSelectFile,
 	onToggleSelected,
@@ -66,6 +67,7 @@ export function WorkingChangesList({
 		files: WorkingTreeChangedFile[],
 		includeAll: boolean,
 	) => void;
+	onOpenFileBlame: (file: WorkingTreeChangedFile) => void;
 	onOpenFileHistory: (file: WorkingTreeChangedFile) => void;
 	onSelectFile: (file: WorkingTreeChangedFile) => void;
 	onToggleSelected: (file: WorkingTreeChangedFile) => void;
@@ -123,6 +125,7 @@ export function WorkingChangesList({
 				files={unstagedFiles}
 				isBusy={isBusy}
 				onIndexCommand={onIndexCommand}
+				onOpenFileBlame={onOpenFileBlame}
 				onOpenFileHistory={onOpenFileHistory}
 				onSelectFile={onSelectFile}
 				onToggleSelected={onToggleSelected}
@@ -154,6 +157,7 @@ export function WorkingChangesList({
 				files={stagedFiles}
 				isBusy={isBusy}
 				onIndexCommand={onIndexCommand}
+				onOpenFileBlame={onOpenFileBlame}
 				onOpenFileHistory={onOpenFileHistory}
 				onSelectFile={onSelectFile}
 				onToggleSelected={onToggleSelected}

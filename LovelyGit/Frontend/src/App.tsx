@@ -8,7 +8,6 @@ import { CommitFileDiffView } from "./components/CommitFileDiff/CommitFileDiffVi
 import { CommitGraphLayer } from "./components/CommitGraph/CommitGraphLayer";
 import { isCommitSearchShortcut } from "./components/CommitSearch/commitSearchShortcut";
 import { SlidingDetailsPanel } from "./components/DetailsPanel/SlidingDetailsPanel";
-import type { FileHistoryTarget } from "./components/FileHistory/FileHistoryDialog";
 import { NewTab } from "./components/NewTab/NewTab";
 import { TopNavBar } from "./components/TopNavBar/TopNavBar";
 import { useWorkingTreeChanges } from "./components/WorkingChanges/useWorkingTreeChanges";
@@ -19,6 +18,7 @@ import { RepositoryProvider } from "./lib/repositoryContext";
 import { useApplyFont } from "./lib/settings/font/useApplyFont";
 import { useSetting } from "./lib/settings/settingsStore";
 import { useApplyTheme } from "./lib/settings/theme/useApplyTheme";
+import { useFileDiscoveryTargets } from "./useFileDiscoveryTargets";
 import { useResetOnRepositoryChange } from "./useResetOnRepositoryChange";
 
 function App() {
@@ -30,8 +30,7 @@ function App() {
 	);
 	const [commitGraphRefreshToken, setCommitGraphRefreshToken] = useState(0);
 	const [isCommitSearchOpen, setIsCommitSearchOpen] = useState(false);
-	const [fileHistoryTarget, setFileHistoryTarget] =
-		useState<FileHistoryTarget | null>(null);
+	const fileDiscovery = useFileDiscoveryTargets();
 	const [currentBranchName, setCurrentBranchName] = useState<string | null>(
 		null,
 	);
@@ -44,8 +43,8 @@ function App() {
 		currentGitRepositoryId,
 		setCurrentBranchName,
 		setDetailsPanel,
-		setFileHistoryTarget,
 		setIsCommitSearchOpen,
+		fileDiscovery.reset,
 	);
 	const selectCommit = (row: CommitGraphRow) => {
 		setDetailsPanel({ commitHash: row.commit.hash, kind: "commit" });
@@ -178,11 +177,11 @@ function App() {
 						{detailsPanel?.kind === "commit" && currentGitRepositoryId ? (
 							<CommitDetails
 								commitHash={detailsPanel.commitHash}
+								onOpenFileBlame={(file) =>
+									fileDiscovery.openBlame(file.path, detailsPanel.commitHash)
+								}
 								onOpenFileHistory={(file) =>
-									setFileHistoryTarget({
-										path: file.path,
-										startCommitHash: detailsPanel.commitHash,
-									})
+									fileDiscovery.openHistory(file.path, detailsPanel.commitHash)
 								}
 								onSelectFile={(file) =>
 									setDetailsPanel({
@@ -213,10 +212,10 @@ function App() {
 									return workingTreeChanges.reload();
 								}}
 								onOpenFileHistory={(file) =>
-									setFileHistoryTarget({
-										path: file.path,
-										startCommitHash: null,
-									})
+									fileDiscovery.openHistory(file.path, null)
+								}
+								onOpenFileBlame={(file) =>
+									fileDiscovery.openBlame(file.path, null)
 								}
 								onSelectFile={(file) =>
 									setDetailsPanel({
@@ -232,11 +231,13 @@ function App() {
 				</div>
 			</main>
 			<AppOverlays
-				fileHistoryTarget={fileHistoryTarget}
+				fileBlameTarget={fileDiscovery.blameTarget}
+				fileHistoryTarget={fileDiscovery.historyTarget}
 				isCommitSearchOpen={isCommitSearchOpen}
-				onFileHistoryOpenChange={(open) => {
-					if (!open) setFileHistoryTarget(null);
-				}}
+				onFileBlameOpenChange={(open) => !open && fileDiscovery.closeBlame()}
+				onFileHistoryOpenChange={(open) =>
+					!open && fileDiscovery.closeHistory()
+				}
 				onSearchOpenChange={setIsCommitSearchOpen}
 				onSelectCommit={(commitHash) =>
 					setDetailsPanel({ commitHash, kind: "commit" })

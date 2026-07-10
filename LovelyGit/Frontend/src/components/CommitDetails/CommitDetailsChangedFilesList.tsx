@@ -14,10 +14,12 @@ export function getChangedFileListHeight(fileCount: number) {
 
 export function CommitDetailsChangedFilesList({
 	files,
+	onOpenBlame,
 	onOpenHistory,
 	onSelectFile,
 }: {
 	files: CommitChangedFile[];
+	onOpenBlame: (file: CommitChangedFile) => void;
 	onOpenHistory: (file: CommitChangedFile) => void;
 	onSelectFile: (file: CommitChangedFile) => void;
 }) {
@@ -55,6 +57,7 @@ export function CommitDetailsChangedFilesList({
 							style={{ transform: `translateY(${virtualRow.start}px)` }}
 						>
 							<FileHistoryContextMenu
+								onOpenBlame={() => onOpenBlame(file)}
 								onOpen={() => onOpenHistory(file)}
 								path={file.path}
 							>

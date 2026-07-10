@@ -42,4 +42,13 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Commit
         public int Limit { get; set; } = 100;
         public bool Deep { get; set; }
     }
+
+    [TypeSharp]
+    public record GetFileBlameCommandArguments
+    {
+        public Guid KnownRepositoryId { get; set; }
+        public string Path { get; set; } = string.Empty;
+        public string? StartCommitHash { get; set; }
+        public bool Deep { get; set; }
+    }
 }

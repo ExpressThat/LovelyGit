@@ -9,8 +9,13 @@ describe("FileHistoryContextMenu", () => {
 	it("composes directly with a file button and opens history", async () => {
 		const user = userEvent.setup();
 		const onOpen = vi.fn();
+		const onOpenBlame = vi.fn();
 		render(
-			<FileHistoryContextMenu onOpen={onOpen} path="src/file.ts">
+			<FileHistoryContextMenu
+				onOpen={onOpen}
+				onOpenBlame={onOpenBlame}
+				path="src/file.ts"
+			>
 				<button type="button">src/file.ts</button>
 			</FileHistoryContextMenu>,
 		);
@@ -19,6 +24,9 @@ describe("FileHistoryContextMenu", () => {
 			keys: "[MouseRight]",
 			target: screen.getByRole("button", { name: "src/file.ts" }),
 		});
+		expect(
+			await screen.findByRole("menuitem", { name: "View line blame…" }),
+		).toBeVisible();
 		await user.click(
 			await screen.findByRole("menuitem", { name: "View file history…" }),
 		);
