@@ -13,6 +13,7 @@ export function WorkingChangesSection({
 	files,
 	isBusy,
 	onIndexCommand,
+	onOpenFileHistory,
 	onSelectFile,
 	onToggleSelected,
 	selectedKeys,
@@ -27,6 +28,7 @@ export function WorkingChangesSection({
 		files: WorkingTreeChangedFile[],
 		includeAll: boolean,
 	) => void;
+	onOpenFileHistory: (file: WorkingTreeChangedFile) => void;
 	onSelectFile: (file: WorkingTreeChangedFile) => void;
 	onToggleSelected: (file: WorkingTreeChangedFile) => void;
 	selectedKeys: Set<string>;
@@ -85,6 +87,7 @@ export function WorkingChangesSection({
 												: undefined
 										}
 										onSelect={() => onSelectFile(file)}
+										onOpenHistory={() => onOpenFileHistory(file)}
 										onToggleSelected={
 											selectable ? () => onToggleSelected(file) : undefined
 										}

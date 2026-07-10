@@ -1,16 +1,16 @@
 import "./App.css";
 import { AnimatePresence, motion } from "motion/react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
+import { AppOverlays } from "./AppOverlays";
 import { type DetailsPanelState, panelTitle } from "./AppPanelState";
 import { CommitDetails } from "./components/CommitDetails/CommitDetails";
 import { CommitFileDiffView } from "./components/CommitFileDiff/CommitFileDiffView";
 import { CommitGraphLayer } from "./components/CommitGraph/CommitGraphLayer";
-import { CommitSearchDialog } from "./components/CommitSearch/CommitSearchDialog";
 import { isCommitSearchShortcut } from "./components/CommitSearch/commitSearchShortcut";
 import { SlidingDetailsPanel } from "./components/DetailsPanel/SlidingDetailsPanel";
+import type { FileHistoryTarget } from "./components/FileHistory/FileHistoryDialog";
 import { NewTab } from "./components/NewTab/NewTab";
 import { TopNavBar } from "./components/TopNavBar/TopNavBar";
-import { Toaster } from "./components/ui/sonner";
 import { useWorkingTreeChanges } from "./components/WorkingChanges/useWorkingTreeChanges";
 import { WorkingChangesPanel } from "./components/WorkingChanges/WorkingChangesPanel";
 import { WorkingTreeFileDiffView } from "./components/WorkingChanges/WorkingTreeFileDiffView";
@@ -19,6 +19,7 @@ import { RepositoryProvider } from "./lib/repositoryContext";
 import { useApplyFont } from "./lib/settings/font/useApplyFont";
 import { useSetting } from "./lib/settings/settingsStore";
 import { useApplyTheme } from "./lib/settings/theme/useApplyTheme";
+import { useResetOnRepositoryChange } from "./useResetOnRepositoryChange";
 
 function App() {
 	useApplyTheme();
@@ -29,6 +30,8 @@ function App() {
 	);
 	const [commitGraphRefreshToken, setCommitGraphRefreshToken] = useState(0);
 	const [isCommitSearchOpen, setIsCommitSearchOpen] = useState(false);
+	const [fileHistoryTarget, setFileHistoryTarget] =
+		useState<FileHistoryTarget | null>(null);
 	const [currentBranchName, setCurrentBranchName] = useState<string | null>(
 		null,
 	);
@@ -37,19 +40,16 @@ function App() {
 		currentGitRepositoryId,
 		isWorkingChangesPanelOpen,
 	);
-	const previousRepositoryIdRef = useRef<string | null>(currentGitRepositoryId);
+	useResetOnRepositoryChange(
+		currentGitRepositoryId,
+		setCurrentBranchName,
+		setDetailsPanel,
+		setFileHistoryTarget,
+		setIsCommitSearchOpen,
+	);
 	const selectCommit = (row: CommitGraphRow) => {
 		setDetailsPanel({ commitHash: row.commit.hash, kind: "commit" });
 	};
-	useEffect(() => {
-		if (previousRepositoryIdRef.current === currentGitRepositoryId) {
-			return;
-		}
-		previousRepositoryIdRef.current = currentGitRepositoryId;
-		setCurrentBranchName(null);
-		setDetailsPanel(null);
-		setIsCommitSearchOpen(false);
-	}, [currentGitRepositoryId]);
 	useEffect(() => {
 		const openSearch = (event: KeyboardEvent) => {
 			if (currentGitRepositoryId && isCommitSearchShortcut(event)) {
@@ -60,9 +60,7 @@ function App() {
 		window.addEventListener("keydown", openSearch);
 		return () => window.removeEventListener("keydown", openSearch);
 	}, [currentGitRepositoryId]);
-	const closeDetailsPanel = () => {
-		setDetailsPanel(null);
-	};
+	const closeDetailsPanel = () => setDetailsPanel(null);
 	return (
 		<RepositoryProvider>
 			<main className="app-shell">
@@ -180,6 +178,12 @@ function App() {
 						{detailsPanel?.kind === "commit" && currentGitRepositoryId ? (
 							<CommitDetails
 								commitHash={detailsPanel.commitHash}
+								onOpenFileHistory={(file) =>
+									setFileHistoryTarget({
+										path: file.path,
+										startCommitHash: detailsPanel.commitHash,
+									})
+								}
 								onSelectFile={(file) =>
 									setDetailsPanel({
 										commitHash: detailsPanel.commitHash,
@@ -208,6 +212,12 @@ function App() {
 									setCommitGraphRefreshToken((token) => token + 1);
 									return workingTreeChanges.reload();
 								}}
+								onOpenFileHistory={(file) =>
+									setFileHistoryTarget({
+										path: file.path,
+										startCommitHash: null,
+									})
+								}
 								onSelectFile={(file) =>
 									setDetailsPanel({
 										kind: "workingChanges",
@@ -221,15 +231,18 @@ function App() {
 					</SlidingDetailsPanel>
 				</div>
 			</main>
-			<CommitSearchDialog
-				onOpenChange={setIsCommitSearchOpen}
+			<AppOverlays
+				fileHistoryTarget={fileHistoryTarget}
+				isCommitSearchOpen={isCommitSearchOpen}
+				onFileHistoryOpenChange={(open) => {
+					if (!open) setFileHistoryTarget(null);
+				}}
+				onSearchOpenChange={setIsCommitSearchOpen}
 				onSelectCommit={(commitHash) =>
 					setDetailsPanel({ commitHash, kind: "commit" })
 				}
-				open={isCommitSearchOpen && Boolean(currentGitRepositoryId)}
 				repositoryId={currentGitRepositoryId}
 			/>
-			<Toaster />
 		</RepositoryProvider>
 	);
 }

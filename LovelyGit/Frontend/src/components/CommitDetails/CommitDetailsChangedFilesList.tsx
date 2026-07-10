@@ -3,6 +3,7 @@ import { File, FilePlus2, FileX2 } from "lucide-react";
 import { useRef } from "react";
 import { Button } from "@/components/ui/button";
 import type { CommitChangedFile } from "@/generated/types";
+import { FileHistoryContextMenu } from "../FileHistory/FileHistoryContextMenu";
 
 const ROW_HEIGHT = 42;
 const MAX_VISIBLE_ROWS = 10;
@@ -13,9 +14,11 @@ export function getChangedFileListHeight(fileCount: number) {
 
 export function CommitDetailsChangedFilesList({
 	files,
+	onOpenHistory,
 	onSelectFile,
 }: {
 	files: CommitChangedFile[];
+	onOpenHistory: (file: CommitChangedFile) => void;
 	onSelectFile: (file: CommitChangedFile) => void;
 }) {
 	const parentRef = useRef<HTMLDivElement>(null);
@@ -51,7 +54,15 @@ export function CommitDetailsChangedFilesList({
 							key={`${file.status}:${file.path}`}
 							style={{ transform: `translateY(${virtualRow.start}px)` }}
 						>
-							<ChangedFileRow file={file} onSelect={() => onSelectFile(file)} />
+							<FileHistoryContextMenu
+								onOpen={() => onOpenHistory(file)}
+								path={file.path}
+							>
+								<ChangedFileRow
+									file={file}
+									onSelect={() => onSelectFile(file)}
+								/>
+							</FileHistoryContextMenu>
 						</div>
 					);
 				})}

@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import type { WorkingTreeChangedFile } from "@/generated/types";
+import { FileHistoryContextMenu } from "../FileHistory/FileHistoryContextMenu";
 
 export function ChangedFileRow({
 	file,
@@ -14,6 +15,7 @@ export function ChangedFileRow({
 	isBusy = false,
 	isSelected = false,
 	onAction,
+	onOpenHistory,
 	onSelect,
 	onToggleSelected,
 	rowActionLabel,
@@ -23,6 +25,7 @@ export function ChangedFileRow({
 	isBusy?: boolean;
 	isSelected?: boolean;
 	onAction?: () => void;
+	onOpenHistory: () => void;
 	onSelect: () => void;
 	onToggleSelected?: () => void;
 	rowActionLabel?: string;
@@ -44,37 +47,39 @@ export function ChangedFileRow({
 					/>
 				</div>
 			) : null}
-			<button
-				className="flex min-w-0 flex-1 items-center gap-2 py-1.5 text-left"
-				onClick={handleFileClick}
-				type="button"
-			>
-				<Icon
-					aria-hidden="true"
-					className={statusColor(file.status, file.group)}
-					size={15}
-				/>
-				<div className="min-w-0 flex-1 text-left">
-					<div
-						className="truncate font-mono text-xs text-foreground"
-						title={file.path}
-					>
-						{file.path}
+			<FileHistoryContextMenu onOpen={onOpenHistory} path={file.path}>
+				<button
+					className="flex min-w-0 flex-1 items-center gap-2 py-1.5 text-left"
+					onClick={handleFileClick}
+					type="button"
+				>
+					<Icon
+						aria-hidden="true"
+						className={statusColor(file.status, file.group)}
+						size={15}
+					/>
+					<div className="min-w-0 flex-1 text-left">
+						<div
+							className="truncate font-mono text-xs text-foreground"
+							title={file.path}
+						>
+							{file.path}
+						</div>
+						<div className="text-[10px] uppercase text-muted-foreground">
+							{hideGroupLabel ? file.status : `${file.group} ${file.status}`}
+							{file.isBinary ? " binary" : ""}
+						</div>
 					</div>
-					<div className="text-[10px] uppercase text-muted-foreground">
-						{hideGroupLabel ? file.status : `${file.group} ${file.status}`}
-						{file.isBinary ? " binary" : ""}
+					<div className="shrink-0 font-mono text-xs">
+						<span className="text-emerald-600 dark:text-emerald-400">
+							+{file.additions}
+						</span>{" "}
+						<span className="text-red-600 dark:text-red-400">
+							-{file.deletions}
+						</span>
 					</div>
-				</div>
-				<div className="shrink-0 font-mono text-xs">
-					<span className="text-emerald-600 dark:text-emerald-400">
-						+{file.additions}
-					</span>{" "}
-					<span className="text-red-600 dark:text-red-400">
-						-{file.deletions}
-					</span>
-				</div>
-			</button>
+				</button>
+			</FileHistoryContextMenu>
 			{onAction && rowActionLabel ? (
 				<button
 					className="mr-1 hidden h-6 shrink-0 items-center rounded border bg-background px-2 text-[10px] font-semibold uppercase text-muted-foreground hover:bg-accent hover:text-accent-foreground disabled:pointer-events-none disabled:opacity-40 group-hover/file-row:inline-flex"

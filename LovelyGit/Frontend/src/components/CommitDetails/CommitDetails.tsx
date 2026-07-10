@@ -16,11 +16,13 @@ type CommitDetailsState =
 
 export function CommitDetails({
 	commitHash,
+	onOpenFileHistory,
 	onSelectFile,
 	repositoryId,
 	refreshToken = 0,
 }: {
 	commitHash: string;
+	onOpenFileHistory: (file: CommitChangedFile) => void;
 	onSelectFile: (file: CommitChangedFile) => void;
 	repositoryId: string;
 	refreshToken?: number;
@@ -142,6 +144,7 @@ export function CommitDetails({
 
 			<CommitDetailsChangedFilesList
 				files={details.changedFiles}
+				onOpenHistory={onOpenFileHistory}
 				onSelectFile={onSelectFile}
 			/>
 		</div>

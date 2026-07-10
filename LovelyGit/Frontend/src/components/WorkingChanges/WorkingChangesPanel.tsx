@@ -15,6 +15,7 @@ export function WorkingChangesPanel({
 	isLoading,
 	onRefresh,
 	onCommitSuccess,
+	onOpenFileHistory,
 	onSelectFile,
 	repositoryId,
 	totalCount,
@@ -24,6 +25,7 @@ export function WorkingChangesPanel({
 	isLoading: boolean;
 	onCommitSuccess: () => Promise<void> | void;
 	onRefresh: () => Promise<void> | void;
+	onOpenFileHistory: (file: WorkingTreeChangedFile) => void;
 	onSelectFile: (file: WorkingTreeChangedFile) => void;
 	repositoryId: string;
 	totalCount: number;
@@ -99,6 +101,7 @@ export function WorkingChangesPanel({
 					onIndexCommand={(commandType, files, includeAll) =>
 						void runIndexCommand(commandType, files, includeAll)
 					}
+					onOpenFileHistory={onOpenFileHistory}
 					onSelectFile={onSelectFile}
 					onToggleSelected={toggleSelected}
 					selectedKeys={selectedKeys}

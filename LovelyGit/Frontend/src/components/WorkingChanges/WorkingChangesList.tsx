@@ -49,6 +49,7 @@ export function WorkingChangesList({
 	onDiscardAll,
 	onDiscardSelected,
 	onIndexCommand,
+	onOpenFileHistory,
 	onSelectFile,
 	onToggleSelected,
 	selectedKeys,
@@ -65,6 +66,7 @@ export function WorkingChangesList({
 		files: WorkingTreeChangedFile[],
 		includeAll: boolean,
 	) => void;
+	onOpenFileHistory: (file: WorkingTreeChangedFile) => void;
 	onSelectFile: (file: WorkingTreeChangedFile) => void;
 	onToggleSelected: (file: WorkingTreeChangedFile) => void;
 	selectedKeys: Set<string>;
@@ -121,6 +123,7 @@ export function WorkingChangesList({
 				files={unstagedFiles}
 				isBusy={isBusy}
 				onIndexCommand={onIndexCommand}
+				onOpenFileHistory={onOpenFileHistory}
 				onSelectFile={onSelectFile}
 				onToggleSelected={onToggleSelected}
 				selectedKeys={selectedKeys}
@@ -151,6 +154,7 @@ export function WorkingChangesList({
 				files={stagedFiles}
 				isBusy={isBusy}
 				onIndexCommand={onIndexCommand}
+				onOpenFileHistory={onOpenFileHistory}
 				onSelectFile={onSelectFile}
 				onToggleSelected={onToggleSelected}
 				selectedKeys={selectedKeys}

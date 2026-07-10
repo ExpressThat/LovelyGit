@@ -2,6 +2,7 @@ using ExpressThat.LovelyGit.Services.Git.CommitGraph.Models;
 using ExpressThat.LovelyGit.Services.NativeMessaging.Commands;
 using ExpressThat.LovelyGit.Services.Git.Reflog;
 using ExpressThat.LovelyGit.Services.Git.CommitSearch;
+using ExpressThat.LovelyGit.Services.Git.FileHistory;
 using System.Text.Json.Serialization;
 
 namespace ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.CommitGraph;
@@ -37,6 +38,10 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Commit
 [JsonSerializable(typeof(SearchCommitsCommandArguments))]
 [JsonSerializable(typeof(CommitSearchResult))]
 [JsonSerializable(typeof(CommitSearchResponse))]
+[JsonSerializable(typeof(GetFileHistoryCommandArguments))]
+[JsonSerializable(typeof(FileHistoryChangeKind))]
+[JsonSerializable(typeof(FileHistoryResult))]
+[JsonSerializable(typeof(FileHistoryResponse))]
 [JsonSerializable(typeof(GetCommitDetailsCommandArguments))]
 [JsonSerializable(typeof(GetCommitFileDiffCommandArguments))]
 [JsonSerializable(typeof(GetCommitPatchCommandArguments))]
@@ -44,6 +49,7 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Commit
 [JsonSerializable(typeof(CommandResponse<RepositoryRefsResponse>))]
 [JsonSerializable(typeof(CommandResponse<GitReflogResponse>))]
 [JsonSerializable(typeof(CommandResponse<CommitSearchResponse>))]
+[JsonSerializable(typeof(CommandResponse<FileHistoryResponse>))]
 [JsonSerializable(typeof(CommandResponse<CommitDetailsResponse>))]
 [JsonSerializable(typeof(CommandResponse<CommitFileDiffResponse>))]
 [JsonSerializable(typeof(CommandResponse<CommitPatchResponse>))]

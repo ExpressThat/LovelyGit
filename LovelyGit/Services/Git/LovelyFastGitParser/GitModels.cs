@@ -122,6 +122,29 @@ internal readonly record struct GitCommitSearchHeader(
     }
 }
 
+internal readonly record struct GitCommitTraversalHeader(
+    GitObjectId? TreeHash,
+    GitObjectId FirstParentHash,
+    GitObjectId[]? AdditionalParentHashes,
+    int ParentHashCount,
+    long AuthorUnixSeconds)
+{
+    public GitObjectId GetParentHash(int index)
+    {
+        if ((uint)index >= (uint)ParentHashCount)
+        {
+            throw new ArgumentOutOfRangeException(nameof(index));
+        }
+
+        return index == 0 ? FirstParentHash : AdditionalParentHashes![index - 1];
+    }
+}
+
+internal readonly record struct GitTreePathEntry(GitObjectId ObjectId, string Mode)
+{
+    public bool IsTree => Mode == "40000";
+}
+
 internal sealed record GitTreeFile(string Path, GitObjectId ObjectId, string Mode);
 
 internal sealed record GitTreeComparison(
