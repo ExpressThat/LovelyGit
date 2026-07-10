@@ -26,6 +26,14 @@ public sealed record CancelCloneRepositoryCommandArguments
 }
 
 [TypeSharp]
+public sealed record InitializeRepositoryCommandArguments
+{
+    public string ParentPath { get; init; } = string.Empty;
+    public string DirectoryName { get; init; } = string.Empty;
+    public string InitialBranchName { get; init; } = string.Empty;
+}
+
+[TypeSharp]
 public sealed record CloneRepositoryProgressNotification
 {
     public Guid OperationId { get; init; }

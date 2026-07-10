@@ -1,3 +1,4 @@
+import { InitializeRepositoryDialog } from "./InitializeRepositoryDialog";
 import { OpenRepoButton } from "./OpenRepoButton";
 import { RecentRepositories } from "./RecentRepositories";
 
@@ -12,6 +13,7 @@ export function NewTab() {
 					</p>
 				</div>
 				<div className="flex shrink-0 items-center gap-2">
+					<InitializeRepositoryDialog />
 					<OpenRepoButton />
 					<CloneRepositoryDialog />
 				</div>

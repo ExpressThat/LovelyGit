@@ -10,6 +10,7 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.KnownR
 [JsonSerializable(typeof(OpenRepositoryTerminalCommandArguments))]
 [JsonSerializable(typeof(CloneRepositoryCommandArguments))]
 [JsonSerializable(typeof(CancelCloneRepositoryCommandArguments))]
+[JsonSerializable(typeof(InitializeRepositoryCommandArguments))]
 [JsonSerializable(typeof(CloneDestinationResponse))]
 [JsonSerializable(typeof(CloneRepositoryProgressNotification))]
 [JsonSerializable(typeof(List<KnownGitRepository>))]

@@ -26,6 +26,7 @@ internal static class GitCliServiceCollectionExtensions
         services.AddSingleton<GitTagCommandService>();
         services.AddSingleton<GitWorktreeCommandService>();
         services.AddSingleton<GitCloneService>();
+        services.AddSingleton<GitInitializeService>();
         return services;
     }
 }

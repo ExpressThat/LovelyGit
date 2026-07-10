@@ -20,6 +20,7 @@ internal static class KnownRepositoryServiceCollectionExtensions
         services.AddSingleton<ICommandResponder, ChooseCloneDestinationCommandResolver>();
         services.AddSingleton<ICommandResponder, CloneRepositoryCommandResolver>();
         services.AddSingleton<ICommandResponder, CancelCloneRepositoryCommandResolver>();
+        services.AddSingleton<ICommandResponder, InitializeRepositoryCommandResolver>();
 
         return services;
     }

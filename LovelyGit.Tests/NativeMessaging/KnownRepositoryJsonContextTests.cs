@@ -20,4 +20,23 @@ public sealed class KnownRepositoryJsonContextTests
 
         Assert.Equal(repositoryId, arguments?.KnownRepositoryId);
     }
+
+    [Fact]
+    public void Context_DeserializesInitializeRepositoryArguments()
+    {
+        var arguments = JsonSerializer.Deserialize(
+            """
+            {
+              "parentPath": "C:\\projects",
+              "directoryName": "lovely-project",
+              "initialBranchName": "trunk"
+            }
+            """,
+            KnownRepositoriesJsonSerializerContext.Default.InitializeRepositoryCommandArguments);
+
+        Assert.NotNull(arguments);
+        Assert.Equal("C:\\projects", arguments.ParentPath);
+        Assert.Equal("lovely-project", arguments.DirectoryName);
+        Assert.Equal("trunk", arguments.InitialBranchName);
+    }
 }

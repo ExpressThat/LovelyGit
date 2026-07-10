@@ -53,6 +53,10 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging
         CloneRepository,
         [NativeMessageContract(typeof(CancelCloneRepositoryCommandArguments))]
         CancelCloneRepository,
+        [NativeMessageContract(typeof(EmptyCommandArguments), typeof(CloneDestinationResponse))]
+        ChooseRepositoryDestination,
+        [NativeMessageContract(typeof(InitializeRepositoryCommandArguments), typeof(KnownGitRepository))]
+        InitializeRepository,
 
         // Fast native commit graph, commit metadata, patch, and diff reads.
         [NativeMessageContract(typeof(CommitGraphCommandArguments), typeof(CommitGraphResponse))]

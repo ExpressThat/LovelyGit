@@ -18,13 +18,17 @@ internal sealed class ChooseCloneDestinationCommandResolver : CommandResponder<E
         CommandJsonSerializerContext.Default.EmptyCommandArguments;
 
     public override bool CanRespondTo(NativeCommand<JsonElement> command) =>
-        command.CommandType == NativeMessageType.ChooseCloneDestination;
+        command.CommandType is NativeMessageType.ChooseCloneDestination or
+            NativeMessageType.ChooseRepositoryDestination;
 
     public override async Task<CommandResponseBase> Resolve(
         NativeCommand<EmptyCommandArguments> command)
     {
+        var title = command.CommandType == NativeMessageType.ChooseCloneDestination
+            ? "Select clone destination"
+            : "Select new repository location";
         var selectedFolder = await _folderPicker
-            .PickFolderAsync(CancellationToken.None, "Select clone destination")
+            .PickFolderAsync(CancellationToken.None, title)
             .ConfigureAwait(false);
         return new CommandResponse<CloneDestinationResponse?>
         {
