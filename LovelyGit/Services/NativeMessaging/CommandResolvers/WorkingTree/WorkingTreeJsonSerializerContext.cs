@@ -42,6 +42,7 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Workin
 [JsonSerializable(typeof(WorktreeMutationAction))]
 [JsonSerializable(typeof(WorktreeDestinationResponse))]
 [JsonSerializable(typeof(GitRemoteCommandArguments))]
+[JsonSerializable(typeof(GitPushMode))]
 [JsonSerializable(typeof(GetRemotesCommandArguments))]
 [JsonSerializable(typeof(ManageRemoteCommandArguments))]
 [JsonSerializable(typeof(RemoteMutationAction))]

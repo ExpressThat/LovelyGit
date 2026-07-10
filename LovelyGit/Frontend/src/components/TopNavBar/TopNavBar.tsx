@@ -42,7 +42,10 @@ export function TopNavBar({
 					/>
 				</div>
 				<div className="flex items-center justify-center gap-2">
-					<RemoteActionsControl repositoryId={repositoryId} />
+					<RemoteActionsControl
+						currentBranchName={currentBranchName}
+						repositoryId={repositoryId}
+					/>
 					<PatchApplyControl
 						onApplied={onOpenWorkingChanges}
 						repositoryId={repositoryId}

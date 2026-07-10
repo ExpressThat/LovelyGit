@@ -74,6 +74,71 @@ public sealed class GitRemoteCommandServiceTests
     }
 
     [Fact]
+    public async Task PushAsync_ForceWithLease_ReplacesHistoryOnlyAfterNormalPushRejectsIt()
+    {
+        using var repository = TemporaryRemoteGitRepository.Create();
+        var service = new GitRemoteCommandService(repository.GitCliService);
+        repository.Commit(repository.ClonePath, "first.txt", "first local change");
+        await service.PushAsync(
+            repository.ClonePath,
+            GitPushMode.Normal,
+            remoteName: null,
+            CancellationToken.None);
+        repository.RunGit(repository.ClonePath, ["reset", "--hard", "HEAD~1"]);
+        repository.Commit(repository.ClonePath, "replacement.txt", "replacement history");
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => service.PushAsync(
+            repository.ClonePath,
+            GitPushMode.Normal,
+            remoteName: null,
+            CancellationToken.None));
+        await service.PushAsync(
+            repository.ClonePath,
+            GitPushMode.ForceWithLease,
+            remoteName: null,
+            CancellationToken.None);
+
+        Assert.Equal(repository.Head(repository.ClonePath), repository.Head(repository.BarePath));
+    }
+
+    [Fact]
+    public async Task PushAsync_ForceWithLease_RejectsRemoteWorkNotSeenLocally()
+    {
+        using var repository = TemporaryRemoteGitRepository.Create();
+        var service = new GitRemoteCommandService(repository.GitCliService);
+        repository.CommitAndPushFromUpdater("remote.txt", "remote work");
+        repository.Commit(repository.ClonePath, "local.txt", "diverged local work");
+        var remoteHead = repository.Head(repository.BarePath);
+
+        var error = await Assert.ThrowsAsync<InvalidOperationException>(() => service.PushAsync(
+            repository.ClonePath,
+            GitPushMode.ForceWithLease,
+            remoteName: null,
+            CancellationToken.None));
+
+        Assert.Contains("rejected", error.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(remoteHead, repository.Head(repository.BarePath));
+    }
+
+    [Fact]
+    public async Task PushAsync_CancellationDoesNotChangeRemote()
+    {
+        using var repository = TemporaryRemoteGitRepository.Create();
+        var service = new GitRemoteCommandService(repository.GitCliService);
+        repository.Commit(repository.ClonePath, "local.txt", "cancelled work");
+        var remoteHead = repository.Head(repository.BarePath);
+        using var cancellation = new CancellationTokenSource();
+        cancellation.Cancel();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => service.PushAsync(
+            repository.ClonePath,
+            GitPushMode.Normal,
+            remoteName: null,
+            cancellation.Token));
+        Assert.Equal(remoteHead, repository.Head(repository.BarePath));
+    }
+
+    [Fact]
     public async Task AddUpdateAndRemoveAsync_ManageFetchAndPushUrls()
     {
         using var repository = TemporaryRemoteGitRepository.Create();
@@ -118,98 +183,4 @@ public sealed class GitRemoteCommandServiceTests
             service.AddAsync(repository.ClonePath, name, url, null, CancellationToken.None));
     }
 
-    private sealed class TemporaryRemoteGitRepository : IDisposable
-    {
-        private readonly DirectoryInfo _directory;
-
-        private TemporaryRemoteGitRepository(DirectoryInfo directory)
-        {
-            _directory = directory;
-            GitCliService = new GitCliService();
-            BarePath = Path.Combine(directory.FullName, "origin.git");
-            ClonePath = Path.Combine(directory.FullName, "clone");
-            UpdaterPath = Path.Combine(directory.FullName, "updater");
-        }
-
-        public string BarePath { get; }
-
-        public string ClonePath { get; }
-
-        public GitCliService GitCliService { get; }
-
-        private string UpdaterPath { get; }
-
-        public string[] RemoteNames() =>
-            RunGit(ClonePath, ["remote"])
-                .StandardOutput
-                .Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries);
-
-        public string RemoteUrl(string name, bool push = false) =>
-            RunGit(ClonePath, push
-                    ? ["remote", "get-url", "--push", name]
-                    : ["remote", "get-url", name])
-                .StandardOutput.Trim();
-
-        public void Commit(string path, string fileName, string message)
-        {
-            File.WriteAllText(Path.Combine(path, fileName), message);
-            RunGit(path, ["add", "."]);
-            RunGit(path, ["commit", "-m", message]);
-        }
-
-        public void CommitAndPushFromUpdater(string fileName, string message)
-        {
-            Commit(UpdaterPath, fileName, message);
-            RunGit(UpdaterPath, ["push", "origin", "HEAD"]);
-        }
-
-        public static TemporaryRemoteGitRepository Create()
-        {
-            var directory = Directory.CreateTempSubdirectory("lovelygit-remote-");
-            var repository = new TemporaryRemoteGitRepository(directory);
-
-            repository.RunGit(directory.FullName, ["init", "--bare", repository.BarePath]);
-            repository.RunGit(directory.FullName, ["init", repository.UpdaterPath]);
-            repository.ConfigureIdentity(repository.UpdaterPath);
-            repository.Commit(repository.UpdaterPath, "readme.txt", "initial");
-            var branch = repository.RunGit(repository.UpdaterPath, ["branch", "--show-current"])
-                .StandardOutput.Trim();
-            repository.RunGit(
-                repository.UpdaterPath,
-                ["remote", "add", "origin", repository.BarePath]);
-            repository.RunGit(repository.UpdaterPath, ["push", "-u", "origin", branch]);
-            repository.RunGit(
-                directory.FullName,
-                ["clone", repository.BarePath, repository.ClonePath]);
-            repository.ConfigureIdentity(repository.ClonePath);
-
-            return repository;
-        }
-
-        public void Dispose()
-        {
-            foreach (var file in _directory.EnumerateFiles("*", SearchOption.AllDirectories))
-            {
-                file.Attributes = FileAttributes.Normal;
-            }
-
-            _directory.Delete(recursive: true);
-        }
-
-        public CliWrap.Buffered.BufferedCommandResult RunGit(
-            string workingDirectory,
-            IReadOnlyList<string> arguments)
-        {
-            return GitCliService
-                .ExecuteBufferedAsync(arguments, workingDirectory)
-                .GetAwaiter()
-                .GetResult();
-        }
-
-        private void ConfigureIdentity(string path)
-        {
-            RunGit(path, ["config", "user.name", "LovelyGit Test"]);
-            RunGit(path, ["config", "user.email", "test@example.invalid"]);
-        }
-    }
 }

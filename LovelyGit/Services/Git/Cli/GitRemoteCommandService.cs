@@ -43,12 +43,16 @@ internal sealed partial class GitRemoteCommandService
 
     public Task PushAsync(
         string repositoryPath,
+        GitPushMode mode,
         string? remoteName,
         CancellationToken cancellationToken)
     {
+        IReadOnlyList<string> arguments = mode == GitPushMode.ForceWithLease
+            ? ["push", "--force-with-lease"]
+            : ["push"];
         return RunRemoteCommandAsync(
             repositoryPath,
-            AddRemote(["push"], remoteName),
+            AddRemote(arguments, remoteName),
             cancellationToken);
     }
 
@@ -91,23 +95,32 @@ internal sealed partial class GitRemoteCommandService
             return;
         }
 
-        var message = FirstNonEmptyLine(result.StandardError)
-            ?? FirstNonEmptyLine(result.StandardOutput)
+        var message = BestErrorLine(result.StandardError)
+            ?? BestErrorLine(result.StandardOutput)
             ?? "Git remote command failed.";
         throw new InvalidOperationException(message);
     }
 
-    private static string? FirstNonEmptyLine(string text)
+    private static string? BestErrorLine(string text)
     {
+        string? fallback = null;
         foreach (var line in text.AsSpan().EnumerateLines())
         {
             var trimmed = line.Trim();
-            if (!trimmed.IsEmpty)
+            if (trimmed.IsEmpty)
+            {
+                continue;
+            }
+
+            fallback ??= trimmed.ToString();
+            if (trimmed.Contains("rejected", StringComparison.OrdinalIgnoreCase)
+                || trimmed.StartsWith("fatal:", StringComparison.OrdinalIgnoreCase)
+                || trimmed.StartsWith("error:", StringComparison.OrdinalIgnoreCase))
             {
                 return trimmed.ToString();
             }
         }
 
-        return null;
+        return fallback;
     }
 }

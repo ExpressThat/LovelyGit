@@ -29,6 +29,7 @@ internal sealed class PushRepositoryCommandResolver : GitRemoteCommandResolver
     {
         return _gitRemoteCommandService.PushAsync(
             repositoryPath,
+            arguments.PushMode,
             arguments.RemoteName,
             cancellationToken);
     }

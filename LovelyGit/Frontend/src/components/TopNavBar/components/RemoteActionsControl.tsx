@@ -9,10 +9,11 @@ import {
 	DropdownMenuLabel,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import type { RemotePrimaryAction } from "@/generated/types";
+import type { GitPushMode, RemotePrimaryAction } from "@/generated/types";
 import { sendRequestWithResponse } from "@/lib/commands";
 import { gitMutationTimeoutMs } from "@/lib/gitMutationTimeout";
 import { setSetting, useSetting } from "@/lib/settings/settingsStore";
+import { PushActionsControl } from "./PushActionsControl";
 import {
 	defaultableRemoteActions,
 	normalizePrimaryAction,
@@ -24,8 +25,10 @@ import { RemoteDefaultRow } from "./RemoteDefaultRow";
 import { RemoteManagerDialog } from "./RemoteManagerDialog";
 
 export function RemoteActionsControl({
+	currentBranchName,
 	repositoryId,
 }: {
+	currentBranchName: string | null;
 	repositoryId: string | null;
 }) {
 	const [busyAction, setBusyAction] = useState<RemotePrimaryAction | null>(
@@ -46,11 +49,13 @@ export function RemoteActionsControl({
 	const isBusy = busyAction !== null;
 	const canRunRemoteAction = Boolean(repositoryId) && !isBusy;
 	const Icon = primary.icon;
-	const PushIcon = pushRemoteAction.icon;
 
-	const runAction = async (action: RemoteAction) => {
+	const runAction = async (
+		action: RemoteAction,
+		pushMode: GitPushMode = "Normal",
+	) => {
 		if (!repositoryId || isBusy) {
-			return;
+			return false;
 		}
 
 		setBusyAction(action.value);
@@ -61,6 +66,7 @@ export function RemoteActionsControl({
 					commandType: action.commandType,
 					arguments: {
 						pullMode: action.pullMode,
+						pushMode,
 						remoteName: null,
 						repositoryId,
 					},
@@ -70,6 +76,7 @@ export function RemoteActionsControl({
 				},
 			);
 			toast.success(`${action.label} complete`, { id: toastId });
+			return true;
 		} catch (error) {
 			toast.error(
 				error instanceof Error ? error.message : `${action.label} failed`,
@@ -77,6 +84,7 @@ export function RemoteActionsControl({
 					id: toastId,
 				},
 			);
+			return false;
 		} finally {
 			setBusyAction(null);
 		}
@@ -138,22 +146,12 @@ export function RemoteActionsControl({
 					</DropdownMenuContent>
 				</DropdownMenu>
 			</div>
-			<Button
-				aria-label="Push"
-				className="h-9 px-3"
-				disabled={!canRunRemoteAction}
-				onClick={() => void runAction(pushRemoteAction)}
-				size="sm"
-				title="Push"
-				type="button"
-				variant="ghost"
-			>
-				<PushIcon
-					aria-hidden="true"
-					className={`size-6 ${busyAction === "Push" ? "animate-pulse" : ""}`}
-				/>
-				<span>Push</span>
-			</Button>
+			<PushActionsControl
+				canRun={canRunRemoteAction}
+				currentBranchName={currentBranchName}
+				isBusy={busyAction === "Push"}
+				onPush={(mode) => runAction(pushRemoteAction, mode)}
+			/>
 			<Button
 				aria-label="Manage remotes"
 				className="h-9 px-2"
