@@ -57,6 +57,22 @@ describe("splitWorkingChanges", () => {
 			flattenWorkingChangesForTests(changes).map((item) => item.path),
 		).toEqual(["modified.txt", "new.txt", "conflict.txt", "staged.txt"]);
 	});
+
+	it("keeps actionable files enabled when a scanner bucket is stale", () => {
+		const changes = {
+			staged: [],
+			unstaged: [],
+			untracked: [],
+			unmerged: [file("deleted.txt", "Unstaged")],
+			totalCount: 1,
+		};
+
+		const { unstagedFiles } = splitWorkingChanges(changes);
+
+		expect(workingFilesOnly(unstagedFiles).map((item) => item.path)).toEqual([
+			"deleted.txt",
+		]);
+	});
 });
 
 function file(

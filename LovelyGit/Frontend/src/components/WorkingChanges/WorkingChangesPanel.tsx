@@ -7,7 +7,11 @@ import { DiscardWorkingTreeChangesDialog } from "./DiscardWorkingTreeChangesDial
 import { RepositoryOperationBanner } from "./RepositoryOperationBanner";
 import { StashDialog } from "./StashDialog";
 import { useWorkingChangesPanelActions } from "./useWorkingChangesPanelActions";
-import { splitWorkingChanges, WorkingChangesList } from "./WorkingChangesList";
+import {
+	splitWorkingChanges,
+	WorkingChangesList,
+	workingFilesOnly,
+} from "./WorkingChangesList";
 import { WorkingChangesHeader } from "./WorkingChangesPanelParts";
 export function WorkingChangesPanel({
 	changes,
@@ -32,9 +36,6 @@ export function WorkingChangesPanel({
 	repositoryId: string;
 	totalCount: number;
 }) {
-	const workingFiles = changes
-		? [...changes.unstaged, ...changes.untracked]
-		: [];
 	const visibleChanges = changes ?? {
 		staged: [],
 		unstaged: [],
@@ -43,6 +44,7 @@ export function WorkingChangesPanel({
 		totalCount,
 	};
 	const { stagedFiles, unstagedFiles } = splitWorkingChanges(visibleChanges);
+	const workingFiles = workingFilesOnly(unstagedFiles);
 	const {
 		actionError,
 		commitBody,
