@@ -47,7 +47,9 @@ export function WorkingChangesPanel({
 		discardFiles,
 		discardWorkingChanges,
 		isBusy,
+		isAmending,
 		isCommitting,
+		isLoadingAmendMessage,
 		isMutating,
 		runIndexCommand,
 		selectedKeys,
@@ -55,6 +57,7 @@ export function WorkingChangesPanel({
 		setCommitTitle,
 		setDiscardFiles,
 		toggleSelected,
+		toggleAmend,
 	} = useWorkingChangesPanelActions({
 		changes,
 		onCommitSuccess,
@@ -105,11 +108,14 @@ export function WorkingChangesPanel({
 				/>
 			</div>
 			<CommitStagedForm
-				canCommit={stagedFiles.length > 0}
+				canCommit={stagedFiles.length > 0 || isAmending}
 				commitBody={commitBody}
 				commitTitle={commitTitle}
 				isBusy={isBusy}
+				isAmending={isAmending}
 				isCommitting={isCommitting}
+				isLoadingAmendMessage={isLoadingAmendMessage}
+				onAmendChange={(enabled) => void toggleAmend(enabled)}
 				onCommit={() => void commitStagedChanges()}
 				onCommitBodyChange={setCommitBody}
 				onCommitTitleChange={setCommitTitle}

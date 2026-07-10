@@ -62,6 +62,14 @@ public record CommitGraphChangedNotification
 }
 
 [TypeSharp]
+public record HeadCommitMessageResponse
+{
+    public string Hash { get; set; } = string.Empty;
+    public string Title { get; set; } = string.Empty;
+    public string Body { get; set; } = string.Empty;
+}
+
+[TypeSharp]
 public record GetWorkingTreeFileDiffArguments
 {
     public Guid RepositoryId { get; set; }

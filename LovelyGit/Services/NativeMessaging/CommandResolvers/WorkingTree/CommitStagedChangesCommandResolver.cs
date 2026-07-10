@@ -49,6 +49,7 @@ internal sealed class CommitStagedChangesCommandResolver : CommandResponder<Comm
                     foundRepo.Path,
                     command.Arguments.Title,
                     command.Arguments.Body,
+                    command.Arguments.Amend,
                     CancellationToken.None)
                 .ConfigureAwait(false);
             return Success(command);

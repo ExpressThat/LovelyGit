@@ -51,6 +51,13 @@ public record CommitStagedChangesCommandArguments
     public Guid RepositoryId { get; set; }
     public string Title { get; set; } = string.Empty;
     public string Body { get; set; } = string.Empty;
+    public bool Amend { get; set; }
+}
+
+[TypeSharp]
+public record GetHeadCommitMessageCommandArguments
+{
+    public Guid RepositoryId { get; set; }
 }
 
 [TypeSharp]

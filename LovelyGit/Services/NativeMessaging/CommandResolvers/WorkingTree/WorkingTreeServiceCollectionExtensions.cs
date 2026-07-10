@@ -30,6 +30,7 @@ internal static class WorkingTreeServiceCollectionExtensions
         services.AddSingleton<WorkingTreePreliminarySummaryService>();
         services.AddSingleton<WorkingTreeSummaryService>();
         services.AddSingleton<WorkingTreeIndexService>();
+        services.AddSingleton<HeadCommitMessageService>();
         services.AddSingleton<WorkingTreeWatcherService>();
         services.AddHostedService<ActiveRepositorySettingsWatcher>();
         services.AddSingleton<ICommandResponder, GetWorkingTreeChangesCommandResolver>();
@@ -41,6 +42,7 @@ internal static class WorkingTreeServiceCollectionExtensions
         services.AddSingleton<ICommandResponder, DiscardWorkingTreeChangesCommandResolver>();
         services.AddSingleton<ICommandResponder, StageWorkingTreeLineCommandResolver>();
         services.AddSingleton<ICommandResponder, UnstageWorkingTreeLineCommandResolver>();
+        services.AddSingleton<ICommandResponder, GetHeadCommitMessageCommandResolver>();
         services.AddSingleton<ICommandResponder, CommitStagedChangesCommandResolver>();
         services.AddSingleton<ICommandResponder, FetchRepositoryCommandResolver>();
         services.AddSingleton<ICommandResponder, PullRepositoryCommandResolver>();

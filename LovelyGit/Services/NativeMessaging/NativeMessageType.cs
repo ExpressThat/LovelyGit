@@ -72,7 +72,9 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging
         StageWorkingTreeLine,
         [NativeMessageContract(typeof(StageWorkingTreeLineCommandArguments))]
         UnstageWorkingTreeLine,
-        [NativeMessageContract(typeof(CommitStagedChangesCommandArguments))]
+        [NativeMessageContract(typeof(GetHeadCommitMessageCommandArguments), typeof(HeadCommitMessageResponse))]
+        GetHeadCommitMessage,
+        [NativeMessageContract(typeof(CommitStagedChangesCommandArguments), typeof(EmptyCommandArguments))]
         CommitStagedChanges,
 
         // Remote synchronization and branch/ref mutations.

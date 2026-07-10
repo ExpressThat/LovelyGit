@@ -7,6 +7,7 @@ import {
 	commitStagedChanges,
 	discardWorkingChanges,
 	type IndexCommandType,
+	loadHeadCommitMessage,
 	runIndexCommand,
 } from "./WorkingChangesPanelCommands";
 import { fileKey } from "./WorkingChangesPanelParts";
@@ -30,6 +31,12 @@ export function useWorkingChangesPanelActions({
 	const [commitTitle, setCommitTitle] = useState("");
 	const [commitBody, setCommitBody] = useState("");
 	const [isCommitting, setIsCommitting] = useState(false);
+	const [isAmending, setIsAmending] = useState(false);
+	const [isLoadingAmendMessage, setIsLoadingAmendMessage] = useState(false);
+	const [draftBeforeAmend, setDraftBeforeAmend] = useState({
+		body: "",
+		title: "",
+	});
 	const [discardFiles, setDiscardFiles] = useState<WorkingTreeChangedFile[]>(
 		[],
 	);
@@ -58,6 +65,7 @@ export function useWorkingChangesPanelActions({
 		commitBody,
 		commitStagedChanges: () =>
 			commitStagedChanges({
+				amend: isAmending,
 				changes,
 				commitBody,
 				commitTitle,
@@ -66,6 +74,7 @@ export function useWorkingChangesPanelActions({
 				setActionError,
 				setCommitBody,
 				setCommitTitle,
+				setIsAmending,
 				setIsCommitting,
 				setSelectedKeys,
 			}),
@@ -81,8 +90,10 @@ export function useWorkingChangesPanelActions({
 				setIsMutating,
 				setSelectedKeys,
 			}),
-		isBusy: isMutating || isCommitting,
+		isBusy: isMutating || isCommitting || isLoadingAmendMessage,
+		isAmending,
 		isCommitting,
+		isLoadingAmendMessage,
 		isMutating,
 		runIndexCommand: (
 			commandType: IndexCommandType,
@@ -114,6 +125,32 @@ export function useWorkingChangesPanelActions({
 				}
 				return next;
 			});
+		},
+		toggleAmend: async (enabled: boolean) => {
+			if (!enabled) {
+				setIsAmending(false);
+				setCommitTitle(draftBeforeAmend.title);
+				setCommitBody(draftBeforeAmend.body);
+				return;
+			}
+
+			setIsLoadingAmendMessage(true);
+			setActionError(null);
+			try {
+				const message = await loadHeadCommitMessage(repositoryId);
+				setDraftBeforeAmend({ body: commitBody, title: commitTitle });
+				setCommitTitle(message.title);
+				setCommitBody(message.body);
+				setIsAmending(true);
+			} catch (error) {
+				setActionError(
+					error instanceof Error
+						? error.message
+						: "Failed to load the last commit message.",
+				);
+			} finally {
+				setIsLoadingAmendMessage(false);
+			}
 		},
 	};
 }

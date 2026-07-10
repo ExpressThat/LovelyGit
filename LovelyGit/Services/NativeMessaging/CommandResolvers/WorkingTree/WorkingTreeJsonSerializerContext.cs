@@ -19,6 +19,7 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Workin
 [JsonSerializable(typeof(UpdateWorkingTreeIndexCommandArguments))]
 [JsonSerializable(typeof(DiscardWorkingTreeChangesCommandArguments))]
 [JsonSerializable(typeof(StageWorkingTreeLineCommandArguments))]
+[JsonSerializable(typeof(GetHeadCommitMessageCommandArguments))]
 [JsonSerializable(typeof(CommitStagedChangesCommandArguments))]
 [JsonSerializable(typeof(GitRemoteCommandArguments))]
 [JsonSerializable(typeof(CheckoutBranchCommandArguments))]
@@ -35,6 +36,7 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Workin
 [JsonSerializable(typeof(CommandResponse<WorkingTreeChangesResponse>))]
 [JsonSerializable(typeof(CommandResponse<WorkingTreeChangeSummaryResponse>))]
 [JsonSerializable(typeof(CommandResponse<CommitFileDiffResponse>))]
+[JsonSerializable(typeof(CommandResponse<HeadCommitMessageResponse>))]
 internal partial class WorkingTreeJsonSerializerContext : JsonSerializerContext
 {
 }

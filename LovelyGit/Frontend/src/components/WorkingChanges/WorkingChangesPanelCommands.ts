@@ -55,6 +55,7 @@ export async function runIndexCommand({
 }
 
 export async function commitStagedChanges({
+	amend,
 	changes,
 	commitBody,
 	commitTitle,
@@ -63,9 +64,11 @@ export async function commitStagedChanges({
 	setActionError,
 	setCommitBody,
 	setCommitTitle,
+	setIsAmending,
 	setIsCommitting,
 	setSelectedKeys,
 }: {
+	amend: boolean;
 	changes: WorkingTreeChangesResponse | null;
 	commitBody: string;
 	commitTitle: string;
@@ -74,12 +77,13 @@ export async function commitStagedChanges({
 	setActionError: (message: string | null) => void;
 	setCommitBody: (body: string) => void;
 	setCommitTitle: (title: string) => void;
+	setIsAmending: (isAmending: boolean) => void;
 	setIsCommitting: (isCommitting: boolean) => void;
 	setSelectedKeys: (keys: Set<string>) => void;
 }) {
 	if (
 		!changes ||
-		changes.staged.length === 0 ||
+		(!amend && changes.staged.length === 0) ||
 		commitTitle.trim().length === 0
 	) {
 		return;
@@ -91,6 +95,7 @@ export async function commitStagedChanges({
 		await sendRequestWithResponse({
 			commandType: "CommitStagedChanges",
 			arguments: {
+				amend,
 				body: commitBody,
 				repositoryId,
 				title: commitTitle,
@@ -98,6 +103,7 @@ export async function commitStagedChanges({
 		});
 		setCommitTitle("");
 		setCommitBody("");
+		setIsAmending(false);
 		setSelectedKeys(new Set());
 		await onCommitSuccess();
 	} catch (error) {
@@ -109,6 +115,13 @@ export async function commitStagedChanges({
 	} finally {
 		setIsCommitting(false);
 	}
+}
+
+export async function loadHeadCommitMessage(repositoryId: string) {
+	return sendRequestWithResponse({
+		commandType: "GetHeadCommitMessage",
+		arguments: { repositoryId },
+	});
 }
 
 export async function discardWorkingChanges({
