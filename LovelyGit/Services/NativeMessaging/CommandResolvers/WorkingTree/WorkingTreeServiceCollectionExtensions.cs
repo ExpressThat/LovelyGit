@@ -67,9 +67,11 @@ internal static class WorkingTreeServiceCollectionExtensions
         services.AddSingleton<ICommandResponder, PullRepositoryCommandResolver>();
         services.AddSingleton<ICommandResponder, PushRepositoryCommandResolver>();
         services.AddSingleton<ICommandResponder, CheckoutBranchCommandResolver>();
+        services.AddSingleton<ICommandResponder, CheckoutRemoteBranchCommandResolver>();
         services.AddSingleton<ICommandResponder, CreateBranchCommandResolver>();
         services.AddSingleton<ICommandResponder, RenameBranchCommandResolver>();
         services.AddSingleton<ICommandResponder, DeleteBranchCommandResolver>();
+        services.AddSingleton<ICommandResponder, DeleteRemoteBranchCommandResolver>();
         services.AddSingleton<ICommandResponder, PushBranchCommandResolver>();
         services.AddSingleton<ICommandResponder, ManageBranchUpstreamCommandResolver>();
         services.AddSingleton<ICommandResponder, StashCommandResolver>();

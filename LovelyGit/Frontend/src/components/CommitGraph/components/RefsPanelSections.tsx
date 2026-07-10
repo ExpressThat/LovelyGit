@@ -5,6 +5,7 @@ import { shortHash } from "../utils/format";
 import { type BranchAction, BranchContextMenu } from "./BranchContextMenu";
 import { RefIcon } from "./RefCellUtils";
 import type { RefPanelItem, RefPanelSection } from "./RefsPanelData";
+import { RemoteBranchContextMenu } from "./RemoteBranchContextMenu";
 import { type TagAction, TagContextMenu } from "./TagContextMenu";
 
 export function RefSection({
@@ -109,7 +110,17 @@ export function RefPanelRow({
 	);
 
 	if (item.kind !== "Local") {
-		return item.kind === "Tag" ? (
+		return item.kind === "Remote" ? (
+			<RemoteBranchContextMenu
+				currentBranchName={currentBranchName}
+				disabled={branchMutationBusy}
+				onAction={onBranchAction}
+				onIntegrateBranch={onIntegrateBranch}
+				remoteBranchName={item.name}
+			>
+				{branchButton}
+			</RemoteBranchContextMenu>
+		) : item.kind === "Tag" ? (
 			<TagContextMenu
 				commitHash={item.commitHash}
 				disabled={tagMutationBusy}

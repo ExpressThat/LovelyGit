@@ -37,6 +37,20 @@ internal sealed partial class GitBranchCommandService
             "Resolve local divergence or choose a merge/rebase pull strategy.",
             cancellationToken);
 
+    public Task DeleteRemoteBranchAsync(
+        string repositoryPath,
+        string remoteBranchName,
+        CancellationToken cancellationToken)
+    {
+        var (remote, branch) = NormalizeRemoteBranchName(remoteBranchName);
+        return RunAsync(
+            repositoryPath,
+            "Delete remote branch",
+            ["push", "--delete", remote, $"refs/heads/{branch}"],
+            "Check authentication, remote permissions, and whether the remote branch still exists.",
+            cancellationToken);
+    }
+
     public Task SetBranchUpstreamAsync(
         string repositoryPath,
         string branchName,
@@ -77,5 +91,20 @@ internal sealed partial class GitBranchCommandService
         }
 
         return normalized;
+    }
+
+    private static (string Remote, string Branch) NormalizeRemoteBranchName(
+        string remoteBranchName)
+    {
+        var normalized = remoteBranchName.Trim();
+        var slashIndex = normalized.IndexOf('/');
+        if (slashIndex <= 0 || slashIndex == normalized.Length - 1 ||
+            !GitRemoteNameValidator.IsValidRemoteName(normalized[..slashIndex]) ||
+            !GitBranchNameValidator.IsValidBranchName(normalized[(slashIndex + 1)..]))
+        {
+            throw new ArgumentException("Remote branch name is not valid.", nameof(remoteBranchName));
+        }
+
+        return (normalized[..slashIndex], normalized[(slashIndex + 1)..]);
     }
 }

@@ -103,6 +103,53 @@ describe("useBranchMutations", () => {
 		expect(send).not.toHaveBeenCalled();
 		expect(result.current.busyBranch).toBeNull();
 	});
+
+	it("preserves failed remote checkout and retries as a tracking branch", async () => {
+		const callbacks = createCallbacks();
+		send.mockRejectedValueOnce(new Error("Local branch already exists"));
+		const { result } = renderHook(() => useTestBranchMutations(callbacks));
+		act(() => result.current.manageBranch("checkoutRemote", "origin/feature"));
+
+		await act(() => result.current.checkoutRemoteBranch("feature"));
+		expect(result.current.checkoutRemoteBranchName).toBe("origin/feature");
+		expect(callbacks.onCurrentBranchNameChange).not.toHaveBeenCalled();
+		expect(callbacks.onRepositoryChanged).not.toHaveBeenCalled();
+
+		send.mockResolvedValueOnce(undefined);
+		await act(() => result.current.checkoutRemoteBranch("feature/local"));
+		expect(send).toHaveBeenLastCalledWith(
+			{
+				arguments: {
+					localBranchName: "feature/local",
+					remoteBranchName: "origin/feature",
+					repositoryId: "repo",
+				},
+				commandType: "CheckoutRemoteBranch",
+			},
+			{ timeoutMs: gitMutationTimeoutMs },
+		);
+		expect(result.current.checkoutRemoteBranchName).toBeNull();
+		expect(callbacks.onCurrentBranchNameChange).toHaveBeenCalledWith(
+			"feature/local",
+		);
+		expect(callbacks.onRepositoryChanged).toHaveBeenCalledOnce();
+	});
+
+	it("keeps failed remote deletion pending and refreshes only after retry", async () => {
+		const callbacks = createCallbacks();
+		send.mockRejectedValueOnce(new Error("Protected branch"));
+		const { result } = renderHook(() => useTestBranchMutations(callbacks));
+		act(() => result.current.manageBranch("deleteRemote", "origin/protected"));
+
+		await act(() => result.current.deleteRemoteBranch());
+		expect(result.current.deleteRemoteBranchName).toBe("origin/protected");
+		expect(callbacks.onRepositoryChanged).not.toHaveBeenCalled();
+
+		send.mockResolvedValueOnce(undefined);
+		await act(() => result.current.deleteRemoteBranch());
+		expect(result.current.deleteRemoteBranchName).toBeNull();
+		expect(callbacks.onRepositoryChanged).toHaveBeenCalledOnce();
+	});
 });
 
 function createCallbacks() {

@@ -19,6 +19,21 @@ public sealed record DeleteBranchCommandArguments
 }
 
 [TypeSharp]
+public sealed record CheckoutRemoteBranchCommandArguments
+{
+    public Guid RepositoryId { get; init; }
+    public string RemoteBranchName { get; init; } = string.Empty;
+    public string LocalBranchName { get; init; } = string.Empty;
+}
+
+[TypeSharp]
+public sealed record DeleteRemoteBranchCommandArguments
+{
+    public Guid RepositoryId { get; init; }
+    public string RemoteBranchName { get; init; } = string.Empty;
+}
+
+[TypeSharp]
 public sealed record PushBranchCommandArguments
 {
     public Guid RepositoryId { get; init; }

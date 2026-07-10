@@ -1,8 +1,21 @@
+import { lazy, Suspense } from "react";
 import type { BranchIntegrationMode } from "@/components/TopNavBar/components/BranchIntegrationDialog";
 import type { BranchMutationController } from "../hooks/useBranchMutations";
 import { BranchComparisonDialog } from "./BranchComparisonDialog";
 import { BranchUpstreamDialog } from "./BranchUpstreamDialog";
 import { DeleteBranchDialog } from "./DeleteBranchDialog";
+
+const CheckoutRemoteBranchDialog = lazy(() =>
+	import("./RemoteBranchDialogs").then((module) => ({
+		default: module.CheckoutRemoteBranchDialog,
+	})),
+);
+const DeleteRemoteBranchDialog = lazy(() =>
+	import("./RemoteBranchDialogs").then((module) => ({
+		default: module.DeleteRemoteBranchDialog,
+	})),
+);
+
 import { RenameBranchDialog } from "./RenameBranchDialog";
 
 export function BranchManagementDialogs({
@@ -61,6 +74,27 @@ export function BranchManagementDialogs({
 					onOpenChange={controller.setUpstreamBranchName}
 					remoteBranches={remoteBranches}
 				/>
+			) : null}
+			{controller.checkoutRemoteBranchName ? (
+				<Suspense fallback={null}>
+					<CheckoutRemoteBranchDialog
+						existingBranchNames={branchNames}
+						isBusy={controller.busyBranch !== null}
+						onConfirm={(name) => void controller.checkoutRemoteBranch(name)}
+						onOpenChange={controller.setCheckoutRemoteBranchName}
+						remoteBranchName={controller.checkoutRemoteBranchName}
+					/>
+				</Suspense>
+			) : null}
+			{controller.deleteRemoteBranchName ? (
+				<Suspense fallback={null}>
+					<DeleteRemoteBranchDialog
+						isBusy={controller.busyBranch !== null}
+						onConfirm={() => void controller.deleteRemoteBranch()}
+						onOpenChange={controller.setDeleteRemoteBranchName}
+						remoteBranchName={controller.deleteRemoteBranchName}
+					/>
+				</Suspense>
 			) : null}
 		</>
 	);

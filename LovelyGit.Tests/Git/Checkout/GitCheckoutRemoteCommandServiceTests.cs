@@ -31,6 +31,58 @@ public sealed class GitCheckoutRemoteCommandServiceTests
         Assert.Equal("origin/feature/remote", upstream);
     }
 
+    [Fact]
+    public async Task CheckoutRemoteBranchAsync_DuplicateLocalNameLeavesHeadUnchanged()
+    {
+        using var repository = TemporaryRemoteGitRepository.Create();
+        var checkoutService = new GitCheckoutCommandService(repository.GitCliService);
+        RunGit(
+            repository.GitCliService,
+            repository.ClonePath,
+            ["switch", "--create", "existing-local", "--track", "origin/feature/remote"]);
+        var originalHead = RunGit(
+            repository.GitCliService,
+            repository.ClonePath,
+            ["rev-parse", "HEAD"]).StandardOutput.Trim();
+
+        await Assert.ThrowsAsync<GitOperationException>(() =>
+            checkoutService.CheckoutRemoteBranchAsync(
+                repository.ClonePath,
+                "origin/feature/remote",
+                "existing-local",
+                CancellationToken.None));
+
+        var currentHead = RunGit(
+            repository.GitCliService,
+            repository.ClonePath,
+            ["rev-parse", "HEAD"]).StandardOutput.Trim();
+        Assert.Equal(originalHead, currentHead);
+    }
+
+    [Theory]
+    [InlineData("origin")]
+    [InlineData("bad remote/feature")]
+    [InlineData("origin/../feature")]
+    public async Task CheckoutRemoteBranchAsync_InvalidRemoteNameCreatesNoLocalBranch(
+        string remoteBranchName)
+    {
+        using var repository = TemporaryRemoteGitRepository.Create();
+        var checkoutService = new GitCheckoutCommandService(repository.GitCliService);
+
+        await Assert.ThrowsAsync<ArgumentException>(() =>
+            checkoutService.CheckoutRemoteBranchAsync(
+                repository.ClonePath,
+                remoteBranchName,
+                "local-copy",
+                CancellationToken.None));
+
+        var localBranch = RunGit(
+            repository.GitCliService,
+            repository.ClonePath,
+            ["branch", "--list", "local-copy"]);
+        Assert.Empty(localBranch.StandardOutput);
+    }
+
     private sealed class TemporaryRemoteGitRepository : IDisposable
     {
         private readonly DirectoryInfo _directory;

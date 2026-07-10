@@ -21,11 +21,11 @@ internal static partial class NativeBranchComparisonReader
             throw new InvalidOperationException("The current branch does not have a commit.");
         var targetName = NormalizeBranchName(targetBranchName);
         var target = repository.GetBranches().FirstOrDefault(reference =>
-            reference.Kind == GitRefKind.Head &&
+            reference.Kind is GitRefKind.Head or GitRefKind.Remote &&
             string.Equals(reference.Name, targetName, StringComparison.Ordinal));
         if (target == null)
         {
-            throw new ArgumentException("The target local branch was not found.", nameof(targetBranchName));
+            throw new ArgumentException("The target branch was not found.", nameof(targetBranchName));
         }
 
         var history = await PaintHistoryAsync(

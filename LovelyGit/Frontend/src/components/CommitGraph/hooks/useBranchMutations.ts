@@ -1,9 +1,8 @@
 import { useState } from "react";
-import { toast } from "sonner";
-import { sendRequestWithResponse } from "@/lib/commands";
-import { gitMutationTimeoutMs } from "@/lib/gitMutationTimeout";
 import { NativeMessageType } from "@/lib/nativeMessaging";
 import type { BranchAction } from "../components/BranchContextMenu";
+import { useBranchMutationRunner } from "./useBranchMutationRunner";
+import { useRemoteBranchMutations } from "./useRemoteBranchMutations";
 
 export function useBranchMutations({
 	currentBranchName,
@@ -20,7 +19,7 @@ export function useBranchMutations({
 	remoteName: string | null;
 	repositoryId: string | null;
 }) {
-	const [busyBranch, setBusyBranch] = useState<string | null>(null);
+	const { busyBranch, mutate } = useBranchMutationRunner(repositoryId);
 	const [comparisonBranchName, setComparisonBranchName] = useState<
 		string | null
 	>(null);
@@ -30,33 +29,12 @@ export function useBranchMutations({
 		null,
 	);
 
-	const mutate = async (
-		branchName: string,
-		loadingMessage: string,
-		successMessage: string,
-		request: Parameters<typeof sendRequestWithResponse>[0],
-		afterSuccess?: () => void,
-	) => {
-		if (!repositoryId || busyBranch) return;
-		setBusyBranch(branchName);
-		const toastId = toast.loading(loadingMessage);
-		try {
-			await sendRequestWithResponse(request, {
-				timeoutMs: gitMutationTimeoutMs,
-			});
-			afterSuccess?.();
-			toast.success(successMessage, { id: toastId });
-		} catch (error) {
-			toast.error(
-				error instanceof Error ? error.message : "Git operation failed.",
-				{
-					id: toastId,
-				},
-			);
-		} finally {
-			setBusyBranch(null);
-		}
-	};
+	const remoteBranches = useRemoteBranchMutations({
+		mutate,
+		onCurrentBranchNameChange,
+		onRepositoryChanged,
+		repositoryId,
+	});
 
 	const checkoutBranch = (branchName: string) =>
 		mutate(
@@ -93,6 +71,10 @@ export function useBranchMutations({
 	const manageBranch = (action: BranchAction, branchName: string) => {
 		if (action === "compare") setComparisonBranchName(branchName);
 		else if (action === "checkout") void checkoutBranch(branchName);
+		else if (action === "checkoutRemote")
+			remoteBranches.setCheckoutRemoteBranchName(branchName);
+		else if (action === "deleteRemote")
+			remoteBranches.setDeleteRemoteBranchName(branchName);
 		else if (action === "push") void pushBranch(branchName);
 		else if (action === "rename") setRenameBranchName(branchName);
 		else if (action === "upstream") setUpstreamBranchName(branchName);
@@ -184,6 +166,7 @@ export function useBranchMutations({
 		setRenameBranchName,
 		setUpstreamBranchName,
 		upstreamBranchName,
+		...remoteBranches,
 		onCurrentBranchNameChange,
 		onRepositoryChanged,
 	};

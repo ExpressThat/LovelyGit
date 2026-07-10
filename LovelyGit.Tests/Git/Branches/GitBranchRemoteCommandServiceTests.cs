@@ -71,6 +71,60 @@ public sealed class GitBranchRemoteCommandServiceTests
                 CancellationToken.None));
     }
 
+    [Fact]
+    public async Task DeleteRemoteBranchAsync_RemovesOnlyTheRemoteBranch()
+    {
+        using var repository = TemporaryRemoteGitRepository.Create();
+        var service = new GitBranchCommandService(repository.GitCliService);
+        RunGit(repository.GitCliService, repository.ClonePath, ["switch", "-c", "feature/remove"]);
+        RunGit(repository.GitCliService, repository.ClonePath, ["push", "origin", "feature/remove"]);
+        RunGit(repository.GitCliService, repository.ClonePath, ["switch", repository.DefaultBranchName]);
+
+        await service.DeleteRemoteBranchAsync(
+            repository.ClonePath,
+            "origin/feature/remove",
+            CancellationToken.None);
+
+        var remoteRef = RunGit(
+            repository.GitCliService,
+            repository.ClonePath,
+            ["ls-remote", "--heads", "origin", "refs/heads/feature/remove"]);
+        var localRef = RunGit(
+            repository.GitCliService,
+            repository.ClonePath,
+            ["branch", "--list", "feature/remove"]);
+        var localRemoteRef = RunGit(
+            repository.GitCliService,
+            repository.ClonePath,
+            ["show-ref", "--verify", "refs/remotes/origin/feature/remove"],
+            validateExitCode: false);
+        Assert.Empty(remoteRef.StandardOutput);
+        Assert.Contains("feature/remove", localRef.StandardOutput, StringComparison.Ordinal);
+        Assert.NotEqual(0, localRemoteRef.ExitCode);
+    }
+
+    [Theory]
+    [InlineData("origin")]
+    [InlineData("bad remote/feature")]
+    [InlineData("origin/../feature")]
+    public async Task DeleteRemoteBranchAsync_RejectsInvalidNamesWithoutMutation(
+        string remoteBranchName)
+    {
+        using var repository = TemporaryRemoteGitRepository.Create();
+        var service = new GitBranchCommandService(repository.GitCliService);
+
+        await Assert.ThrowsAsync<ArgumentException>(() => service.DeleteRemoteBranchAsync(
+            repository.ClonePath,
+            remoteBranchName,
+            CancellationToken.None));
+
+        var defaultRef = RunGit(
+            repository.GitCliService,
+            repository.ClonePath,
+            ["ls-remote", "--heads", "origin", $"refs/heads/{repository.DefaultBranchName}"]);
+        Assert.NotEmpty(defaultRef.StandardOutput);
+    }
+
     private sealed class TemporaryRemoteGitRepository : IDisposable
     {
         private readonly DirectoryInfo _directory;

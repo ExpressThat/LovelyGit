@@ -146,8 +146,10 @@ export function BranchContextMenu({
 
 export type BranchAction =
 	| "checkout"
+	| "checkoutRemote"
 	| "compare"
 	| "delete"
+	| "deleteRemote"
 	| "push"
 	| "reflog"
 	| "rename"

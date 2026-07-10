@@ -57,6 +57,26 @@ public sealed class NativeBranchComparisonReaderTests
     }
 
     [Fact]
+    public async Task ReadAsync_ComparesCurrentBranchWithNativeRemoteRef()
+    {
+        using var repository = TemporaryGitRepository.Create();
+        await CommitFilesAsync(repository, "Shared", ("shared.txt", "base"));
+        await RunAsync(repository, "checkout", "-b", "feature");
+        await CommitFilesAsync(repository, "Remote feature", ("remote.txt", "remote"));
+        var remoteHash = await HeadAsync(repository);
+        await RunAsync(repository, "checkout", "master");
+        await RunAsync(repository, "update-ref", "refs/remotes/origin/feature", remoteHash);
+        await RunAsync(repository, "branch", "-D", "feature");
+
+        var comparison = await NativeBranchComparisonReader.ReadAsync(
+            repository.Path, "origin/feature", CancellationToken.None);
+
+        Assert.Equal("origin/feature", comparison.TargetBranchName);
+        Assert.Equal(remoteHash, comparison.TargetHash);
+        Assert.Equal("Remote feature", Assert.Single(comparison.BehindCommits).Subject);
+    }
+
+    [Fact]
     public async Task ReadAsync_RejectsUnknownOrDetachedBranches()
     {
         using var repository = TemporaryGitRepository.Create();
