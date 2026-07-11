@@ -20,9 +20,13 @@ const defaultProps = {
 	fileBlameTarget: null,
 	fileHistoryTarget: null,
 	isCommitSearchOpen: false,
+	isCommandPaletteOpen: false,
+	onCommandPaletteOpenChange: vi.fn(),
 	onFileBlameOpenChange: vi.fn(),
 	onFileHistoryOpenChange: vi.fn(),
 	onSearchOpenChange: vi.fn(),
+	onOpenSettings: vi.fn(),
+	onOpenWorkingChanges: vi.fn(),
 	onSelectCommit: vi.fn(),
 	repositoryId: "repo",
 };

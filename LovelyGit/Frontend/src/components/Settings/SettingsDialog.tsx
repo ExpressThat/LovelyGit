@@ -67,8 +67,16 @@ const categories: Array<{
 	},
 ];
 
-export function SettingsDialog() {
-	const [open, setOpen] = useState(false);
+export function SettingsDialog({
+	onOpenChange,
+	open: controlledOpen,
+}: {
+	onOpenChange?: (open: boolean) => void;
+	open?: boolean;
+} = {}) {
+	const [internalOpen, setInternalOpen] = useState(false);
+	const open = controlledOpen ?? internalOpen;
+	const setOpen = onOpenChange ?? setInternalOpen;
 	const [activeCategory, setActiveCategory] =
 		useState<SettingsCategory>("appearance");
 	const active = categories.find((category) => category.id === activeCategory);

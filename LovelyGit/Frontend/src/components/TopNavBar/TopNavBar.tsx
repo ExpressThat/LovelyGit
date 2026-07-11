@@ -1,4 +1,4 @@
-import { GitCompareArrows, Search } from "lucide-react";
+import { Command, GitCompareArrows, Search } from "lucide-react";
 import { SettingsDialog } from "../Settings/SettingsDialog";
 import { BisectControl } from "./components/BisectControl";
 import { BranchControl } from "./components/BranchControl";
@@ -12,16 +12,22 @@ import { TerminalActionControl } from "./components/TerminalActionControl";
 export function TopNavBar({
 	currentBranchName,
 	onBranchChanged,
+	onOpenCommandPalette,
 	onOpenWorkingChanges,
 	onSearchCommits,
+	onSettingsOpenChange,
 	repositoryId,
+	settingsOpen,
 	workingChangesCount,
 }: {
 	currentBranchName: string | null;
 	onBranchChanged: (branchName: string) => void;
+	onOpenCommandPalette: () => void;
 	onOpenWorkingChanges: () => void;
 	onSearchCommits: () => void;
+	onSettingsOpenChange: (open: boolean) => void;
 	repositoryId: string | null;
+	settingsOpen: boolean;
 	workingChangesCount: number;
 }) {
 	return (
@@ -55,6 +61,15 @@ export function TopNavBar({
 					<RemoteWebActionControl repositoryId={repositoryId} />
 				</div>
 				<div className="flex items-center justify-end gap-1">
+					<button
+						aria-label="Open command palette"
+						className="inline-flex size-9 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+						onClick={onOpenCommandPalette}
+						title="Command palette (Ctrl+K)"
+						type="button"
+					>
+						<Command aria-hidden="true" className="size-5" />
+					</button>
 					<BisectControl repositoryId={repositoryId} />
 					<SubmoduleManager repositoryId={repositoryId} />
 					<button
@@ -81,7 +96,10 @@ export function TopNavBar({
 							</span>
 						) : null}
 					</button>
-					<SettingsDialog />
+					<SettingsDialog
+						onOpenChange={onSettingsOpenChange}
+						open={settingsOpen}
+					/>
 				</div>
 			</div>
 		</header>

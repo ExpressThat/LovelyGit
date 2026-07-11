@@ -27,9 +27,12 @@ describe("TopNavBar", () => {
 			<TopNavBar
 				currentBranchName="main"
 				onBranchChanged={vi.fn()}
+				onOpenCommandPalette={vi.fn()}
 				onOpenWorkingChanges={vi.fn()}
 				onSearchCommits={onSearchCommits}
 				repositoryId="repo"
+				settingsOpen={false}
+				onSettingsOpenChange={vi.fn()}
 				workingChangesCount={0}
 			/>,
 		);
@@ -41,9 +44,12 @@ describe("TopNavBar", () => {
 			<TopNavBar
 				currentBranchName={null}
 				onBranchChanged={vi.fn()}
+				onOpenCommandPalette={vi.fn()}
 				onOpenWorkingChanges={vi.fn()}
 				onSearchCommits={onSearchCommits}
 				repositoryId={null}
+				settingsOpen={false}
+				onSettingsOpenChange={vi.fn()}
 				workingChangesCount={0}
 			/>,
 		);

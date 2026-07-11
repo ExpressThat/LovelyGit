@@ -1,11 +1,10 @@
 import "./App.css";
 import { AnimatePresence, motion } from "motion/react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import * as LazySurfaces from "./AppLazySurfaces";
 import { AppOverlays } from "./AppOverlays";
 import { type DetailsPanelState, panelTitle } from "./AppPanelState";
 import { CommitGraphLayer } from "./components/CommitGraph/CommitGraphLayer";
-import { isCommitSearchShortcut } from "./components/CommitSearch/commitSearchShortcut";
 import { SlidingDetailsPanel } from "./components/DetailsPanel/SlidingDetailsPanel";
 import { NewTab } from "./components/NewTab/NewTab";
 import { TopNavBar } from "./components/TopNavBar/TopNavBar";
@@ -15,6 +14,7 @@ import { RepositoryProvider } from "./lib/repositoryContext";
 import { useApplyFont } from "./lib/settings/font/useApplyFont";
 import { useSetting } from "./lib/settings/settingsStore";
 import { useApplyTheme } from "./lib/settings/theme/useApplyTheme";
+import { useAppShortcuts } from "./useAppShortcuts";
 import { useFileDiscoveryTargets } from "./useFileDiscoveryTargets";
 import { useResetOnRepositoryChange } from "./useResetOnRepositoryChange";
 
@@ -27,6 +27,8 @@ function App() {
 	);
 	const [commitGraphRefreshToken, setCommitGraphRefreshToken] = useState(0);
 	const [isCommitSearchOpen, setIsCommitSearchOpen] = useState(false);
+	const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
+	const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 	const fileDiscovery = useFileDiscoveryTargets();
 	const [currentBranchName, setCurrentBranchName] = useState<string | null>(
 		null,
@@ -46,22 +48,17 @@ function App() {
 	const selectCommit = (row: CommitGraphRow) => {
 		setDetailsPanel({ commitHash: row.commit.hash, kind: "commit" });
 	};
-	useEffect(() => {
-		const openSearch = (event: KeyboardEvent) => {
-			if (currentGitRepositoryId && isCommitSearchShortcut(event)) {
-				event.preventDefault();
-				setIsCommitSearchOpen(true);
-			}
-		};
-		window.addEventListener("keydown", openSearch);
-		return () => window.removeEventListener("keydown", openSearch);
-	}, [currentGitRepositoryId]);
-	const closeDetailsPanel = () => setDetailsPanel(null);
+	useAppShortcuts({
+		hasRepository: Boolean(currentGitRepositoryId),
+		onOpenCommandPalette: () => setIsCommandPaletteOpen(true),
+		onOpenCommitSearch: () => setIsCommitSearchOpen(true),
+	});
 	return (
 		<RepositoryProvider>
 			<main className="app-shell">
 				<TopNavBar
 					currentBranchName={currentBranchName}
+					onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
 					onBranchChanged={(branchName) => {
 						setCurrentBranchName(branchName);
 						setDetailsPanel(null);
@@ -71,7 +68,9 @@ function App() {
 						setDetailsPanel({ kind: "workingChanges" })
 					}
 					onSearchCommits={() => setIsCommitSearchOpen(true)}
+					onSettingsOpenChange={setIsSettingsOpen}
 					repositoryId={currentGitRepositoryId}
+					settingsOpen={isSettingsOpen}
 					workingChangesCount={workingTreeChanges.totalCount}
 				/>
 				<div className="flex min-h-0 flex-1 overflow-hidden">
@@ -168,7 +167,7 @@ function App() {
 					</div>
 					<SlidingDetailsPanel
 						isOpen={Boolean(detailsPanel && currentGitRepositoryId)}
-						onClose={closeDetailsPanel}
+						onClose={() => setDetailsPanel(null)}
 						title={panelTitle(detailsPanel)}
 					>
 						{detailsPanel?.kind === "commit" && currentGitRepositoryId ? (
@@ -231,11 +230,15 @@ function App() {
 				fileBlameTarget={fileDiscovery.blameTarget}
 				fileHistoryTarget={fileDiscovery.historyTarget}
 				isCommitSearchOpen={isCommitSearchOpen}
+				isCommandPaletteOpen={isCommandPaletteOpen}
+				onCommandPaletteOpenChange={setIsCommandPaletteOpen}
 				onFileBlameOpenChange={(open) => !open && fileDiscovery.closeBlame()}
 				onFileHistoryOpenChange={(open) =>
 					!open && fileDiscovery.closeHistory()
 				}
 				onSearchOpenChange={setIsCommitSearchOpen}
+				onOpenSettings={() => setIsSettingsOpen(true)}
+				onOpenWorkingChanges={() => setDetailsPanel({ kind: "workingChanges" })}
 				onSelectCommit={(commitHash) =>
 					setDetailsPanel({ commitHash, kind: "commit" })
 				}

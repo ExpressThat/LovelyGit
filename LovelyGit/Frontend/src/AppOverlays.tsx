@@ -19,32 +19,55 @@ const FileBlameDialog = lazy(() =>
 		default: module.FileBlameDialog,
 	})),
 );
+const CommandPalette = lazy(() =>
+	import("./components/CommandPalette/CommandPalette").then((module) => ({
+		default: module.CommandPalette,
+	})),
+);
 
 export function AppOverlays({
 	fileHistoryTarget,
 	fileBlameTarget,
 	isCommitSearchOpen,
+	isCommandPaletteOpen,
 	onFileHistoryOpenChange,
 	onFileBlameOpenChange,
 	onSearchOpenChange,
+	onCommandPaletteOpenChange,
+	onOpenSettings,
+	onOpenWorkingChanges,
 	onSelectCommit,
 	repositoryId,
 }: {
 	fileHistoryTarget: FileHistoryTarget | null;
 	fileBlameTarget: FileBlameTarget | null;
 	isCommitSearchOpen: boolean;
+	isCommandPaletteOpen: boolean;
 	onFileHistoryOpenChange: (open: boolean) => void;
 	onFileBlameOpenChange: (open: boolean) => void;
 	onSearchOpenChange: (open: boolean) => void;
+	onCommandPaletteOpenChange: (open: boolean) => void;
+	onOpenSettings: () => void;
+	onOpenWorkingChanges: () => void;
 	onSelectCommit: (commitHash: string) => void;
 	repositoryId: string | null;
 }) {
 	const retainSearch = useRetainedSurface(isCommitSearchOpen);
 	const retainHistory = useRetainedSurface(fileHistoryTarget !== null);
 	const retainBlame = useRetainedSurface(fileBlameTarget !== null);
+	const retainPalette = useRetainedSurface(isCommandPaletteOpen);
 	return (
 		<>
 			<Suspense fallback={<SurfaceLoading label="Opening tool" overlay />}>
+				{retainPalette ? (
+					<CommandPalette
+						onOpenChange={onCommandPaletteOpenChange}
+						onOpenCommitSearch={() => onSearchOpenChange(true)}
+						onOpenSettings={onOpenSettings}
+						onOpenWorkingChanges={onOpenWorkingChanges}
+						open={isCommandPaletteOpen}
+					/>
+				) : null}
 				{retainSearch ? (
 					<CommitSearchDialog
 						onOpenChange={onSearchOpenChange}
