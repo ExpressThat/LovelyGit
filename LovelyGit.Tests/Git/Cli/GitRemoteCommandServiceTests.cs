@@ -5,6 +5,53 @@ namespace LovelyGit.Tests.Git.Cli;
 
 public sealed class GitRemoteCommandServiceTests
 {
+    [Theory]
+    [InlineData(false, "fetch", "--all")]
+    [InlineData(true, "fetch", "--all", "--prune")]
+    public void BuildFetchArguments_UsesEveryConfiguredRemote(
+        bool prune,
+        params string[] expected)
+    {
+        Assert.Equal(expected, GitRemoteCommandService.BuildFetchArguments(null, prune));
+    }
+
+    [Fact]
+    public void BuildFetchArguments_TargetsOneValidatedRemoteWhenRequested()
+    {
+        Assert.Equal(
+            ["fetch", "--prune", "upstream"],
+            GitRemoteCommandService.BuildFetchArguments("upstream", prune: true));
+    }
+
+    [Fact]
+    public async Task FetchAsync_AllWithPrune_UpdatesEveryRemoteAndRemovesDeletedRefs()
+    {
+        using var repository = TemporaryRemoteGitRepository.Create();
+        var service = new GitRemoteCommandService(repository.GitCliService);
+        var backupPath = Path.Combine(Path.GetDirectoryName(repository.BarePath)!, "backup.git");
+        repository.RunGit(repository.ClonePath, ["init", "--bare", backupPath]);
+        repository.RunGit(repository.ClonePath, ["remote", "add", "backup", backupPath]);
+        repository.RunGit(
+            repository.ClonePath,
+            ["push", "backup", "HEAD:refs/heads/backup-only"]);
+        repository.RunGit(
+            repository.ClonePath,
+            ["push", "origin", "HEAD:refs/heads/obsolete"]);
+        repository.RunGit(repository.ClonePath, ["fetch", "origin"]);
+        repository.RunGit(repository.ClonePath, ["push", "origin", "--delete", "obsolete"]);
+
+        await service.FetchAsync(
+            repository.ClonePath,
+            remoteName: null,
+            prune: true,
+            CancellationToken.None);
+
+        var remoteBranches = repository.RunGit(repository.ClonePath, ["branch", "--remotes"])
+            .StandardOutput;
+        Assert.Contains("backup/backup-only", remoteBranches, StringComparison.Ordinal);
+        Assert.DoesNotContain("origin/obsolete", remoteBranches, StringComparison.Ordinal);
+    }
+
     [Fact]
     public void AddRemote_AppendsValidRemoteName()
     {

@@ -50,6 +50,7 @@ namespace ExpressThat.LovelyGit.Services.Settings
     public enum RemotePrimaryAction
     {
         Fetch,
+        FetchPrune,
         Pull,
         PullRebase,
         PullFastForwardOnly,

@@ -54,6 +54,7 @@ describe("RemoteActionsControl", () => {
 				commandType: "PushRepository",
 				arguments: {
 					pullMode: "Merge",
+					prune: false,
 					pushMode: "Normal",
 					remoteName: null,
 					repositoryId: "repo-1",
@@ -128,6 +129,7 @@ describe("RemoteActionsControl", () => {
 				commandType: "PushRepository",
 				arguments: {
 					pullMode: "Merge",
+					prune: false,
 					pushMode: "ForceWithLease",
 					remoteName: null,
 					repositoryId: "repo-1",
@@ -135,6 +137,50 @@ describe("RemoteActionsControl", () => {
 			},
 			{ timeoutMs: 120_000 },
 		);
+	});
+
+	it("fetches every remote and offers a retryable prune action", async () => {
+		const user = userEvent.setup();
+		send
+			.mockRejectedValueOnce(new Error("remote unavailable"))
+			.mockResolvedValueOnce(undefined);
+		render(
+			<RemoteActionsControl currentBranchName="main" repositoryId="repo-1" />,
+		);
+
+		await user.click(
+			screen.getByRole("button", { name: "Choose fetch or pull default" }),
+		);
+		await user.click(await screen.findByText("Fetch All & Prune"));
+		await waitFor(() =>
+			expect(toast.error).toHaveBeenCalledWith("remote unavailable", {
+				id: "toast-1",
+			}),
+		);
+
+		await user.click(
+			screen.getByRole("button", { name: "Choose fetch or pull default" }),
+		);
+		await user.click(await screen.findByText("Fetch All & Prune"));
+		await waitFor(() =>
+			expect(toast.success).toHaveBeenCalledWith("Fetch and prune complete", {
+				id: "toast-1",
+			}),
+		);
+		expect(send).toHaveBeenLastCalledWith(
+			{
+				commandType: "FetchRepository",
+				arguments: {
+					pullMode: "Merge",
+					prune: true,
+					pushMode: "Normal",
+					remoteName: null,
+					repositoryId: "repo-1",
+				},
+			},
+			{ timeoutMs: 120_000 },
+		);
+		expect(sync.reload).toHaveBeenCalledOnce();
 	});
 
 	it("disables every remote mutation when no repository is selected", () => {

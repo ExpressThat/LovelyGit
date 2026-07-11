@@ -90,6 +90,7 @@ public record UndoLastCommitCommandArguments
 public record GitRemoteCommandArguments
 {
     public Guid RepositoryId { get; set; }
+    public bool Prune { get; set; }
     public GitPullMode PullMode { get; set; } = GitPullMode.Merge;
     public GitPushMode PushMode { get; set; } = GitPushMode.Normal;
     public string? RemoteName { get; set; }

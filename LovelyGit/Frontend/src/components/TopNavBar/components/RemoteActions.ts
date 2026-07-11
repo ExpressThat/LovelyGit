@@ -15,6 +15,7 @@ export type RemoteAction = {
 	icon: LucideIcon;
 	label: string;
 	menuLabel: string;
+	prune: boolean;
 	pullMode: GitPullMode;
 	toolbarLabel: string;
 	value: RemotePrimaryAction;
@@ -22,6 +23,16 @@ export type RemoteAction = {
 
 export const defaultableRemoteActions: RemoteAction[] = [
 	remoteAction(NativeMessageType.FetchRepository, Download, "Fetch", "Fetch"),
+	remoteAction(
+		NativeMessageType.FetchRepository,
+		Download,
+		"Fetch and prune",
+		"FetchPrune",
+		"Merge",
+		"Fetch All & Prune",
+		"Fetch & prune",
+		true,
+	),
 	remoteAction(
 		NativeMessageType.PullRepository,
 		GitPullRequestArrow,
@@ -75,6 +86,16 @@ function remoteAction(
 	pullMode: GitPullMode = "Merge",
 	menuLabel = label === "Fetch" ? "Fetch All" : label,
 	toolbarLabel = label,
+	prune = false,
 ): RemoteAction {
-	return { commandType, icon, label, menuLabel, pullMode, toolbarLabel, value };
+	return {
+		commandType,
+		icon,
+		label,
+		menuLabel,
+		prune,
+		pullMode,
+		toolbarLabel,
+		value,
+	};
 }

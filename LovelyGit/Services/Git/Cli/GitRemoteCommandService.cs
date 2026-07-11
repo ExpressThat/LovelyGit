@@ -15,12 +15,25 @@ internal sealed partial class GitRemoteCommandService
     public Task FetchAsync(
         string repositoryPath,
         string? remoteName,
+        bool prune,
         CancellationToken cancellationToken)
     {
         return RunRemoteCommandAsync(
             repositoryPath,
-            AddRemote(["fetch"], remoteName),
+            BuildFetchArguments(remoteName, prune),
             cancellationToken);
+    }
+
+    internal static IReadOnlyList<string> BuildFetchArguments(string? remoteName, bool prune)
+    {
+        IReadOnlyList<string> arguments = string.IsNullOrWhiteSpace(remoteName)
+            ? ["fetch", "--all"]
+            : ["fetch"];
+        if (prune)
+        {
+            arguments = arguments.Concat(["--prune"]).ToArray();
+        }
+        return AddRemote(arguments, remoteName);
     }
 
     public Task PullAsync(

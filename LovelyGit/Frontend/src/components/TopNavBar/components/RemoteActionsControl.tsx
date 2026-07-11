@@ -69,6 +69,7 @@ export function RemoteActionsControl({
 					commandType: action.commandType,
 					arguments: {
 						pullMode: action.pullMode,
+						prune: action.prune,
 						pushMode,
 						remoteName: null,
 						repositoryId,

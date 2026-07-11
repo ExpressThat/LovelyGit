@@ -30,6 +30,7 @@ internal sealed class FetchRepositoryCommandResolver : GitRemoteCommandResolver
         return _gitRemoteCommandService.FetchAsync(
             repositoryPath,
             arguments.RemoteName,
+            arguments.Prune,
             cancellationToken);
     }
 }
