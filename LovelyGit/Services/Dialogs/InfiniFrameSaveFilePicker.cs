@@ -24,7 +24,7 @@ internal sealed class InfiniFrameSaveFilePicker : ISaveFilePicker
             (GetFilterLabel(extensions), extensions.ToArray()),
         };
         var selected = await window
-            .ShowSaveFileAsync(title, suggestedFileName, filter, cancellationToken)
+            .ShowSaveFileAsync(title, GetDefaultDirectory(), filter, cancellationToken)
             .ConfigureAwait(false);
         return string.IsNullOrWhiteSpace(selected) ? null : Path.GetFullPath(selected);
     }
@@ -41,5 +41,13 @@ internal sealed class InfiniFrameSaveFilePicker : ISaveFilePicker
             extension.Equals("tar", StringComparison.OrdinalIgnoreCase))
             ? "Archive files"
             : "Files";
+    }
+
+    internal static string GetDefaultDirectory()
+    {
+        var documents = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+        return Directory.Exists(documents)
+            ? documents
+            : Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
     }
 }

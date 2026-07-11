@@ -15,4 +15,13 @@ public sealed class InfiniFrameSaveFilePickerTests
     {
         Assert.Equal(expected, InfiniFrameSaveFilePicker.GetFilterLabel([extension]));
     }
+
+    [Fact]
+    public void GetDefaultDirectory_ReturnsAnExistingFolder()
+    {
+        var directory = InfiniFrameSaveFilePicker.GetDefaultDirectory();
+
+        Assert.True(Path.IsPathFullyQualified(directory));
+        Assert.True(Directory.Exists(directory));
+    }
 }
