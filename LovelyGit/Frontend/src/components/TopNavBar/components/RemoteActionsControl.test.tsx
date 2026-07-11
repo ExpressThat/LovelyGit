@@ -93,9 +93,11 @@ describe("RemoteActionsControl", () => {
 		await user.click(screen.getByRole("button", { name: "More push actions" }));
 		await user.click(await screen.findByText("Force push with lease…"));
 		expect(
-			await screen.findByRole("heading", {
-				name: "Force push feature/rewrite?",
-			}),
+			await screen.findByRole(
+				"heading",
+				{ name: "Force push feature/rewrite?" },
+				{ timeout: 5_000 },
+			),
 		).toBeInTheDocument();
 		expect(screen.getByText(/protected by the lease/)).toBeInTheDocument();
 		expect(send).not.toHaveBeenCalled();

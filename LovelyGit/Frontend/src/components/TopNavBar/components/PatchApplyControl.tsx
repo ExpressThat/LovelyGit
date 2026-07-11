@@ -1,6 +1,13 @@
 import { FileInput, LoaderCircle } from "lucide-react";
-import { PatchApplyDialog } from "./PatchApplyDialog";
+import { lazy, Suspense } from "react";
+import { SurfaceLoading } from "@/AppLazySurfaces";
 import { usePatchApply } from "./usePatchApply";
+
+const PatchApplyDialog = lazy(() =>
+	import("./PatchApplyDialog").then((module) => ({
+		default: module.PatchApplyDialog,
+	})),
+);
 
 export function PatchApplyControl({
 	onApplied,
@@ -27,18 +34,24 @@ export function PatchApplyControl({
 				)}
 				<span>{patch.isSelecting ? "Reading patch…" : "Apply patch"}</span>
 			</button>
-			<PatchApplyDialog
-				isApplying={patch.isApplying}
-				onApply={() => void patch.applyPatch()}
-				onOpenChange={(open) => {
-					if (!open && !patch.isApplying) patch.setPreview(null);
-				}}
-				onReverseChange={patch.setReverse}
-				onStageChangesChange={patch.setStageChanges}
-				preview={patch.preview}
-				reverse={patch.reverse}
-				stageChanges={patch.stageChanges}
-			/>
+			{patch.preview ? (
+				<Suspense
+					fallback={<SurfaceLoading label="Opening patch preview" overlay />}
+				>
+					<PatchApplyDialog
+						isApplying={patch.isApplying}
+						onApply={() => void patch.applyPatch()}
+						onOpenChange={(open) => {
+							if (!open && !patch.isApplying) patch.setPreview(null);
+						}}
+						onReverseChange={patch.setReverse}
+						onStageChangesChange={patch.setStageChanges}
+						preview={patch.preview}
+						reverse={patch.reverse}
+						stageChanges={patch.stageChanges}
+					/>
+				</Suspense>
+			) : null}
 		</>
 	);
 }
