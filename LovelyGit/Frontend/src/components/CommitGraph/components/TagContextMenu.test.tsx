@@ -28,6 +28,27 @@ describe("TagContextMenu", () => {
 		expect(onAction).toHaveBeenCalledWith("checkout", "v2.0.0");
 	});
 
+	it("offers remote deletion only when a remote is available", async () => {
+		const user = userEvent.setup();
+		const onAction = vi.fn();
+		render(
+			<TagContextMenu
+				commitHash="1111111111111111111111111111111111111111"
+				disabled={false}
+				onAction={onAction}
+				onCreateBranch={vi.fn()}
+				remoteName="origin"
+				tagName="v2.0.0"
+			>
+				<button type="button">v2.0.0 tag</button>
+			</TagContextMenu>,
+		);
+
+		fireEvent.contextMenu(screen.getByRole("button", { name: "v2.0.0 tag" }));
+		await user.click(await screen.findByText("Delete from origin…"));
+		expect(onAction).toHaveBeenCalledWith("deleteRemote", "v2.0.0");
+	});
+
 	it("creates a branch at the tagged commit", async () => {
 		const user = userEvent.setup();
 		const onCreateBranch = vi.fn();

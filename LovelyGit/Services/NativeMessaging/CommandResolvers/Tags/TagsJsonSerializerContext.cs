@@ -6,4 +6,5 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Tags;
 [JsonSerializable(typeof(CreateTagAtCommitCommandArguments))]
 [JsonSerializable(typeof(DeleteTagCommandArguments))]
 [JsonSerializable(typeof(PushTagCommandArguments))]
+[JsonSerializable(typeof(DeleteRemoteTagCommandArguments))]
 internal partial class TagsJsonSerializerContext : JsonSerializerContext;

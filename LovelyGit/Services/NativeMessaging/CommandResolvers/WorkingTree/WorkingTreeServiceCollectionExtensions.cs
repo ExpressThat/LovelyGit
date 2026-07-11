@@ -98,6 +98,7 @@ internal static class WorkingTreeServiceCollectionExtensions
         services.AddSingleton<ICommandResponder, CreateTagAtCommitCommandResolver>();
         services.AddSingleton<ICommandResponder, DeleteTagCommandResolver>();
         services.AddSingleton<ICommandResponder, PushTagCommandResolver>();
+        services.AddSingleton<ICommandResponder, DeleteRemoteTagCommandResolver>();
         services.AddSingleton<ICommandResponder, GetRepositoryOperationStateCommandResolver>();
         services.AddSingleton<ICommandResponder, ContinueRepositoryOperationCommandResolver>();
         services.AddSingleton<ICommandResponder, AbortRepositoryOperationCommandResolver>();

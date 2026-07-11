@@ -70,6 +70,22 @@ internal sealed class GitTagCommandService
             cancellationToken);
     }
 
+    public Task DeleteRemoteTagAsync(
+        string repositoryPath,
+        string remoteName,
+        string tagName,
+        CancellationToken cancellationToken)
+    {
+        var remote = NormalizeRemoteName(remoteName);
+        var name = NormalizeTagName(tagName);
+        return RunAsync(
+            repositoryPath,
+            "Delete remote tag",
+            ["push", remote, "--delete", $"refs/tags/{name}"],
+            "Check authentication, remote permissions, and whether the remote tag still exists.",
+            cancellationToken);
+    }
+
     private async Task RunAsync(
         string repositoryPath,
         string operationName,

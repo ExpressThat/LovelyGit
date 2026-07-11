@@ -16,6 +16,9 @@ export function useTagMutations({
 	const [busyTag, setBusyTag] = useState<string | null>(null);
 	const [checkoutTagName, setCheckoutTagName] = useState<string | null>(null);
 	const [deleteTagName, setDeleteTagName] = useState<string | null>(null);
+	const [deleteRemoteTagName, setDeleteRemoteTagName] = useState<string | null>(
+		null,
+	);
 
 	const pushTag = async (tagName: string) => {
 		if (!repositoryId || !remoteName || busyTag) return;
@@ -65,12 +68,37 @@ export function useTagMutations({
 			setBusyTag(null);
 		}
 	};
+	const deleteRemoteTag = async () => {
+		if (!repositoryId || !remoteName || !deleteRemoteTagName || busyTag) return;
+		const tagName = deleteRemoteTagName;
+		setBusyTag(tagName);
+		const toastId = toast.loading(`Deleting ${tagName} from ${remoteName}`);
+		try {
+			await sendRequestWithResponse(
+				{
+					arguments: { remoteName, repositoryId, tagName },
+					commandType: NativeMessageType.DeleteRemoteTag,
+				},
+				{ timeoutMs: gitMutationTimeoutMs },
+			);
+			setDeleteRemoteTagName(null);
+			toast.success(`Deleted ${tagName} from ${remoteName}`, { id: toastId });
+		} catch (error) {
+			toast.error(
+				error instanceof Error ? error.message : "Could not delete remote tag.",
+				{ id: toastId },
+			);
+		} finally {
+			setBusyTag(null);
+		}
+	};
 	const manageTag = (
-		action: "checkout" | "delete" | "push",
+		action: "checkout" | "delete" | "deleteRemote" | "push",
 		tagName: string,
 	) => {
 		if (action === "push") void pushTag(tagName);
 		else if (action === "checkout") setCheckoutTagName(tagName);
+		else if (action === "deleteRemote") setDeleteRemoteTagName(tagName);
 		else setDeleteTagName(tagName);
 	};
 
@@ -78,10 +106,13 @@ export function useTagMutations({
 		busyTag,
 		checkoutTagName,
 		deleteTag,
+		deleteRemoteTag,
+		deleteRemoteTagName,
 		deleteTagName,
 		manageTag,
 		setCheckoutTagName,
 		setDeleteTagName,
+		setDeleteRemoteTagName,
 	};
 }
 

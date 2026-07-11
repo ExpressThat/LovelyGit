@@ -3,6 +3,7 @@ import type { TagMutationController } from "../hooks/useTagMutations";
 import {
 	LazyCheckoutTagDialog,
 	LazyCreateTagDialog,
+	LazyDeleteRemoteTagDialog,
 	LazyDeleteTagDialog,
 } from "./LazyGraphManagementDialogs";
 
@@ -23,7 +24,14 @@ export function TagManagementDialogs({
 	repositoryId: string | null;
 	tagCommit: CommitGraphRow | null;
 }) {
-	const { busyTag, checkoutTagName, deleteTag, deleteTagName } = controller;
+	const {
+		busyTag,
+		checkoutTagName,
+		deleteRemoteTag,
+		deleteRemoteTagName,
+		deleteTag,
+		deleteTagName,
+	} = controller;
 	return (
 		<>
 			{checkoutTagName ? (
@@ -50,6 +58,13 @@ export function TagManagementDialogs({
 				onConfirm={() => void deleteTag()}
 				onOpenChange={controller.setDeleteTagName}
 				tagName={deleteTagName}
+			/>
+			<LazyDeleteRemoteTagDialog
+				isBusy={busyTag !== null}
+				onConfirm={() => void deleteRemoteTag()}
+				onOpenChange={controller.setDeleteRemoteTagName}
+				remoteName={remoteName}
+				tagName={deleteRemoteTagName}
 			/>
 		</>
 	);

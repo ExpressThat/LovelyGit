@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import {
+	Cloud,
 	CloudUpload,
 	Copy,
 	GitBranch,
@@ -17,7 +18,7 @@ import {
 } from "@/components/ui/context-menu";
 import { copyToClipboard } from "../utils/clipboard";
 
-export type TagAction = "checkout" | "delete" | "push";
+export type TagAction = "checkout" | "delete" | "deleteRemote" | "push";
 
 export function TagContextMenu({
 	children,
@@ -59,6 +60,19 @@ export function TagContextMenu({
 				>
 					<Copy aria-hidden="true" />
 					Copy tag name
+				</ContextMenuItem>
+				<ContextMenuItem
+					className="text-destructive focus:bg-destructive/10 focus:text-destructive"
+					disabled={disabled || remoteName === null}
+					onClick={() => onAction("deleteRemote", tagName)}
+					title={
+						remoteName
+							? `Delete ${tagName} from ${remoteName}`
+							: "No remote is available"
+					}
+				>
+					<Cloud aria-hidden="true" />
+					Delete from {remoteName ?? "remote"}…
 				</ContextMenuItem>
 				<ContextMenuItem onClick={() => onCreateBranch(tagName, commitHash)}>
 					<GitBranch aria-hidden="true" />

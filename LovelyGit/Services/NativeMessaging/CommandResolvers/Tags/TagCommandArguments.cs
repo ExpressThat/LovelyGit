@@ -27,3 +27,11 @@ public sealed record PushTagCommandArguments
     public string RemoteName { get; init; } = string.Empty;
     public string TagName { get; init; } = string.Empty;
 }
+
+[TypeSharp]
+public sealed record DeleteRemoteTagCommandArguments
+{
+    public Guid RepositoryId { get; init; }
+    public string RemoteName { get; init; } = string.Empty;
+    public string TagName { get; init; } = string.Empty;
+}

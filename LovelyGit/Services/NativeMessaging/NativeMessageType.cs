@@ -203,6 +203,8 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging
         DeleteTag,
         [NativeMessageContract(typeof(PushTagCommandArguments), typeof(EmptyCommandArguments))]
         PushTag,
+        [NativeMessageContract(typeof(DeleteRemoteTagCommandArguments), typeof(EmptyCommandArguments))]
+        DeleteRemoteTag,
 
         // Multi-step repository operations and their conflict lifecycle.
         [NativeMessageContract(typeof(CherryPickCommitCommandArguments), typeof(RepositoryOperationCommandResponse))]

@@ -96,4 +96,37 @@ describe("useTagMutations", () => {
 		expect(result.current.checkoutTagName).toBeNull();
 		expect(send).not.toHaveBeenCalled();
 	});
+
+	it("preserves failed remote deletion confirmation and permits retry", async () => {
+		send.mockRejectedValueOnce(new Error("Remote tag is protected"));
+		const { result } = renderHook(() =>
+			useTagMutations({
+				onRepositoryChanged: vi.fn(),
+				remoteName: "origin",
+				repositoryId: "repo",
+			}),
+		);
+		act(() => result.current.manageTag("deleteRemote", "v1"));
+
+		await act(() => result.current.deleteRemoteTag());
+		expect(result.current.deleteRemoteTagName).toBe("v1");
+		expect(result.current.busyTag).toBeNull();
+		expect(toast.error).toHaveBeenCalledWith("Remote tag is protected", {
+			id: "toast",
+		});
+
+		send.mockResolvedValueOnce(undefined);
+		await act(() => result.current.deleteRemoteTag());
+		expect(result.current.deleteRemoteTagName).toBeNull();
+		expect(send).toHaveBeenLastCalledWith(
+			expect.objectContaining({
+				arguments: {
+					remoteName: "origin",
+					repositoryId: "repo",
+					tagName: "v1",
+				},
+			}),
+			expect.any(Object),
+		);
+	});
 });
