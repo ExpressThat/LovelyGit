@@ -8,7 +8,7 @@ internal sealed partial class GitObjectStore : IDisposable
     private const int ObjectCacheSize = 256;
     private const int ObjectCacheBytes = 8 * 1024 * 1024;
 
-    private readonly string _gitDirectory;
+    private readonly IReadOnlyList<string> _objectDirectories;
     private readonly GitObjectFormat _objectFormat;
     private readonly GitPackReader _packReader;
     private readonly LruCache<GitObjectId, GitObjectData> _objectCache =
@@ -23,7 +23,7 @@ internal sealed partial class GitObjectStore : IDisposable
 
     public GitObjectStore(string gitDirectory, GitObjectFormat objectFormat)
     {
-        _gitDirectory = gitDirectory;
+        _objectDirectories = GitAlternateObjectDirectoryReader.Read(gitDirectory);
         _objectFormat = objectFormat;
         _packReader = new GitPackReader(objectFormat);
     }
@@ -77,22 +77,32 @@ internal sealed partial class GitObjectStore : IDisposable
     private async Task<GitObjectData?> TryReadLooseObjectAsync(GitObjectId id, CancellationToken cancellationToken)
     {
         var value = id.Value;
-        var path = Path.Combine(_gitDirectory, "objects", value[..2], value[2..]);
-        if (!MightHaveLooseObject(value) || !File.Exists(path))
+        if (!MightHaveLooseObject(value))
         {
             return null;
         }
 
-        await using var file = File.OpenRead(path);
-        await using var zlib = new ZLibStream(file, CompressionMode.Decompress);
-        using var inflated = new MemoryStream();
-        await zlib.CopyToAsync(inflated, cancellationToken).ConfigureAwait(false);
-        if (inflated.TryGetBuffer(out var buffer))
+        foreach (var objectDirectory in _objectDirectories)
         {
-            return ParseLooseObject(buffer.AsSpan(0, checked((int)inflated.Length)));
+            var path = Path.Combine(objectDirectory, value[..2], value[2..]);
+            if (!File.Exists(path))
+            {
+                continue;
+            }
+
+            await using var file = File.OpenRead(path);
+            await using var zlib = new ZLibStream(file, CompressionMode.Decompress);
+            using var inflated = new MemoryStream();
+            await zlib.CopyToAsync(inflated, cancellationToken).ConfigureAwait(false);
+            if (inflated.TryGetBuffer(out var buffer))
+            {
+                return ParseLooseObject(buffer.AsSpan(0, checked((int)inflated.Length)));
+            }
+
+            return ParseLooseObject(inflated.ToArray());
         }
 
-        return ParseLooseObject(inflated.ToArray());
+        return null;
     }
 
     private static GitObjectData ParseLooseObject(ReadOnlySpan<byte> inflated)

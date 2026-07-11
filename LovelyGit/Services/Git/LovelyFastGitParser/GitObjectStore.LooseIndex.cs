@@ -23,11 +23,14 @@ internal sealed partial class GitObjectStore
             }
 
             const int maxIndexedLooseObjects = 10_000;
-            var objectsPath = Path.Combine(_gitDirectory, "objects");
             var ids = new HashSet<string>(StringComparer.Ordinal);
-            if (Directory.Exists(objectsPath))
+            foreach (var objectsPath in _objectDirectories)
             {
                 LoadLooseObjectIndex(objectsPath, ids, maxIndexedLooseObjects);
+                if (_looseObjectIndexTooLarge)
+                {
+                    break;
+                }
             }
 
             _looseObjectIds = ids;

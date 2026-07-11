@@ -77,9 +77,14 @@ internal sealed partial class GitObjectStore
             }
 
             var indexes = new List<GitPackIndex>();
-            var packDirectory = Path.Combine(_gitDirectory, "objects", "pack");
-            if (Directory.Exists(packDirectory))
+            foreach (var objectDirectory in _objectDirectories)
             {
+                var packDirectory = Path.Combine(objectDirectory, "pack");
+                if (!Directory.Exists(packDirectory))
+                {
+                    continue;
+                }
+
                 foreach (var indexPath in Directory.EnumerateFiles(packDirectory, "*.idx"))
                 {
                     cancellationToken.ThrowIfCancellationRequested();
