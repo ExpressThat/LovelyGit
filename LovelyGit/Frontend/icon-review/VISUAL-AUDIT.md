@@ -1,6 +1,7 @@
 # Visual audit
 
 The complete family was reviewed both at a large 64px inspection size and at LovelyGit's typical 20px production size.
+The second pass uses paired 42px/20px catalog previews plus standalone close-ups for questionable metaphors. See `ICON-CHECKLIST.md` for all 100 verdicts.
 
 ## Redrawn after the audit
 
@@ -16,7 +17,13 @@ The complete family was reviewed both at a large 64px inspection size and at Lov
 - `resize-horizontally` and `resize-vertically`: added opposing directional cues around the grip.
 - `git-bisect`: placed a split Git path inside the search lens.
 - `apply-stash`, `submodules`, and `initialize-submodule`: clarified package direction, plurality, and initialization.
-- `remote-fork`: simplified the previous crowded fork into a single connected path.
+- `incoming-commits` and `outgoing-commits`: replaced detached dots with an explicit connected commit rail beside the direction arrow.
+- `remote-reference`: replaced the cloud dumbbell with a cloud flag.
+- `remote-fork`: replaced the bead-like curve with a conventional Y fork.
+- `reset-modes`: added an explicit reset return to the mode rows.
+- `undo-last-action`: replaced the sync-like loop with a single backward action arrow.
+- `discard-diff-hunk` and `stage-diff-hunk`: separated the diff rows from bounded minus/plus actions.
+- `unified-diff`, `file-diff`, and `wrap-long-lines`: clarified their internal row structure at 20px.
 - `conflicted-file`, `added-file`, and `deleted-file`: moved status marks into a shared inner safe area so they do not collide with the document fold.
 - `confirm`, `create-new`, `remove-line`, and `close`: replaced undersized badge geometry with properly scaled standalone marks.
 - `remote-actions`: corrected a radio arc that crossed the view-box boundary and recentered the complete tower.

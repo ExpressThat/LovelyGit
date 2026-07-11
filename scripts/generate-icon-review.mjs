@@ -58,10 +58,10 @@ function draw(kind) {
 	if (kind === "merge") return `${circle(6,5)}${circle(18,5)}${circle(12,19)}${p("M6 7c0 6 6 5 6 10M18 7c0 6-6 5-6 10")}`;
 	if (kind === "commit") return `${line(3,12,21,12)}${circle(12,12,4)}`;
 	if (kind === "compare") return `${p("M4 8h13m-4-4 4 4-4 4M20 16H7m4-4-4 4 4 4")}`;
-	if (kind === "fork") return `${p("M4 16a4 4 0 0 1 4-4h8a4 4 0 0 0 4-4")}${circle(4,18)}${circle(20,6)}${circle(12,12)}`;
+	if (kind === "fork") return `${circle(12,19,1.5)}${circle(6,6,1.5)}${circle(18,6,1.5)}${p("M12 17v-4c0-4-6-3-6-5M12 13c0-4 6-3 6-5")}`;
 	if (kind === "fileClock") return `${p("M5 3h7l4 4v4M12 3v5h4")}${circle(15,16,5)}${p("M15 13v3l2 1")}`;
 	if (kind === "fileSearch") return `${p("M5 3h7l4 4v5M12 3v5h4")}${circle(14,16,4)}${line(17,19,20,22)}`;
-	if (kind === "fileDiff") return `${file()}${p("M9 11h2m2 0h2M9 15h2m2 0h2M10 10v2m4 2v2")}`;
+	if (kind === "fileDiff") return `${file()}${p("M9 11h2m3 0h2M10 10v2M9 15h2M14 15h2")}`;
 	if (kind === "fileEmpty") return `${file()}${p("M9 15h6")}${line(8,10,16,18)}`;
 	if (kind.startsWith("file")) {
 		const overlay = kind.includes("Plus") ? "M12 10.5v7M8.5 14h7" : kind.includes("Delete") ? "m9 11 6 6m0-6-6 6" : kind.includes("Minus") ? marks.minus
@@ -77,13 +77,13 @@ function draw(kind) {
 	if (kind === "download") return `${arrow("down")}${line(5,20,19,20)}`;
 	if (kind === "moveDown" || kind === "moveUp") return `${p("M4 6h7M4 12h5M4 18h7")}${p(kind==="moveUp"?"M17 19V5m-4 4 4-4 4 4":"M17 5v14m-4-4 4 4 4-4")}`;
 	if (kind === "incoming" || kind === "outgoing") {
-		const direction = kind === "outgoing" ? "M14 20V5m-5 6 5-6 5 6" : "M14 4v15m-5-6 5 6 5-6";
-		return `${p(direction)}${circle(7,12,1.5)}${line(5,12,9,12)}`;
+		const direction = kind === "outgoing" ? "M16 19V5m-4 4 4-4 4 4" : "M16 5v14m-4-4 4 4 4-4";
+		return `${line(6,4,6,20)}${circle(6,7,1.5)}${circle(6,17,1.5)}${p(direction)}`;
 	}
 	if (kind === "expandDown" || kind === "expandUp") return p(kind==="expandUp"?"m5 15 7-7 7 7":"m5 9 7 7 7-7");
 	if (kind === "push") return `${arrow("up")}${line(5,4,19,4)}`;
 	if (kind === "downloadCloud" || kind === "uploadCloud") return `${p("M5 18h14a3 3 0 0 0 .5-6A5 5 0 0 0 10 9a4 4 0 0 0-5 4 2.5 2.5 0 0 0 0 5")}${p(kind==="downloadCloud"?"M12 8v7m-3-3 3 3 3-3":"M12 16V9m-3 3 3-3 3 3")}`;
-	if (kind === "remote") return `${p("M5 18h14a3 3 0 0 0 .5-6A5 5 0 0 0 10 9a4 4 0 0 0-5 4 2.5 2.5 0 0 0 0 5")}${circle(9,14,1)}${circle(15,14,1)}${line(10,14,14,14)}`;
+	if (kind === "remote") return `${p("M5 18h14a3 3 0 0 0 .5-6A5 5 0 0 0 10 9a4 4 0 0 0-5 4 2.5 2.5 0 0 0 0 5")}${p("M10 16v-6h5l-1.5 2L15 14h-5")}`;
 	if (kind === "pull") return `${circle(5,5,1.5)}${circle(5,18,1.5)}${p("M5 7v9M11 6h7v11m-3-3 3 3 3-3")}`;
 	if (kind === "pullRequest") return `${circle(5,5,1.5)}${circle(5,19,1.5)}${p("M5 7v10M11 18h3a4 4 0 0 0 4-4V6m-3 3 3-3 3 3")}`;
 	if (kind === "drive" || kind === "driveDownload") return `${rect(4,6,16,12,3)}${line(7,14,17,14)}${circle(8,10,1)}${kind==="driveDownload"?badge(marks.download):""}`;
@@ -100,7 +100,7 @@ function draw(kind) {
 	if (kind === "copy") return `${rect(7,6,12,14,2)}${rect(4,3,12,14,2)}`;
 	if (kind === "reflogEntry") return `${rect(5,5,14,16,2)}${p("M9 3h6v4H9zM8 11h8m-8 4h5")}`;
 	if (kind === "columns") return `${rect(3,4,18,16,2)}${line(12,4,12,20)}`;
-	if (kind === "rows") return `${rect(3,4,18,16,2)}${line(3,12,21,12)}`;
+	if (kind === "rows") return `${rect(3,4,18,16,2)}${line(3,12,21,12)}${p("M7 8h4m-2-2v4M7 16h4M14 8h3m-3 8h3")}`;
 	if (kind === "terminal") return `${rect(3,5,18,14,2)}${p("m7 9 3 3-3 3m6 0h4")}`;
 	if (kind === "user") return `${circle(12,8,4)}${p("M4 21c1-5 4-7 8-7s7 2 8 7")}`;
 	if (kind === "verified") return `${p("M12 3l2 2 3-.4.8 2.8 2.7 1.3-1.2 2.7 1.2 2.7-2.7 1.3-.8 2.8-3-.4-2 2-2-2-3 .4-.8-2.8-2.7-1.3 1.2-2.7-1.2-2.7 2.7-1.3.8-2.8 3 .4z")}${p(marks.check)}`;
@@ -115,10 +115,14 @@ function draw(kind) {
 	if (kind === "enter") return `${p("M18 6v7H6m4-4-4 4 4 4")}`;
 	if (kind === "hidden") return `${p("M3 12c3-5 6-7 9-7s6 2 9 7c-3 5-6 7-9 7s-6-2-9-7M4 4l16 16")}`;
 	if (kind === "info") return `${circle(12,12,9)}${p("M12 11v6m0-10h.01")}`;
-	if (kind === "layers") return `${p("m4 9 8-5 8 5-8 5zM4 13l8 5 8-5M6 17l6 4 6-4")}`;
+	if (kind === "layers") return `${p("M5 6h10M5 11h8M5 16h6M18 7a6 6 0 0 1-2 11m0 0h4v-4")}`;
 	if (kind === "collapse") return `${p("M4 6h16M4 18h16M8 10l4 4 4-4")}`;
-	if (kind === "hunkMinus" || kind === "hunkPlus") return `${p("M5 5h9M5 9h14M5 13h8M5 17h14")}${badge(kind==="hunkPlus"?marks.plus:marks.minus)}`;
-	if (kind === "reset" || kind === "undo" || kind === "undoAction") return `${p("M8 7H4v-4m0 4 4-4M5 8a8 8 0 1 1-1 7")}${kind==="reset"?badge("M9 12h6M9 15h4"):kind==="undoAction"?badge("M16 16h4v4"):""}`;
+	if (kind === "hunkMinus" || kind === "hunkPlus") {
+		const mark = kind === "hunkPlus" ? "M18 9.5v5M15.5 12h5" : "M15.5 12h5";
+		return `${p("M4 6h8M4 10h6M4 14h8M4 18h6")}${circle(18,12,3.5)}${badge(mark)}`;
+	}
+	if (kind === "undoAction") return `${p("M9 7H4m0 0 4-4M4 7l4 4M5 8h7a7 7 0 0 1 7 7v3")}`;
+	if (kind === "reset" || kind === "undo") return `${p("M8 7H4v-4m0 4 4-4M5 8a8 8 0 1 1-1 7")}${kind==="reset"?badge("M9 12h6M9 15h4"):""}`;
 	if (kind === "tree") return `${circle(6,5,1.5)}${circle(6,12,1.5)}${circle(18,8,1.5)}${circle(18,18,1.5)}${p("M7.5 5H12v13h4.5M7.5 12H12m0-4h4.5")}`;
 	if (kind === "loader") return `${p("M12 3v3m6.4-.4-2.1 2.1M21 12h-3m.4 6.4-2.1-2.1M12 21v-3m-6.4.4 2.1-2.1M3 12h3m-.4-6.4 2.1 2.1")}`;
 	if (kind === "unstage" || kind === "stage") return `${rect(4,4,16,16,3)}${p(kind==="stage"?marks.check:marks.minus)}`;
@@ -129,7 +133,7 @@ function draw(kind) {
 	if (kind === "skip") return `${p("M6 5v14l9-7zM18 5v14")}`;
 	if (kind === "sparkle") return `${p("M4 19 15 8m-8 8 2 2M14 4l1 3 3 1-3 1-1 3-1-3-3-1 3-1zM19 14l.7 2.3L22 17l-2.3.7L19 20l-.7-2.3L16 17l2.3-.7z")}`;
 	if (kind === "wand") return `${p("M4 19 15 8m-8 8 2 2")}${p("M17 3l.8 2.2L20 6l-2.2.8L17 9l-.8-2.2L14 6l2.2-.8z")}${rect(4,4,7,7,1)}${line(7.5,4,7.5,11)}${line(4,7.5,11,7.5)}`;
-	if (kind === "wrap") return `${p("M4 7h12a4 4 0 0 1 0 8H9m3-3-3 3 3 3M4 11h8M4 15h2")}`;
+	if (kind === "wrap") return `${p("M4 6h13a3 3 0 0 1 0 6H9m3-3-3 3 3 3M4 10h5M4 18h7")}`;
 	if (kind === "gripH") return `${line(5,10,19,10)}${line(5,14,19,14)}${p("m12 7-2-2m2 2 2-2m-2 12-2 2m2-2 2 2")}`;
 	if (kind === "gripV") return `${line(10,5,10,19)}${line(14,5,14,19)}${p("m7 12-2-2m2 2-2 2m12-2 2-2m-2 2 2 2")}`;
 	if (kind === "unplug") return `${p("M8 3v5m8-5v5M6 8h12v3a6 6 0 0 1-6 6v4M4 4l16 16")}`;
@@ -144,14 +148,14 @@ function draw(kind) {
 }
 
 function svg(kind, name) {
-	return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" role="img" aria-labelledby="title"><title id="title">${name.replaceAll("-", " ")}</title><g>${draw(kind)}</g></svg>\n`;
+	return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" shape-rendering="geometricPrecision" role="img" aria-labelledby="title"><title id="title">${name.replaceAll("-", " ")}</title><g>${draw(kind)}</g></svg>\n`;
 }
 
 await mkdir(path.join(output, "svg"), { recursive: true });
 for (const [kind, name] of icons) await writeFile(path.join(output, "svg", `${name}.svg`), svg(kind, name));
 const cards = icons.map(([,name]) => {
 	const label = name.replaceAll("-", " ");
-	return `<a href="svg/${name}.svg" target="_blank" rel="noopener" aria-label="Open ${label} SVG"><figure><div><img src="svg/${name}.svg" alt=""></div><figcaption>${name}</figcaption></figure></a>`;
+	return `<a href="svg/${name}.svg" target="_blank" rel="noopener" aria-label="Open ${label} SVG"><figure><div class="previews"><span><img class="large" src="svg/${name}.svg" alt=""><small>42</small></span><span><img class="compact" src="svg/${name}.svg" alt=""><small>20</small></span></div><figcaption>${name}</figcaption></figure></a>`;
 }).join("");
-const html = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>LovelyGit icon review</title><style>:root{color-scheme:dark}body{margin:0;background:#0e0a12;color:#eee6f5;font:14px system-ui;padding:32px}h1{font-size:24px}p{color:#b7aabd}.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}.grid>a{color:inherit;text-decoration:none;border-radius:12px}.grid>a:focus-visible{outline:2px solid #91f7dc;outline-offset:3px}figure{margin:0;border:1px solid #362c3e;border-radius:12px;background:#17111d;padding:14px;transition:border-color 120ms ease,transform 120ms ease}.grid>a:hover figure{border-color:#74617f;transform:translateY(-1px)}figure div{display:grid;place-items:center;height:74px;border-radius:8px;background:#211827}img{width:42px;height:42px;filter:invert(95%) sepia(15%) saturate(850%) hue-rotate(95deg)}figcaption{margin-top:10px;font-size:12px;overflow-wrap:anywhere}@media(prefers-reduced-motion:reduce){figure{transition:none}.grid>a:hover figure{transform:none}}</style></head><body><h1>LovelyGit icon concepts</h1><p>${icons.length} review-only SVGs. Select any card to open its source file.</p><main class="grid">${cards}</main></body></html>`;
+const html = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>LovelyGit icon review</title><style>:root{color-scheme:dark}body{margin:0;background:#0e0a12;color:#eee6f5;font:14px system-ui;padding:32px}h1{font-size:24px}p{color:#b7aabd}.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px}.grid>a{color:inherit;text-decoration:none;border-radius:12px}.grid>a:focus-visible{outline:2px solid #91f7dc;outline-offset:3px}figure{margin:0;border:1px solid #362c3e;border-radius:12px;background:#17111d;padding:14px;transition:border-color 120ms ease,transform 120ms ease}.grid>a:hover figure{border-color:#74617f;transform:translateY(-1px)}.previews{display:flex;align-items:center;justify-content:center;gap:24px;height:74px;border-radius:8px;background:#211827}.previews span{display:grid;place-items:center;gap:3px}.previews img{filter:invert(95%) sepia(15%) saturate(850%) hue-rotate(95deg)}.previews .large{width:42px;height:42px}.previews .compact{width:20px;height:20px}.previews small{color:#8f8299;font-size:9px;line-height:1}figcaption{margin-top:10px;font-size:12px;overflow-wrap:anywhere}@media(prefers-reduced-motion:reduce){figure{transition:none}.grid>a:hover figure{transform:none}}</style></head><body><h1>LovelyGit icon concepts</h1><p>${icons.length} review-only SVGs at 42px and 20px. Select any card to open its source file.</p><main class="grid">${cards}</main></body></html>`;
 await writeFile(path.join(output, "index.html"), html);
