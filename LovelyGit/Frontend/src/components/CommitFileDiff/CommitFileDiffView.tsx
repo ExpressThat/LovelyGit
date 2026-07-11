@@ -17,11 +17,13 @@ export function CommitFileDiffView({
 	commitHash,
 	file,
 	onClose,
+	parentIndex,
 	repositoryId,
 }: {
 	commitHash: string;
 	file: CommitChangedFile;
 	onClose: () => void;
+	parentIndex: number;
 	repositoryId: string;
 }) {
 	const viewMode = useSetting("CommitDiffViewMode");
@@ -41,6 +43,7 @@ export function CommitFileDiffView({
 				commitHash,
 				path: file.path,
 				ignoreWhitespace,
+				parentIndex,
 				repositoryId,
 				viewMode,
 			},
@@ -74,7 +77,14 @@ export function CommitFileDiffView({
 		return () => {
 			isActive = false;
 		};
-	}, [commitHash, file.path, ignoreWhitespace, repositoryId, viewMode]);
+	}, [
+		commitHash,
+		file.path,
+		ignoreWhitespace,
+		parentIndex,
+		repositoryId,
+		viewMode,
+	]);
 
 	const handleClose = () => {
 		setState({ status: "loading" });

@@ -14,7 +14,9 @@ describe("AppLazySurfaces", () => {
 				commitHash={"a".repeat(40)}
 				onOpenFileBlame={vi.fn()}
 				onOpenFileHistory={vi.fn()}
+				onParentIndexChange={vi.fn()}
 				onSelectFile={vi.fn()}
+				parentIndex={0}
 				repositoryId="repo"
 			/>,
 		);

@@ -62,6 +62,7 @@ internal class GetCommitFileDiffCommandResolver : CommandResponder<GetCommitFile
                     foundRepo.Id,
                     foundRepo.Path,
                     command.Arguments.CommitHash,
+                    command.Arguments.ParentIndex,
                     command.Arguments.Path,
                     command.Arguments.ViewMode,
                     command.Arguments.IgnoreWhitespace,

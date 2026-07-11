@@ -58,9 +58,15 @@ internal class GetCommitDetailsCommandResolver : CommandResponder<GetCommitDetai
         try
         {
             var response = await _commitDetailsService
-                .GetCommitDetailsAsync(foundRepo.Id, foundRepo.Path, commitId, CancellationToken.None)
+                .GetCommitDetailsAsync(
+                    foundRepo.Id,
+                    foundRepo.Path,
+                    commitId,
+                    command.Arguments.ParentIndex,
+                    CancellationToken.None)
                 .ConfigureAwait(false);
-            if (_backgroundWorkerOptions.EnableCommitFileDiffPreparationWorker)
+            if (_backgroundWorkerOptions.EnableCommitFileDiffPreparationWorker &&
+                command.Arguments.ParentIndex == 0)
             {
                 _commitFileDiffService.StartPreparingCommitDiffs(
                     foundRepo.Id,

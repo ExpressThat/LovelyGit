@@ -7,4 +7,5 @@ public record GetCommitDetailsCommandArguments
 {
     public Guid RepositoryId { get; set; }
     public string CommitHash { get; set; } = string.Empty;
+    public int ParentIndex { get; set; }
 }

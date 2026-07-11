@@ -1,79 +1,38 @@
 import { GitBranch } from "lucide-react";
-import { useEffect, useState } from "react";
 import { CommitSignatureBadge } from "@/components/CommitSignatureBadge";
-import type {
-	CommitChangedFile,
-	CommitDetailsResponse,
-} from "@/generated/types";
-import { sendRequestWithResponse } from "@/lib/commands";
+import type { CommitChangedFile } from "@/generated/types";
 import { formatDate, shortHash } from "../CommitGraph/utils/format";
 import { CommitDetailsChangedFilesList } from "./CommitDetailsChangedFilesList";
 import { CommitDetailsCopyButtons } from "./CommitDetailsCopyButtons";
-
-type CommitDetailsState =
-	| { status: "loading" }
-	| { status: "error"; message: string }
-	| { status: "loaded"; details: CommitDetailsResponse };
+import { CommitParentSelector } from "./CommitParentSelector";
+import { useCommitDetails } from "./useCommitDetails";
 
 export function CommitDetails({
 	commitHash,
 	onOpenFileBlame,
 	onOpenFileHistory,
+	onParentIndexChange,
 	onSelectFile,
+	parentIndex,
 	repositoryId,
 	refreshToken = 0,
 }: {
 	commitHash: string;
 	onOpenFileBlame: (file: CommitChangedFile) => void;
 	onOpenFileHistory: (file: CommitChangedFile) => void;
+	onParentIndexChange: (parentIndex: number) => void;
 	onSelectFile: (file: CommitChangedFile) => void;
+	parentIndex: number;
 	repositoryId: string;
 	refreshToken?: number;
 }) {
-	const [state, setState] = useState<CommitDetailsState>({ status: "loading" });
-
-	useEffect(() => {
-		let isActive = true;
-		void refreshToken;
-		setState({ status: "loading" });
-
-		sendRequestWithResponse({
-			commandType: "GetCommitDetails",
-			arguments: {
-				repositoryId,
-				commitHash,
-			},
-		})
-			.then((details) => {
-				if (!isActive) {
-					return;
-				}
-
-				if (!details) {
-					setState({ status: "error", message: "Commit details were empty." });
-					return;
-				}
-
-				setState({ status: "loaded", details });
-			})
-			.catch((error: unknown) => {
-				if (!isActive) {
-					return;
-				}
-
-				setState({
-					status: "error",
-					message:
-						error instanceof Error
-							? error.message
-							: "Failed to load commit details.",
-				});
-			});
-
-		return () => {
-			isActive = false;
-		};
-	}, [commitHash, refreshToken, repositoryId]);
+	const detailsState = useCommitDetails(
+		repositoryId,
+		commitHash,
+		parentIndex,
+		refreshToken,
+	);
+	const { state } = detailsState;
 
 	if (state.status === "loading") {
 		return (
@@ -113,6 +72,26 @@ export function CommitDetails({
 				<CommitDetailsCopyButtons details={details} />
 			</section>
 
+			<CommitParentSelector
+				busy={state.isRefreshing}
+				onChange={onParentIndexChange}
+				parents={details.parents}
+				selectedIndex={parentIndex}
+			/>
+
+			{state.refreshError ? (
+				<div className="flex items-center justify-between gap-2 rounded-md border border-destructive/40 bg-destructive/10 p-2 text-destructive text-xs">
+					<span>{state.refreshError}</span>
+					<button
+						className="shrink-0 rounded border border-destructive/40 px-2 py-1 hover:bg-destructive/10"
+						onClick={detailsState.retry}
+						type="button"
+					>
+						Retry
+					</button>
+				</div>
+			) : null}
+
 			{details.message ? (
 				<pre className="custom-scrollbar max-h-56 overflow-auto whitespace-pre-wrap rounded-md border bg-card p-3 font-mono text-xs leading-5 text-card-foreground">
 					{details.message}
@@ -146,12 +125,17 @@ export function CommitDetails({
 				</section>
 			) : null}
 
-			<CommitDetailsChangedFilesList
-				files={details.changedFiles}
-				onOpenBlame={onOpenFileBlame}
-				onOpenHistory={onOpenFileHistory}
-				onSelectFile={onSelectFile}
-			/>
+			<div
+				aria-busy={state.isRefreshing}
+				className={state.isRefreshing ? "pointer-events-none opacity-60" : ""}
+			>
+				<CommitDetailsChangedFilesList
+					files={details.changedFiles}
+					onOpenBlame={onOpenFileBlame}
+					onOpenHistory={onOpenFileHistory}
+					onSelectFile={onSelectFile}
+				/>
+			</div>
 		</div>
 	);
 }

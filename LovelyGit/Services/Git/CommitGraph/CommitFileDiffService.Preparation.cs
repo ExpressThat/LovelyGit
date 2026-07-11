@@ -65,67 +65,6 @@ internal sealed partial class CommitFileDiffService : IDisposable
         }
     }
 
-    private async Task SaveMissingViewModesAsync(
-        Guid repositoryId,
-        string repositoryPath,
-        string commitHash,
-        string path,
-        CancellationToken cancellationToken)
-    {
-        var hasSideBySide = await _commitGraphRepository
-            .HasCommitFileDiffAsync(
-                repositoryId,
-                commitHash,
-                path,
-                CommitDiffViewMode.SideBySide,
-                ignoreWhitespace: false,
-                cancellationToken)
-            .ConfigureAwait(false);
-        var hasCombined = await _commitGraphRepository
-            .HasCommitFileDiffAsync(
-                repositoryId,
-                commitHash,
-                path,
-                CommitDiffViewMode.Combined,
-                ignoreWhitespace: false,
-                cancellationToken)
-            .ConfigureAwait(false);
-
-        if (hasSideBySide && hasCombined)
-        {
-            return;
-        }
-
-        var source = await BuildCommitFileDiffSourceAsync(repositoryPath, commitHash, path, cancellationToken)
-            .ConfigureAwait(false);
-
-        if (!hasSideBySide)
-        {
-            await BuildAndCacheMissingDiffAsync(
-                    repositoryId,
-                    repositoryPath,
-                    commitHash,
-                    path,
-                    CommitDiffViewMode.SideBySide,
-                    source,
-                    cancellationToken)
-                .ConfigureAwait(false);
-        }
-
-        if (!hasCombined)
-        {
-            await BuildAndCacheMissingDiffAsync(
-                    repositoryId,
-                    repositoryPath,
-                    commitHash,
-                    path,
-                    CommitDiffViewMode.Combined,
-                    source,
-                    cancellationToken)
-                .ConfigureAwait(false);
-        }
-    }
-
     private async Task<CommitFileDiffResponse> BuildAndCacheMissingDiffAsync(
         Guid repositoryId,
         string repositoryPath,
@@ -159,6 +98,7 @@ internal sealed partial class CommitFileDiffService : IDisposable
             var response = await BuildCommitFileDiffAsync(
                     repositoryPath,
                     commitHash,
+                    0,
                     path,
                     viewMode,
                     ignoreWhitespace,

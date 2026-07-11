@@ -21,6 +21,33 @@ internal sealed class CommitDetailsService
         GitObjectId commitId,
         CancellationToken cancellationToken)
     {
+        return await GetCommitDetailsAsync(
+                repositoryId,
+                repositoryPath,
+                commitId,
+                0,
+                cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    public async Task<CommitDetailsResponse> GetCommitDetailsAsync(
+        Guid repositoryId,
+        string repositoryPath,
+        GitObjectId commitId,
+        int parentIndex,
+        CancellationToken cancellationToken)
+    {
+        if (parentIndex < 0) throw new ArgumentOutOfRangeException(nameof(parentIndex));
+        if (parentIndex > 0)
+        {
+            return await BuildForParentAsync(
+                    repositoryPath,
+                    commitId,
+                    parentIndex,
+                    cancellationToken)
+                .ConfigureAwait(false);
+        }
+
         var commitHash = commitId.ToString();
         var cachedDetails = await TryGetCachedCommitDetailsAsync(
                 repositoryId,
@@ -53,12 +80,8 @@ internal sealed class CommitDetailsService
             using var repository = await LovelyGitRepository.OpenAsync(repositoryPath, cancellationToken)
                 .ConfigureAwait(false);
             var commit = await repository.GetCommitAsync(commitId, cancellationToken).ConfigureAwait(false);
-            GitCommit? firstParent = null;
-            if (commit.ParentHashes.Count > 0)
-            {
-                firstParent = await repository.GetCommitAsync(commit.ParentHashes[0], cancellationToken)
-                    .ConfigureAwait(false);
-            }
+            var firstParent = await GetParentAsync(repository, commit, 0, cancellationToken)
+                .ConfigureAwait(false);
 
             var details = await new CommitDetailsBuilder(repository)
                 .BuildAsync(commit, firstParent, cancellationToken)
@@ -79,6 +102,45 @@ internal sealed class CommitDetailsService
 
             ReleaseBuildGate(gateKey, gate);
         }
+    }
+
+    private static async Task<CommitDetailsResponse> BuildForParentAsync(
+        string repositoryPath,
+        GitObjectId commitId,
+        int parentIndex,
+        CancellationToken cancellationToken)
+    {
+        using var repository = await LovelyGitRepository
+            .OpenAsync(repositoryPath, cancellationToken)
+            .ConfigureAwait(false);
+        var commit = await repository.GetCommitAsync(commitId, cancellationToken)
+            .ConfigureAwait(false);
+        var parent = await GetParentAsync(repository, commit, parentIndex, cancellationToken)
+            .ConfigureAwait(false);
+        return await new CommitDetailsBuilder(repository)
+            .BuildAsync(commit, parent, cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    private static async Task<GitCommit?> GetParentAsync(
+        LovelyGitRepository repository,
+        GitCommit commit,
+        int parentIndex,
+        CancellationToken cancellationToken)
+    {
+        if (commit.ParentHashes.Count == 0)
+        {
+            if (parentIndex == 0) return null;
+            throw new ArgumentOutOfRangeException(nameof(parentIndex), "Commit parent does not exist.");
+        }
+
+        if (parentIndex >= commit.ParentHashes.Count)
+        {
+            throw new ArgumentOutOfRangeException(nameof(parentIndex), "Commit parent does not exist.");
+        }
+
+        return await repository.GetCommitAsync(commit.ParentHashes[parentIndex], cancellationToken)
+            .ConfigureAwait(false);
     }
 
     private async Task<CommitDetailsResponse?> TryGetCachedCommitDetailsAsync(

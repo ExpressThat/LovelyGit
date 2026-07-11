@@ -17,10 +17,10 @@ internal sealed class CommitDetailsBuilder
 
     public async Task<CommitDetailsResponse> BuildAsync(
         GitCommit commit,
-        GitCommit? firstParent,
+        GitCommit? comparisonParent,
         CancellationToken cancellationToken)
     {
-        var comparison = await _repository.GetChangedTreeFilesAsync(firstParent?.TreeHash, commit.TreeHash, cancellationToken)
+        var comparison = await _repository.GetChangedTreeFilesAsync(comparisonParent?.TreeHash, commit.TreeHash, cancellationToken)
             .ConfigureAwait(false);
         var changedFiles = await _changeDetector
             .BuildChangedFilesAsync(comparison.ParentFiles, comparison.CurrentFiles, cancellationToken)

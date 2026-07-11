@@ -1,9 +1,14 @@
 import "./App.css";
 import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
+import { AppCommitDetailsPanel } from "./AppCommitDetailsPanel";
 import * as LazySurfaces from "./AppLazySurfaces";
 import { AppOverlaysContainer } from "./AppOverlaysContainer";
-import { type DetailsPanelState, panelTitle } from "./AppPanelState";
+import {
+	commitDetailsPanel,
+	type DetailsPanelState,
+	panelTitle,
+} from "./AppPanelState";
 import { CommitGraphLayer } from "./components/CommitGraph/CommitGraphLayer";
 import { SlidingDetailsPanel } from "./components/DetailsPanel/SlidingDetailsPanel";
 import { TopNavBar } from "./components/TopNavBar/TopNavBar";
@@ -104,7 +109,7 @@ function App() {
 											className="absolute inset-0 z-10 min-w-0 overflow-hidden"
 											exit={{ opacity: 0, x: 56, scale: 0.995 }}
 											initial={{ opacity: 0, x: 56, scale: 0.995 }}
-											key={`diff:${detailsPanel.commitHash}:${detailsPanel.selectedFile.path}`}
+											key={`diff:${detailsPanel.commitHash}:${detailsPanel.parentIndex ?? 0}:${detailsPanel.selectedFile.path}`}
 											transition={{
 												duration: 0.24,
 												ease: [0.22, 1, 0.36, 1],
@@ -114,11 +119,14 @@ function App() {
 												commitHash={detailsPanel.commitHash}
 												file={detailsPanel.selectedFile}
 												onClose={() =>
-													setDetailsPanel({
-														commitHash: detailsPanel.commitHash,
-														kind: "commit",
-													})
+													setDetailsPanel(
+														commitDetailsPanel(
+															detailsPanel.commitHash,
+															detailsPanel.parentIndex,
+														),
+													)
 												}
+												parentIndex={detailsPanel.parentIndex ?? 0}
 												repositoryId={currentGitRepositoryId}
 											/>
 										</motion.div>
@@ -169,21 +177,15 @@ function App() {
 						title={panelTitle(detailsPanel)}
 					>
 						{detailsPanel?.kind === "commit" && currentGitRepositoryId ? (
-							<LazySurfaces.CommitDetailsSurface
-								commitHash={detailsPanel.commitHash}
+							<AppCommitDetailsPanel
 								onOpenFileBlame={(file) =>
 									fileDiscovery.openBlame(file.path, detailsPanel.commitHash)
 								}
 								onOpenFileHistory={(file) =>
 									fileDiscovery.openHistory(file.path, detailsPanel.commitHash)
 								}
-								onSelectFile={(file) =>
-									setDetailsPanel({
-										commitHash: detailsPanel.commitHash,
-										kind: "commit",
-										selectedFile: file,
-									})
-								}
+								onPanelChange={setDetailsPanel}
+								panel={detailsPanel}
 								refreshToken={commitGraphRefreshToken}
 								repositoryId={currentGitRepositoryId}
 							/>
