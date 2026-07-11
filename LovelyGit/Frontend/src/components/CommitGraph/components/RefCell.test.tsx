@@ -42,6 +42,7 @@ describe("RefCell", () => {
 		const remoteRef = await screen.findByTitle("origin/release");
 		expect(remoteRef).not.toBeNull();
 		if (!remoteRef) throw new Error("Remote ref was not rendered.");
+		expect(remoteRef.closest(".custom-scrollbar")).not.toBeNull();
 
 		fireEvent.contextMenu(remoteRef);
 		expect(await screen.findByText("Check out as local branch…")).toBeVisible();

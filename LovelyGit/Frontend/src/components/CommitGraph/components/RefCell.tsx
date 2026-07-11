@@ -137,7 +137,7 @@ function RefGroupHoverList({
 	...pillProps
 }: Omit<RefGroupPillProps, "group"> & { groups: RefGroup[] }) {
 	return (
-		<div className="grid max-h-72 gap-px overflow-auto">
+		<div className="custom-scrollbar grid max-h-72 gap-px overflow-auto">
 			{groups.map((group) => (
 				<RefGroupPill {...pillProps} group={group} key={group.key} wide />
 			))}
