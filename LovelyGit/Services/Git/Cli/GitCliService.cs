@@ -7,6 +7,16 @@ namespace ExpressThat.LovelyGit.Services.Git.Cli;
 internal sealed partial class GitCliService
 {
     private readonly Lazy<GitCliInstallation> _installation = new(ResolveInstallation);
+    private readonly IReadOnlyDictionary<string, string?>? _defaultEnvironmentVariables;
+
+    public GitCliService()
+    {
+    }
+
+    internal GitCliService(IReadOnlyDictionary<string, string?> defaultEnvironmentVariables)
+    {
+        _defaultEnvironmentVariables = defaultEnvironmentVariables;
+    }
 
     public GitCliInstallation Installation => _installation.Value;
 
@@ -45,19 +55,27 @@ internal sealed partial class GitCliService
             .ExecuteBufferedAsync(cancellationToken);
     }
 
-    private static void ConfigureEnvironment(
+    private void ConfigureEnvironment(
         EnvironmentVariablesBuilder environment,
         GitCliInstallation installation,
         IReadOnlyDictionary<string, string?>? additionalVariables)
     {
         environment.Set("GIT_TERMINAL_PROMPT", "0");
         environment.Set("PATH", BuildPathValue(installation.PathDirectories));
-        if (additionalVariables == null)
+        ApplyVariables(environment, _defaultEnvironmentVariables);
+        ApplyVariables(environment, additionalVariables);
+    }
+
+    private static void ApplyVariables(
+        EnvironmentVariablesBuilder environment,
+        IReadOnlyDictionary<string, string?>? variables)
+    {
+        if (variables == null)
         {
             return;
         }
 
-        foreach (var (name, value) in additionalVariables)
+        foreach (var (name, value) in variables)
         {
             environment.Set(name, value);
         }

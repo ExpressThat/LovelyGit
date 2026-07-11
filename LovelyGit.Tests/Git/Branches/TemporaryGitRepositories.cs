@@ -37,7 +37,12 @@ internal sealed class TemporaryGitRepository : IDisposable
     public static TemporaryGitRepository Create()
     {
         var directory = Directory.CreateTempSubdirectory("lovelygit-branch-");
-        var gitCliService = new GitCliService();
+        var isolatedGlobalConfig = System.IO.Path.Combine(directory.FullName, "global.gitconfig");
+        File.WriteAllText(isolatedGlobalConfig, string.Empty);
+        var gitCliService = new GitCliService(new Dictionary<string, string?>
+        {
+            ["GIT_CONFIG_GLOBAL"] = isolatedGlobalConfig,
+        });
         RunGit(gitCliService, directory.FullName, ["init"]);
         RunGit(gitCliService, directory.FullName, ["config", "user.name", "LovelyGit Test"]);
         RunGit(gitCliService, directory.FullName, ["config", "user.email", "test@example.invalid"]);
