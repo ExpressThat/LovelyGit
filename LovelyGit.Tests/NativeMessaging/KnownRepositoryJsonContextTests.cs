@@ -1,10 +1,18 @@
 using System.Text.Json;
+using ExpressThat.LovelyGit.Services.NativeMessaging;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.KnownRepository;
 
 namespace LovelyGit.Tests.NativeMessaging;
 
 public sealed class KnownRepositoryJsonContextTests
 {
+
+    [Fact]
+    public void RemoveRepositoryContract_AwaitsNativeCompletion()
+    {
+        Assert.True(NativeMessageType.RemoveKnownGitRepositorys.HasResponse());
+    }
+
     [Fact]
     public void Context_DeserializesRevealRepositoryArguments()
     {

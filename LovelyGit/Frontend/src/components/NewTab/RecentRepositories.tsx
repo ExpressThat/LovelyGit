@@ -1,13 +1,13 @@
 import { Search } from "lucide-react";
 import { useMemo, useState } from "react";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import type { KnownGitRepository } from "@/generated/types";
 import { useRepositoryContext } from "@/lib/repositoryContext";
+import { RecentRepositoryRow } from "./RecentRepositoryRow";
 import { filterRepositories } from "./RepositorySearch";
 
 export function RecentRepositories() {
-	const { repositories, setCurrentRepositoryId } = useRepositoryContext();
+	const { closeRepository, repositories, setCurrentRepositoryId } =
+		useRepositoryContext();
 	const [query, setQuery] = useState("");
 	const filtered = useMemo(
 		() => filterRepositories(repositories, query),
@@ -46,9 +46,10 @@ export function RecentRepositories() {
 			<div className="grid gap-1">
 				{filtered.length > 0 ? (
 					filtered.map((repository) => (
-						<RepositoryRow
+						<RecentRepositoryRow
 							key={repository.id}
 							onOpen={() => void setCurrentRepositoryId(repository.id)}
+							onRemove={() => closeRepository(repository.id)}
 							repository={repository}
 						/>
 					))
@@ -60,37 +61,4 @@ export function RecentRepositories() {
 			</div>
 		</section>
 	);
-}
-
-function RepositoryRow({
-	onOpen,
-	repository,
-}: {
-	onOpen: () => void;
-	repository: KnownGitRepository;
-}) {
-	const path = repository.path ?? "";
-	const label = repository.name || pathTail(path) || "Repository";
-	return (
-		<Button
-			className="h-auto min-w-0 justify-start px-3 py-2"
-			onClick={onOpen}
-			title={path || label}
-			type="button"
-			variant="ghost"
-		>
-			<span className="grid min-w-0 text-left">
-				<span className="truncate font-medium">{label}</span>
-				<span className="truncate font-mono text-muted-foreground text-xs">
-					{path}
-				</span>
-			</span>
-		</Button>
-	);
-}
-
-function pathTail(path: string) {
-	const normalized = path.replaceAll("\\", "/").replace(/\/+$/, "");
-	const slashIndex = normalized.lastIndexOf("/");
-	return slashIndex >= 0 ? normalized.slice(slashIndex + 1) : normalized;
 }
