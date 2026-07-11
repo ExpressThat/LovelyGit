@@ -24,6 +24,47 @@ internal sealed class GitResetCommandService
         var paths = await GitRepositoryDiscovery
             .ResolveRepositoryPathsAsync(repositoryPath, cancellationToken)
             .ConfigureAwait(false);
+        var branchName = await EnsureResetAllowedAsync(paths, cancellationToken)
+            .ConfigureAwait(false);
+
+        await _operations.ExecuteRequiredBufferedAsync(
+            $"{FormatMode(mode)} reset {branchName}",
+            ["reset", ModeArgument(mode), NormalizeCommitHash(commitHash)],
+            paths.WorkTreeDirectory,
+            RecoveryHint(mode),
+            cancellationToken).ConfigureAwait(false);
+    }
+
+    public async Task UndoLastCommitAsync(
+        string repositoryPath,
+        string currentCommitHash,
+        string parentCommitHash,
+        CancellationToken cancellationToken)
+    {
+        var paths = await GitRepositoryDiscovery
+            .ResolveRepositoryPathsAsync(repositoryPath, cancellationToken)
+            .ConfigureAwait(false);
+        var branchName = await EnsureResetAllowedAsync(paths, cancellationToken)
+            .ConfigureAwait(false);
+        await _operations.ExecuteRequiredBufferedAsync(
+            $"Undo last commit on {branchName}",
+            [
+                "update-ref",
+                "-m",
+                "reset: undo last commit",
+                "HEAD",
+                NormalizeCommitHash(parentCommitHash),
+                NormalizeCommitHash(currentCommitHash),
+            ],
+            paths.WorkTreeDirectory,
+            "Inspect the staged changes and branch reflog before trying the undo again.",
+            cancellationToken).ConfigureAwait(false);
+    }
+
+    private static async Task<string> EnsureResetAllowedAsync(
+        GitRepositoryPaths paths,
+        CancellationToken cancellationToken)
+    {
         if (GitRepositoryOperationStateReader.Read(paths.WorktreeGitDirectory) is { } operation)
         {
             throw new InvalidOperationException(
@@ -39,12 +80,7 @@ internal sealed class GitResetCommandService
                 "Check out a local branch before resetting to a commit.");
         }
 
-        await _operations.ExecuteRequiredBufferedAsync(
-            $"{FormatMode(mode)} reset {branchName}",
-            ["reset", ModeArgument(mode), NormalizeCommitHash(commitHash)],
-            paths.WorkTreeDirectory,
-            RecoveryHint(mode),
-            cancellationToken).ConfigureAwait(false);
+        return branchName;
     }
 
     private static string ModeArgument(GitResetMode mode) => mode switch

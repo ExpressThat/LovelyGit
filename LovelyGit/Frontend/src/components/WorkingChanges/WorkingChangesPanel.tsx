@@ -6,6 +6,8 @@ import { CommitStagedForm } from "./CommitStagedForm";
 import { DiscardWorkingTreeChangesDialog } from "./DiscardWorkingTreeChangesDialog";
 import { RepositoryOperationBanner } from "./RepositoryOperationBanner";
 import { StashDialog } from "./StashDialog";
+import { UndoLastCommitDialog } from "./UndoLastCommitDialog";
+import { useUndoLastCommit } from "./useUndoLastCommit";
 import { useWorkingChangesPanelActions } from "./useWorkingChangesPanelActions";
 import {
 	splitWorkingChanges,
@@ -59,6 +61,7 @@ export function WorkingChangesPanel({
 		isLoadingAmendMessage,
 		isMutating,
 		runIndexCommand,
+		restoreCommitDraft,
 		selectedKeys,
 		setCommitBody,
 		setCommitTitle,
@@ -71,6 +74,14 @@ export function WorkingChangesPanel({
 		onRefresh,
 		repositoryId,
 	});
+	const undo = useUndoLastCommit({
+		onSuccess: async (message) => {
+			restoreCommitDraft(message.title, message.body);
+			await onCommitSuccess();
+		},
+		repositoryId,
+	});
+	const controlsBusy = isBusy || undo.isBusy;
 	return (
 		<div className="flex h-full min-h-0 flex-col gap-4 p-4 text-left text-sm">
 			<WorkingChangesHeader
@@ -99,7 +110,7 @@ export function WorkingChangesPanel({
 			/>
 			<div className="min-h-0 flex-1">
 				<WorkingChangesList
-					isBusy={isBusy}
+					isBusy={controlsBusy}
 					isLoading={!changes && isLoading}
 					onDiscardAll={() => setDiscardFiles(workingFiles)}
 					onDiscardSelected={setDiscardFiles}
@@ -121,7 +132,7 @@ export function WorkingChangesPanel({
 				canCommit={stagedFiles.length > 0 || isAmending}
 				commitBody={commitBody}
 				commitTitle={commitTitle}
-				isBusy={isBusy}
+				isBusy={controlsBusy}
 				isAmending={isAmending}
 				isCommitting={isCommitting}
 				isLoadingAmendMessage={isLoadingAmendMessage}
@@ -129,7 +140,17 @@ export function WorkingChangesPanel({
 				onCommit={() => void commitStagedChanges()}
 				onCommitBodyChange={setCommitBody}
 				onCommitTitleChange={setCommitTitle}
+				onUndo={() => void undo.open()}
 				repositoryId={repositoryId}
+			/>
+			<UndoLastCommitDialog
+				error={undo.error}
+				isLoading={undo.isLoading}
+				isOpen={undo.isOpen}
+				isUndoing={undo.isUndoing}
+				onClose={undo.close}
+				onConfirm={() => void undo.confirm()}
+				preview={undo.preview}
 			/>
 			<DiscardWorkingTreeChangesDialog
 				files={discardFiles}

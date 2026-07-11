@@ -18,7 +18,9 @@ describe("useWorkingChangesPanelActions amend state", () => {
 	it("loads HEAD and restores the user's draft when amend is disabled", async () => {
 		vi.mocked(loadHeadCommitMessage).mockResolvedValueOnce({
 			body: "Existing body",
+			firstParentHash: "b".repeat(40),
 			hash: "a".repeat(40),
+			parentCount: 1,
 			title: "Existing title",
 		});
 		const { result } = renderActions();

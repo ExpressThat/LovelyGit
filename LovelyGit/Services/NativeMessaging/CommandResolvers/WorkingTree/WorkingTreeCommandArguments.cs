@@ -70,6 +70,13 @@ public record GetHeadCommitMessageCommandArguments
 }
 
 [TypeSharp]
+public record UndoLastCommitCommandArguments
+{
+    public Guid RepositoryId { get; set; }
+    public string ExpectedHeadHash { get; set; } = string.Empty;
+}
+
+[TypeSharp]
 public record GitRemoteCommandArguments
 {
     public Guid RepositoryId { get; set; }

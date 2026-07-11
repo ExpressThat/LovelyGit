@@ -126,6 +126,8 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging
         UnstageWorkingTreeLine,
         [NativeMessageContract(typeof(GetHeadCommitMessageCommandArguments), typeof(HeadCommitMessageResponse))]
         GetHeadCommitMessage,
+        [NativeMessageContract(typeof(UndoLastCommitCommandArguments), typeof(HeadCommitMessageResponse))]
+        UndoLastCommit,
         [NativeMessageContract(typeof(CommitStagedChangesCommandArguments), typeof(EmptyCommandArguments))]
         CommitStagedChanges,
         [NativeMessageContract(typeof(EmptyCommandArguments), typeof(PatchPreviewResponse))]

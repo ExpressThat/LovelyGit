@@ -41,6 +41,10 @@ internal sealed class HeadCommitMessageService
         return new HeadCommitMessageResponse
         {
             Hash = commitId.ToString(),
+            FirstParentHash = commit.ParentHashCount > 0
+                ? commit.GetParentHash(0).ToString()
+                : null,
+            ParentCount = commit.ParentHashCount,
             Title = commit.Subject,
             Body = ExtractDescription(commit.Body),
         };

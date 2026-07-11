@@ -72,6 +72,8 @@ public sealed class WorkingTreeCommitTests
             .GetAsync(repository.Path, CancellationToken.None);
 
         Assert.Equal(await ReadHeadHashAsync(repository), message.Hash);
+        Assert.Equal(1, message.ParentCount);
+        Assert.Equal(repository.HeadCommitHash, message.FirstParentHash);
         Assert.Equal("Native title", message.Title);
         Assert.Equal("Native body", message.Body);
     }
@@ -88,6 +90,8 @@ public sealed class WorkingTreeCommitTests
             .GetAsync(repository.Path, CancellationToken.None);
 
         Assert.Equal(repository.HeadCommitHash, message.Hash);
+        Assert.Equal(0, message.ParentCount);
+        Assert.Null(message.FirstParentHash);
         Assert.Equal("Initial", message.Title);
     }
 

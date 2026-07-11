@@ -1,4 +1,9 @@
-import { GitCommitHorizontal, LoaderCircle, PencilLine } from "lucide-react";
+import {
+	GitCommitHorizontal,
+	LoaderCircle,
+	PencilLine,
+	Undo2,
+} from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { Switch } from "@/components/ui/switch";
 import { CommitIdentityControl } from "./CommitIdentityControl";
@@ -18,6 +23,7 @@ export function CommitStagedForm({
 	onCommit,
 	onCommitBodyChange,
 	onCommitTitleChange,
+	onUndo,
 	repositoryId,
 }: {
 	canCommit: boolean;
@@ -31,6 +37,7 @@ export function CommitStagedForm({
 	onCommit: () => void;
 	onCommitBodyChange: (value: string) => void;
 	onCommitTitleChange: (value: string) => void;
+	onUndo: () => void;
 	repositoryId: string;
 }) {
 	const reduceMotion = useReducedMotion();
@@ -118,7 +125,13 @@ export function CommitStagedForm({
 					</motion.p>
 				) : null}
 			</AnimatePresence>
-			<div className="flex justify-end gap-2">
+			<div className="flex justify-between gap-2">
+				<ActionButton
+					disabled={isBusy}
+					icon={<Undo2 aria-hidden="true" size={14} />}
+					label="Undo last commit"
+					onClick={onUndo}
+				/>
 				<ActionButton
 					disabled={isBusy || !canCommit || commitTitle.trim().length === 0}
 					icon={

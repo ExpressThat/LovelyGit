@@ -121,6 +121,12 @@ export function useWorkingChangesPanelActions({
 				setSelectedKeys,
 			}),
 		selectedKeys,
+		restoreCommitDraft: (title: string, body: string) => {
+			setCommitTitle(title);
+			setCommitBody(body);
+			setIsAmending(false);
+			setDraftBeforeAmend({ body: "", title: "" });
+		},
 		setCommitBody,
 		setCommitTitle,
 		setDiscardFiles,

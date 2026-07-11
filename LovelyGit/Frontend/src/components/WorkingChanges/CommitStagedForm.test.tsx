@@ -62,6 +62,19 @@ describe("CommitStagedForm", () => {
 			screen.getByRole("switch", { name: /^Amend last commit/ }),
 		).toHaveAttribute("aria-disabled", "true");
 		expect(screen.getByRole("button", { name: "Commit" })).toBeDisabled();
+		expect(
+			screen.getByRole("button", { name: "Undo last commit" }),
+		).toBeDisabled();
+	});
+
+	it("opens the undo workflow from a dedicated secondary action", async () => {
+		const user = userEvent.setup();
+		const onUndo = vi.fn();
+		renderForm({ onUndo });
+
+		await user.click(screen.getByRole("button", { name: "Undo last commit" }));
+
+		expect(onUndo).toHaveBeenCalledOnce();
 	});
 });
 
@@ -81,6 +94,7 @@ function renderForm(
 			onCommit={vi.fn()}
 			onCommitBodyChange={vi.fn()}
 			onCommitTitleChange={vi.fn()}
+			onUndo={vi.fn()}
 			repositoryId="repository-1"
 			{...overrides}
 		/>,

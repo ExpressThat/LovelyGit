@@ -80,6 +80,24 @@ public sealed class GitResetCommandServiceTests
         Assert.Equal(repository.SecondCommitHash, repository.RunGit(["rev-parse", "HEAD"]));
     }
 
+    [Fact]
+    public async Task UndoLastCommitAsync_AtomicallyRejectsAnUnexpectedCurrentHead()
+    {
+        using var repository = TemporaryGitRepository.Create();
+        var index = File.ReadAllBytes(Path.Combine(repository.Path, ".git", "index"));
+
+        await Assert.ThrowsAsync<GitOperationException>(() =>
+            repository.Service.UndoLastCommitAsync(
+                repository.Path,
+                repository.FirstCommitHash,
+                repository.FirstCommitHash,
+                CancellationToken.None));
+
+        Assert.Equal(repository.SecondCommitHash, repository.RunGit(["rev-parse", "HEAD"]));
+        Assert.Equal(index, File.ReadAllBytes(Path.Combine(repository.Path, ".git", "index")));
+        Assert.Equal("after", File.ReadAllText(Path.Combine(repository.Path, "file.txt")));
+    }
+
     private sealed class TemporaryGitRepository : IDisposable
     {
         private readonly DirectoryInfo _directory;

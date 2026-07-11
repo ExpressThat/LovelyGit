@@ -65,6 +65,8 @@ public record CommitGraphChangedNotification
 public record HeadCommitMessageResponse
 {
     public string Hash { get; set; } = string.Empty;
+    public string? FirstParentHash { get; set; }
+    public int ParentCount { get; set; }
     public string Title { get; set; } = string.Empty;
     public string Body { get; set; } = string.Empty;
 }
