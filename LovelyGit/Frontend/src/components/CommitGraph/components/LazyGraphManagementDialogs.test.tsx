@@ -18,7 +18,9 @@ describe("LazyGraphManagementDialogs", () => {
 			tagName: null,
 		};
 		const view = render(<LazyDeleteTagDialog {...props} />);
-		expect(screen.queryByText("Delete tag dialog loaded")).not.toBeInTheDocument();
+		expect(
+			screen.queryByText("Delete tag dialog loaded"),
+		).not.toBeInTheDocument();
 		view.rerender(<LazyDeleteTagDialog {...props} tagName="v1.0.0" />);
 		expect(await screen.findByText("Delete tag dialog loaded")).toBeVisible();
 	});

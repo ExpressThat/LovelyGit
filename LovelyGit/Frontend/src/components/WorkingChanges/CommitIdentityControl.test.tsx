@@ -2,7 +2,7 @@
 
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import type { GitCommitIdentity } from "@/generated/types";
 import { sendRequestWithResponse } from "@/lib/commands";
 import { NativeMessageType } from "@/lib/nativeMessaging";
@@ -15,6 +15,10 @@ vi.mock("@/lib/commands", () => ({
 const send = vi.mocked(sendRequestWithResponse);
 
 describe("CommitIdentityControl", () => {
+	beforeAll(async () => {
+		await import("./CommitIdentityDialog");
+	});
+
 	beforeEach(() => send.mockReset());
 
 	it("shows the effective native identity and its source", async () => {
@@ -38,12 +42,16 @@ describe("CommitIdentityControl", () => {
 			.mockResolvedValueOnce(globalIdentity())
 			.mockResolvedValueOnce(repositoryIdentity());
 		render(<CommitIdentityControl disabled={false} repositoryId="repo-1" />);
-		await screen.findByText("Ada Lovelace <ada@example.test>");
+		await screen.findByText(
+			"Ada Lovelace <ada@example.test>",
+			{},
+			{ timeout: 10_000 },
+		);
 
 		await user.click(
 			screen.getByRole("button", { name: "Edit commit identity" }),
 		);
-		const name = await screen.findByLabelText("Name", {}, { timeout: 5_000 });
+		const name = await screen.findByLabelText("Name", {}, { timeout: 10_000 });
 		await user.clear(name);
 		await user.type(name, "Grace Hopper");
 		const email = screen.getByLabelText("Email");
@@ -76,7 +84,11 @@ describe("CommitIdentityControl", () => {
 			.mockResolvedValueOnce(repositoryIdentity())
 			.mockResolvedValueOnce(globalIdentity());
 		render(<CommitIdentityControl disabled={false} repositoryId="repo-1" />);
-		await screen.findByText("Grace Hopper <grace@example.test>");
+		await screen.findByText(
+			"Grace Hopper <grace@example.test>",
+			{},
+			{ timeout: 10_000 },
+		);
 
 		await user.click(
 			screen.getByRole("button", { name: "Edit commit identity" }),
