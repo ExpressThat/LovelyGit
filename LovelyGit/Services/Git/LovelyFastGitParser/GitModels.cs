@@ -15,6 +15,15 @@ internal sealed record GitCommitRef(string Name, GitRefKind Kind);
 
 internal sealed record GitTag(GitObjectId Hash, GitObjectId Target, string Name, string TargetType);
 
+internal enum GitSignatureKind
+{
+    None,
+    OpenPgp,
+    Ssh,
+    X509,
+    Unknown,
+}
+
 internal sealed class GitCommit
 {
     private GitObjectId _firstParentHash;
@@ -34,6 +43,7 @@ internal sealed class GitCommit
     public long CommitterUnixSeconds { get; set; }
     public string Subject { get; set; } = string.Empty;
     public string Body { get; set; } = string.Empty;
+    public GitSignatureKind SignatureKind { get; set; }
     public IReadOnlyList<string> Branches => _branches ?? [];
     public IReadOnlyList<string> Tags => _tags ?? [];
     public IReadOnlyList<GitCommitRef> Refs => _refs ?? [];

@@ -1,5 +1,6 @@
 import { GitBranch } from "lucide-react";
 import { useEffect, useState } from "react";
+import { CommitSignatureBadge } from "@/components/CommitSignatureBadge";
 import type {
 	CommitChangedFile,
 	CommitDetailsResponse,
@@ -101,6 +102,7 @@ export function CommitDetails({
 				<div className="flex min-w-0 items-center gap-2 text-xs text-muted-foreground">
 					<span className="font-mono">{shortHash(details.hash)}</span>
 					<span>{formatDate(details.date)}</span>
+					<CommitSignatureBadge kind={details.signatureKind} />
 				</div>
 				<h3 className="text-base font-semibold leading-snug text-foreground">
 					{title}

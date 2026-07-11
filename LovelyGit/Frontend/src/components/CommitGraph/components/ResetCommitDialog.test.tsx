@@ -116,6 +116,7 @@ const commit: CommitGraphRow = {
 		refs: [],
 		remoteRepositoryUrl: null,
 		remoteUrl: null,
+		signatureKind: "None",
 		stats: null,
 		tags: [],
 	},

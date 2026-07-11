@@ -45,6 +45,7 @@ internal static class CommitGraphCommitMapper
             RemoteUrl = RemoteCommitUrlBuilder.Build(remoteUrl, hash),
             RemoteRepositoryUrl = RemoteCommitUrlBuilder.BuildRepository(remoteUrl),
             Stats = null,
+            SignatureKind = MapSignatureKind(commit.SignatureKind),
         };
     }
 
@@ -59,4 +60,13 @@ internal static class CommitGraphCommitMapper
     {
         return value.Length <= CommitMessagePreviewChars ? value : value[..CommitMessagePreviewChars];
     }
+
+    internal static CommitSignatureKind MapSignatureKind(GitSignatureKind kind) => kind switch
+    {
+        GitSignatureKind.OpenPgp => CommitSignatureKind.OpenPgp,
+        GitSignatureKind.Ssh => CommitSignatureKind.Ssh,
+        GitSignatureKind.X509 => CommitSignatureKind.X509,
+        GitSignatureKind.Unknown => CommitSignatureKind.Unknown,
+        _ => CommitSignatureKind.None,
+    };
 }

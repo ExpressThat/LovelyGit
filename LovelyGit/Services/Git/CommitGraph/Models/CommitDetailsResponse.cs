@@ -17,4 +17,5 @@ public record CommitDetailsResponse
     public List<string> Tags { get; set; } = new();
     public CommitStats Stats { get; set; } = new();
     public List<CommitChangedFile> ChangedFiles { get; set; } = new();
+    public CommitSignatureKind SignatureKind { get; set; }
 }

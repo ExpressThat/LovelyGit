@@ -45,6 +45,7 @@ function createDetails(
 		hash: "1234567890abcdef",
 		message: "",
 		parents: [],
+		signatureKind: "None",
 		stats: { additions: 0, deletions: 0 },
 		subject: "",
 		tags: [],

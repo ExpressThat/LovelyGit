@@ -5,6 +5,18 @@ namespace ExpressThat.LovelyGit.Services.Git.CommitGraph.Models
 {
     [TypeSharp]
     [Union]
+    [JsonConverter(typeof(JsonStringEnumConverter<CommitSignatureKind>))]
+    public enum CommitSignatureKind
+    {
+        None,
+        OpenPgp,
+        Ssh,
+        X509,
+        Unknown,
+    }
+
+    [TypeSharp]
+    [Union]
     [JsonConverter(typeof(JsonStringEnumConverter<CommitRefKind>))]
     public enum CommitRefKind
     {
@@ -37,5 +49,6 @@ namespace ExpressThat.LovelyGit.Services.Git.CommitGraph.Models
         public string? RemoteUrl { get; set; }
         public string? RemoteRepositoryUrl { get; set; }
         public CommitStats? Stats { get; set; }
+        public CommitSignatureKind SignatureKind { get; set; }
     }
 }

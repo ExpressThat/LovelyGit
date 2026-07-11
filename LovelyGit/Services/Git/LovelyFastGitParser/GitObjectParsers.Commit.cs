@@ -17,6 +17,7 @@ internal static partial class GitObjectParsers
         {
             Hash = id,
             Body = includeBody && body.Length > 0 ? Encoding.UTF8.GetString(body) : string.Empty,
+            SignatureKind = ReadSignatureKind(header),
         };
 
         foreach (var rawLine in EnumerateByteLines(header))
@@ -59,6 +60,35 @@ internal static partial class GitObjectParsers
         }
 
         return commit;
+    }
+
+    private static GitSignatureKind ReadSignatureKind(ReadOnlySpan<byte> header)
+    {
+        if (header.IndexOf("\ngpgsig "u8) < 0 &&
+            !header.StartsWith("gpgsig "u8) &&
+            header.IndexOf("\ngpgsig-sha256 "u8) < 0 &&
+            !header.StartsWith("gpgsig-sha256 "u8))
+        {
+            return GitSignatureKind.None;
+        }
+
+        if (header.IndexOf("BEGIN SSH SIGNATURE"u8) >= 0)
+        {
+            return GitSignatureKind.Ssh;
+        }
+
+        if (header.IndexOf("BEGIN PGP SIGNATURE"u8) >= 0)
+        {
+            return GitSignatureKind.OpenPgp;
+        }
+
+        if (header.IndexOf("BEGIN SIGNED MESSAGE"u8) >= 0 ||
+            header.IndexOf("BEGIN CERTIFICATE"u8) >= 0)
+        {
+            return GitSignatureKind.X509;
+        }
+
+        return GitSignatureKind.Unknown;
     }
 
     private static int FindBodyStart(ReadOnlySpan<byte> data)

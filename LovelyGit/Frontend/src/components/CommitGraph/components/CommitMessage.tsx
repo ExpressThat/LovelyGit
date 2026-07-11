@@ -1,3 +1,4 @@
+import { CommitSignatureBadge } from "@/components/CommitSignatureBadge";
 import type { CommitGraphRow } from "@/generated/types";
 import { messagePrefix } from "../utils/format";
 
@@ -13,6 +14,7 @@ export function CommitMessage({ row }: { row: CommitGraphRow }) {
 			className="flex min-w-0 overflow-hidden whitespace-nowrap"
 			title={row.commit.message}
 		>
+			<CommitSignatureBadge compact kind={row.commit.signatureKind} />
 			<span className="mr-2 shrink-0 font-semibold text-foreground">
 				{prefix}
 			</span>

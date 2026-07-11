@@ -83,6 +83,7 @@ function commit(): CommitInfo {
 		],
 		remoteRepositoryUrl: null,
 		remoteUrl: null,
+		signatureKind: "None",
 		stats: null,
 		tags: ["v1"],
 	};

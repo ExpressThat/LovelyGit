@@ -44,6 +44,7 @@ internal sealed class CommitDetailsBuilder
                 Deletions = changedFiles.Aggregate(0u, (total, file) => total + file.Deletions),
             },
             ChangedFiles = changedFiles,
+            SignatureKind = CommitGraphCommitMapper.MapSignatureKind(commit.SignatureKind),
         };
     }
 }

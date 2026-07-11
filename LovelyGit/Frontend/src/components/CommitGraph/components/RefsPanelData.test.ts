@@ -188,6 +188,7 @@ function commit(
 		refs,
 		remoteRepositoryUrl: null,
 		remoteUrl: null,
+		signatureKind: "None",
 		stats: null,
 		tags,
 	} satisfies CommitInfo;
