@@ -208,7 +208,7 @@ function resetSession(
 	session.totalRows = previousTotalRows;
 }
 function applyResponse(response: CommitGraphResponse, requiredLength: number) {
-	const nextRows = session.rows.slice();
+	const nextRows = session.rows;
 	for (const row of response.rows) {
 		nextRows[row.rowIndex] = row;
 	}

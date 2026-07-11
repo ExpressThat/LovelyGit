@@ -35,6 +35,7 @@ describe("useCommitGraphData", () => {
 
 		await waitFor(() => expect(mocks.sendRequest).toHaveBeenCalledTimes(2));
 		expect(result.current.rows).toHaveLength(256);
+		const initialRows = result.current.rows;
 		expect(mocks.sendRequest).toHaveBeenNthCalledWith(1, {
 			commandType: "CommitGraph",
 			arguments: {
@@ -49,6 +50,7 @@ describe("useCommitGraphData", () => {
 			expect(result.current.rows.length).toBeGreaterThan(520),
 		);
 		expect(mocks.sendRequest).toHaveBeenCalledTimes(6);
+		expect(result.current.rows).toBe(initialRows);
 	});
 
 	it("surfaces a failed initial page without retaining loading state", async () => {
