@@ -1,28 +1,16 @@
 import { AlertTriangle } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { toast } from "sonner";
-import type {
-	ConflictResolutionResponse,
-	ConflictResolutionSource,
-	WorkingTreeChangedFile,
-} from "@/generated/types";
-import { sendRequestWithResponse } from "@/lib/commands";
-import { useSetting } from "@/lib/settings/settingsStore";
-import { DiffContent, LoadingDiff } from "../CommitFileDiff/DiffContent";
-import { WorkingTreeDiffHeader } from "../WorkingChanges/WorkingTreeDiffHeader";
+import { motion, useReducedMotion } from "motion/react";
+import { useRef } from "react";
+import type { WorkingTreeChangedFile } from "@/generated/types";
+import { LoadingDiff } from "../CommitFileDiff/DiffContent";
+import { DiffToolbarControls } from "../CommitFileDiff/DiffToolbarControls";
+import { ConflictMergeHeader } from "./ConflictMergeHeader";
+import { ConflictNavigationBar } from "./ConflictNavigationBar";
 import { ConflictResultPanel } from "./ConflictResultPanel";
-import {
-	createConflictChoices,
-	hasConflictMarkers,
-	parseConflictDocument,
-	renderConflictResult,
-} from "./conflictDocument";
+import { ConflictSourcePanes } from "./ConflictSourcePanes";
+import { useConflictResolution } from "./useConflictResolution";
+import { useConflictSplitter } from "./useConflictSplitter";
 import { WholeFileResolutionPanel } from "./WholeFileResolutionPanel";
-
-type LoadState =
-	| { status: "loading" }
-	| { status: "error"; message: string }
-	| { status: "loaded"; conflict: ConflictResolutionResponse };
 
 export function ConflictResolutionView({
 	file,
@@ -35,194 +23,114 @@ export function ConflictResolutionView({
 	onClose: () => void;
 	repositoryId: string;
 }) {
-	const viewMode = useSetting("CommitDiffViewMode");
-	const contextLines = useSetting("CommitDiffContextLines");
-	const lineDisplayMode = useSetting("CommitDiffLineDisplayMode");
-	const wrapLines = useSetting("CommitDiffWrapLines");
-	const ignoreWhitespace = useSetting("CommitDiffIgnoreWhitespace");
-	const [state, setState] = useState<LoadState>({ status: "loading" });
-	const [choices, setChoices] = useState<
-		ReturnType<typeof createConflictChoices>
-	>({});
-	const [resultText, setResultText] = useState("");
-	const [wholeFileSelection, setWholeFileSelection] = useState<
-		ConflictResolutionSource | "delete" | null
-	>(null);
-	const [isBusy, setIsBusy] = useState(false);
-	const [actionError, setActionError] = useState<string | null>(null);
-
-	const fetchConflict = useCallback(
-		() =>
-			sendRequestWithResponse({
-				commandType: "GetConflictResolution",
-				arguments: {
-					repositoryId,
-					path: file.path,
-					viewMode,
-					ignoreWhitespace,
-				},
-			}),
-		[file.path, ignoreWhitespace, repositoryId, viewMode],
-	);
-
-	useEffect(() => {
-		let active = true;
-		setState({ status: "loading" });
-		fetchConflict()
-			.then((conflict) => {
-				if (!active || !conflict) return;
-				const nextDocument = createEditableDocument(conflict);
-				const initialChoices = createConflictChoices(nextDocument);
-				setChoices(initialChoices);
-				setResultText(renderConflictResult(nextDocument, initialChoices));
-				setWholeFileSelection(null);
-				setState({ status: "loaded", conflict });
-			})
-			.catch((error: unknown) => {
-				if (active) setState({ status: "error", message: errorMessage(error) });
-			});
-		return () => {
-			active = false;
-		};
-	}, [fetchConflict]);
-
-	const document = useMemo(
-		() =>
-			state.status === "loaded" ? createEditableDocument(state.conflict) : [],
-		[state],
-	);
-
-	const updateChoice = (id: number, choice: (typeof choices)[number]) => {
-		const next = { ...choices, [id]: choice };
-		setChoices(next);
-		setResultText(renderConflictResult(document, next));
-	};
-
-	const resetResult = () => {
-		const initial = createConflictChoices(document);
-		setChoices(initial);
-		setResultText(renderConflictResult(document, initial));
-	};
-
-	const resolve = async () => {
-		if (state.status !== "loaded") return;
-		setIsBusy(true);
-		setActionError(null);
-		try {
-			const isWholeFile = requiresWholeFileChoice(state.conflict);
-			await sendRequestWithResponse({
-				commandType: "ResolveConflict",
-				arguments: {
-					repositoryId,
-					path: file.path,
-					expectedFingerprint: state.conflict.worktreeFingerprint,
-					resultText: isWholeFile ? null : resultText,
-					source:
-						isWholeFile && wholeFileSelection !== "delete"
-							? wholeFileSelection
-							: null,
-					deleteResult: isWholeFile && wholeFileSelection === "delete",
-				},
-			});
-			await onChange?.();
-			toast.success(`Resolved ${file.path}`);
-			onClose();
-		} catch (error) {
-			setActionError(errorMessage(error));
-		} finally {
-			setIsBusy(false);
-		}
-	};
-
+	const model = useConflictResolution({
+		file,
+		onChange,
+		onClose,
+		repositoryId,
+	});
+	const workspaceRef = useRef<HTMLDivElement>(null);
+	const splitter = useConflictSplitter(workspaceRef);
+	const reduceMotion = useReducedMotion();
 	return (
 		<section className="flex h-full min-w-0 flex-1 flex-col overflow-hidden border-l bg-background text-foreground">
-			<WorkingTreeDiffHeader file={file} onClose={onClose} />
-			{state.status === "loading" ? <LoadingDiff /> : null}
-			{state.status === "error" ? (
-				<ErrorMessage message={state.message} />
+			<ConflictMergeHeader
+				conflictCount={
+					model.state.status === "loaded"
+						? Math.max(1, model.textConflicts.length)
+						: 0
+				}
+				controlsDisabled={model.state.status !== "loaded"}
+				fileName={file.path}
+				isBusy={model.busyAction !== null}
+				isExternalOpen={model.busyAction === "external"}
+				onClose={onClose}
+				onExternalTool={model.openExternalTool}
+				onSave={model.save}
+				saveDisabled={!model.canSave}
+			/>
+			<DiffToolbarControls
+				className="h-9 shrink-0 border-t-0 border-b"
+				disabled={model.busyAction !== null}
+				showViewMode={false}
+			/>
+			{model.actionError ? <ErrorMessage message={model.actionError} /> : null}
+			{model.state.status === "loading" ? <LoadingDiff /> : null}
+			{model.state.status === "error" ? (
+				<ErrorMessage message={model.state.message} />
 			) : null}
-			{state.status === "loaded" ? (
-				<>
-					{actionError ? <ErrorMessage message={actionError} /> : null}
-					<div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-						<div className="flex h-7 shrink-0 items-center border-b bg-muted/30 px-3 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-							Current branch (ours) ↔ Incoming branch (theirs)
-						</div>
-						<div className="min-h-0 flex-1 overflow-hidden">
-							{state.conflict.comparison ? (
-								<DiffContent
-									contextLines={contextLines}
-									diff={state.conflict.comparison}
-									lineDisplayMode={lineDisplayMode}
-									wrapLines={wrapLines}
-								/>
-							) : (
-								<WholeFileNotice />
-							)}
-						</div>
+			{model.state.status === "loaded" ? (
+				<div className="flex min-h-0 flex-1 flex-col" ref={workspaceRef}>
+					<motion.div
+						animate={{ height: `${splitter.sourcePercent}%` }}
+						className="min-h-0 shrink-0 overflow-hidden"
+						transition={{
+							duration: splitter.isDragging || reduceMotion ? 0 : 0.16,
+						}}
+					>
+						{model.wholeFile ? (
+							<WholeFileNotice />
+						) : (
+							<ConflictSourcePanes
+								activeConflict={model.activeConflict}
+								choices={model.choices}
+								conflict={model.state.conflict}
+								contextLines={model.contextLines}
+								disabled={model.busyAction !== null || model.isManualResult}
+								lineDisplayMode={model.lineDisplayMode}
+								onChoice={model.updateChoice}
+								wrapLines={model.wrapLines}
+							/>
+						)}
+					</motion.div>
+					<ConflictNavigationBar
+						active={model.activeConflict}
+						count={model.wholeFile ? 0 : model.textConflicts.length}
+						disabled={model.busyAction !== null || model.isManualResult}
+						onNavigate={model.setActiveConflict}
+						onOmit={model.omitActiveConflict}
+						onPointerDown={splitter.startDrag}
+						onResizeBy={splitter.resizeBy}
+						onReset={model.resetResult}
+						resetDisabled={model.busyAction !== null}
+						unresolved={
+							model.wholeFile
+								? model.wholeFileSelection
+									? 0
+									: 1
+								: model.unresolved
+						}
+					/>
+					<div className="min-h-0 flex-1 overflow-hidden">
+						{model.wholeFile ? (
+							<WholeFileResolutionPanel
+								exists={{
+									base: model.state.conflict.base.exists,
+									ours: model.state.conflict.ours.exists,
+									theirs: model.state.conflict.theirs.exists,
+								}}
+								selection={model.wholeFileSelection}
+								setSelection={model.setWholeFileSelection}
+							/>
+						) : (
+							<ConflictResultPanel
+								isManualResult={model.isManualResult}
+								isResolved={model.isTextResolved}
+								onEdit={model.editResult}
+								value={model.resultText}
+								wrapLines={model.wrapLines}
+							/>
+						)}
 					</div>
-					{requiresWholeFileChoice(state.conflict) ? (
-						<WholeFileResolutionPanel
-							exists={{
-								base: state.conflict.base.exists,
-								ours: state.conflict.ours.exists,
-								theirs: state.conflict.theirs.exists,
-							}}
-							isBusy={isBusy}
-							onResolve={resolve}
-							selection={wholeFileSelection}
-							setSelection={setWholeFileSelection}
-						/>
-					) : (
-						<ConflictResultPanel
-							choices={choices}
-							isBusy={isBusy}
-							isResolved={!hasConflictMarkers(resultText)}
-							onChoice={updateChoice}
-							onEdit={setResultText}
-							onReset={resetResult}
-							onResolve={resolve}
-							segments={document}
-							value={resultText}
-						/>
-					)}
-				</>
+				</div>
 			) : null}
 		</section>
 	);
 }
 
-function createEditableDocument(conflict: ConflictResolutionResponse) {
-	const text = conflict.result.text ?? "";
-	const parsed = parseConflictDocument(text);
-	if (parsed.some((segment) => segment.kind === "conflict")) return parsed;
-	const ours = withFinalNewline(conflict.ours.text ?? "");
-	const theirs = withFinalNewline(conflict.theirs.text ?? "");
-	return parseConflictDocument(
-		`<<<<<<< current branch\n${ours}=======\n${theirs}>>>>>>> incoming branch\n`,
-	);
-}
-
-function withFinalNewline(text: string) {
-	return text.length > 0 && !text.endsWith("\n") ? `${text}\n` : text;
-}
-
-function requiresWholeFileChoice(conflict: ConflictResolutionResponse) {
-	if (!conflict.ours.exists || !conflict.theirs.exists) return true;
-	return [conflict.ours, conflict.theirs, conflict.result].some(
-		(version) => version.isBinary || version.isTooLarge,
-	);
-}
-
-function errorMessage(error: unknown) {
-	return error instanceof Error
-		? error.message
-		: "Failed to resolve the conflict.";
-}
-
 function ErrorMessage({ message }: { message: string }) {
 	return (
-		<div className="m-4 rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
+		<div className="border-b border-destructive/40 bg-destructive/10 px-3 py-2 text-xs text-destructive">
 			{message}
 		</div>
 	);

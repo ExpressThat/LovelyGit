@@ -13,9 +13,9 @@ internal static class NativeMessageMetricsFactory
         return new NativeMessageMetrics(
             GetElapsedMilliseconds(startedAt),
             requestPayloadBytes,
-            GC.GetTotalMemory(false),
-            process.WorkingSet64,
-            process.PrivateMemorySize64);
+            Math.Max(0, GC.GetTotalMemory(false)),
+            Math.Max(0, process.WorkingSet64),
+            Math.Max(0, process.PrivateMemorySize64));
     }
 
     public static int CountUtf8Bytes(string? value)

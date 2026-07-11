@@ -108,6 +108,8 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging
         GetConflictResolution,
         [NativeMessageContract(typeof(ResolveConflictCommandArguments))]
         ResolveConflict,
+        [NativeMessageContract(typeof(OpenConflictInMergeToolCommandArguments))]
+        OpenConflictInMergeTool,
         [NativeMessageContract(typeof(RevealWorkingTreeFileCommandArguments), typeof(EmptyCommandArguments))]
         RevealWorkingTreeFile,
         [NativeMessageContract(typeof(IgnoreWorkingTreePathCommandArguments), typeof(GitIgnoreResult))]

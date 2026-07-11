@@ -23,3 +23,10 @@ public record ResolveConflictCommandArguments
     public ConflictResolutionSource? Source { get; set; }
     public bool DeleteResult { get; set; }
 }
+
+[TypeSharp]
+public record OpenConflictInMergeToolCommandArguments
+{
+    public Guid RepositoryId { get; set; }
+    public string Path { get; set; } = string.Empty;
+}

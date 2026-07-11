@@ -12,9 +12,9 @@ export type ConflictDocumentSegment =
 	| ConflictSegment;
 
 export type ConflictChoice = {
-	mode: "unresolved" | "custom";
-	ours: boolean[];
-	theirs: boolean[];
+	resolution: "unresolved" | "selection" | "omit";
+	ours: { accepted: boolean; lines: boolean[] };
+	theirs: { accepted: boolean; lines: boolean[] };
 };
 
 export function parseConflictDocument(text: string): ConflictDocumentSegment[] {
@@ -61,12 +61,69 @@ export function createConflictChoices(
 			.map((segment) => [
 				segment.id,
 				{
-					mode: "unresolved",
-					ours: segment.ours.map(() => false),
-					theirs: segment.theirs.map(() => false),
+					resolution: "unresolved",
+					ours: {
+						accepted: false,
+						lines: segment.ours.map(() => false),
+					},
+					theirs: {
+						accepted: false,
+						lines: segment.theirs.map(() => false),
+					},
 				},
 			]),
 	);
+}
+
+export function createConflictDocument(
+	conflict: ConflictResolutionResponse,
+): ConflictDocumentSegment[] {
+	const parsed = parseConflictDocument(conflict.result.text ?? "");
+	const parsedConflicts = parsed.filter(
+		(segment): segment is ConflictSegment => segment.kind === "conflict",
+	);
+	const baseLines = splitLines(conflict.base.text ?? "");
+	const currentLines = splitLines(conflict.ours.text ?? "");
+	const incomingLines = splitLines(conflict.theirs.text ?? "");
+	const newline = conflict.result.text?.includes("\r\n") ? "\r\n" : "\n";
+
+	if (parsedConflicts.length === conflict.hunks.length) {
+		for (const segment of parsedConflicts) {
+			const hunk = conflict.hunks.find(
+				(candidate) => candidate.id === segment.id,
+			);
+			if (!hunk) continue;
+			segment.base = normalizeLineEndings(
+				sliceRange(baseLines, hunk.baseStartLine, hunk.baseLineCount),
+				newline,
+			);
+			segment.ours = normalizeLineEndings(
+				sliceRange(currentLines, hunk.currentStartLine, hunk.currentLineCount),
+				newline,
+			);
+			segment.theirs = normalizeLineEndings(
+				sliceRange(
+					incomingLines,
+					hunk.incomingStartLine,
+					hunk.incomingLineCount,
+				),
+				newline,
+			);
+		}
+		return parsed;
+	}
+
+	if (parsedConflicts.length > 0) return parsed;
+	return [
+		{
+			kind: "conflict",
+			id: 0,
+			base: baseLines,
+			ours: currentLines,
+			theirs: incomingLines,
+			original: conflict.result.text ?? "",
+		},
+	];
 }
 
 export function renderConflictResult(
@@ -77,13 +134,31 @@ export function renderConflictResult(
 		.map((segment) => {
 			if (segment.kind === "common") return segment.text;
 			const choice = choices[segment.id];
-			if (!choice || choice.mode === "unresolved") return segment.original;
+			if (!choice || choice.resolution === "unresolved") {
+				return segment.base.join("");
+			}
+			if (choice.resolution === "omit") return "";
 			return [
-				...segment.ours.filter((_, index) => choice.ours[index]),
-				...segment.theirs.filter((_, index) => choice.theirs[index]),
+				...(choice.ours.accepted
+					? segment.ours.filter((_, index) => choice.ours.lines[index])
+					: []),
+				...(choice.theirs.accepted
+					? segment.theirs.filter((_, index) => choice.theirs.lines[index])
+					: []),
 			].join("");
 		})
 		.join("");
+}
+
+export function areConflictChoicesResolved(
+	segments: ConflictDocumentSegment[],
+	choices: Record<number, ConflictChoice>,
+) {
+	return segments.every(
+		(segment) =>
+			segment.kind === "common" ||
+			choices[segment.id]?.resolution !== "unresolved",
+	);
 }
 
 export function hasConflictMarkers(text: string) {
@@ -130,10 +205,23 @@ function readConflict(lines: string[], start: number, id: number) {
 	return null;
 }
 
-function splitLines(text: string) {
+export function splitLines(text: string) {
 	return text.match(/.*(?:\r\n|\n|$)/g)?.filter(Boolean) ?? [];
+}
+
+function sliceRange(lines: string[], oneBasedStart: number, count: number) {
+	return lines.slice(
+		Math.max(0, oneBasedStart - 1),
+		Math.max(0, oneBasedStart - 1) + count,
+	);
+}
+
+function normalizeLineEndings(lines: string[], newline: string) {
+	return lines.map((line) => line.replace(/\r?\n$/, newline));
 }
 
 function isMarker(line: string, marker: string) {
 	return line.startsWith(marker);
 }
+
+import type { ConflictResolutionResponse } from "@/generated/types";

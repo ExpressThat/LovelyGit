@@ -1,18 +1,14 @@
-import { CheckCheck, FileMinus2, GitBranch } from "lucide-react";
+import { FileMinus2, GitBranch } from "lucide-react";
 import { motion } from "motion/react";
 import { Button } from "@/components/ui/button";
 import type { ConflictResolutionSource } from "@/generated/types";
 
 export function WholeFileResolutionPanel({
 	exists,
-	isBusy,
-	onResolve,
 	selection,
 	setSelection,
 }: {
 	exists: { base: boolean; ours: boolean; theirs: boolean };
-	isBusy: boolean;
-	onResolve: () => void;
 	selection: ConflictResolutionSource | "delete" | null;
 	setSelection: (selection: ConflictResolutionSource | "delete") => void;
 }) {
@@ -58,9 +54,6 @@ export function WholeFileResolutionPanel({
 					<FileMinus2 /> Delete file
 				</Button>
 			</div>
-			<Button disabled={!selection || isBusy} onClick={onResolve}>
-				<CheckCheck /> {isBusy ? "Resolving…" : "Mark resolved"}
-			</Button>
 		</motion.section>
 	);
 }

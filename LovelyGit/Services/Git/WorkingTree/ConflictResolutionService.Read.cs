@@ -19,6 +19,9 @@ internal sealed partial class ConflictResolutionService
         CancellationToken cancellationToken)
     {
         path = WorkingTreePath.NormalizeRelative(path);
+        var repositoryPaths = await GitRepositoryDiscovery
+            .ResolveRepositoryPathsAsync(repositoryPath, cancellationToken)
+            .ConfigureAwait(false);
         using var repository = await LovelyGitRepository.OpenAsync(repositoryPath, cancellationToken)
             .ConfigureAwait(false);
         var entries = await ReadConflictEntriesAsync(repository, path, cancellationToken).ConfigureAwait(false);
@@ -30,6 +33,16 @@ internal sealed partial class ConflictResolutionService
             .ConfigureAwait(false);
         var resultPath = WorkingTreePath.Resolve(repository.WorkTreeDirectory, path);
         var result = await ReadWorktreeVersionAsync(resultPath, cancellationToken).ConfigureAwait(false);
+        var currentSource = CreateCurrentSource(repository, entries.GetValueOrDefault(2));
+        var incomingSource = await CreateIncomingSourceAsync(
+            repository,
+            repositoryPaths.WorktreeGitDirectory,
+            entries.GetValueOrDefault(3),
+            cancellationToken).ConfigureAwait(false);
+        var canBuildTextMerge = baseVersion.Text != null &&
+            ours.Text != null &&
+            theirs.Text != null &&
+            result.Text != null;
 
         return new ConflictResolutionResponse
         {
@@ -40,30 +53,34 @@ internal sealed partial class ConflictResolutionService
             Ours = ours,
             Theirs = theirs,
             Result = result,
-            Comparison = BuildComparison(path, viewMode, ignoreWhitespace, ours, theirs),
+            CurrentSource = currentSource,
+            IncomingSource = incomingSource,
+            Hunks = canBuildTextMerge
+                ? ConflictHunkBuilder.Build(baseVersion.Text!, ours.Text!, theirs.Text!, result.Text!)
+                : new List<ConflictHunk>(),
+            CurrentComparison = canBuildTextMerge
+                ? BuildBaseComparison(path, ignoreWhitespace, baseVersion.Text!, ours.Text!)
+                : null,
+            IncomingComparison = canBuildTextMerge
+                ? BuildBaseComparison(path, ignoreWhitespace, baseVersion.Text!, theirs.Text!)
+                : null,
         };
     }
 
-    private static CommitFileDiffResponse? BuildComparison(
+    private static CommitFileDiffResponse BuildBaseComparison(
         string path,
-        CommitDiffViewMode viewMode,
         bool ignoreWhitespace,
-        ConflictFileVersion ours,
-        ConflictFileVersion theirs)
+        string baseText,
+        string sourceText)
     {
-        if (ours.IsTooLarge || theirs.IsTooLarge || ours.IsBinary || theirs.IsBinary)
-        {
-            return null;
-        }
-
         return WorkingTreeChangeService.BuildDiffResponse(
             "CONFLICT",
             path,
             "Unmerged",
-            viewMode,
+            CommitDiffViewMode.SideBySide,
             ignoreWhitespace,
-            Encoding.UTF8.GetBytes(ours.Text ?? string.Empty),
-            Encoding.UTF8.GetBytes(theirs.Text ?? string.Empty));
+            Encoding.UTF8.GetBytes(baseText),
+            Encoding.UTF8.GetBytes(sourceText));
     }
 
     private static async Task<Dictionary<int, GitIndexEntry>> ReadConflictEntriesAsync(

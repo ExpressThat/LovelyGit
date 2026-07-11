@@ -1,95 +1,86 @@
-import { CheckCheck, RotateCcw } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
-import { Button } from "@/components/ui/button";
-import { ConflictChoiceCard } from "./ConflictChoiceCard";
-import type {
-	ConflictChoice,
-	ConflictDocumentSegment,
-	ConflictSegment,
-} from "./conflictDocument";
+import { useMemo, useState } from "react";
+import { cn } from "@/lib/utils";
 
 export function ConflictResultPanel({
-	choices,
-	isBusy,
+	isManualResult,
 	isResolved,
-	onChoice,
 	onEdit,
-	onReset,
-	onResolve,
-	segments,
 	value,
+	wrapLines,
 }: {
-	choices: Record<number, ConflictChoice>;
-	isBusy: boolean;
+	isManualResult: boolean;
 	isResolved: boolean;
-	onChoice: (id: number, choice: ConflictChoice) => void;
 	onEdit: (value: string) => void;
-	onReset: () => void;
-	onResolve: () => void;
-	segments: ConflictDocumentSegment[];
 	value: string;
+	wrapLines: boolean;
 }) {
 	const reduceMotion = useReducedMotion();
-	const conflicts = segments.filter(
-		(segment): segment is ConflictSegment => segment.kind === "conflict",
+	const [scrollTop, setScrollTop] = useState(0);
+	const lineNumbers = useMemo(
+		() =>
+			Array.from(
+				{ length: Math.max(1, value.split(/\r?\n/).length) },
+				(_, index) => index + 1,
+			),
+		[value],
 	);
 	return (
 		<motion.section
 			animate={{ opacity: 1, y: 0 }}
-			className="flex min-h-0 flex-[0.85] flex-col border-t bg-popover"
-			initial={{ opacity: 0, y: reduceMotion ? 0 : 22 }}
+			className="flex h-full min-h-0 flex-col bg-background"
+			initial={{ opacity: 0, y: reduceMotion ? 0 : 12 }}
 			transition={{
-				duration: reduceMotion ? 0 : 0.24,
+				duration: reduceMotion ? 0 : 0.2,
 				ease: [0.22, 1, 0.36, 1],
 			}}
 		>
-			<header className="flex h-10 shrink-0 items-center gap-2 border-b px-3">
-				<div className="mr-auto">
-					<div className="text-xs font-semibold">Resolution result</div>
-					<div className="text-[10px] text-muted-foreground">
-						Pick either side line-by-line, then refine the result.
+			<div className="flex h-7 shrink-0 items-center gap-2 border-b bg-muted/25 px-3 text-[10px] text-muted-foreground">
+				<span className="font-semibold uppercase tracking-wide text-foreground">
+					Editable result
+				</span>
+				<span>
+					{isManualResult
+						? "Manual editing is active. Reset to use source controls again."
+						: "Base content remains until you deliberately resolve each conflict."}
+				</span>
+				<span
+					className={cn(
+						"ml-auto rounded-full px-2 py-0.5",
+						isResolved
+							? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-300"
+							: "bg-amber-500/10 text-amber-600 dark:text-amber-300",
+					)}
+				>
+					{isResolved ? "Ready to save" : "Resolution required"}
+				</span>
+			</div>
+			<div className="relative flex min-h-0 flex-1 overflow-hidden font-mono text-[12px] leading-[18px]">
+				<div
+					aria-hidden="true"
+					className="w-14 shrink-0 overflow-hidden border-r bg-card/45 py-2 text-right text-muted-foreground"
+				>
+					<div style={{ transform: `translateY(-${scrollTop}px)` }}>
+						{lineNumbers.map((line) => (
+							<div className="h-[18px] px-2 tabular-nums" key={line}>
+								{line}
+							</div>
+						))}
 					</div>
 				</div>
-				<Button onClick={onReset} size="sm" variant="ghost">
-					<RotateCcw /> Reset
-				</Button>
-				<Button disabled={!isResolved || isBusy} onClick={onResolve} size="sm">
-					<CheckCheck /> {isBusy ? "Resolving…" : "Mark resolved"}
-				</Button>
-			</header>
-			<div className="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[1.15fr_0.85fr]">
-				<div className="min-h-0 space-y-2 overflow-auto border-r p-2">
-					{conflicts.map((segment, index) => (
-						<ConflictChoiceCard
-							choice={choices[segment.id]}
-							index={index}
-							key={segment.id}
-							onChange={(choice) => onChoice(segment.id, choice)}
-							segment={segment}
-						/>
-					))}
-				</div>
-				<div className="flex min-h-0 flex-col bg-background">
-					<label
-						className="border-b px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground"
-						htmlFor="conflict-result"
-					>
-						Editable result preview
-					</label>
-					<textarea
-						aria-invalid={!isResolved}
-						className="min-h-0 flex-1 resize-none bg-background p-3 font-mono text-xs leading-5 outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
-						id="conflict-result"
-						onChange={(event) => onEdit(event.target.value)}
-						spellCheck={false}
-						value={value}
-					/>
-					{!isResolved ? (
-						<div className="border-t px-3 py-1.5 text-xs text-amber-600 dark:text-amber-400">
-							Resolve every highlighted conflict before saving.
-						</div>
-					) : null}
-				</div>
+				<textarea
+					aria-invalid={!isResolved}
+					aria-label="Editable result preview"
+					className={cn(
+						"custom-scrollbar min-h-0 min-w-0 flex-1 resize-none bg-background px-3 py-2 font-mono text-[12px] leading-[18px] outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring",
+						wrapLines ? "whitespace-pre-wrap" : "whitespace-pre",
+					)}
+					onChange={(event) => onEdit(event.target.value)}
+					onScroll={(event) => setScrollTop(event.currentTarget.scrollTop)}
+					spellCheck={false}
+					value={value}
+					wrap={wrapLines ? "soft" : "off"}
+				/>
 			</div>
 		</motion.section>
 	);

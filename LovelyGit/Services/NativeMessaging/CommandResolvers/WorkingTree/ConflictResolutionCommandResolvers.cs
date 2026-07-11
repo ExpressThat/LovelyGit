@@ -130,3 +130,43 @@ internal sealed class ResolveConflictCommandResolver : ConflictCommandResolver<R
         }
     }
 }
+
+internal sealed class OpenConflictInMergeToolCommandResolver
+    : ConflictCommandResolver<OpenConflictInMergeToolCommandArguments>
+{
+    private readonly ConflictExternalMergeToolService _service;
+
+    protected override JsonTypeInfo<OpenConflictInMergeToolCommandArguments> ArgumentsJsonTypeInfo =>
+        WorkingTreeJsonSerializerContext.Default.OpenConflictInMergeToolCommandArguments;
+
+    public OpenConflictInMergeToolCommandResolver(
+        KnownGitRepositorysRepository repositories,
+        ConflictExternalMergeToolService service) : base(repositories)
+    {
+        _service = service;
+    }
+
+    public override bool CanRespondTo(NativeCommand<JsonElement> command) =>
+        command.CommandType == NativeMessageType.OpenConflictInMergeTool;
+
+    public override async Task<CommandResponseBase> Resolve(
+        NativeCommand<OpenConflictInMergeToolCommandArguments> command)
+    {
+        try
+        {
+            var arguments = command.Arguments ?? throw new InvalidOperationException("Arguments are required.");
+            var repository = await FindRepositoryAsync(arguments.RepositoryId).ConfigureAwait(false);
+            await _service.OpenAsync(repository.Path!, arguments.Path, CancellationToken.None).ConfigureAwait(false);
+            return new CommandResponseBase
+            {
+                CommandUniqueId = command.CommandUniqueId,
+                CommandType = command.CommandType,
+                IsSuccess = true,
+            };
+        }
+        catch (Exception exception)
+        {
+            return Failure(command, exception);
+        }
+    }
+}

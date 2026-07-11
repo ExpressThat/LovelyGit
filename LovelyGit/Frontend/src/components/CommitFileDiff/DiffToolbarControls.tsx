@@ -11,8 +11,17 @@ import {
 import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { setSetting, useSetting } from "@/lib/settings/settingsStore";
+import { cn } from "@/lib/utils";
 
-export function DiffToolbarControls() {
+export function DiffToolbarControls({
+	className,
+	disabled = false,
+	showViewMode = true,
+}: {
+	className?: string;
+	disabled?: boolean;
+	showViewMode?: boolean;
+} = {}) {
 	const viewMode = useSetting("CommitDiffViewMode");
 	const contextLines = useSetting("CommitDiffContextLines");
 	const lineDisplayMode = useSetting("CommitDiffLineDisplayMode");
@@ -20,23 +29,33 @@ export function DiffToolbarControls() {
 	const ignoreWhitespace = useSetting("CommitDiffIgnoreWhitespace");
 
 	return (
-		<div className="diff-toolbar flex h-10 items-center justify-center border-t bg-card/60 px-3">
+		<div
+			className={cn(
+				"diff-toolbar flex h-10 items-center justify-center border-t bg-card/60 px-3",
+				className,
+			)}
+		>
+			{showViewMode ? (
+				<ToolbarGroup>
+					<ToolbarButton
+						disabled={disabled}
+						icon={<Columns2 aria-hidden="true" />}
+						isActive={viewMode === "SideBySide"}
+						label="Side by side"
+						onClick={() => void setSetting("CommitDiffViewMode", "SideBySide")}
+					/>
+					<ToolbarButton
+						disabled={disabled}
+						icon={<Rows3 aria-hidden="true" />}
+						isActive={viewMode === "Combined"}
+						label="Combined"
+						onClick={() => void setSetting("CommitDiffViewMode", "Combined")}
+					/>
+				</ToolbarGroup>
+			) : null}
 			<ToolbarGroup>
 				<ToolbarButton
-					icon={<Columns2 aria-hidden="true" />}
-					isActive={viewMode === "SideBySide"}
-					label="Side by side"
-					onClick={() => void setSetting("CommitDiffViewMode", "SideBySide")}
-				/>
-				<ToolbarButton
-					icon={<Rows3 aria-hidden="true" />}
-					isActive={viewMode === "Combined"}
-					label="Combined"
-					onClick={() => void setSetting("CommitDiffViewMode", "Combined")}
-				/>
-			</ToolbarGroup>
-			<ToolbarGroup>
-				<ToolbarButton
+					disabled={disabled}
 					icon={<ListCollapse aria-hidden="true" />}
 					isActive={lineDisplayMode === "Changes"}
 					label="Changes"
@@ -45,6 +64,7 @@ export function DiffToolbarControls() {
 					}
 				/>
 				<ToolbarButton
+					disabled={disabled}
 					icon={<FileText aria-hidden="true" />}
 					isActive={lineDisplayMode === "FullFile"}
 					label="Full file"
@@ -54,16 +74,18 @@ export function DiffToolbarControls() {
 				/>
 			</ToolbarGroup>
 			{lineDisplayMode === "Changes" ? (
-				<ContextLinesControl contextLines={contextLines} />
+				<ContextLinesControl contextLines={contextLines} disabled={disabled} />
 			) : null}
 			<ToolbarGroup>
 				<ToolbarButton
+					disabled={disabled}
 					icon={<WrapText aria-hidden="true" />}
 					isActive={wrapLines}
 					label="Wrap lines"
 					onClick={() => void setSetting("CommitDiffWrapLines", !wrapLines)}
 				/>
 				<ToolbarButton
+					disabled={disabled}
 					icon={<Pilcrow aria-hidden="true" />}
 					isActive={ignoreWhitespace}
 					label="Ignore whitespace"
@@ -80,7 +102,13 @@ export function clampContextLines(value: number) {
 	return Math.max(0, Math.min(99, Math.trunc(value)));
 }
 
-function ContextLinesControl({ contextLines }: { contextLines: number }) {
+function ContextLinesControl({
+	contextLines,
+	disabled,
+}: {
+	contextLines: number;
+	disabled: boolean;
+}) {
 	const updateContextLines = (value: number) => {
 		void setSetting("CommitDiffContextLines", clampContextLines(value));
 	};
@@ -92,7 +120,7 @@ function ContextLinesControl({ contextLines }: { contextLines: number }) {
 				<Button
 					aria-label="Decrease context lines"
 					className="h-full w-6 rounded-none border-0"
-					disabled={contextLines <= 0}
+					disabled={disabled || contextLines <= 0}
 					onClick={() => updateContextLines(contextLines - 1)}
 					size="icon-xs"
 					variant="ghost"
@@ -105,7 +133,7 @@ function ContextLinesControl({ contextLines }: { contextLines: number }) {
 				<Button
 					aria-label="Increase context lines"
 					className="h-full w-6 rounded-none border-0"
-					disabled={contextLines >= 99}
+					disabled={disabled || contextLines >= 99}
 					onClick={() => updateContextLines(contextLines + 1)}
 					size="icon-xs"
 					variant="ghost"
@@ -127,11 +155,13 @@ function ToolbarGroup({ children }: { children: ReactNode }) {
 
 function ToolbarButton({
 	icon,
+	disabled = false,
 	isActive,
 	label,
 	onClick,
 }: {
 	icon: ReactNode;
+	disabled?: boolean;
 	isActive: boolean;
 	label: string;
 	onClick: () => void;
@@ -141,6 +171,7 @@ function ToolbarButton({
 			aria-label={label}
 			aria-pressed={isActive}
 			className="diff-toolbar-button h-7 rounded px-2 text-xs"
+			disabled={disabled}
 			onClick={onClick}
 			size="xs"
 			title={label}

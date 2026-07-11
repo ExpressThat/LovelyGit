@@ -8,7 +8,7 @@ namespace LovelyGit.Tests.Git.WorkingTree;
 public sealed class ConflictResolutionServiceTests
 {
     [Fact]
-    public async Task ReadAsync_ReturnsThreeStagesResultAndComparison()
+    public async Task ReadAsync_ReturnsThreeStagesBaseComparisonsAndHunks()
     {
         using var repository = await CreateConflictAsync();
         var response = await CreateService(repository).ReadAsync(
@@ -22,8 +22,15 @@ public sealed class ConflictResolutionServiceTests
         Assert.Equal("main", response.Ours.Text);
         Assert.Equal("feature", response.Theirs.Text);
         Assert.Contains("<<<<<<<", response.Result.Text);
-        Assert.NotNull(response.Comparison);
-        Assert.True(response.Comparison.HasDifferences);
+        Assert.NotNull(response.CurrentComparison);
+        Assert.NotNull(response.IncomingComparison);
+        Assert.True(response.CurrentComparison.HasDifferences);
+        Assert.True(response.IncomingComparison.HasDifferences);
+        Assert.Single(response.Hunks);
+        Assert.Equal("Current", response.CurrentSource.Label);
+        Assert.Equal("Incoming", response.IncomingSource.Label);
+        Assert.NotNull(response.CurrentSource.ObjectId);
+        Assert.NotNull(response.IncomingSource.ObjectId);
         Assert.NotEmpty(response.WorktreeFingerprint);
     }
 
