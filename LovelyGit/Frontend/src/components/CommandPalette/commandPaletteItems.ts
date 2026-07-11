@@ -1,8 +1,10 @@
 import {
 	ExternalLink,
 	FolderGit2,
+	GitBranch,
 	GitCompareArrows,
 	Plus,
+	RadioTower,
 	RefreshCw,
 	Search,
 	Settings,
@@ -24,6 +26,8 @@ type ItemOptions = {
 	currentRepositoryId: string | null;
 	onClose: () => void;
 	onOpenCommitSearch: () => void;
+	onCreateBranch: () => void;
+	onManageRemotes: () => void;
 	onOpenSettings: () => void;
 	onOpenRemote: () => void;
 	onOpenTerminal: () => void;
@@ -66,6 +70,24 @@ export function createPaletteItems(options: ItemOptions): PaletteItem[] {
 			icon: RefreshCw,
 			disabled: needsRepository,
 			run: run(options.onRefreshRepository),
+		},
+		{
+			id: "create-branch",
+			label: "Create Branch",
+			description: "Create a branch from the current commit",
+			keywords: "new checkout ref",
+			icon: GitBranch,
+			disabled: needsRepository,
+			run: run(options.onCreateBranch),
+		},
+		{
+			id: "manage-remotes",
+			label: "Manage Remotes",
+			description: "Add, edit, or remove repository remotes",
+			keywords: "origin url fetch push",
+			icon: RadioTower,
+			disabled: needsRepository,
+			run: run(options.onManageRemotes),
 		},
 		{
 			id: "terminal",

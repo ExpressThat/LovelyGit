@@ -2,7 +2,7 @@ import "./App.css";
 import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
 import * as LazySurfaces from "./AppLazySurfaces";
-import { AppOverlays } from "./AppOverlays";
+import { AppOverlaysContainer } from "./AppOverlaysContainer";
 import { type DetailsPanelState, panelTitle } from "./AppPanelState";
 import { CommitGraphLayer } from "./components/CommitGraph/CommitGraphLayer";
 import { SlidingDetailsPanel } from "./components/DetailsPanel/SlidingDetailsPanel";
@@ -224,24 +224,17 @@ function App() {
 					</SlidingDetailsPanel>
 				</div>
 			</main>
-			<AppOverlays
-				fileBlameTarget={fileDiscovery.blameTarget}
-				fileHistoryTarget={fileDiscovery.historyTarget}
-				isCommitSearchOpen={overlays.commitSearchOpen}
-				isCommandPaletteOpen={overlays.commandPaletteOpen}
-				onCommandPaletteOpenChange={overlays.setCommandPaletteOpen}
-				onFileBlameOpenChange={(open) => !open && fileDiscovery.closeBlame()}
-				onFileHistoryOpenChange={(open) =>
-					!open && fileDiscovery.closeHistory()
-				}
-				onSearchOpenChange={overlays.setCommitSearchOpen}
-				onOpenSettings={() => overlays.setSettingsOpen(true)}
-				onOpenWorkingChanges={() => setDetailsPanel({ kind: "workingChanges" })}
+			<AppOverlaysContainer
+				currentBranchName={currentBranchName}
+				fileDiscovery={fileDiscovery}
 				onRefreshRepository={refreshRepository}
-				onSelectCommit={(commitHash) =>
-					setDetailsPanel({ commitHash, kind: "commit" })
+				onRepositoryChanged={() =>
+					setCommitGraphRefreshToken((token) => token + 1)
 				}
+				overlays={overlays}
 				repositoryId={currentGitRepositoryId}
+				setCurrentBranchName={setCurrentBranchName}
+				setDetailsPanel={setDetailsPanel}
 			/>
 		</RepositoryProvider>
 	);

@@ -6,10 +6,15 @@ import {
 	nextEnabledItem,
 } from "./commandPaletteItems";
 
-function create(currentRepositoryId: string | null = "repo-1") {
+function create(
+	currentRepositoryId: string | null = "repo-1",
+	overrides: Partial<Parameters<typeof createPaletteItems>[0]> = {},
+) {
 	return createPaletteItems({
 		currentRepositoryId,
 		onClose: vi.fn(),
+		onCreateBranch: vi.fn(),
+		onManageRemotes: vi.fn(),
 		onOpenCommitSearch: vi.fn(),
 		onOpenSettings: vi.fn(),
 		onOpenRemote: vi.fn(),
@@ -24,6 +29,7 @@ function create(currentRepositoryId: string | null = "repo-1") {
 			} as KnownGitRepository,
 		],
 		setCurrentRepositoryId: vi.fn().mockResolvedValue(undefined),
+		...overrides,
 	});
 }
 
@@ -39,9 +45,25 @@ describe("command palette items", () => {
 
 	it("enables high-frequency repository actions with an active repository", () => {
 		const items = create();
-		for (const id of ["refresh", "terminal", "remote-web"]) {
+		for (const id of [
+			"refresh",
+			"create-branch",
+			"manage-remotes",
+			"terminal",
+			"remote-web",
+		]) {
 			expect(items.find((item) => item.id === id)?.disabled).toBe(false);
 		}
+	});
+
+	it("closes before opening shared repository workflows", () => {
+		const order: string[] = [];
+		const items = create("repo-1", {
+			onClose: () => order.push("close"),
+			onCreateBranch: () => order.push("create"),
+		});
+		items.find((item) => item.id === "create-branch")?.run();
+		expect(order).toEqual(["close", "create"]);
 	});
 
 	it("matches labels, descriptions, and keywords across terms", () => {

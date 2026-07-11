@@ -5,6 +5,8 @@ export function useAppOverlayState(hasRepository: boolean) {
 	const [commitSearchOpen, setCommitSearchOpen] = useState(false);
 	const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
 	const [settingsOpen, setSettingsOpen] = useState(false);
+	const [createBranchOpen, setCreateBranchOpen] = useState(false);
+	const [remoteManagerOpen, setRemoteManagerOpen] = useState(false);
 	useAppShortcuts({
 		hasRepository,
 		onOpenCommandPalette: () => setCommandPaletteOpen(true),
@@ -13,8 +15,12 @@ export function useAppOverlayState(hasRepository: boolean) {
 	return {
 		commandPaletteOpen,
 		commitSearchOpen,
+		createBranchOpen,
+		remoteManagerOpen,
 		setCommandPaletteOpen,
 		setCommitSearchOpen,
+		setCreateBranchOpen,
+		setRemoteManagerOpen,
 		setSettingsOpen,
 		settingsOpen,
 	};

@@ -2,6 +2,8 @@ import { lazy, Suspense, useEffect, useState } from "react";
 import { SurfaceLoading } from "./AppLazySurfaces";
 import type { FileBlameTarget } from "./components/FileBlame/FileBlameDialog";
 import type { FileHistoryTarget } from "./components/FileHistory/FileHistoryDialog";
+import { CreateBranchDialog } from "./components/TopNavBar/components/CreateBranchDialog";
+import { RemoteManagerDialog } from "./components/TopNavBar/components/RemoteManagerDialog";
 import { Toaster } from "./components/ui/sonner";
 
 const CommitSearchDialog = lazy(() =>
@@ -28,13 +30,20 @@ const CommandPalette = lazy(() =>
 export function AppOverlays({
 	fileHistoryTarget,
 	fileBlameTarget,
+	createBranchOpen,
+	currentBranchName,
 	isCommitSearchOpen,
 	isCommandPaletteOpen,
+	remoteManagerOpen,
 	onFileHistoryOpenChange,
 	onFileBlameOpenChange,
 	onSearchOpenChange,
 	onCommandPaletteOpenChange,
+	onBranchChanged,
+	onCreateBranchOpenChange,
 	onOpenSettings,
+	onRemoteManagerOpenChange,
+	onRepositoryChanged,
 	onOpenWorkingChanges,
 	onRefreshRepository,
 	onSelectCommit,
@@ -42,13 +51,20 @@ export function AppOverlays({
 }: {
 	fileHistoryTarget: FileHistoryTarget | null;
 	fileBlameTarget: FileBlameTarget | null;
+	createBranchOpen: boolean;
+	currentBranchName: string | null;
 	isCommitSearchOpen: boolean;
 	isCommandPaletteOpen: boolean;
+	remoteManagerOpen: boolean;
 	onFileHistoryOpenChange: (open: boolean) => void;
 	onFileBlameOpenChange: (open: boolean) => void;
 	onSearchOpenChange: (open: boolean) => void;
 	onCommandPaletteOpenChange: (open: boolean) => void;
+	onBranchChanged: (branchName: string) => void;
+	onCreateBranchOpenChange: (open: boolean) => void;
 	onOpenSettings: () => void;
+	onRemoteManagerOpenChange: (open: boolean) => void;
+	onRepositoryChanged: () => void;
 	onOpenWorkingChanges: () => void;
 	onRefreshRepository: () => void | Promise<void>;
 	onSelectCommit: (commitHash: string) => void;
@@ -60,9 +76,24 @@ export function AppOverlays({
 	const retainPalette = useRetainedSurface(isCommandPaletteOpen);
 	return (
 		<>
+			<CreateBranchDialog
+				currentBranchName={currentBranchName}
+				onBranchChanged={onBranchChanged}
+				onOpenChange={onCreateBranchOpenChange}
+				onRepositoryChanged={onRepositoryChanged}
+				open={createBranchOpen}
+				repositoryId={repositoryId}
+			/>
+			<RemoteManagerDialog
+				onOpenChange={onRemoteManagerOpenChange}
+				open={remoteManagerOpen}
+				repositoryId={repositoryId}
+			/>
 			<Suspense fallback={<SurfaceLoading label="Opening tool" overlay />}>
 				{retainPalette ? (
 					<CommandPalette
+						onCreateBranch={() => onCreateBranchOpenChange(true)}
+						onManageRemotes={() => onRemoteManagerOpenChange(true)}
 						onOpenChange={onCommandPaletteOpenChange}
 						onOpenCommitSearch={() => onSearchOpenChange(true)}
 						onOpenSettings={onOpenSettings}
