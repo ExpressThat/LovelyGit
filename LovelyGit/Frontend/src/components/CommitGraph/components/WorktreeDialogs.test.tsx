@@ -4,11 +4,41 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import type { RepositoryWorktreeItem } from "@/generated/types";
+import type { WorktreeMutationController } from "../hooks/useWorktreeMutations";
 import { CreateWorktreeDialog } from "./CreateWorktreeDialog";
 import { LockWorktreeDialog } from "./LockWorktreeDialog";
 import { RemoveWorktreeDialog } from "./RemoveWorktreeDialog";
+import { WorktreeManagementDialogs } from "./WorktreeManagementDialogs";
 
 describe("CreateWorktreeDialog", () => {
+	it("lazy-loads branch selection when opened from the sidebar", async () => {
+		render(
+			<WorktreeManagementDialogs
+				controller={
+					{
+						busyPath: null,
+						createBranchName: "",
+						lockTarget: null,
+						removeTarget: null,
+						setCreateBranchName: vi.fn(),
+					} as unknown as WorktreeMutationController
+				}
+				repositoryRefs={{
+					branchUpstreams: [],
+					currentBranchName: "main",
+					refs: [localRef("main")],
+					remotePrefixes: [],
+					stashes: [],
+					worktrees: [linkedWorktree()],
+				}}
+			/>,
+		);
+
+		expect(
+			await screen.findByRole("dialog", { name: "Create worktree" }),
+		).toBeInTheDocument();
+	});
+
 	it("selects a local branch when opened from the worktrees section", async () => {
 		const user = userEvent.setup();
 		const onBranchChange = vi.fn();
@@ -128,5 +158,14 @@ function linkedWorktree(): RepositoryWorktreeItem {
 		isLocked: false,
 		lockReason: "",
 		path: "C:/repo-demo",
+	};
+}
+
+function localRef(name: string) {
+	return {
+		commitHash: "a".repeat(40),
+		kind: "Local" as const,
+		name,
+		remoteUrl: null,
 	};
 }

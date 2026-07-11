@@ -75,7 +75,7 @@ export function LazyCreateTagDialog(
 export function LazyCreateWorktreeDialog(
 	props: ComponentProps<typeof CreateWorktreeDialog>,
 ) {
-	return props.branchName ? (
+	return props.branchName !== null ? (
 		<Boundary>{<CreateWorktree {...props} />}</Boundary>
 	) : null;
 }
