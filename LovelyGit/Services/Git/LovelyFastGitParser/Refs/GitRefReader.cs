@@ -27,7 +27,10 @@ internal static class GitRefReader
                         continue;
                     }
 
-                    refs[fullName] = new GitRawRef(id, null);
+                    refs[fullName] = new GitRawRef(
+                        id,
+                        null,
+                        RequiresPeeling: GetRefKind(fullName) == GitRefKind.Tag);
                 }
             }
         }
@@ -36,11 +39,20 @@ internal static class GitRefReader
         if (File.Exists(packedRefsPath))
         {
             string? lastRefName = null;
-            foreach (var rawLine in await File.ReadAllLinesAsync(packedRefsPath, cancellationToken).ConfigureAwait(false))
+            var fullyPeeled = false;
+            await foreach (var rawLine in File
+                               .ReadLinesAsync(packedRefsPath, cancellationToken)
+                               .ConfigureAwait(false))
             {
                 var line = rawLine.AsSpan().Trim();
-                if (line.Length == 0 || line[0] == '#')
+                if (line.Length == 0)
                 {
+                    continue;
+                }
+
+                if (line[0] == '#')
+                {
+                    fullyPeeled |= line.Contains("fully-peeled", StringComparison.Ordinal);
                     continue;
                 }
 
@@ -49,7 +61,11 @@ internal static class GitRefReader
                     if (lastRefName != null && GitObjectId.TryParse(line[1..], objectFormat, out var peeled))
                     {
                         var existing = refs[lastRefName];
-                        refs[lastRefName] = existing with { PeeledTarget = peeled };
+                        refs[lastRefName] = existing with
+                        {
+                            PeeledTarget = peeled,
+                            RequiresPeeling = false,
+                        };
                     }
 
                     continue;
@@ -72,7 +88,12 @@ internal static class GitRefReader
                     continue;
                 }
 
-                refs.Add(name, new GitRawRef(id, null));
+                refs.Add(
+                    name,
+                    new GitRawRef(
+                        id,
+                        null,
+                        RequiresPeeling: GetRefKind(name) == GitRefKind.Tag && !fullyPeeled));
                 lastRefName = name;
             }
         }
@@ -126,7 +147,7 @@ internal static class GitRefReader
             }
 
             var refName = stashIndex == 0 ? "refs/stash" : $"refs/stash@{{{stashIndex}}}";
-            refs.TryAdd(refName, new GitRawRef(id, null));
+            refs.TryAdd(refName, new GitRawRef(id, null, RequiresPeeling: false));
             stashIndex++;
         }
     }
@@ -209,4 +230,7 @@ internal static class GitRefReader
     }
 }
 
-internal readonly record struct GitRawRef(GitObjectId Target, GitObjectId? PeeledTarget);
+internal readonly record struct GitRawRef(
+    GitObjectId Target,
+    GitObjectId? PeeledTarget,
+    bool RequiresPeeling);

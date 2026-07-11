@@ -96,12 +96,14 @@ internal sealed partial class LovelyGitRepository : IDisposable
             }
             else if (kind == GitRefKind.Tag)
             {
-                var commitTarget = rawRef.PeeledTarget ??
-                    await ResolveTagCommitTargetAsync(
-                        objectStore,
-                        objectFormat,
-                        rawRef.Target,
-                        cancellationToken).ConfigureAwait(false);
+                var commitTarget = rawRef.PeeledTarget ?? (rawRef.RequiresPeeling
+                    ? await ResolveTagCommitTargetAsync(
+                            objectStore,
+                            objectFormat,
+                            rawRef.Target,
+                            cancellationToken)
+                        .ConfigureAwait(false)
+                    : rawRef.Target);
                 refsByFullName[fullName] = new GitRef(
                     displayName,
                     commitTarget ?? rawRef.Target,

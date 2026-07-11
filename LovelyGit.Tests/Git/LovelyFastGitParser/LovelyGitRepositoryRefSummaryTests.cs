@@ -74,6 +74,28 @@ public sealed class LovelyGitRepositoryRefSummaryTests
         Assert.Equal(branchTarget, tagTarget);
     }
 
+    [Fact]
+    public async Task LoadRefs_DoesNotPeelLightweightTagFromFullyPeeledFile()
+    {
+        using var temporary = TemporaryGitRepository.Create();
+        await temporary.RunGitAsync(["pack-refs", "--all", "--prune"]);
+        var paths = await GitRepositoryDiscovery.ResolveRepositoryPathsAsync(
+            temporary.Path,
+            CancellationToken.None);
+        var objectFormat = await GitRepositoryDiscovery.ReadObjectFormatAsync(
+            paths.GitDirectory,
+            CancellationToken.None);
+
+        var refs = await GitRefReader.LoadRefsAsync(
+            paths.GitDirectory,
+            objectFormat,
+            GitRefReader.DefaultTagLimit,
+            CancellationToken.None);
+
+        Assert.False(refs["refs/tags/v1.0.0"].RequiresPeeling);
+        Assert.Null(refs["refs/tags/v1.0.0"].PeeledTarget);
+    }
+
     private sealed class TemporaryGitRepository : IDisposable
     {
         private readonly DirectoryInfo _directory;
