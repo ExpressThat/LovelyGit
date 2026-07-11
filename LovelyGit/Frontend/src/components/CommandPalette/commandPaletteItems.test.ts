@@ -15,6 +15,7 @@ function create(
 		onClose: vi.fn(),
 		onCreateBranch: vi.fn(),
 		onManageRemotes: vi.fn(),
+		onManageStashes: vi.fn(),
 		onOpenCommitSearch: vi.fn(),
 		onOpenSettings: vi.fn(),
 		onOpenRemote: vi.fn(),
@@ -49,6 +50,7 @@ describe("command palette items", () => {
 			"refresh",
 			"create-branch",
 			"manage-remotes",
+			"manage-stashes",
 			"terminal",
 			"remote-web",
 		]) {

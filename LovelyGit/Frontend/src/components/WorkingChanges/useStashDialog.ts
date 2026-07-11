@@ -8,6 +8,10 @@ import { NativeMessageType } from "@/lib/nativeMessaging";
 export function useStashDialog(
 	repositoryId: string,
 	onRepositoryChanged: () => Promise<void> | void,
+	controlled?: {
+		onOpenChange: (open: boolean) => void;
+		open: boolean;
+	},
 ) {
 	const [busyAction, setBusyAction] = useState<StashAction | null>(null);
 	const [dropTarget, setDropTarget] = useState<RepositoryStashItem | null>(
@@ -17,7 +21,9 @@ export function useStashDialog(
 	const [isLoading, setIsLoading] = useState(false);
 	const [loadError, setLoadError] = useState<string | null>(null);
 	const [message, setMessage] = useState("");
-	const [open, setOpen] = useState(false);
+	const [internalOpen, setInternalOpen] = useState(false);
+	const open = controlled?.open ?? internalOpen;
+	const setOpen = controlled?.onOpenChange ?? setInternalOpen;
 	const [restoreIndex, setRestoreIndex] = useState(true);
 	const [stashes, setStashes] = useState<RepositoryStashItem[]>([]);
 

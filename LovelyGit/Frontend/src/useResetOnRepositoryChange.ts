@@ -5,7 +5,7 @@ export function useResetOnRepositoryChange(
 	repositoryId: string | null,
 	setBranchName: Dispatch<SetStateAction<string | null>>,
 	setDetailsPanel: Dispatch<SetStateAction<DetailsPanelState | null>>,
-	setSearchOpen: Dispatch<SetStateAction<boolean>>,
+	resetRepositoryOverlays: () => void,
 	resetFileDiscovery: () => void,
 ) {
 	const previousRepositoryIdRef = useRef<string | null>(repositoryId);
@@ -14,13 +14,13 @@ export function useResetOnRepositoryChange(
 		previousRepositoryIdRef.current = repositoryId;
 		setBranchName(null);
 		setDetailsPanel(null);
-		setSearchOpen(false);
+		resetRepositoryOverlays();
 		resetFileDiscovery();
 	}, [
 		repositoryId,
 		setBranchName,
 		setDetailsPanel,
-		setSearchOpen,
+		resetRepositoryOverlays,
 		resetFileDiscovery,
 	]);
 }

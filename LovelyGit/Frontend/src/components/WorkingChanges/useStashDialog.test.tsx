@@ -27,6 +27,18 @@ const stash: RepositoryStashItem = {
 describe("useStashDialog", () => {
 	beforeEach(() => vi.clearAllMocks());
 
+	it("honors controlled open state and delegates close requests", async () => {
+		send.mockResolvedValueOnce({ stashes: [] });
+		const onOpenChange = vi.fn();
+		const { result } = renderHook(() =>
+			useStashDialog("repo", vi.fn(), { onOpenChange, open: true }),
+		);
+		await waitFor(() => expect(send).toHaveBeenCalledOnce());
+		act(() => result.current.setOpen(false));
+		expect(onOpenChange).toHaveBeenCalledWith(false);
+		expect(result.current.open).toBe(true);
+	});
+
 	it("exposes load failure, clears loading, and permits retry", async () => {
 		send.mockRejectedValueOnce(new Error("Repository unavailable"));
 		const { result } = renderHook(() => useStashDialog("repo", vi.fn()));

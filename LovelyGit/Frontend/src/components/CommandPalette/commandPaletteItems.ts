@@ -1,4 +1,5 @@
 import {
+	Archive,
 	ExternalLink,
 	FolderGit2,
 	GitBranch,
@@ -28,6 +29,7 @@ type ItemOptions = {
 	onOpenCommitSearch: () => void;
 	onCreateBranch: () => void;
 	onManageRemotes: () => void;
+	onManageStashes: () => void;
 	onOpenSettings: () => void;
 	onOpenRemote: () => void;
 	onOpenTerminal: () => void;
@@ -88,6 +90,15 @@ export function createPaletteItems(options: ItemOptions): PaletteItem[] {
 			icon: RadioTower,
 			disabled: needsRepository,
 			run: run(options.onManageRemotes),
+		},
+		{
+			id: "manage-stashes",
+			label: "Manage Stashes",
+			description: "Save work or apply, pop, and delete existing stashes",
+			keywords: "wip shelf checkpoint apply pop",
+			icon: Archive,
+			disabled: needsRepository,
+			run: run(options.onManageStashes),
 		},
 		{
 			id: "terminal",

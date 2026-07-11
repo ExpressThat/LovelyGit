@@ -27,14 +27,24 @@ import { useStashDialog } from "./useStashDialog";
 
 export function StashDialog({
 	canCreate,
+	onOpenChange,
 	onRepositoryChanged,
+	open: controlledOpen,
 	repositoryId,
+	showTrigger = true,
 }: {
 	canCreate: boolean;
+	onOpenChange?: (open: boolean) => void;
 	onRepositoryChanged: () => Promise<void> | void;
+	open?: boolean;
 	repositoryId: string;
+	showTrigger?: boolean;
 }) {
-	const stash = useStashDialog(repositoryId, onRepositoryChanged);
+	const controlled =
+		controlledOpen === undefined || onOpenChange === undefined
+			? undefined
+			: { onOpenChange, open: controlledOpen };
+	const stash = useStashDialog(repositoryId, onRepositoryChanged, controlled);
 	const {
 		busyAction,
 		dropTarget,
@@ -56,18 +66,20 @@ export function StashDialog({
 	return (
 		<>
 			<Dialog open={open} onOpenChange={setOpen}>
-				<DialogTrigger
-					render={
-						<Button
-							className="h-7 gap-1.5 px-2 text-xs"
-							size="sm"
-							variant="outline"
-						/>
-					}
-				>
-					<Archive aria-hidden="true" className="size-3.5" />
-					Stash
-				</DialogTrigger>
+				{showTrigger ? (
+					<DialogTrigger
+						render={
+							<Button
+								className="h-7 gap-1.5 px-2 text-xs"
+								size="sm"
+								variant="outline"
+							/>
+						}
+					>
+						<Archive aria-hidden="true" className="size-3.5" />
+						Stash
+					</DialogTrigger>
+				) : null}
 				<DialogContent className="grid max-h-[min(680px,calc(100vh-2rem))] grid-rows-[auto_auto_minmax(0,1fr)] gap-0 overflow-hidden p-0 sm:max-w-xl">
 					<DialogHeader className="border-b px-5 py-4">
 						<DialogTitle>Stashes</DialogTitle>

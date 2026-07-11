@@ -7,6 +7,7 @@ import type { useFileDiscoveryTargets } from "./useFileDiscoveryTargets";
 export function AppOverlaysContainer({
 	currentBranchName,
 	fileDiscovery,
+	canCreateStash,
 	onRefreshRepository,
 	onRepositoryChanged,
 	overlays,
@@ -15,6 +16,7 @@ export function AppOverlaysContainer({
 	setDetailsPanel,
 }: {
 	currentBranchName: string | null;
+	canCreateStash: boolean;
 	fileDiscovery: ReturnType<typeof useFileDiscoveryTargets>;
 	onRefreshRepository: () => void | Promise<void>;
 	onRepositoryChanged: () => void;
@@ -25,6 +27,7 @@ export function AppOverlaysContainer({
 }) {
 	return (
 		<AppOverlays
+			canCreateStash={canCreateStash}
 			createBranchOpen={overlays.createBranchOpen}
 			currentBranchName={currentBranchName}
 			fileBlameTarget={fileDiscovery.blameTarget}
@@ -42,11 +45,13 @@ export function AppOverlaysContainer({
 			onRemoteManagerOpenChange={overlays.setRemoteManagerOpen}
 			onRepositoryChanged={onRepositoryChanged}
 			onSearchOpenChange={overlays.setCommitSearchOpen}
+			onStashOpenChange={overlays.setStashOpen}
 			onSelectCommit={(commitHash) =>
 				setDetailsPanel({ commitHash, kind: "commit" })
 			}
 			remoteManagerOpen={overlays.remoteManagerOpen}
 			repositoryId={repositoryId}
+			stashOpen={overlays.stashOpen}
 		/>
 	);
 }

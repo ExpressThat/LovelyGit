@@ -27,6 +27,7 @@ export function CommandPalette({
 	onOpenCommitSearch,
 	onCreateBranch,
 	onManageRemotes,
+	onManageStashes,
 	onOpenSettings,
 	onOpenWorkingChanges,
 	onRefreshRepository,
@@ -36,6 +37,7 @@ export function CommandPalette({
 	onOpenCommitSearch: () => void;
 	onCreateBranch: () => void;
 	onManageRemotes: () => void;
+	onManageStashes: () => void;
 	onOpenSettings: () => void;
 	onOpenWorkingChanges: () => void;
 	onRefreshRepository: () => void | Promise<void>;
@@ -52,6 +54,7 @@ export function CommandPalette({
 				onClose: () => onOpenChange(false),
 				onCreateBranch,
 				onManageRemotes,
+				onManageStashes,
 				onOpenCommitSearch,
 				onOpenSettings,
 				onOpenRemote: () => {
@@ -72,6 +75,7 @@ export function CommandPalette({
 			onOpenChange,
 			onCreateBranch,
 			onManageRemotes,
+			onManageStashes,
 			onOpenCommitSearch,
 			onOpenSettings,
 			onOpenWorkingChanges,

@@ -45,7 +45,7 @@ function App() {
 		currentGitRepositoryId,
 		setCurrentBranchName,
 		setDetailsPanel,
-		overlays.setCommitSearchOpen,
+		overlays.resetRepositoryOverlays,
 		fileDiscovery.reset,
 	);
 	const selectCommit = (row: CommitGraphRow) => {
@@ -225,6 +225,7 @@ function App() {
 				</div>
 			</main>
 			<AppOverlaysContainer
+				canCreateStash={workingTreeChanges.totalCount > 0}
 				currentBranchName={currentBranchName}
 				fileDiscovery={fileDiscovery}
 				onRefreshRepository={refreshRepository}

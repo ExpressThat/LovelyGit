@@ -22,9 +22,14 @@ vi.mock("./components/TopNavBar/components/RemoteManagerDialog", () => ({
 	RemoteManagerDialog: ({ open }: { open: boolean }) =>
 		open ? <div>Remote manager loaded</div> : null,
 }));
+vi.mock("./components/WorkingChanges/StashDialog", () => ({
+	StashDialog: ({ open }: { open?: boolean }) =>
+		open ? <div>Stash manager loaded</div> : null,
+}));
 vi.mock("./components/ui/sonner", () => ({ Toaster: () => null }));
 
 const defaultProps = {
+	canCreateStash: false,
 	createBranchOpen: false,
 	currentBranchName: "main",
 	fileBlameTarget: null,
@@ -32,6 +37,7 @@ const defaultProps = {
 	isCommitSearchOpen: false,
 	isCommandPaletteOpen: false,
 	remoteManagerOpen: false,
+	stashOpen: false,
 	onBranchChanged: vi.fn(),
 	onCommandPaletteOpenChange: vi.fn(),
 	onCreateBranchOpenChange: vi.fn(),
@@ -41,6 +47,7 @@ const defaultProps = {
 	onOpenSettings: vi.fn(),
 	onRemoteManagerOpenChange: vi.fn(),
 	onRepositoryChanged: vi.fn(),
+	onStashOpenChange: vi.fn(),
 	onOpenWorkingChanges: vi.fn(),
 	onRefreshRepository: vi.fn(),
 	onSelectCommit: vi.fn(),
@@ -48,11 +55,13 @@ const defaultProps = {
 };
 
 describe("AppOverlays", () => {
-	it("shares branch and remote dialogs with external entry points", () => {
+	it("shares repository dialogs with external entry points", async () => {
 		const view = render(<AppOverlays {...defaultProps} createBranchOpen />);
 		expect(screen.getByText("Create branch loaded")).toBeVisible();
 		view.rerender(<AppOverlays {...defaultProps} remoteManagerOpen />);
 		expect(screen.getByText("Remote manager loaded")).toBeVisible();
+		view.rerender(<AppOverlays {...defaultProps} stashOpen />);
+		expect(await screen.findByText("Stash manager loaded")).toBeVisible();
 	});
 
 	it("loads an overlay only after it is requested and retains it for exit", async () => {

@@ -26,15 +26,22 @@ const CommandPalette = lazy(() =>
 		default: module.CommandPalette,
 	})),
 );
+const StashDialog = lazy(() =>
+	import("./components/WorkingChanges/StashDialog").then((module) => ({
+		default: module.StashDialog,
+	})),
+);
 
 export function AppOverlays({
 	fileHistoryTarget,
 	fileBlameTarget,
 	createBranchOpen,
+	canCreateStash,
 	currentBranchName,
 	isCommitSearchOpen,
 	isCommandPaletteOpen,
 	remoteManagerOpen,
+	stashOpen,
 	onFileHistoryOpenChange,
 	onFileBlameOpenChange,
 	onSearchOpenChange,
@@ -43,6 +50,7 @@ export function AppOverlays({
 	onCreateBranchOpenChange,
 	onOpenSettings,
 	onRemoteManagerOpenChange,
+	onStashOpenChange,
 	onRepositoryChanged,
 	onOpenWorkingChanges,
 	onRefreshRepository,
@@ -52,10 +60,12 @@ export function AppOverlays({
 	fileHistoryTarget: FileHistoryTarget | null;
 	fileBlameTarget: FileBlameTarget | null;
 	createBranchOpen: boolean;
+	canCreateStash: boolean;
 	currentBranchName: string | null;
 	isCommitSearchOpen: boolean;
 	isCommandPaletteOpen: boolean;
 	remoteManagerOpen: boolean;
+	stashOpen: boolean;
 	onFileHistoryOpenChange: (open: boolean) => void;
 	onFileBlameOpenChange: (open: boolean) => void;
 	onSearchOpenChange: (open: boolean) => void;
@@ -64,6 +74,7 @@ export function AppOverlays({
 	onCreateBranchOpenChange: (open: boolean) => void;
 	onOpenSettings: () => void;
 	onRemoteManagerOpenChange: (open: boolean) => void;
+	onStashOpenChange: (open: boolean) => void;
 	onRepositoryChanged: () => void;
 	onOpenWorkingChanges: () => void;
 	onRefreshRepository: () => void | Promise<void>;
@@ -74,6 +85,7 @@ export function AppOverlays({
 	const retainHistory = useRetainedSurface(fileHistoryTarget !== null);
 	const retainBlame = useRetainedSurface(fileBlameTarget !== null);
 	const retainPalette = useRetainedSurface(isCommandPaletteOpen);
+	const retainStash = useRetainedSurface(stashOpen);
 	return (
 		<>
 			<CreateBranchDialog
@@ -90,10 +102,21 @@ export function AppOverlays({
 				repositoryId={repositoryId}
 			/>
 			<Suspense fallback={<SurfaceLoading label="Opening tool" overlay />}>
+				{retainStash && repositoryId ? (
+					<StashDialog
+						canCreate={canCreateStash}
+						onOpenChange={onStashOpenChange}
+						onRepositoryChanged={onRepositoryChanged}
+						open={stashOpen}
+						repositoryId={repositoryId}
+						showTrigger={false}
+					/>
+				) : null}
 				{retainPalette ? (
 					<CommandPalette
 						onCreateBranch={() => onCreateBranchOpenChange(true)}
 						onManageRemotes={() => onRemoteManagerOpenChange(true)}
+						onManageStashes={() => onStashOpenChange(true)}
 						onOpenChange={onCommandPaletteOpenChange}
 						onOpenCommitSearch={() => onSearchOpenChange(true)}
 						onOpenSettings={onOpenSettings}

@@ -21,7 +21,7 @@ describe("useResetOnRepositoryChange", () => {
 					repositoryId,
 					setBranch,
 					setDetails,
-					setSearchOpen,
+					() => setSearchOpen(false),
 					() => setFileDiscoveryOpen(false),
 				);
 				return { branch, details, fileDiscoveryOpen, searchOpen };
