@@ -7,6 +7,7 @@ import type {
 } from "@/generated/types";
 import { sendRequestWithResponse } from "@/lib/commands";
 import { gitMutationTimeoutMs } from "@/lib/gitMutationTimeout";
+import { nativeDialogTimeoutMs } from "@/lib/nativeDialogTimeout";
 import { useRepositoryContext } from "@/lib/repositoryContext";
 
 export function useWorktreeMutations({
@@ -26,7 +27,10 @@ export function useWorktreeMutations({
 		useState<RepositoryWorktreeItem | null>(null);
 
 	const chooseDestination = () =>
-		sendRequestWithResponse({ commandType: "ChooseWorktreeDestination" });
+		sendRequestWithResponse(
+			{ commandType: "ChooseWorktreeDestination" },
+			{ timeoutMs: nativeDialogTimeoutMs },
+		);
 
 	const create = async (worktreePath: string) => {
 		if (!repositoryId || !createBranchName || busyPath) return;

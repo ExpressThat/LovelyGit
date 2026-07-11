@@ -3,6 +3,7 @@
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { sendRequestWithResponse } from "@/lib/commands";
+import { nativeDialogTimeoutMs } from "@/lib/nativeDialogTimeout";
 import { usePatchApply } from "./usePatchApply";
 
 vi.mock("@/lib/commands", () => ({ sendRequestWithResponse: vi.fn() }));
@@ -18,9 +19,10 @@ describe("usePatchApply", () => {
 
 		await act(() => result.current.choosePatch());
 
-		expect(sendRequestWithResponse).toHaveBeenCalledWith({
-			commandType: "ChoosePatchFile",
-		});
+		expect(sendRequestWithResponse).toHaveBeenCalledWith(
+			{ commandType: "ChoosePatchFile" },
+			{ timeoutMs: nativeDialogTimeoutMs },
+		);
 		expect(result.current.preview).toEqual(preview);
 	});
 

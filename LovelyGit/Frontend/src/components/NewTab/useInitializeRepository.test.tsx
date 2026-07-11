@@ -4,6 +4,7 @@ import { act, renderHook, waitFor } from "@testing-library/react";
 import { toast } from "sonner";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { sendRequestWithResponse } from "@/lib/commands";
+import { nativeDialogTimeoutMs } from "@/lib/nativeDialogTimeout";
 import { useInitializeRepository } from "./useInitializeRepository";
 
 const repositories = vi.hoisted(() => ({
@@ -68,6 +69,10 @@ describe("useInitializeRepository", () => {
 
 		await act(() => result.current.chooseDestination());
 		expect(result.current.parentPath).toBe("C:\\projects");
+		expect(send).toHaveBeenLastCalledWith(
+			{ commandType: "ChooseRepositoryDestination" },
+			{ timeoutMs: nativeDialogTimeoutMs },
+		);
 
 		send.mockResolvedValueOnce(null);
 		await act(() => result.current.chooseDestination());

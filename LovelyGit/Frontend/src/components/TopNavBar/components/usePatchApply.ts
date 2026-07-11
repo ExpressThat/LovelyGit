@@ -2,6 +2,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import type { PatchPreviewResponse } from "@/generated/types";
 import { sendRequestWithResponse } from "@/lib/commands";
+import { nativeDialogTimeoutMs } from "@/lib/nativeDialogTimeout";
 import { NativeMessageType } from "@/lib/nativeMessaging";
 
 export function usePatchApply(
@@ -18,9 +19,10 @@ export function usePatchApply(
 		if (!repositoryId || isSelecting || isApplying) return;
 		setIsSelecting(true);
 		try {
-			const response = await sendRequestWithResponse({
-				commandType: NativeMessageType.ChoosePatchFile,
-			});
+			const response = await sendRequestWithResponse(
+				{ commandType: NativeMessageType.ChoosePatchFile },
+				{ timeoutMs: nativeDialogTimeoutMs },
+			);
 			if (response?.selected) {
 				setPreview(response);
 				setStageChanges(false);

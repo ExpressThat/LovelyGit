@@ -7,6 +7,7 @@ import {
 	sendRequestWithResponse,
 	subscribeToServerEvent,
 } from "@/lib/commands";
+import { nativeDialogTimeoutMs } from "@/lib/nativeDialogTimeout";
 import { useCloneRepository } from "./useCloneRepository";
 
 const repositoryMocks = vi.hoisted(() => ({
@@ -35,6 +36,19 @@ describe("useCloneRepository", () => {
 		vi.spyOn(globalThis.crypto, "randomUUID").mockReturnValue(operationId);
 	});
 	afterEach(() => vi.restoreAllMocks());
+
+	it("allows time for a native destination picker", async () => {
+		send.mockResolvedValueOnce({ parentPath: "C:\\projects" });
+		const { result } = renderHook(() => useCloneRepository());
+
+		await act(() => result.current.chooseDestination());
+
+		expect(result.current.parentPath).toBe("C:\\projects");
+		expect(send).toHaveBeenCalledWith(
+			{ commandType: "ChooseCloneDestination" },
+			{ timeoutMs: nativeDialogTimeoutMs },
+		);
+	});
 
 	it("preserves a failed form and permits a successful retry", async () => {
 		send.mockRejectedValueOnce(new Error("Authentication failed"));

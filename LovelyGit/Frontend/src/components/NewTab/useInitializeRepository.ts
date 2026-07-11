@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import { sendRequestWithResponse } from "@/lib/commands";
+import { nativeDialogTimeoutMs } from "@/lib/nativeDialogTimeout";
 import { NativeMessageType } from "@/lib/nativeMessaging";
 import { useRepositoryContext } from "@/lib/repositoryContext";
 
@@ -20,9 +21,10 @@ export function useInitializeRepository() {
 
 	const chooseDestination = async () => {
 		try {
-			const result = await sendRequestWithResponse({
-				commandType: NativeMessageType.ChooseRepositoryDestination,
-			});
+			const result = await sendRequestWithResponse(
+				{ commandType: NativeMessageType.ChooseRepositoryDestination },
+				{ timeoutMs: nativeDialogTimeoutMs },
+			);
 			if (result?.parentPath) setParentPath(result.parentPath);
 		} catch (error) {
 			toast.error(message(error, "Could not choose a destination folder."));

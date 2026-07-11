@@ -5,6 +5,7 @@ import {
 	sendRequestWithResponse,
 	subscribeToServerEvent,
 } from "@/lib/commands";
+import { nativeDialogTimeoutMs } from "@/lib/nativeDialogTimeout";
 import { NativeMessageType } from "@/lib/nativeMessaging";
 import { useRepositoryContext } from "@/lib/repositoryContext";
 import { inferCloneDirectoryName } from "./CloneRepositoryHelpers";
@@ -51,9 +52,10 @@ export function useCloneRepository() {
 	};
 	const chooseDestination = async () => {
 		try {
-			const result = await sendRequestWithResponse({
-				commandType: NativeMessageType.ChooseCloneDestination,
-			});
+			const result = await sendRequestWithResponse(
+				{ commandType: NativeMessageType.ChooseCloneDestination },
+				{ timeoutMs: nativeDialogTimeoutMs },
+			);
 			if (result?.parentPath) setParentPath(result.parentPath);
 		} catch (error) {
 			toast.error(

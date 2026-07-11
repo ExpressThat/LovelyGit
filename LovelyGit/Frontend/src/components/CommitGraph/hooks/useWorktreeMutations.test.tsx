@@ -4,6 +4,7 @@ import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { RepositoryWorktreeItem } from "@/generated/types";
 import { sendRequestWithResponse } from "@/lib/commands";
+import { nativeDialogTimeoutMs } from "@/lib/nativeDialogTimeout";
 import { useWorktreeMutations } from "./useWorktreeMutations";
 
 const reloadRepositories = vi.fn(async () => undefined);
@@ -16,6 +17,20 @@ vi.mock("@/lib/repositoryContext", () => ({
 
 describe("useWorktreeMutations", () => {
 	beforeEach(() => vi.clearAllMocks());
+
+	it("allows time for a native worktree destination picker", async () => {
+		vi.mocked(sendRequestWithResponse).mockResolvedValueOnce({
+			path: "C:/repo-demo",
+		});
+		const { result } = renderController(vi.fn());
+
+		await act(() => result.current.chooseDestination());
+
+		expect(sendRequestWithResponse).toHaveBeenCalledWith(
+			{ commandType: "ChooseWorktreeDestination" },
+			{ timeoutMs: nativeDialogTimeoutMs },
+		);
+	});
 
 	it("creates the selected branch worktree and refreshes native refs", async () => {
 		vi.mocked(sendRequestWithResponse).mockResolvedValueOnce(undefined);
