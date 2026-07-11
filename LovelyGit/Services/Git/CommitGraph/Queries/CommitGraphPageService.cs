@@ -18,20 +18,6 @@ internal sealed partial class CommitGraphPageService : IDisposable
     private readonly HashSet<Guid> _repositoriesLoadedThisProcess = new();
     private Guid? _activeRepositoryId;
 
-    public CommitGraphPageService(
-        KnownGitRepositorysRepository knownGitRepositorysRepository,
-        CommitGraphRepository commitGraphRepository,
-        CommitDetailsPreloadService commitDetailsPreloadService,
-        CommitFileDiffService commitFileDiffService,
-        CommitGraphBackgroundWorkerOptions backgroundWorkerOptions)
-    {
-        _knownGitRepositorysRepository = knownGitRepositorysRepository;
-        _commitGraphRepository = commitGraphRepository;
-        _commitDetailsPreloadService = commitDetailsPreloadService;
-        _commitFileDiffService = commitFileDiffService;
-        _backgroundWorkerOptions = backgroundWorkerOptions;
-    }
-
     public async Task<CommitGraphPageQueryResult> GetPageAsync(
         Guid knownRepositoryId,
         int limit,
@@ -78,6 +64,10 @@ internal sealed partial class CommitGraphPageService : IDisposable
             {
                 CloseGraph(foundRepo.Id);
             }
+            else
+            {
+                ScheduleGraphClose(foundRepo.Id);
+            }
 
             return CommitGraphPageQueryResult.Success(response);
         }
@@ -90,12 +80,15 @@ internal sealed partial class CommitGraphPageService : IDisposable
     public void Dispose()
     {
         List<IActiveGraphWork> cacheWork;
+        List<CommitGraphManager> graphs;
         lock (_cacheWorkLock)
         {
             cacheWork = _activeCacheWork.Values.Cast<IActiveGraphWork>().ToList();
             _activeCacheWork.Clear();
             cacheWork.AddRange(_activeGraphCloseWork.Values);
             _activeGraphCloseWork.Clear();
+            graphs = _activeGraphs.Values.ToList();
+            _activeGraphs.Clear();
         }
 
         foreach (var work in cacheWork)
@@ -116,12 +109,10 @@ internal sealed partial class CommitGraphPageService : IDisposable
             work.Dispose();
         }
 
-        foreach (var graph in _activeGraphs.Values)
+        foreach (var graph in graphs)
         {
             graph.Dispose();
         }
-
-        _activeGraphs.Clear();
     }
 
     private async Task ResetRepositoryGraphAsync(Guid repositoryId, CancellationToken cancellationToken)

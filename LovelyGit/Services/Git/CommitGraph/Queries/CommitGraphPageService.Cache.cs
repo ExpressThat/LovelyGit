@@ -1,6 +1,5 @@
 using ExpressThat.LovelyGit.Services.Data.Models;
 using ExpressThat.LovelyGit.Services.Data.Repositorys;
-using System.Runtime;
 
 namespace ExpressThat.LovelyGit.Services.Git.CommitGraph.Queries;
 
@@ -133,10 +132,13 @@ internal sealed partial class CommitGraphPageService : IDisposable
         string repositoryPath,
         CancellationToken cancellationToken)
     {
-        if (_activeGraphs.TryGetValue(repositoryId, out var graph))
+        lock (_cacheWorkLock)
         {
-            CancelScheduledGraphClose(repositoryId);
-            return new CommitGraphOpenResult(true, graph, null);
+            if (_activeGraphs.TryGetValue(repositoryId, out var graph))
+            {
+                CancelScheduledGraphCloseCore(repositoryId);
+                return new CommitGraphOpenResult(true, graph, null);
+            }
         }
 
         var openResult = await CommitGraphManager.TryOpenAsync(
@@ -147,7 +149,21 @@ internal sealed partial class CommitGraphPageService : IDisposable
             .ConfigureAwait(false);
         if (openResult.Success && openResult.Graph != null)
         {
-            _activeGraphs[repositoryId] = openResult.Graph;
+            CommitGraphManager? redundantGraph = null;
+            lock (_cacheWorkLock)
+            {
+                if (_activeGraphs.TryGetValue(repositoryId, out var existingGraph))
+                {
+                    redundantGraph = openResult.Graph;
+                    openResult = new CommitGraphOpenResult(true, existingGraph, null);
+                }
+                else
+                {
+                    _activeGraphs[repositoryId] = openResult.Graph;
+                }
+            }
+
+            redundantGraph?.Dispose();
         }
 
         return openResult;
@@ -171,18 +187,13 @@ internal sealed partial class CommitGraphPageService : IDisposable
 
     private void CloseGraph(Guid repositoryId)
     {
-        if (_activeGraphs.Remove(repositoryId, out var completedGraph))
+        CommitGraphManager? completedGraph;
+        lock (_cacheWorkLock)
         {
-            completedGraph.Dispose();
-            CollectDisposedGraphCaches();
+            _activeGraphs.Remove(repositoryId, out completedGraph);
         }
-    }
 
-    private static void CollectDisposedGraphCaches()
-    {
-        GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce;
-        GC.Collect(2, GCCollectionMode.Aggressive, blocking: true, compacting: true);
-        GC.WaitForPendingFinalizers();
+        completedGraph?.Dispose();
     }
 
     private interface IActiveGraphWork : IDisposable

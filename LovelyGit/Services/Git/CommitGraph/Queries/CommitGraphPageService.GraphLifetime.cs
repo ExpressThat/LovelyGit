@@ -2,9 +2,7 @@ namespace ExpressThat.LovelyGit.Services.Git.CommitGraph.Queries;
 
 internal sealed partial class CommitGraphPageService
 {
-    private static readonly TimeSpan ActiveGraphIdleCloseDelay = TimeSpan.FromSeconds(2);
-
-    private void ScheduleGraphClose(Guid repositoryId)
+    internal void ScheduleGraphClose(Guid repositoryId)
     {
         var work = new ActiveGraphCloseWork();
         lock (_cacheWorkLock)
@@ -17,7 +15,7 @@ internal sealed partial class CommitGraphPageService
         }
     }
 
-    private void CancelScheduledGraphClose(Guid repositoryId)
+    internal void CancelScheduledGraphClose(Guid repositoryId)
     {
         lock (_cacheWorkLock)
         {
@@ -38,24 +36,22 @@ internal sealed partial class CommitGraphPageService
         ActiveGraphCloseWork work,
         CancellationToken cancellationToken)
     {
-        var shouldClose = false;
+        CommitGraphManager? graphToClose = null;
         try
         {
-            await Task.Delay(ActiveGraphIdleCloseDelay, cancellationToken).ConfigureAwait(false);
+            await Task.Delay(_activeGraphIdleCloseDelay, cancellationToken).ConfigureAwait(false);
             lock (_cacheWorkLock)
             {
-                shouldClose = _activeGraphCloseWork.TryGetValue(repositoryId, out var active)
+                var shouldClose = _activeGraphCloseWork.TryGetValue(repositoryId, out var active)
                     && ReferenceEquals(active, work);
                 if (shouldClose)
                 {
                     _activeGraphCloseWork.Remove(repositoryId);
+                    _activeGraphs.Remove(repositoryId, out graphToClose);
                 }
             }
 
-            if (shouldClose)
-            {
-                CloseGraph(repositoryId);
-            }
+            graphToClose?.Dispose();
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
