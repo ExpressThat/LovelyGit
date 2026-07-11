@@ -5,6 +5,7 @@ using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.CommitGrap
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Bisect;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Configuration;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.KnownRepository;
+using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Lfs;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Settings;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.WorkingTree;
 using ExpressThat.LovelyGit.Services.NativeMessaging.Commands;
@@ -28,6 +29,7 @@ namespace ExpressThat.LovelyGit.Services
                 .AddCommitGraphCommands()
                 .AddBisectCommands()
                 .AddConfigurationCommands()
+                .AddLfsCommands()
                 .AddWorkingTreeCommands()
                 .AddSettingsCommands();
 

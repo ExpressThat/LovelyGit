@@ -30,6 +30,8 @@ using ExpressThat.LovelyGit.Services.Git.Submodules;
 using ExpressThat.LovelyGit.Services.Git.Bisect;
 using ExpressThat.LovelyGit.Services.Git.Configuration;
 using ExpressThat.LovelyGit.Services.Git.RemoteSync;
+using ExpressThat.LovelyGit.Services.Git.Lfs;
+using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Lfs;
 using System.Text.Json;
 
 namespace ExpressThat.LovelyGit.Services.NativeMessaging
@@ -146,6 +148,12 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging
         GetSubmodules,
         [NativeMessageContract(typeof(ManageSubmoduleCommandArguments), typeof(EmptyCommandArguments))]
         ManageSubmodule,
+
+        // Native Git LFS attribute reads and explicit Git LFS mutations.
+        [NativeMessageContract(typeof(GetGitLfsStateCommandArguments), typeof(LfsRepositoryState))]
+        GetGitLfsState,
+        [NativeMessageContract(typeof(ManageGitLfsCommandArguments), typeof(LfsRepositoryState))]
+        ManageGitLfs,
 
         // Linked worktree creation, navigation, locking, and removal.
         [NativeMessageContract(typeof(EmptyCommandArguments), typeof(WorktreeDestinationResponse))]

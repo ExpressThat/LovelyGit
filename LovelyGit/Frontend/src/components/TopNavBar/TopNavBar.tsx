@@ -1,6 +1,7 @@
 import { Command, GitCompareArrows, Search, Settings } from "lucide-react";
 import { BisectControl } from "./components/BisectControl";
 import { BranchControl } from "./components/BranchControl";
+import { LfsManager } from "./components/LfsManager";
 import { PatchApplyControl } from "./components/PatchApplyControl";
 import { RemoteActionsControl } from "./components/RemoteActionsControl";
 import { RemoteWebActionControl } from "./components/RemoteWebActionControl";
@@ -70,6 +71,7 @@ export function TopNavBar({
 						<Command aria-hidden="true" className="size-5" />
 					</button>
 					<BisectControl repositoryId={repositoryId} />
+					<LfsManager repositoryId={repositoryId} />
 					<SubmoduleManager repositoryId={repositoryId} />
 					<button
 						aria-label="Search commits"
