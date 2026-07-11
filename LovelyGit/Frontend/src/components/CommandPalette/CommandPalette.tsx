@@ -1,9 +1,11 @@
 import { Search } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
 import { useEffect, useMemo, useState } from "react";
+import { copyToClipboard } from "@/components/CommitGraph/utils/clipboard";
 import {
 	openRemoteWebResource,
 	openRepositoryTerminal,
+	revealKnownRepository,
 } from "@/components/TopNavBar/components/RepositoryCommands";
 import {
 	Dialog,
@@ -43,15 +45,24 @@ export function CommandPalette({
 	onRefreshRepository: () => void | Promise<void>;
 	open: boolean;
 }) {
-	const { currentRepositoryId, repositories, setCurrentRepositoryId } =
-		useRepositoryContext();
+	const {
+		currentRepository,
+		currentRepositoryId,
+		repositories,
+		setCurrentRepositoryId,
+	} = useRepositoryContext();
 	const [query, setQuery] = useState("");
 	const [activeIndex, setActiveIndex] = useState(0);
 	const items = useMemo(
 		() =>
 			createPaletteItems({
 				currentRepositoryId,
+				currentRepositoryPath: currentRepository?.path ?? null,
 				onClose: () => onOpenChange(false),
+				onCopyRepositoryPath: () => {
+					if (currentRepository?.path)
+						void copyToClipboard(currentRepository.path, "Repository path");
+				},
 				onCreateBranch,
 				onManageRemotes,
 				onManageStashes,
@@ -67,10 +78,15 @@ export function CommandPalette({
 				},
 				onOpenWorkingChanges,
 				onRefreshRepository,
+				onRevealRepository: () => {
+					if (currentRepositoryId)
+						void revealKnownRepository(currentRepositoryId);
+				},
 				repositories,
 				setCurrentRepositoryId,
 			}),
 		[
+			currentRepository,
 			currentRepositoryId,
 			onOpenChange,
 			onCreateBranch,

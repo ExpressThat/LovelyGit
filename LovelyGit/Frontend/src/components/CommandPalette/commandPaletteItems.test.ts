@@ -12,7 +12,9 @@ function create(
 ) {
 	return createPaletteItems({
 		currentRepositoryId,
+		currentRepositoryPath: currentRepositoryId ? "C:/Example" : null,
 		onClose: vi.fn(),
+		onCopyRepositoryPath: vi.fn(),
 		onCreateBranch: vi.fn(),
 		onManageRemotes: vi.fn(),
 		onManageStashes: vi.fn(),
@@ -22,6 +24,7 @@ function create(
 		onOpenTerminal: vi.fn(),
 		onOpenWorkingChanges: vi.fn(),
 		onRefreshRepository: vi.fn(),
+		onRevealRepository: vi.fn(),
 		repositories: [
 			{
 				id: "repo-2",
@@ -48,6 +51,8 @@ describe("command palette items", () => {
 		const items = create();
 		for (const id of [
 			"refresh",
+			"copy-path",
+			"reveal",
 			"create-branch",
 			"manage-remotes",
 			"manage-stashes",
@@ -56,6 +61,12 @@ describe("command palette items", () => {
 		]) {
 			expect(items.find((item) => item.id === id)?.disabled).toBe(false);
 		}
+	});
+
+	it("keeps path copying disabled until repository metadata is loaded", () => {
+		const items = create("repo-1", { currentRepositoryPath: null });
+		expect(items.find((item) => item.id === "copy-path")?.disabled).toBe(true);
+		expect(items.find((item) => item.id === "reveal")?.disabled).toBe(false);
 	});
 
 	it("closes before opening shared repository workflows", () => {

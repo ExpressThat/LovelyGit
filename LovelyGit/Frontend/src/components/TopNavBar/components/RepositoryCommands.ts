@@ -24,6 +24,21 @@ export async function openRepositoryTerminal(repositoryId: string) {
 	}
 }
 
+export async function revealKnownRepository(repositoryId: string) {
+	try {
+		await sendRequestWithResponse({
+			arguments: { knownRepositoryId: repositoryId },
+			commandType: "RevealKnownGitRepository",
+		});
+	} catch (error) {
+		toast.error(
+			error instanceof Error
+				? error.message
+				: "Could not reveal the repository",
+		);
+	}
+}
+
 export async function openRemoteWebResource(
 	repositoryId: string,
 	kind: RemoteWebResourceKind,

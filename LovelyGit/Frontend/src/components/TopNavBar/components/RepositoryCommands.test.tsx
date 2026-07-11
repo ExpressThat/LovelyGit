@@ -5,7 +5,10 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { sendRequestWithResponse } from "@/lib/commands";
 import { RemoteWebActionControl } from "./RemoteWebActionControl";
-import { openRemoteWebResource } from "./RepositoryCommands";
+import {
+	openRemoteWebResource,
+	revealKnownRepository,
+} from "./RepositoryCommands";
 
 const toast = vi.hoisted(() => ({ error: vi.fn(), success: vi.fn() }));
 
@@ -40,6 +43,19 @@ describe("remote website commands", () => {
 
 		expect(toast.error).toHaveBeenCalledWith("No supported remote");
 		expect(sendRequestWithResponse).toHaveBeenCalledTimes(2);
+	});
+
+	it("reveals a known repository and surfaces Explorer failures", async () => {
+		vi.mocked(sendRequestWithResponse)
+			.mockRejectedValueOnce(new Error("Explorer unavailable"))
+			.mockResolvedValueOnce({});
+		await revealKnownRepository("repo");
+		await revealKnownRepository("repo");
+		expect(sendRequestWithResponse).toHaveBeenLastCalledWith({
+			arguments: { knownRepositoryId: "repo" },
+			commandType: "RevealKnownGitRepository",
+		});
+		expect(toast.error).toHaveBeenCalledWith("Explorer unavailable");
 	});
 
 	it("disables the toolbar action without a repository", async () => {

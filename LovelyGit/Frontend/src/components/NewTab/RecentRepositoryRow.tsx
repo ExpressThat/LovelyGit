@@ -1,6 +1,6 @@
 import { FolderGit2, FolderOpen, LoaderCircle, Trash2 } from "lucide-react";
 import { useState } from "react";
-import { toast } from "sonner";
+import { revealKnownRepository } from "@/components/TopNavBar/components/RepositoryCommands";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -23,7 +23,6 @@ import {
 	ContextMenuTrigger,
 } from "@/components/ui/context-menu";
 import type { KnownGitRepository } from "@/generated/types";
-import { sendRequestWithResponse } from "@/lib/commands";
 
 export function RecentRepositoryRow({
 	onOpen,
@@ -39,16 +38,6 @@ export function RecentRepositoryRow({
 	const [removeError, setRemoveError] = useState<string | null>(null);
 	const path = repository.path ?? "";
 	const label = repository.name || pathTail(path) || "Repository";
-	const reveal = async () => {
-		try {
-			await sendRequestWithResponse({
-				commandType: "RevealKnownGitRepository",
-				arguments: { knownRepositoryId: repository.id },
-			});
-		} catch (error) {
-			toast.error(errorMessage(error, "Could not reveal the repository."));
-		}
-	};
 	const remove = async () => {
 		setIsRemoving(true);
 		setRemoveError(null);
@@ -78,7 +67,9 @@ export function RecentRepositoryRow({
 					<ContextMenuItem onClick={onOpen}>
 						<FolderGit2 aria-hidden="true" /> Open in LovelyGit
 					</ContextMenuItem>
-					<ContextMenuItem onClick={() => void reveal()}>
+					<ContextMenuItem
+						onClick={() => void revealKnownRepository(repository.id)}
+					>
 						<FolderOpen aria-hidden="true" /> Show in File Explorer
 					</ContextMenuItem>
 					<ContextMenuSeparator />

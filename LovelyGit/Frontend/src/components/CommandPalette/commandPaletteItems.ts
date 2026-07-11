@@ -1,7 +1,9 @@
 import {
 	Archive,
+	Copy,
 	ExternalLink,
 	FolderGit2,
+	FolderOpen,
 	GitBranch,
 	GitCompareArrows,
 	Plus,
@@ -25,7 +27,9 @@ export type PaletteItem = {
 
 type ItemOptions = {
 	currentRepositoryId: string | null;
+	currentRepositoryPath: string | null;
 	onClose: () => void;
+	onCopyRepositoryPath: () => void;
 	onOpenCommitSearch: () => void;
 	onCreateBranch: () => void;
 	onManageRemotes: () => void;
@@ -34,6 +38,7 @@ type ItemOptions = {
 	onOpenRemote: () => void;
 	onOpenTerminal: () => void;
 	onRefreshRepository: () => void | Promise<void>;
+	onRevealRepository: () => void;
 	onOpenWorkingChanges: () => void;
 	repositories: KnownGitRepository[];
 	setCurrentRepositoryId: (id: string | null) => Promise<void>;
@@ -72,6 +77,24 @@ export function createPaletteItems(options: ItemOptions): PaletteItem[] {
 			icon: RefreshCw,
 			disabled: needsRepository,
 			run: run(options.onRefreshRepository),
+		},
+		{
+			id: "copy-path",
+			label: "Copy Repository Path",
+			description: "Copy the active worktree path to the clipboard",
+			keywords: "folder directory location clipboard",
+			icon: Copy,
+			disabled: !options.currentRepositoryPath,
+			run: run(options.onCopyRepositoryPath),
+		},
+		{
+			id: "reveal",
+			label: "Show Repository in File Explorer",
+			description: "Reveal the active worktree in its containing folder",
+			keywords: "open folder directory reveal",
+			icon: FolderOpen,
+			disabled: needsRepository,
+			run: run(options.onRevealRepository),
 		},
 		{
 			id: "create-branch",
