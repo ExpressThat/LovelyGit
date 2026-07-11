@@ -6,7 +6,6 @@ import { AppOverlaysContainer } from "./AppOverlaysContainer";
 import { type DetailsPanelState, panelTitle } from "./AppPanelState";
 import { CommitGraphLayer } from "./components/CommitGraph/CommitGraphLayer";
 import { SlidingDetailsPanel } from "./components/DetailsPanel/SlidingDetailsPanel";
-import { NewTab } from "./components/NewTab/NewTab";
 import { TopNavBar } from "./components/TopNavBar/TopNavBar";
 import { useWorkingTreeChanges } from "./components/WorkingChanges/useWorkingTreeChanges";
 import type { CommitGraphRow } from "./generated/types";
@@ -14,6 +13,7 @@ import { RepositoryProvider } from "./lib/repositoryContext";
 import { useApplyFont } from "./lib/settings/font/useApplyFont";
 import { useSetting } from "./lib/settings/settingsStore";
 import { useApplyTheme } from "./lib/settings/theme/useApplyTheme";
+import { NewTabSurface } from "./NewTabSurface";
 import { useAppOverlayState } from "./useAppOverlayState";
 import { useFileDiscoveryTargets } from "./useFileDiscoveryTargets";
 import { createRepositoryRefreshAction } from "./useRepositoryRefresh";
@@ -159,7 +159,7 @@ function App() {
 								initial={{ opacity: 0 }}
 								transition={{ duration: 0.18 }}
 							>
-								<NewTab />
+								<NewTabSurface />
 							</motion.div>
 						)}
 					</div>
