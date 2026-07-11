@@ -77,7 +77,6 @@ describe("useStashDialog", () => {
 		});
 
 		send.mockResolvedValueOnce(undefined);
-		send.mockResolvedValueOnce({ stashes: [] });
 		await act(() => result.current.runAction(StashAction.Drop, stash));
 
 		expect(result.current.dropTarget).toBeNull();
@@ -110,6 +109,42 @@ describe("useStashDialog", () => {
 		await act(() => result.current.runAction(StashAction.Create));
 		expect(result.current.message).toBe("");
 		expect(result.current.stashes).toEqual([stash]);
+		expect(onRepositoryChanged).toHaveBeenCalledOnce();
+	});
+
+	it("preserves a failed branch target and clears it after retry", async () => {
+		const onRepositoryChanged = vi.fn();
+		send.mockResolvedValueOnce({
+			refs: [
+				{ commitHash: "abc", kind: "Local", name: "main", remoteUrl: null },
+			],
+			stashes: [stash],
+		});
+		const { result } = renderHook(() =>
+			useStashDialog("repo", onRepositoryChanged),
+		);
+		act(() => result.current.setOpen(true));
+		await waitFor(() => expect(result.current.stashes).toEqual([stash]));
+		act(() => result.current.setBranchTarget(stash));
+
+		send.mockRejectedValueOnce(new Error("Branch already exists"));
+		await act(() =>
+			result.current.runAction(StashAction.Branch, stash, "recover/work"),
+		);
+		expect(result.current.branchTarget).toEqual(stash);
+		expect(onRepositoryChanged).not.toHaveBeenCalled();
+		expect(send).toHaveBeenLastCalledWith(
+			expect.objectContaining({
+				arguments: expect.objectContaining({ branchName: "recover/work" }),
+			}),
+			expect.any(Object),
+		);
+
+		send.mockResolvedValueOnce(undefined);
+		await act(() =>
+			result.current.runAction(StashAction.Branch, stash, "recover/work"),
+		);
+		expect(result.current.branchTarget).toBeNull();
 		expect(onRepositoryChanged).toHaveBeenCalledOnce();
 	});
 });

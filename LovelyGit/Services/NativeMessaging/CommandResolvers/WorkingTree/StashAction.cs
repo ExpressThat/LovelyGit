@@ -12,4 +12,5 @@ public enum StashAction
     Apply,
     Pop,
     Drop,
+    Branch,
 }

@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { StashAction } from "@/generated/types";
+import { BranchFromStashDialog } from "./BranchFromStashDialog";
 import { StashList } from "./StashList";
 import { useStashDialog } from "./useStashDialog";
 
@@ -46,6 +47,8 @@ export function StashDialog({
 			: { onOpenChange, open: controlledOpen };
 	const stash = useStashDialog(repositoryId, onRepositoryChanged, controlled);
 	const {
+		branchNames,
+		branchTarget,
 		busyAction,
 		dropTarget,
 		includeUntracked,
@@ -56,6 +59,7 @@ export function StashDialog({
 		restoreIndex,
 		runAction,
 		setDropTarget,
+		setBranchTarget,
 		setIncludeUntracked,
 		setMessage,
 		setOpen,
@@ -158,6 +162,7 @@ export function StashDialog({
 							isLoading={isLoading}
 							loadError={loadError}
 							onApply={(item) => void runAction(StashAction.Apply, item)}
+							onBranch={setBranchTarget}
 							onDrop={setDropTarget}
 							onPop={(item) => void runAction(StashAction.Pop, item)}
 							stashes={stashes}
@@ -200,6 +205,19 @@ export function StashDialog({
 					</AlertDialogFooter>
 				</AlertDialogContent>
 			</AlertDialog>
+			<BranchFromStashDialog
+				branchNames={branchNames}
+				isBusy={busyAction === StashAction.Branch}
+				onClose={() => setBranchTarget(null)}
+				onConfirm={(branchName) =>
+					void runAction(
+						StashAction.Branch,
+						branchTarget ?? undefined,
+						branchName,
+					)
+				}
+				stash={branchTarget}
+			/>
 		</>
 	);
 }

@@ -1,5 +1,6 @@
 using System.Text.RegularExpressions;
 using ExpressThat.LovelyGit.Services.Git.Cli;
+using ExpressThat.LovelyGit.Services.Git.Branches;
 using ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.WorkingTree;
 
@@ -74,6 +75,26 @@ internal sealed partial class GitStashCommandService
         CancellationToken cancellationToken) =>
         ExecuteAsync(repositoryPath, StashAction.Drop, NormalizeAlias(selector), null, false, false, cancellationToken);
 
+    public Task BranchFromStashAsync(
+        string repositoryPath,
+        string? selector,
+        string? branchName,
+        CancellationToken cancellationToken)
+    {
+        var normalizedBranchName = branchName?.Trim() ?? string.Empty;
+        if (!GitBranchNameValidator.IsValidBranchName(normalizedBranchName))
+        {
+            throw new ArgumentException("Branch name is not valid.", nameof(branchName));
+        }
+
+        var arguments = BuildExistingArguments(
+            "branch",
+            selector,
+            restoreIndex: false).ToList();
+        arguments.Insert(2, normalizedBranchName);
+        return RunAsync(repositoryPath, StashAction.Branch, arguments, cancellationToken);
+    }
+
     private async Task RunAsync(
         string repositoryPath,
         StashAction action,
@@ -87,7 +108,7 @@ internal sealed partial class GitStashCommandService
             $"{action} stash",
             arguments,
             paths.WorkTreeDirectory,
-            action is StashAction.Apply or StashAction.Pop
+            action is StashAction.Apply or StashAction.Pop or StashAction.Branch
                 ? "Resolve any conflicts in the working tree, then continue from there."
                 : null,
             cancellationToken).ConfigureAwait(false);

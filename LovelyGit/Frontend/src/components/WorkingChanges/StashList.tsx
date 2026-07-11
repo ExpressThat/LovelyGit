@@ -1,6 +1,7 @@
 import {
 	Archive,
 	ArchiveRestore,
+	GitBranch,
 	PackageOpen,
 	Trash2,
 } from "@/components/icons/lovelyIcons";
@@ -12,6 +13,7 @@ export function StashList({
 	isLoading,
 	loadError,
 	onApply,
+	onBranch,
 	onDrop,
 	onPop,
 	stashes,
@@ -20,6 +22,7 @@ export function StashList({
 	isLoading: boolean;
 	loadError: string | null;
 	onApply: (stash: RepositoryStashItem) => void;
+	onBranch: (stash: RepositoryStashItem) => void;
 	onDrop: (stash: RepositoryStashItem) => void;
 	onPop: (stash: RepositoryStashItem) => void;
 	stashes: RepositoryStashItem[];
@@ -40,6 +43,7 @@ export function StashList({
 					busyAction={busyAction}
 					key={`${stash.selector}:${stash.commitHash}`}
 					onApply={() => onApply(stash)}
+					onBranch={() => onBranch(stash)}
 					onDrop={() => onDrop(stash)}
 					onPop={() => onPop(stash)}
 					stash={stash}
@@ -52,12 +56,14 @@ export function StashList({
 function StashRow({
 	busyAction,
 	onApply,
+	onBranch,
 	onDrop,
 	onPop,
 	stash,
 }: {
 	busyAction: StashAction | null;
 	onApply: () => void;
+	onBranch: () => void;
 	onDrop: () => void;
 	onPop: () => void;
 	stash: RepositoryStashItem;
@@ -89,6 +95,9 @@ function StashRow({
 				</div>
 			</div>
 			<div className="flex justify-end gap-1">
+				<Button disabled={isBusy} onClick={onBranch} size="sm" variant="ghost">
+					<GitBranch aria-hidden="true" /> Branch
+				</Button>
 				<Button disabled={isBusy} onClick={onApply} size="sm" variant="ghost">
 					<ArchiveRestore aria-hidden="true" /> Apply
 				</Button>

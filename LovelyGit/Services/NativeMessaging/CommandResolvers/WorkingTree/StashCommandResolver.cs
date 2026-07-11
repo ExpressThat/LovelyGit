@@ -43,14 +43,25 @@ internal sealed class StashCommandResolver : CommandResponder<StashCommandArgume
 
         try
         {
-            await _stashCommands.ExecuteAsync(
-                foundRepo.Path,
-                arguments.Action,
-                arguments.Selector,
-                arguments.Message,
-                arguments.IncludeUntracked,
-                arguments.RestoreIndex,
-                CancellationToken.None).ConfigureAwait(false);
+            if (arguments.Action == StashAction.Branch)
+            {
+                await _stashCommands.BranchFromStashAsync(
+                    foundRepo.Path,
+                    arguments.Selector,
+                    arguments.BranchName,
+                    CancellationToken.None).ConfigureAwait(false);
+            }
+            else
+            {
+                await _stashCommands.ExecuteAsync(
+                    foundRepo.Path,
+                    arguments.Action,
+                    arguments.Selector,
+                    arguments.Message,
+                    arguments.IncludeUntracked,
+                    arguments.RestoreIndex,
+                    CancellationToken.None).ConfigureAwait(false);
+            }
             return Success(command);
         }
         catch (Exception ex)

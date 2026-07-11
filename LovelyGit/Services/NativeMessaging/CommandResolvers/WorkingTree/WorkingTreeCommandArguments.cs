@@ -145,4 +145,5 @@ public record StashCommandArguments
     public string? Message { get; set; }
     public bool IncludeUntracked { get; set; }
     public bool RestoreIndex { get; set; }
+    public string? BranchName { get; set; }
 }

@@ -1,6 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
-import { type RepositoryStashItem, StashAction } from "@/generated/types";
+import {
+	CommitRefKind,
+	type RepositoryStashItem,
+	StashAction,
+} from "@/generated/types";
 import { sendRequestWithResponse } from "@/lib/commands";
 import { gitMutationTimeoutMs } from "@/lib/gitMutationTimeout";
 import { NativeMessageType } from "@/lib/nativeMessaging";
@@ -14,6 +18,10 @@ export function useStashDialog(
 	},
 ) {
 	const [busyAction, setBusyAction] = useState<StashAction | null>(null);
+	const [branchNames, setBranchNames] = useState<string[]>([]);
+	const [branchTarget, setBranchTarget] = useState<RepositoryStashItem | null>(
+		null,
+	);
 	const [dropTarget, setDropTarget] = useState<RepositoryStashItem | null>(
 		null,
 	);
@@ -36,6 +44,11 @@ export function useStashDialog(
 				commandType: NativeMessageType.GetRepositoryRefs,
 			});
 			setStashes(response.stashes);
+			setBranchNames(
+				(response.refs ?? [])
+					.filter((item) => item.kind === CommitRefKind.Local)
+					.map((item) => item.name),
+			);
 		} catch (error) {
 			setLoadError(
 				error instanceof Error ? error.message : "Failed to load stashes.",
@@ -52,6 +65,7 @@ export function useStashDialog(
 	const runAction = async (
 		action: StashAction,
 		stash?: RepositoryStashItem,
+		branchName?: string,
 	) => {
 		if (busyAction) return;
 		setBusyAction(action);
@@ -62,6 +76,8 @@ export function useStashDialog(
 				{
 					arguments: {
 						action,
+						branchName:
+							action === StashAction.Branch ? (branchName ?? null) : null,
 						includeUntracked,
 						message:
 							action === StashAction.Create ? message.trim() || null : null,
@@ -74,8 +90,15 @@ export function useStashDialog(
 				{ timeoutMs: gitMutationTimeoutMs },
 			);
 			if (action === StashAction.Create) setMessage("");
+			if (action === StashAction.Branch) setBranchTarget(null);
 			setDropTarget(null);
-			await Promise.all([loadStashes(), onRepositoryChanged()]);
+			await onRepositoryChanged();
+			if (action === StashAction.Create) await loadStashes();
+			else if (stash && action !== StashAction.Apply) {
+				setStashes((current) =>
+					current.filter((item) => item.selector !== stash.selector),
+				);
+			}
 			toast.success(`${actionLabel} complete`, { id: toastId });
 		} catch (error) {
 			toast.error(
@@ -88,6 +111,8 @@ export function useStashDialog(
 	};
 
 	return {
+		branchNames,
+		branchTarget,
 		busyAction,
 		dropTarget,
 		includeUntracked,
@@ -98,6 +123,7 @@ export function useStashDialog(
 		restoreIndex,
 		runAction,
 		setDropTarget,
+		setBranchTarget,
 		setIncludeUntracked,
 		setMessage,
 		setOpen,
@@ -113,5 +139,7 @@ function stashActionLabel(action: StashAction) {
 			? "Apply stash"
 			: action === StashAction.Pop
 				? "Pop stash"
-				: "Delete stash";
+				: action === StashAction.Branch
+					? "Create branch from stash"
+					: "Delete stash";
 }
