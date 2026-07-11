@@ -16,6 +16,7 @@ import type { TagAction } from "./TagContextMenu";
 export function CommitRow({
 	branchMutationBusy,
 	branchRemoteName,
+	archiveBusy,
 	copyPatchBusy,
 	comparison,
 	savePatchBusy,
@@ -29,6 +30,7 @@ export function CommitRow({
 	onCreateTag,
 	onCreateBranch,
 	onCopyPatch,
+	onSaveArchive,
 	onSavePatch,
 	onCreateBranchFromTag,
 	onIntegrateBranch,
@@ -46,6 +48,7 @@ export function CommitRow({
 }: {
 	branchMutationBusy: boolean;
 	branchRemoteName: string | null;
+	archiveBusy: boolean;
 	copyPatchBusy: boolean;
 	comparison: CommitComparisonController;
 	savePatchBusy: boolean;
@@ -66,6 +69,7 @@ export function CommitRow({
 	onCreateTag: (row: CommitGraphRow) => void;
 	onCreateBranch: (row: CommitGraphRow) => void;
 	onCopyPatch: (row: CommitGraphRow) => void;
+	onSaveArchive: (row: CommitGraphRow) => void;
 	onSavePatch: (row: CommitGraphRow) => void;
 	onCreateBranchFromTag: (tagName: string, commitHash: string) => void;
 	onSelect: (row: CommitGraphRow) => void;
@@ -151,6 +155,7 @@ export function CommitRow({
 
 	return (
 		<CommitContextMenu
+			archiveBusy={archiveBusy}
 			comparisonBase={comparison.base}
 			copyPatchBusy={copyPatchBusy}
 			savePatchBusy={savePatchBusy}
@@ -162,6 +167,7 @@ export function CommitRow({
 			onCreateTag={onCreateTag}
 			onCreateBranch={onCreateBranch}
 			onCopyPatch={onCopyPatch}
+			onSaveArchive={onSaveArchive}
 			onSavePatch={onSavePatch}
 			onOpenDetails={onSelect}
 			onSetComparisonBase={comparison.setBase}

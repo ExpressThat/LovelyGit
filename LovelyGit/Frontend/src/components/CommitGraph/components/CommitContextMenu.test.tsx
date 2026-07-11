@@ -104,6 +104,17 @@ describe("CommitContextMenu", () => {
 		expect(onSavePatch).toHaveBeenCalledWith(row);
 	});
 
+	it("exports the selected commit tree as an archive", async () => {
+		const user = userEvent.setup();
+		const onSaveArchive = vi.fn();
+		renderMenu({ onSaveArchive });
+		fireEvent.contextMenu(screen.getByRole("button", { name: "commit row" }));
+
+		await user.click(await screen.findByText("Export commit archive…"));
+
+		expect(onSaveArchive).toHaveBeenCalledWith(row);
+	});
+
 	it("opens a commit-aware bisect confirmation", async () => {
 		const user = userEvent.setup();
 		renderMenu({});
@@ -165,6 +176,7 @@ function renderMenu({
 	onInteractiveRebase = vi.fn(),
 	onCopyPatch = vi.fn(),
 	onSavePatch = vi.fn(),
+	onSaveArchive = vi.fn(),
 	onReset = vi.fn(),
 	onCompare = vi.fn(),
 	onCheckoutCommit = vi.fn(),
@@ -176,6 +188,7 @@ function renderMenu({
 	onInteractiveRebase?: (selected: CommitGraphRow) => void;
 	onCopyPatch?: (selected: CommitGraphRow) => void;
 	onSavePatch?: (selected: CommitGraphRow) => void;
+	onSaveArchive?: (selected: CommitGraphRow) => void;
 	onReset?: (selected: CommitGraphRow) => void;
 	onCompare?: (selected: CommitGraphRow) => void;
 	onCheckoutCommit?: (selected: CommitGraphRow) => void;
@@ -183,6 +196,7 @@ function renderMenu({
 }) {
 	return render(
 		<CommitContextMenu
+			archiveBusy={false}
 			comparisonBase={comparisonBase}
 			copyPatchBusy={false}
 			savePatchBusy={false}
@@ -194,6 +208,7 @@ function renderMenu({
 			onCreateBranch={onCreateBranch}
 			onCopyPatch={onCopyPatch}
 			onSavePatch={onSavePatch}
+			onSaveArchive={onSaveArchive}
 			onCreateTag={vi.fn()}
 			onOpenDetails={vi.fn()}
 			onSetComparisonBase={onSetComparisonBase}

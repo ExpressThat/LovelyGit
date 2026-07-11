@@ -7,7 +7,9 @@ import { copyToClipboard } from "../utils/clipboard";
 
 export function useCommitPatchActions(repositoryId: string | null) {
 	const [busyCommitHash, setBusyCommitHash] = useState<string | null>(null);
-	const [busyAction, setBusyAction] = useState<"copy" | "save" | null>(null);
+	const [busyAction, setBusyAction] = useState<
+		"archive" | "copy" | "save" | null
+	>(null);
 
 	async function copyPatch(row: CommitGraphRow) {
 		if (!repositoryId || busyCommitHash) return;
@@ -62,7 +64,30 @@ export function useCommitPatchActions(repositoryId: string | null) {
 		}
 	}
 
-	return { busyAction, busyCommitHash, copyPatch, savePatch };
+	async function saveArchive(row: CommitGraphRow) {
+		if (!repositoryId || busyCommitHash) return;
+
+		setBusyCommitHash(row.commit.hash);
+		setBusyAction("archive");
+		try {
+			const response = await sendRequestWithResponse({
+				commandType: NativeMessageType.SaveCommitArchive,
+				arguments: { commitHash: row.commit.hash, repositoryId },
+			});
+			if (response?.saved) toast.success("Commit archive exported");
+		} catch (error) {
+			toast.error(
+				error instanceof Error
+					? error.message
+					: "Could not export commit archive",
+			);
+		} finally {
+			setBusyCommitHash(null);
+			setBusyAction(null);
+		}
+	}
+
+	return { busyAction, busyCommitHash, copyPatch, saveArchive, savePatch };
 }
 
 function patchFailureMessage(

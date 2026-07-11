@@ -30,6 +30,7 @@ export function CommitGraphView({
 }: CommitGraphViewProps) {
 	const dialogs = useCommitGraphDialogs();
 	const patchActions = useCommitPatchActions(repositoryId);
+	const { busyAction, busyCommitHash } = patchActions;
 	const {
 		currentBranchName,
 		ensureRangeLoaded,
@@ -135,18 +136,20 @@ export function CommitGraphView({
 										}}
 									>
 										<CommitRow
+											archiveBusy={
+												busyAction === "archive" &&
+												busyCommitHash === rows[item.index]?.commit.hash
+											}
 											branchMutationBusy={branchController.busyBranch !== null}
 											branchRemoteName={tagRemoteName}
 											comparison={dialogs.comparison}
 											copyPatchBusy={
-												patchActions.busyAction === "copy" &&
-												patchActions.busyCommitHash ===
-													rows[item.index]?.commit.hash
+												busyAction === "copy" &&
+												busyCommitHash === rows[item.index]?.commit.hash
 											}
 											savePatchBusy={
-												patchActions.busyAction === "save" &&
-												patchActions.busyCommitHash ===
-													rows[item.index]?.commit.hash
+												busyAction === "save" &&
+												busyCommitHash === rows[item.index]?.commit.hash
 											}
 											graph={{
 												contentWidth: graphContentWidth,
@@ -162,6 +165,7 @@ export function CommitGraphView({
 											onBranchAction={manageBranch}
 											onCreateBranch={branchCreation.createAtCommit}
 											onCopyPatch={patchActions.copyPatch}
+											onSaveArchive={patchActions.saveArchive}
 											onSavePatch={patchActions.savePatch}
 											onCreateBranchFromTag={branchCreation.createFromTag}
 											onCreateTag={dialogs.setTagCommit}

@@ -1,8 +1,6 @@
 import { type ReactNode, useState } from "react";
 import {
 	ClipboardCopy,
-	Copy,
-	Download,
 	ExternalLink,
 	GitBranch,
 	GitCommitHorizontal,
@@ -29,12 +27,14 @@ import { useRepositoryContext } from "@/lib/repositoryContext";
 import { copyToClipboard } from "../utils/clipboard";
 import { shortHash } from "../utils/format";
 import { CommitComparisonMenuItem } from "./CommitComparisonMenuItem";
+import { CommitExportMenuItems } from "./CommitExportMenuItems";
 import { StartBisectDialog } from "./StartBisectDialog";
 
 export function CommitContextMenu({
 	children,
 	comparisonBase,
 	copyPatchBusy,
+	archiveBusy,
 	savePatchBusy,
 	currentBranchName,
 	isHead,
@@ -44,6 +44,7 @@ export function CommitContextMenu({
 	onCreateTag,
 	onCreateBranch,
 	onCopyPatch,
+	onSaveArchive,
 	onSavePatch,
 	onOpenDetails,
 	onSetComparisonBase,
@@ -55,6 +56,7 @@ export function CommitContextMenu({
 	children: ReactNode;
 	comparisonBase: CommitGraphRow | null;
 	copyPatchBusy: boolean;
+	archiveBusy: boolean;
 	savePatchBusy: boolean;
 	currentBranchName: string | null;
 	isHead: boolean;
@@ -64,6 +66,7 @@ export function CommitContextMenu({
 	onCreateTag: (row: CommitGraphRow) => void;
 	onCreateBranch: (row: CommitGraphRow) => void;
 	onCopyPatch: (row: CommitGraphRow) => void;
+	onSaveArchive: (row: CommitGraphRow) => void;
 	onSavePatch: (row: CommitGraphRow) => void;
 	onOpenDetails: (row: CommitGraphRow) => void;
 	onSetComparisonBase: (row: CommitGraphRow | null) => void;
@@ -167,20 +170,15 @@ export function CommitContextMenu({
 						<ExternalLink aria-hidden="true" />
 						Open commit on remote website
 					</ContextMenuItem>
-					<ContextMenuItem
-						disabled={copyPatchBusy || savePatchBusy}
-						onClick={() => onCopyPatch(row)}
-					>
-						<Copy aria-hidden="true" />
-						{copyPatchBusy ? "Creating commit patch…" : "Copy commit as patch"}
-					</ContextMenuItem>
-					<ContextMenuItem
-						disabled={copyPatchBusy || savePatchBusy}
-						onClick={() => onSavePatch(row)}
-					>
-						<Download aria-hidden="true" />
-						{savePatchBusy ? "Saving commit patch…" : "Save commit as patch…"}
-					</ContextMenuItem>
+					<CommitExportMenuItems
+						archiveBusy={archiveBusy}
+						copyPatchBusy={copyPatchBusy}
+						onCopyPatch={onCopyPatch}
+						onSaveArchive={onSaveArchive}
+						onSavePatch={onSavePatch}
+						row={row}
+						savePatchBusy={savePatchBusy}
+					/>
 					<ContextMenuSeparator />
 					<ContextMenuItem onClick={() => onCreateTag(row)}>
 						<Tag aria-hidden="true" />

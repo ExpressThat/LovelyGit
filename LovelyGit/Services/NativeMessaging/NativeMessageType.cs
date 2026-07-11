@@ -87,6 +87,8 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging
         GetCommitPatch,
         [NativeMessageContract(typeof(GetCommitPatchCommandArguments), typeof(CommitPatchExportResponse))]
         SaveCommitPatch,
+        [NativeMessageContract(typeof(GetCommitPatchCommandArguments), typeof(CommitArchiveExportResponse))]
+        SaveCommitArchive,
 
         // Native bisect session state and explicit Git CLI progression.
         [NativeMessageContract(typeof(GetBisectStateCommandArguments), typeof(GitBisectState))]

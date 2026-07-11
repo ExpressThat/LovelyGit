@@ -70,6 +70,38 @@ describe("useCommitPatchActions", () => {
 		});
 		await waitFor(() => expect(result.current.busyCommitHash).toBeNull());
 	});
+
+	it("exports the selected commit as an archive and clears its busy state", async () => {
+		vi.mocked(sendRequestWithResponse).mockResolvedValue({
+			path: "C:/archives/selected.zip",
+			saved: true,
+		});
+		const { result } = renderHook(() => useCommitPatchActions("repository-id"));
+
+		await act(() => result.current.saveArchive(row));
+
+		expect(sendRequestWithResponse).toHaveBeenCalledWith({
+			arguments: {
+				commitHash: row.commit.hash,
+				repositoryId: "repository-id",
+			},
+			commandType: "SaveCommitArchive",
+		});
+		await waitFor(() => expect(result.current.busyCommitHash).toBeNull());
+	});
+
+	it("surfaces archive export failures and remains retryable", async () => {
+		vi.mocked(sendRequestWithResponse)
+			.mockRejectedValueOnce(new Error("Archive failed"))
+			.mockResolvedValueOnce({ path: "C:/selected.zip", saved: true });
+		const { result } = renderHook(() => useCommitPatchActions("repository-id"));
+
+		await act(() => result.current.saveArchive(row));
+		await act(() => result.current.saveArchive(row));
+
+		expect(sendRequestWithResponse).toHaveBeenCalledTimes(2);
+		await waitFor(() => expect(result.current.busyAction).toBeNull());
+	});
 });
 
 const row = {
