@@ -36,6 +36,7 @@ export function AppOverlays({
 	onCommandPaletteOpenChange,
 	onOpenSettings,
 	onOpenWorkingChanges,
+	onRefreshRepository,
 	onSelectCommit,
 	repositoryId,
 }: {
@@ -49,6 +50,7 @@ export function AppOverlays({
 	onCommandPaletteOpenChange: (open: boolean) => void;
 	onOpenSettings: () => void;
 	onOpenWorkingChanges: () => void;
+	onRefreshRepository: () => void | Promise<void>;
 	onSelectCommit: (commitHash: string) => void;
 	repositoryId: string | null;
 }) {
@@ -65,6 +67,7 @@ export function AppOverlays({
 						onOpenCommitSearch={() => onSearchOpenChange(true)}
 						onOpenSettings={onOpenSettings}
 						onOpenWorkingChanges={onOpenWorkingChanges}
+						onRefreshRepository={onRefreshRepository}
 						open={isCommandPaletteOpen}
 					/>
 				) : null}

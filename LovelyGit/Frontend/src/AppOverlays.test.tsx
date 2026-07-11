@@ -27,6 +27,7 @@ const defaultProps = {
 	onSearchOpenChange: vi.fn(),
 	onOpenSettings: vi.fn(),
 	onOpenWorkingChanges: vi.fn(),
+	onRefreshRepository: vi.fn(),
 	onSelectCommit: vi.fn(),
 	repositoryId: "repo",
 };

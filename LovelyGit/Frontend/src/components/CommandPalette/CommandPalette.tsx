@@ -2,6 +2,10 @@ import { Search } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
 import { useEffect, useMemo, useState } from "react";
 import {
+	openRemoteWebResource,
+	openRepositoryTerminal,
+} from "@/components/TopNavBar/components/RepositoryCommands";
+import {
 	Dialog,
 	DialogContent,
 	DialogDescription,
@@ -23,12 +27,14 @@ export function CommandPalette({
 	onOpenCommitSearch,
 	onOpenSettings,
 	onOpenWorkingChanges,
+	onRefreshRepository,
 	open,
 }: {
 	onOpenChange: (open: boolean) => void;
 	onOpenCommitSearch: () => void;
 	onOpenSettings: () => void;
 	onOpenWorkingChanges: () => void;
+	onRefreshRepository: () => void | Promise<void>;
 	open: boolean;
 }) {
 	const { currentRepositoryId, repositories, setCurrentRepositoryId } =
@@ -42,7 +48,16 @@ export function CommandPalette({
 				onClose: () => onOpenChange(false),
 				onOpenCommitSearch,
 				onOpenSettings,
+				onOpenRemote: () => {
+					if (currentRepositoryId)
+						void openRemoteWebResource(currentRepositoryId, "Repository");
+				},
+				onOpenTerminal: () => {
+					if (currentRepositoryId)
+						void openRepositoryTerminal(currentRepositoryId);
+				},
 				onOpenWorkingChanges,
+				onRefreshRepository,
 				repositories,
 				setCurrentRepositoryId,
 			}),
@@ -52,6 +67,7 @@ export function CommandPalette({
 			onOpenCommitSearch,
 			onOpenSettings,
 			onOpenWorkingChanges,
+			onRefreshRepository,
 			repositories,
 			setCurrentRepositoryId,
 		],

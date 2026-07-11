@@ -14,8 +14,9 @@ import { RepositoryProvider } from "./lib/repositoryContext";
 import { useApplyFont } from "./lib/settings/font/useApplyFont";
 import { useSetting } from "./lib/settings/settingsStore";
 import { useApplyTheme } from "./lib/settings/theme/useApplyTheme";
-import { useAppShortcuts } from "./useAppShortcuts";
+import { useAppOverlayState } from "./useAppOverlayState";
 import { useFileDiscoveryTargets } from "./useFileDiscoveryTargets";
+import { createRepositoryRefreshAction } from "./useRepositoryRefresh";
 import { useResetOnRepositoryChange } from "./useResetOnRepositoryChange";
 
 function App() {
@@ -26,9 +27,7 @@ function App() {
 		null,
 	);
 	const [commitGraphRefreshToken, setCommitGraphRefreshToken] = useState(0);
-	const [isCommitSearchOpen, setIsCommitSearchOpen] = useState(false);
-	const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
-	const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+	const overlays = useAppOverlayState(Boolean(currentGitRepositoryId));
 	const fileDiscovery = useFileDiscoveryTargets();
 	const [currentBranchName, setCurrentBranchName] = useState<string | null>(
 		null,
@@ -38,27 +37,26 @@ function App() {
 		currentGitRepositoryId,
 		isWorkingChangesPanelOpen,
 	);
+	const refreshRepository = createRepositoryRefreshAction(
+		workingTreeChanges.reload,
+		setCommitGraphRefreshToken,
+	);
 	useResetOnRepositoryChange(
 		currentGitRepositoryId,
 		setCurrentBranchName,
 		setDetailsPanel,
-		setIsCommitSearchOpen,
+		overlays.setCommitSearchOpen,
 		fileDiscovery.reset,
 	);
 	const selectCommit = (row: CommitGraphRow) => {
 		setDetailsPanel({ commitHash: row.commit.hash, kind: "commit" });
 	};
-	useAppShortcuts({
-		hasRepository: Boolean(currentGitRepositoryId),
-		onOpenCommandPalette: () => setIsCommandPaletteOpen(true),
-		onOpenCommitSearch: () => setIsCommitSearchOpen(true),
-	});
 	return (
 		<RepositoryProvider>
 			<main className="app-shell">
 				<TopNavBar
 					currentBranchName={currentBranchName}
-					onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
+					onOpenCommandPalette={() => overlays.setCommandPaletteOpen(true)}
 					onBranchChanged={(branchName) => {
 						setCurrentBranchName(branchName);
 						setDetailsPanel(null);
@@ -67,10 +65,10 @@ function App() {
 					onOpenWorkingChanges={() =>
 						setDetailsPanel({ kind: "workingChanges" })
 					}
-					onSearchCommits={() => setIsCommitSearchOpen(true)}
-					onSettingsOpenChange={setIsSettingsOpen}
+					onSearchCommits={() => overlays.setCommitSearchOpen(true)}
+					onSettingsOpenChange={overlays.setSettingsOpen}
 					repositoryId={currentGitRepositoryId}
-					settingsOpen={isSettingsOpen}
+					settingsOpen={overlays.settingsOpen}
 					workingChangesCount={workingTreeChanges.totalCount}
 				/>
 				<div className="flex min-h-0 flex-1 overflow-hidden">
@@ -229,16 +227,17 @@ function App() {
 			<AppOverlays
 				fileBlameTarget={fileDiscovery.blameTarget}
 				fileHistoryTarget={fileDiscovery.historyTarget}
-				isCommitSearchOpen={isCommitSearchOpen}
-				isCommandPaletteOpen={isCommandPaletteOpen}
-				onCommandPaletteOpenChange={setIsCommandPaletteOpen}
+				isCommitSearchOpen={overlays.commitSearchOpen}
+				isCommandPaletteOpen={overlays.commandPaletteOpen}
+				onCommandPaletteOpenChange={overlays.setCommandPaletteOpen}
 				onFileBlameOpenChange={(open) => !open && fileDiscovery.closeBlame()}
 				onFileHistoryOpenChange={(open) =>
 					!open && fileDiscovery.closeHistory()
 				}
-				onSearchOpenChange={setIsCommitSearchOpen}
-				onOpenSettings={() => setIsSettingsOpen(true)}
+				onSearchOpenChange={overlays.setCommitSearchOpen}
+				onOpenSettings={() => overlays.setSettingsOpen(true)}
 				onOpenWorkingChanges={() => setDetailsPanel({ kind: "workingChanges" })}
+				onRefreshRepository={refreshRepository}
 				onSelectCommit={(commitHash) =>
 					setDetailsPanel({ commitHash, kind: "commit" })
 				}

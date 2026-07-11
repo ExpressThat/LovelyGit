@@ -12,7 +12,10 @@ function create(currentRepositoryId: string | null = "repo-1") {
 		onClose: vi.fn(),
 		onOpenCommitSearch: vi.fn(),
 		onOpenSettings: vi.fn(),
+		onOpenRemote: vi.fn(),
+		onOpenTerminal: vi.fn(),
 		onOpenWorkingChanges: vi.fn(),
+		onRefreshRepository: vi.fn(),
 		repositories: [
 			{
 				id: "repo-2",
@@ -28,9 +31,17 @@ describe("command palette items", () => {
 	it("disables repository commands without an active repository", () => {
 		const items = create(null);
 		expect(items.find((item) => item.id === "working")?.disabled).toBe(true);
+		expect(items.find((item) => item.id === "terminal")?.disabled).toBe(true);
 		expect(
 			items.find((item) => item.id === "settings")?.disabled,
 		).toBeUndefined();
+	});
+
+	it("enables high-frequency repository actions with an active repository", () => {
+		const items = create();
+		for (const id of ["refresh", "terminal", "remote-web"]) {
+			expect(items.find((item) => item.id === id)?.disabled).toBe(false);
+		}
 	});
 
 	it("matches labels, descriptions, and keywords across terms", () => {
@@ -44,7 +55,8 @@ describe("command palette items", () => {
 
 	it("wraps keyboard navigation and skips disabled commands", () => {
 		const items = create(null);
-		expect(nextEnabledItem(items, items.length - 1, 1)).toBe(2);
-		expect(nextEnabledItem(items, 2, -1)).toBe(items.length - 1);
+		const settingsIndex = items.findIndex((item) => item.id === "settings");
+		expect(nextEnabledItem(items, items.length - 1, 1)).toBe(settingsIndex);
+		expect(nextEnabledItem(items, settingsIndex, -1)).toBe(items.length - 1);
 	});
 });

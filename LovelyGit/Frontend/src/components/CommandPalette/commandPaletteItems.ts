@@ -1,9 +1,12 @@
 import {
+	ExternalLink,
 	FolderGit2,
 	GitCompareArrows,
 	Plus,
+	RefreshCw,
 	Search,
 	Settings,
+	SquareTerminal,
 } from "lucide-react";
 import type { KnownGitRepository } from "@/generated/types";
 
@@ -22,6 +25,9 @@ type ItemOptions = {
 	onClose: () => void;
 	onOpenCommitSearch: () => void;
 	onOpenSettings: () => void;
+	onOpenRemote: () => void;
+	onOpenTerminal: () => void;
+	onRefreshRepository: () => void | Promise<void>;
 	onOpenWorkingChanges: () => void;
 	repositories: KnownGitRepository[];
 	setCurrentRepositoryId: (id: string | null) => Promise<void>;
@@ -51,6 +57,33 @@ export function createPaletteItems(options: ItemOptions): PaletteItem[] {
 			icon: Search,
 			disabled: needsRepository,
 			run: run(options.onOpenCommitSearch),
+		},
+		{
+			id: "refresh",
+			label: "Refresh Repository",
+			description: "Reload the graph and working tree from disk",
+			keywords: "reload rescan status graph",
+			icon: RefreshCw,
+			disabled: needsRepository,
+			run: run(options.onRefreshRepository),
+		},
+		{
+			id: "terminal",
+			label: "Open Repository in Terminal",
+			description: "Start your configured terminal in this worktree",
+			keywords: "shell command prompt console",
+			icon: SquareTerminal,
+			disabled: needsRepository,
+			run: run(options.onOpenTerminal),
+		},
+		{
+			id: "remote-web",
+			label: "Open Repository on Remote",
+			description: "Open the repository in its hosting service",
+			keywords: "github gitlab bitbucket browser website",
+			icon: ExternalLink,
+			disabled: needsRepository,
+			run: run(options.onOpenRemote),
 		},
 		{
 			id: "settings",
