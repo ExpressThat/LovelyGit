@@ -1,6 +1,7 @@
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { useMemo, useRef, useState } from "react";
 import type { CommitFileDiffLine } from "@/generated/types";
+import { DiffHunkActionButton, getDiffHunkAction } from "./DiffHunkActions";
 import {
 	CodeCell,
 	changeMarker,
@@ -17,18 +18,25 @@ import {
 } from "./DiffRows";
 
 const DIFF_OVERSCAN = 12;
+const EMPTY_HUNK_LOOKUP = new Map<CommitFileDiffLine, CommitFileDiffLine[]>();
 
 export function CombinedDiff({
 	isLineActionBusy = false,
+	hunkLookup = EMPTY_HUNK_LOOKUP,
 	lines,
 	onStageLine,
+	onStageHunk,
 	onUnstageLine,
+	onUnstageHunk,
 	wrapLines,
 }: {
 	isLineActionBusy?: boolean;
+	hunkLookup?: Map<CommitFileDiffLine, CommitFileDiffLine[]>;
 	lines: DiffDisplayRow[];
 	onStageLine?: (line: CommitFileDiffLine) => void;
+	onStageHunk?: (lines: CommitFileDiffLine[]) => void;
 	onUnstageLine?: (line: CommitFileDiffLine) => void;
+	onUnstageHunk?: (lines: CommitFileDiffLine[]) => void;
 	wrapLines: boolean;
 }) {
 	const hasLineAction = Boolean(onStageLine || onUnstageLine);
@@ -95,6 +103,12 @@ export function CombinedDiff({
 							onStageLine,
 							onUnstageLine,
 						);
+						const hunkAction = getDiffHunkAction(
+							line,
+							hunkLookup,
+							onStageHunk,
+							onUnstageHunk,
+						);
 						return (
 							<div
 								className={`absolute left-0 top-0 grid w-full ${hasLineAction ? "grid-cols-[4rem_4rem_2rem_minmax(0,1fr)_2rem]" : "grid-cols-[4rem_4rem_2rem_minmax(0,1fr)]"} ${lineBackground(line.changeType)}`}
@@ -131,6 +145,12 @@ export function CombinedDiff({
 									/>
 								) : hasLineAction ? (
 									<div className="border-l" />
+								) : null}
+								{hunkAction ? (
+									<DiffHunkActionButton
+										action={hunkAction}
+										disabled={isLineActionBusy}
+									/>
 								) : null}
 							</div>
 						);

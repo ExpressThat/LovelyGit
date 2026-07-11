@@ -57,6 +57,15 @@ public record CommitStagedChangesCommandArguments
 }
 
 [TypeSharp]
+public record StageWorkingTreeHunkCommandArguments
+{
+    public Guid RepositoryId { get; set; }
+    public string Path { get; set; } = string.Empty;
+    public string Group { get; set; } = string.Empty;
+    public List<WorkingTreePatchLine> Lines { get; set; } = new();
+}
+
+[TypeSharp]
 public record IgnoreWorkingTreePathCommandArguments
 {
     public Guid RepositoryId { get; set; }

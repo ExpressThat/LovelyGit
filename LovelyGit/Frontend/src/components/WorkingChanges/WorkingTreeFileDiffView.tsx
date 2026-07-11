@@ -14,9 +14,11 @@ import {
 	isChangedLine,
 	isSameDiffLine,
 	LoadingDiff,
-	workingNewText,
-	workingOldText,
 } from "./WorkingTreeFileDiffHelpers";
+import {
+	moveWorkingTreeHunk,
+	moveWorkingTreeLine,
+} from "./WorkingTreePartialStageCommands";
 
 type DiffState =
 	| { status: "loading" }
@@ -93,65 +95,40 @@ export function WorkingTreeFileDiffView({
 		};
 	}, [fetchDiff]);
 
-	const stageLine = async (line: CommitFileDiffLine) => {
+	const moveLines = async (
+		kind: "stage" | "unstage",
+		lines: CommitFileDiffLine[],
+	) => {
 		setIsLineActionBusy(true);
 		try {
-			await sendRequestWithResponse({
-				commandType: "StageWorkingTreeLine",
-				arguments: {
-					changeType: line.changeType,
-					group: file.group,
-					newLineNumber: line.newLineNumber,
-					newText: workingNewText(line),
-					oldLineNumber: line.oldLineNumber,
-					oldText: workingOldText(line),
-					path: file.path,
-					repositoryId,
-				},
-			});
-			removeLineFromCurrentDiff(line);
+			if (lines.length === 1) {
+				await moveWorkingTreeLine(kind, repositoryId, file, lines[0]);
+			} else {
+				await moveWorkingTreeHunk(kind, repositoryId, file, lines);
+			}
+			removeLinesFromCurrentDiff(lines);
 			refreshWorkingChangesList(onChange);
 		} catch (error) {
 			setState({
 				status: "error",
 				message:
-					error instanceof Error ? error.message : "Failed to stage line.",
+					error instanceof Error
+						? error.message
+						: `Failed to ${kind} ${lines.length === 1 ? "line" : "hunk"}.`,
 			});
 		} finally {
 			setIsLineActionBusy(false);
 		}
 	};
 
-	const unstageLine = async (line: CommitFileDiffLine) => {
-		setIsLineActionBusy(true);
-		try {
-			await sendRequestWithResponse({
-				commandType: "UnstageWorkingTreeLine",
-				arguments: {
-					changeType: line.changeType,
-					group: file.group,
-					newLineNumber: line.newLineNumber,
-					newText: workingNewText(line),
-					oldLineNumber: line.oldLineNumber,
-					oldText: workingOldText(line),
-					path: file.path,
-					repositoryId,
-				},
-			});
-			removeLineFromCurrentDiff(line);
-			refreshWorkingChangesList(onChange);
-		} catch (error) {
-			setState({
-				status: "error",
-				message:
-					error instanceof Error ? error.message : "Failed to unstage line.",
-			});
-		} finally {
-			setIsLineActionBusy(false);
-		}
-	};
+	const stageLine = (line: CommitFileDiffLine) => moveLines("stage", [line]);
+	const unstageLine = (line: CommitFileDiffLine) =>
+		moveLines("unstage", [line]);
+	const stageHunk = (lines: CommitFileDiffLine[]) => moveLines("stage", lines);
+	const unstageHunk = (lines: CommitFileDiffLine[]) =>
+		moveLines("unstage", lines);
 
-	const removeLineFromCurrentDiff = (line: CommitFileDiffLine) => {
+	const removeLinesFromCurrentDiff = (lines: CommitFileDiffLine[]) => {
 		setState((current) => {
 			if (current.status !== "loaded") {
 				return current;
@@ -161,8 +138,8 @@ export function WorkingTreeFileDiffView({
 				return current;
 			}
 
-			const nextLines = current.diff.lines.filter(
-				(currentLine) => !isSameDiffLine(currentLine, line),
+			const nextLines = current.diff.lines.filter((currentLine) =>
+				lines.every((line) => !isSameDiffLine(currentLine, line)),
 			);
 
 			return {
@@ -193,8 +170,12 @@ export function WorkingTreeFileDiffView({
 						isLineActionBusy={isLineActionBusy}
 						lineDisplayMode={lineDisplayMode}
 						onStageLine={canStageLines(file.group) ? stageLine : undefined}
+						onStageHunk={canStageLines(file.group) ? stageHunk : undefined}
 						onUnstageLine={
 							canUnstageLines(file.group) ? unstageLine : undefined
+						}
+						onUnstageHunk={
+							canUnstageLines(file.group) ? unstageHunk : undefined
 						}
 						wrapLines={wrapLines}
 					/>

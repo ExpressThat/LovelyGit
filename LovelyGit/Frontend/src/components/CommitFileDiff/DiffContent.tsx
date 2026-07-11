@@ -5,6 +5,7 @@ import type {
 import { CombinedDiff } from "./CombinedDiff";
 import { CompactDiffContent } from "./CompactDiffContent";
 import { hasCompactLinePayload } from "./compactLinePayload";
+import { buildDiffHunkLookup } from "./DiffHunkActions";
 import { type DiffDisplayRow, getContextualDiffRows } from "./DiffRows";
 import { SideBySideDiff } from "./SideBySideDiff";
 import { VirtualTextDiff } from "./VirtualTextDiff";
@@ -35,7 +36,9 @@ export function DiffContent({
 	isLineActionBusy = false,
 	lineDisplayMode,
 	onStageLine,
+	onStageHunk,
 	onUnstageLine,
+	onUnstageHunk,
 	wrapLines,
 }: {
 	contextLines: number;
@@ -43,7 +46,9 @@ export function DiffContent({
 	isLineActionBusy?: boolean;
 	lineDisplayMode: "Changes" | "FullFile";
 	onStageLine?: (line: CommitFileDiffLine) => void;
+	onStageHunk?: (lines: CommitFileDiffLine[]) => void;
 	onUnstageLine?: (line: CommitFileDiffLine) => void;
+	onUnstageHunk?: (lines: CommitFileDiffLine[]) => void;
 	wrapLines: boolean;
 }) {
 	if (diff.isTruncated) {
@@ -76,7 +81,9 @@ export function DiffContent({
 					isLineActionBusy,
 					lineDisplayMode,
 					onStageLine,
+					onStageHunk,
 					onUnstageLine,
+					onUnstageHunk,
 					wrapLines,
 				}}
 			/>
@@ -95,21 +102,28 @@ export function DiffContent({
 		lineDisplayMode === "FullFile"
 			? diff.lines.map((line): DiffDisplayRow => ({ kind: "line", line }))
 			: getContextualDiffRows(diff.lines, contextLines);
+	const hunkLookup = buildDiffHunkLookup(diff.lines, contextLines);
 
 	return diff.viewMode === "SideBySide" ? (
 		<SideBySideDiff
+			hunkLookup={hunkLookup}
 			isLineActionBusy={isLineActionBusy}
 			lines={lines}
 			onStageLine={onStageLine}
+			onStageHunk={onStageHunk}
 			onUnstageLine={onUnstageLine}
+			onUnstageHunk={onUnstageHunk}
 			wrapLines={wrapLines}
 		/>
 	) : (
 		<CombinedDiff
+			hunkLookup={hunkLookup}
 			isLineActionBusy={isLineActionBusy}
 			lines={lines}
 			onStageLine={onStageLine}
+			onStageHunk={onStageHunk}
 			onUnstageLine={onUnstageLine}
+			onUnstageHunk={onUnstageHunk}
 			wrapLines={wrapLines}
 		/>
 	);

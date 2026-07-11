@@ -1,6 +1,7 @@
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useRef } from "react";
 import type { CommitFileDiffLine } from "@/generated/types";
+import { getSideDiffHunkAction } from "./DiffHunkActions";
 import { estimateCodeWidth } from "./DiffLineRendering";
 import {
 	DiffChunkSeparator,
@@ -8,29 +9,33 @@ import {
 	getSideBySideLineAction,
 } from "./DiffRows";
 import { DiffPaneHeader, SideBySideRow } from "./SideBySideRow";
+import { useSynchronizedDiffScroll } from "./useSynchronizedDiffScroll";
 
 const DIFF_OVERSCAN = 12;
+const EMPTY_HUNK_LOOKUP = new Map<CommitFileDiffLine, CommitFileDiffLine[]>();
 
 export function SideBySideDiff({
 	isLineActionBusy = false,
 	lines,
+	hunkLookup = EMPTY_HUNK_LOOKUP,
 	onStageLine,
+	onStageHunk,
 	onUnstageLine,
+	onUnstageHunk,
 	wrapLines,
 }: {
 	isLineActionBusy?: boolean;
 	lines: DiffDisplayRow[];
+	hunkLookup?: Map<CommitFileDiffLine, CommitFileDiffLine[]>;
+	onStageHunk?: (lines: CommitFileDiffLine[]) => void;
 	onStageLine?: (line: CommitFileDiffLine) => void;
+	onUnstageHunk?: (lines: CommitFileDiffLine[]) => void;
 	onUnstageLine?: (line: CommitFileDiffLine) => void;
 	wrapLines: boolean;
 }) {
 	const hasLineAction = Boolean(onStageLine || onUnstageLine);
 	const viewportRef = useRef<HTMLDivElement | null>(null);
-	const oldScrollerRef = useRef<HTMLDivElement | null>(null);
-	const newScrollerRef = useRef<HTMLDivElement | null>(null);
-	const syncingRef = useRef(false);
-	const [oldScrollLeft, setOldScrollLeft] = useState(0);
-	const [newScrollLeft, setNewScrollLeft] = useState(0);
+	const scroll = useSynchronizedDiffScroll();
 	const contentWidth = useMemo(
 		() => estimateCodeWidth(iterSideBySideText(lines)),
 		[lines],
@@ -43,30 +48,6 @@ export function SideBySideDiff({
 		overscan: DIFF_OVERSCAN,
 	});
 	const virtualItems = virtualizer.getVirtualItems();
-
-	const syncBottomScroll = (
-		source: "old" | "new",
-		event: React.UIEvent<HTMLDivElement>,
-	) => {
-		if (syncingRef.current) {
-			return;
-		}
-
-		const nextScrollLeft = event.currentTarget.scrollLeft;
-		const target =
-			source === "old" ? newScrollerRef.current : oldScrollerRef.current;
-		if (!target) {
-			return;
-		}
-
-		syncingRef.current = true;
-		target.scrollLeft = nextScrollLeft;
-		setOldScrollLeft(nextScrollLeft);
-		setNewScrollLeft(nextScrollLeft);
-		requestAnimationFrame(() => {
-			syncingRef.current = false;
-		});
-	};
 
 	return (
 		<div className="flex h-full min-w-0 flex-col font-mono text-[12px] leading-[18px] text-foreground">
@@ -156,6 +137,13 @@ export function SideBySideDiff({
 										style={{ transform: `translateY(${item.start}px)` }}
 									>
 										<SideBySideRow
+											hunkAction={getSideDiffHunkAction(
+												line.line,
+												"old",
+												hunkLookup,
+												onStageHunk,
+												onUnstageHunk,
+											)}
 											line={line.line}
 											isLineActionBusy={isLineActionBusy}
 											lineAction={getSideBySideLineAction(
@@ -165,7 +153,7 @@ export function SideBySideDiff({
 												onUnstageLine,
 											)}
 											rowHeight={item.size}
-											scrollLeft={oldScrollLeft}
+											scrollLeft={scroll.oldScrollLeft}
 											side="old"
 											width={contentWidth}
 											wrapLines={wrapLines}
@@ -195,6 +183,13 @@ export function SideBySideDiff({
 										style={{ transform: `translateY(${item.start}px)` }}
 									>
 										<SideBySideRow
+											hunkAction={getSideDiffHunkAction(
+												line.line,
+												"new",
+												hunkLookup,
+												onStageHunk,
+												onUnstageHunk,
+											)}
 											line={line.line}
 											isLineActionBusy={isLineActionBusy}
 											lineAction={getSideBySideLineAction(
@@ -204,7 +199,7 @@ export function SideBySideDiff({
 												onUnstageLine,
 											)}
 											rowHeight={item.size}
-											scrollLeft={newScrollLeft}
+											scrollLeft={scroll.newScrollLeft}
 											side="new"
 											width={contentWidth}
 											wrapLines={wrapLines}
@@ -220,15 +215,15 @@ export function SideBySideDiff({
 				<div className="grid h-3 shrink-0 grid-cols-2 border-t bg-background">
 					<div
 						className="custom-scrollbar overflow-x-auto overflow-y-hidden border-r"
-						onScroll={(event) => syncBottomScroll("old", event)}
-						ref={oldScrollerRef}
+						onScroll={(event) => scroll.syncBottomScroll("old", event)}
+						ref={scroll.oldScrollerRef}
 					>
 						<div style={{ height: 1, width: contentWidth }} />
 					</div>
 					<div
 						className="custom-scrollbar overflow-x-auto overflow-y-hidden"
-						onScroll={(event) => syncBottomScroll("new", event)}
-						ref={newScrollerRef}
+						onScroll={(event) => scroll.syncBottomScroll("new", event)}
+						ref={scroll.newScrollerRef}
 					>
 						<div style={{ height: 1, width: contentWidth }} />
 					</div>

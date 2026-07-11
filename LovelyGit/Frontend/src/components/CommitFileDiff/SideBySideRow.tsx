@@ -1,4 +1,5 @@
 import type { CommitFileDiffLine } from "@/generated/types";
+import { type DiffHunkAction, DiffHunkActionButton } from "./DiffHunkActions";
 import {
 	CodeCell,
 	LineNumber,
@@ -32,6 +33,7 @@ export function DiffPaneHeader({
 
 export function SideBySideRow({
 	isLineActionBusy = false,
+	hunkAction,
 	line,
 	lineAction,
 	rowHeight,
@@ -41,6 +43,7 @@ export function SideBySideRow({
 	wrapLines,
 }: {
 	isLineActionBusy?: boolean;
+	hunkAction?: DiffHunkAction;
 	line: CommitFileDiffLine;
 	lineAction?: DiffLineAction;
 	rowHeight?: number;
@@ -52,7 +55,7 @@ export function SideBySideRow({
 	const isOld = side === "old";
 	return (
 		<div
-			className={`grid min-w-0 select-text ${lineAction ? "grid-cols-[4rem_minmax(0,1fr)_2rem]" : "grid-cols-[4rem_minmax(0,1fr)]"} ${lineBackground(line.changeType)}`}
+			className={`relative grid min-w-0 select-text ${lineAction ? "grid-cols-[4rem_minmax(0,1fr)_2rem]" : "grid-cols-[4rem_minmax(0,1fr)]"} ${lineBackground(line.changeType)}`}
 			style={rowHeight === undefined ? undefined : { minHeight: rowHeight }}
 		>
 			<LineNumber value={isOld ? line.oldLineNumber : line.newLineNumber} />
@@ -75,6 +78,9 @@ export function SideBySideRow({
 					disabled={isLineActionBusy}
 					line={line}
 				/>
+			) : null}
+			{hunkAction ? (
+				<DiffHunkActionButton action={hunkAction} disabled={isLineActionBusy} />
 			) : null}
 		</div>
 	);

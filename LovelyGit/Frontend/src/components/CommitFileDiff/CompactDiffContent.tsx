@@ -5,6 +5,7 @@ import type {
 } from "@/generated/types";
 import { CombinedDiff } from "./CombinedDiff";
 import { loadCompactLines } from "./compactLinePayload";
+import { buildDiffHunkLookup } from "./DiffHunkActions";
 import { type DiffDisplayRow, getContextualDiffRows } from "./DiffRows";
 import { SideBySideDiff } from "./SideBySideDiff";
 
@@ -19,7 +20,9 @@ export function CompactDiffContent({
 	isLineActionBusy,
 	lineDisplayMode,
 	onStageLine,
+	onStageHunk,
 	onUnstageLine,
+	onUnstageHunk,
 	wrapLines,
 }: {
 	contextLines: number;
@@ -27,7 +30,9 @@ export function CompactDiffContent({
 	isLineActionBusy: boolean;
 	lineDisplayMode: "Changes" | "FullFile";
 	onStageLine?: (line: CommitFileDiffLine) => void;
+	onStageHunk?: (lines: CommitFileDiffLine[]) => void;
 	onUnstageLine?: (line: CommitFileDiffLine) => void;
+	onUnstageHunk?: (lines: CommitFileDiffLine[]) => void;
 	wrapLines: boolean;
 }) {
 	const [lines, setLines] = useState<CommitFileDiffLine[] | null>(null);
@@ -92,27 +97,56 @@ export function CompactDiffContent({
 				onUnstageLine(line);
 			}
 		: undefined;
+	const runHunk = (
+		action: ((lines: CommitFileDiffLine[]) => void) | undefined,
+		hunkLines: CommitFileDiffLine[],
+	) => {
+		if (!action) return;
+		setLines((current) =>
+			current
+				? current.filter((line) =>
+						hunkLines.every((target) => !isLineActionTarget(line, target)),
+					)
+				: null,
+		);
+		action(hunkLines);
+	};
 	const rows =
 		lineDisplayMode === "FullFile"
 			? lines.map((line): DiffDisplayRow => ({ kind: "line", line }))
 			: getContextualDiffRows(lines, contextLines);
+	const hunkLookup = buildDiffHunkLookup(lines, contextLines);
 
 	return diff.viewMode === "SideBySide" ? (
 		<SideBySideDiff
+			hunkLookup={hunkLookup}
 			{...{
 				isLineActionBusy,
 				onStageLine: stageLine,
+				onStageHunk: onStageHunk
+					? (hunkLines) => runHunk(onStageHunk, hunkLines)
+					: undefined,
 				onUnstageLine: unstageLine,
+				onUnstageHunk: onUnstageHunk
+					? (hunkLines) => runHunk(onUnstageHunk, hunkLines)
+					: undefined,
 				wrapLines,
 			}}
 			lines={rows}
 		/>
 	) : (
 		<CombinedDiff
+			hunkLookup={hunkLookup}
 			{...{
 				isLineActionBusy,
 				onStageLine: stageLine,
+				onStageHunk: onStageHunk
+					? (hunkLines) => runHunk(onStageHunk, hunkLines)
+					: undefined,
 				onUnstageLine: unstageLine,
+				onUnstageHunk: onUnstageHunk
+					? (hunkLines) => runHunk(onUnstageHunk, hunkLines)
+					: undefined,
 				wrapLines,
 			}}
 			lines={rows}

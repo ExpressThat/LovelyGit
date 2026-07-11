@@ -58,6 +58,7 @@ internal static class WorkingTreeServiceCollectionExtensions
         services.AddSingleton<ICommandResponder, DiscardWorkingTreeChangesCommandResolver>();
         services.AddSingleton<ICommandResponder, StageWorkingTreeLineCommandResolver>();
         services.AddSingleton<ICommandResponder, UnstageWorkingTreeLineCommandResolver>();
+        services.AddSingleton<ICommandResponder, WorkingTreeHunkCommandResolver>();
         services.AddSingleton<ICommandResponder, GetHeadCommitMessageCommandResolver>();
         services.AddSingleton<ICommandResponder, UndoLastCommitCommandResolver>();
         services.AddSingleton<ICommandResponder, CommitStagedChangesCommandResolver>();
