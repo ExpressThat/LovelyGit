@@ -24,10 +24,11 @@ internal static class CommitGraphCommitMapper
             Email = commit.AuthorEmail,
             Date = commit.AuthorUnixSeconds,
             Message = TruncateMessage(message),
-            Branches = commit.Branches.ToList(),
-            Tags = commit.Tags.ToList(),
-            Refs = commit.Refs
-                .Select(reference => new CommitRefInfo
+            Branches = CopyOrEmpty(commit.Branches),
+            Tags = CopyOrEmpty(commit.Tags),
+            Refs = commit.Refs.Count == 0
+                ? CommitGraphEmptyLists.Refs
+                : commit.Refs.Select(reference => new CommitRefInfo
                 {
                     Name = reference.Name,
                     Kind = reference.Kind switch
@@ -59,6 +60,11 @@ internal static class CommitGraphCommitMapper
     private static string TruncateMessage(string value)
     {
         return value.Length <= CommitMessagePreviewChars ? value : value[..CommitMessagePreviewChars];
+    }
+
+    private static List<string> CopyOrEmpty(IReadOnlyList<string> values)
+    {
+        return values.Count == 0 ? CommitGraphEmptyLists.Strings : values.ToList();
     }
 
     internal static CommitSignatureKind MapSignatureKind(GitSignatureKind kind) => kind switch
