@@ -1,4 +1,5 @@
-import { GitBranch, HardDrive, LockKeyhole } from "lucide-react";
+import { GitBranch, HardDrive, LockKeyhole, Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import type { RepositoryWorktreeItem } from "@/generated/types";
 import type { WorktreeMutationController } from "../hooks/useWorktreeMutations";
 import { WorktreeContextMenu } from "./WorktreeContextMenu";
@@ -21,7 +22,21 @@ export function WorktreeSection({
 		<section className="mb-3 last:mb-0">
 			<div className="mb-1 flex items-center justify-between px-1 text-[10px] font-semibold uppercase text-muted-foreground">
 				<span>Worktrees</span>
-				<span>{filtered.length}</span>
+				<span className="flex items-center gap-1">
+					<span>{filtered.length}</span>
+					<Button
+						aria-label="Create worktree"
+						className="size-5 rounded-md"
+						disabled={controller.busyPath !== null}
+						onClick={() => controller.setCreateBranchName("")}
+						size="icon-xs"
+						title="Create worktree"
+						type="button"
+						variant="ghost"
+					>
+						<Plus aria-hidden="true" className="size-3" />
+					</Button>
+				</span>
 			</div>
 			<div className="grid gap-1">
 				{filtered.map((worktree) => (

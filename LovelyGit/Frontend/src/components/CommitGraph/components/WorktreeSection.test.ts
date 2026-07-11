@@ -43,6 +43,39 @@ describe("WorktreeSection", () => {
 		);
 		expect(manage).toHaveBeenCalledWith("Open", linked);
 	});
+
+	it("starts worktree creation from the section header", () => {
+		const setCreateBranchName = vi.fn();
+		render(
+			createElement(WorktreeSection, {
+				controller: {
+					busyPath: null,
+					setCreateBranchName,
+				} as unknown as WorktreeMutationController,
+				query: "",
+				worktrees: [worktree("C:/repo", "main")],
+			}),
+		);
+
+		fireEvent.click(screen.getByRole("button", { name: "Create worktree" }));
+		expect(setCreateBranchName).toHaveBeenCalledWith("");
+	});
+
+	it("disables creation while another worktree mutation is running", () => {
+		render(
+			createElement(WorktreeSection, {
+				controller: {
+					busyPath: "C:/repo-linked",
+				} as unknown as WorktreeMutationController,
+				query: "",
+				worktrees: [worktree("C:/repo", "main")],
+			}),
+		);
+
+		expect(
+			screen.getByRole("button", { name: "Create worktree" }),
+		).toBeDisabled();
+	});
 });
 
 function worktree(

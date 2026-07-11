@@ -1,4 +1,4 @@
-import type { RepositoryWorktreeItem } from "@/generated/types";
+import type { RepositoryRefsResponse } from "@/generated/types";
 import type { WorktreeMutationController } from "../hooks/useWorktreeMutations";
 import {
 	LazyCreateWorktreeDialog,
@@ -8,11 +8,12 @@ import {
 
 export function WorktreeManagementDialogs({
 	controller,
-	worktrees,
+	repositoryRefs,
 }: {
 	controller: WorktreeMutationController;
-	worktrees: RepositoryWorktreeItem[];
+	repositoryRefs: RepositoryRefsResponse | null;
 }) {
+	const worktrees = repositoryRefs?.worktrees ?? [];
 	const existingWorktree = controller.createBranchName
 		? (worktrees.find(
 				(worktree) => worktree.branchName === controller.createBranchName,
@@ -20,17 +21,22 @@ export function WorktreeManagementDialogs({
 		: null;
 	const lockTarget = controller.lockTarget;
 	const removeTarget = controller.removeTarget;
+	const branches = (repositoryRefs?.refs ?? [])
+		.filter((ref) => ref.kind === "Local")
+		.map((ref) => ref.name);
 	return (
 		<>
-			{controller.createBranchName ? (
+			{controller.createBranchName !== null ? (
 				<LazyCreateWorktreeDialog
 					branchName={controller.createBranchName}
+					branches={branches}
 					existingWorktree={existingWorktree}
 					isBusy={controller.busyPath !== null}
 					onChooseDestination={async () =>
 						(await controller.chooseDestination())?.path ?? null
 					}
 					onClose={() => controller.setCreateBranchName(null)}
+					onBranchChange={controller.setCreateBranchName}
 					onCreate={(path) => void controller.create(path)}
 					onOpenExisting={(worktree) => controller.manage("Open", worktree)}
 				/>

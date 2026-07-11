@@ -243,7 +243,7 @@ export function CommitGraphView({
 			/>
 			<WorktreeManagementDialogs
 				controller={worktreeController}
-				worktrees={repositoryRefs.refs?.worktrees ?? []}
+				repositoryRefs={repositoryRefs.refs}
 			/>
 		</>
 	);

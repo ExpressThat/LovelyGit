@@ -9,15 +9,39 @@ import { LockWorktreeDialog } from "./LockWorktreeDialog";
 import { RemoveWorktreeDialog } from "./RemoveWorktreeDialog";
 
 describe("CreateWorktreeDialog", () => {
+	it("selects a local branch when opened from the worktrees section", async () => {
+		const user = userEvent.setup();
+		const onBranchChange = vi.fn();
+		render(
+			<CreateWorktreeDialog
+				branchName=""
+				branches={["main", "feature/demo"]}
+				existingWorktree={null}
+				isBusy={false}
+				onBranchChange={onBranchChange}
+				onChooseDestination={async () => null}
+				onClose={vi.fn()}
+				onCreate={vi.fn()}
+				onOpenExisting={vi.fn()}
+			/>,
+		);
+
+		await user.click(screen.getByRole("combobox", { name: "Worktree branch" }));
+		await user.keyboard("{ArrowDown}{ArrowDown}{Enter}");
+		expect(onBranchChange).toHaveBeenCalledWith("feature/demo");
+	});
+
 	it("chooses an empty folder and creates the worktree", async () => {
 		const user = userEvent.setup();
 		const onCreate = vi.fn();
 		render(
 			<CreateWorktreeDialog
 				branchName="feature/demo"
+				branches={["main", "feature/demo"]}
 				existingWorktree={null}
 				isBusy={false}
 				onChooseDestination={async () => "C:/repo-demo"}
+				onBranchChange={vi.fn()}
 				onClose={vi.fn()}
 				onCreate={onCreate}
 				onOpenExisting={vi.fn()}
@@ -41,9 +65,11 @@ describe("CreateWorktreeDialog", () => {
 		render(
 			<CreateWorktreeDialog
 				branchName="feature/demo"
+				branches={["feature/demo"]}
 				existingWorktree={worktree}
 				isBusy={false}
 				onChooseDestination={async () => null}
+				onBranchChange={vi.fn()}
 				onClose={vi.fn()}
 				onCreate={vi.fn()}
 				onOpenExisting={onOpenExisting}

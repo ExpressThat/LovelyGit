@@ -11,21 +11,32 @@ import {
 	DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 import type { RepositoryWorktreeItem } from "@/generated/types";
 
 export function CreateWorktreeDialog({
 	branchName,
+	branches,
 	existingWorktree,
 	isBusy,
 	onChooseDestination,
+	onBranchChange,
 	onClose,
 	onCreate,
 	onOpenExisting,
 }: {
 	branchName: string;
+	branches: string[];
 	existingWorktree: RepositoryWorktreeItem | null;
 	isBusy: boolean;
 	onChooseDestination: () => Promise<string | null>;
+	onBranchChange: (branchName: string) => void;
 	onClose: () => void;
 	onCreate: (path: string) => void;
 	onOpenExisting: (worktree: RepositoryWorktreeItem) => void;
@@ -55,7 +66,7 @@ export function CreateWorktreeDialog({
 					<DialogHeader>
 						<DialogTitle className="flex items-center gap-2">
 							<FolderGit2 aria-hidden="true" className="size-5 text-primary" />
-							Worktree for {branchName}
+							{branchName ? `Worktree for ${branchName}` : "Create worktree"}
 						</DialogTitle>
 						<DialogDescription>
 							Check out this branch in another folder without switching your
@@ -63,6 +74,28 @@ export function CreateWorktreeDialog({
 						</DialogDescription>
 					</DialogHeader>
 					<div className="grid gap-4 py-4">
+						{!branchName ? (
+							<div className="grid gap-2 text-sm">
+								<span className="font-medium">Branch</span>
+								<Select<string>
+									onValueChange={(value) => onBranchChange(value ?? "")}
+								>
+									<SelectTrigger
+										aria-label="Worktree branch"
+										className="w-full"
+									>
+										<SelectValue placeholder="Choose a local branch" />
+									</SelectTrigger>
+									<SelectContent>
+										{branches.map((branch) => (
+											<SelectItem key={branch} value={branch}>
+												{branch}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
+							</div>
+						) : null}
 						{existingWorktree ? (
 							<motion.div
 								animate={{ opacity: 1, y: 0 }}
@@ -79,7 +112,7 @@ export function CreateWorktreeDialog({
 									{existingWorktree.path}
 								</span>
 							</motion.div>
-						) : (
+						) : branchName ? (
 							<label className="grid gap-2 text-sm" htmlFor="worktree-path">
 								<span className="font-medium">Empty destination folder</span>
 								<span className="flex gap-2">
@@ -108,7 +141,11 @@ export function CreateWorktreeDialog({
 									</Button>
 								</span>
 							</label>
-						)}
+						) : branches.length === 0 ? (
+							<p className="text-sm text-muted-foreground">
+								Create a local branch before adding another worktree.
+							</p>
+						) : null}
 					</div>
 					<DialogFooter>
 						<Button
@@ -127,7 +164,7 @@ export function CreateWorktreeDialog({
 							>
 								<FolderGit2 /> Open worktree
 							</Button>
-						) : (
+						) : branchName ? (
 							<Button disabled={isBusy || !path.trim()} type="submit">
 								{isBusy ? (
 									<LoaderCircle className="animate-spin" />
@@ -136,7 +173,7 @@ export function CreateWorktreeDialog({
 								)}
 								{isBusy ? "Creating" : "Create worktree"}
 							</Button>
-						)}
+						) : null}
 					</DialogFooter>
 				</form>
 			</DialogContent>
