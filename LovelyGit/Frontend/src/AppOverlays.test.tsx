@@ -63,9 +63,9 @@ const defaultProps = {
 describe("AppOverlays", () => {
 	it("shares repository dialogs with external entry points", async () => {
 		const view = render(<AppOverlays {...defaultProps} createBranchOpen />);
-		expect(screen.getByText("Create branch loaded")).toBeVisible();
+		expect(await screen.findByText("Create branch loaded")).toBeVisible();
 		view.rerender(<AppOverlays {...defaultProps} remoteManagerOpen />);
-		expect(screen.getByText("Remote manager loaded")).toBeVisible();
+		expect(await screen.findByText("Remote manager loaded")).toBeVisible();
 		view.rerender(<AppOverlays {...defaultProps} stashOpen />);
 		expect(await screen.findByText("Stash manager loaded")).toBeVisible();
 		view.rerender(<AppOverlays {...defaultProps} settingsOpen />);

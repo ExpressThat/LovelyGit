@@ -1,9 +1,7 @@
 import type { BranchIntegrationMode } from "@/components/TopNavBar/components/BranchIntegrationDialog";
 import { BranchIntegrationDialog } from "@/components/TopNavBar/components/BranchIntegrationDialog";
-import {
-	type BranchCreationSource,
-	CreateBranchDialog,
-} from "@/components/TopNavBar/components/CreateBranchDialog";
+import type { BranchCreationSource } from "@/components/TopNavBar/components/CreateBranchDialog";
+import { LazyCreateBranchDialog } from "@/components/TopNavBar/components/LazyRepositoryDialogs";
 import type {
 	CommitGraphRow,
 	GitReflogEntry,
@@ -69,7 +67,7 @@ export function CommitGraphOperationDialogs({
 }) {
 	return (
 		<>
-			<CreateBranchDialog
+			<LazyCreateBranchDialog
 				currentBranchName={currentBranchName}
 				existingBranchNames={branchNames}
 				onBranchChanged={(branchName) => {

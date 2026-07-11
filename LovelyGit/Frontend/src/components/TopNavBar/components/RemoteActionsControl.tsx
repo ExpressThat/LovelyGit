@@ -13,6 +13,7 @@ import type { GitPushMode, RemotePrimaryAction } from "@/generated/types";
 import { sendRequestWithResponse } from "@/lib/commands";
 import { gitMutationTimeoutMs } from "@/lib/gitMutationTimeout";
 import { setSetting, useSetting } from "@/lib/settings/settingsStore";
+import { LazyRemoteManagerDialog } from "./LazyRepositoryDialogs";
 import { PushActionsControl } from "./PushActionsControl";
 import {
 	defaultableRemoteActions,
@@ -22,7 +23,6 @@ import {
 	type RemoteAction,
 } from "./RemoteActions";
 import { RemoteDefaultRow } from "./RemoteDefaultRow";
-import { RemoteManagerDialog } from "./RemoteManagerDialog";
 import { SyncCountBadge, syncActionLabel } from "./SyncCountBadge";
 import { useRemoteSyncStatus } from "./useRemoteSyncStatus";
 
@@ -185,7 +185,7 @@ export function RemoteActionsControl({
 			>
 				<RadioTower aria-hidden="true" className="size-5" />
 			</Button>
-			<RemoteManagerDialog
+			<LazyRemoteManagerDialog
 				onOpenChange={setManagerOpen}
 				open={managerOpen}
 				repositoryId={repositoryId}

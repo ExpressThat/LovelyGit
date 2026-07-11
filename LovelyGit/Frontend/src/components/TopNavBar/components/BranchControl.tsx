@@ -27,7 +27,7 @@ import {
 	BranchIntegrationDialog,
 	type BranchIntegrationMode,
 } from "./BranchIntegrationDialog";
-import { CreateBranchDialog } from "./CreateBranchDialog";
+import { LazyCreateBranchDialog } from "./LazyRepositoryDialogs";
 import { useLocalBranches } from "./useLocalBranches";
 
 type BranchControlProps = {
@@ -225,7 +225,7 @@ export function BranchControl({
 					</DropdownMenuGroup>
 				</DropdownMenuContent>
 			</DropdownMenu>
-			<CreateBranchDialog
+			<LazyCreateBranchDialog
 				currentBranchName={currentBranchName}
 				existingBranchNames={branches.map((branch) => branch.name)}
 				onBranchChanged={onBranchChanged}

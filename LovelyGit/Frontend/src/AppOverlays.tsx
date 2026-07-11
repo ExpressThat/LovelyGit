@@ -2,8 +2,10 @@ import { lazy, Suspense, useEffect, useState } from "react";
 import { SurfaceLoading } from "./AppLazySurfaces";
 import type { FileBlameTarget } from "./components/FileBlame/FileBlameDialog";
 import type { FileHistoryTarget } from "./components/FileHistory/FileHistoryDialog";
-import { CreateBranchDialog } from "./components/TopNavBar/components/CreateBranchDialog";
-import { RemoteManagerDialog } from "./components/TopNavBar/components/RemoteManagerDialog";
+import {
+	LazyCreateBranchDialog,
+	LazyRemoteManagerDialog,
+} from "./components/TopNavBar/components/LazyRepositoryDialogs";
 import { Toaster } from "./components/ui/sonner";
 
 const CommitSearchDialog = lazy(() =>
@@ -98,7 +100,7 @@ export function AppOverlays({
 	const retainSettings = useRetainedSurface(settingsOpen);
 	return (
 		<>
-			<CreateBranchDialog
+			<LazyCreateBranchDialog
 				currentBranchName={currentBranchName}
 				onBranchChanged={onBranchChanged}
 				onOpenChange={onCreateBranchOpenChange}
@@ -106,7 +108,7 @@ export function AppOverlays({
 				open={createBranchOpen}
 				repositoryId={repositoryId}
 			/>
-			<RemoteManagerDialog
+			<LazyRemoteManagerDialog
 				onOpenChange={onRemoteManagerOpenChange}
 				open={remoteManagerOpen}
 				repositoryId={repositoryId}
