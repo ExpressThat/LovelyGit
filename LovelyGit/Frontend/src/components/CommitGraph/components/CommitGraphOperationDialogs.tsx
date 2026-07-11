@@ -1,19 +1,23 @@
 import type { BranchIntegrationMode } from "@/components/TopNavBar/components/BranchIntegrationDialog";
-import { BranchIntegrationDialog } from "@/components/TopNavBar/components/BranchIntegrationDialog";
 import type { BranchCreationSource } from "@/components/TopNavBar/components/CreateBranchDialog";
-import { LazyCreateBranchDialog } from "@/components/TopNavBar/components/LazyRepositoryDialogs";
+import {
+	LazyBranchIntegrationDialog,
+	LazyCreateBranchDialog,
+} from "@/components/TopNavBar/components/LazyRepositoryDialogs";
 import type {
 	CommitGraphRow,
 	GitReflogEntry,
 	RepositoryRefsResponse,
 } from "@/generated/types";
 import type { ReflogManagementController } from "../hooks/useReflogManagement";
-import { CherryPickDialog } from "./CherryPickDialog";
-import { InteractiveRebaseDialog } from "./InteractiveRebaseDialog";
-import { ReflogDialog } from "./ReflogDialog";
-import { ReflogResetDialog } from "./ReflogResetDialog";
-import { ResetCommitDialog } from "./ResetCommitDialog";
-import { RevertDialog } from "./RevertDialog";
+import {
+	LazyCherryPickDialog,
+	LazyInteractiveRebaseDialog,
+	LazyReflogDialog,
+	LazyReflogResetDialog,
+	LazyResetCommitDialog,
+	LazyRevertDialog,
+} from "./LazyCommitOperationDialogs";
 
 type IntegrationTarget = {
 	branchName: string;
@@ -80,7 +84,7 @@ export function CommitGraphOperationDialogs({
 				repositoryId={repositoryId}
 				source={branchCreationSource ?? undefined}
 			/>
-			<BranchIntegrationDialog
+			<LazyBranchIntegrationDialog
 				branches={(repositoryRefs?.refs ?? []).filter(
 					(ref) => ref.kind === "Local",
 				)}
@@ -94,7 +98,7 @@ export function CommitGraphOperationDialogs({
 				repositoryId={repositoryId}
 				targetBranchName={integrationTarget?.branchName}
 			/>
-			<CherryPickDialog
+			<LazyCherryPickDialog
 				commit={cherryPickCommit}
 				currentBranchName={currentBranchName}
 				onOpenChange={setCherryPickCommit}
@@ -102,7 +106,7 @@ export function CommitGraphOperationDialogs({
 				onRepositoryChanged={onRepositoryChanged}
 				repositoryId={repositoryId}
 			/>
-			<RevertDialog
+			<LazyRevertDialog
 				commit={revertCommit}
 				currentBranchName={currentBranchName}
 				onOpenChange={setRevertCommit}
@@ -110,7 +114,7 @@ export function CommitGraphOperationDialogs({
 				onRepositoryChanged={onRepositoryChanged}
 				repositoryId={repositoryId}
 			/>
-			<ResetCommitDialog
+			<LazyResetCommitDialog
 				commit={resetCommit}
 				currentBranchName={currentBranchName}
 				onOpenChange={setResetCommit}
@@ -118,7 +122,7 @@ export function CommitGraphOperationDialogs({
 				onRepositoryChanged={onRepositoryChanged}
 				repositoryId={repositoryId}
 			/>
-			<InteractiveRebaseDialog
+			<LazyInteractiveRebaseDialog
 				baseCommit={interactiveRebaseBase}
 				currentBranchName={currentBranchName}
 				onOpenChange={setInteractiveRebaseBase}
@@ -127,7 +131,7 @@ export function CommitGraphOperationDialogs({
 				repositoryId={repositoryId}
 			/>
 			{reflogController.branchName ? (
-				<ReflogDialog
+				<LazyReflogDialog
 					branchName={reflogController.branchName}
 					onClose={reflogController.close}
 					onCreateBranch={(entry) => {
@@ -139,7 +143,7 @@ export function CommitGraphOperationDialogs({
 				/>
 			) : null}
 			{reflogController.resetTarget && currentBranchName ? (
-				<ReflogResetDialog
+				<LazyReflogResetDialog
 					currentBranchName={currentBranchName}
 					entry={reflogController.resetTarget}
 					onClose={reflogController.closeReset}

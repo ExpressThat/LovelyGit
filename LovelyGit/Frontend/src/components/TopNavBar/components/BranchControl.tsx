@@ -23,11 +23,11 @@ import { Input } from "@/components/ui/input";
 import { sendRequestWithResponse } from "@/lib/commands";
 import { gitMutationTimeoutMs } from "@/lib/gitMutationTimeout";
 import { NativeMessageType } from "@/lib/nativeMessaging";
+import type { BranchIntegrationMode } from "./BranchIntegrationDialog";
 import {
-	BranchIntegrationDialog,
-	type BranchIntegrationMode,
-} from "./BranchIntegrationDialog";
-import { LazyCreateBranchDialog } from "./LazyRepositoryDialogs";
+	LazyBranchIntegrationDialog,
+	LazyCreateBranchDialog,
+} from "./LazyRepositoryDialogs";
 import { useLocalBranches } from "./useLocalBranches";
 
 type BranchControlProps = {
@@ -234,7 +234,7 @@ export function BranchControl({
 				open={createOpen}
 				repositoryId={repositoryId}
 			/>
-			<BranchIntegrationDialog
+			<LazyBranchIntegrationDialog
 				branches={branches}
 				currentBranchName={currentBranchName}
 				mode={integrationMode}

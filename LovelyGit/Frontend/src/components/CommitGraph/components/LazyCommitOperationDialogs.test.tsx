@@ -1,0 +1,30 @@
+// @vitest-environment jsdom
+
+import { render, screen } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
+import type { CommitGraphRow } from "@/generated/types";
+import { LazyRevertDialog } from "./LazyCommitOperationDialogs";
+
+vi.mock("./RevertDialog", () => ({
+	RevertDialog: ({ commit }: { commit: CommitGraphRow | null }) =>
+		commit ? <div>Revert dialog loaded</div> : null,
+}));
+
+describe("LazyCommitOperationDialogs", () => {
+	it("does not load a closed operation and renders it when activated", async () => {
+		const props = {
+			commit: null,
+			currentBranchName: "main",
+			onOpenChange: vi.fn(),
+			onOpenWorkingChanges: vi.fn(),
+			onRepositoryChanged: vi.fn(),
+			repositoryId: "repo",
+		};
+		const view = render(<LazyRevertDialog {...props} />);
+		expect(screen.queryByText("Revert dialog loaded")).not.toBeInTheDocument();
+		view.rerender(
+			<LazyRevertDialog {...props} commit={{} as CommitGraphRow} />,
+		);
+		expect(await screen.findByText("Revert dialog loaded")).toBeVisible();
+	});
+});
