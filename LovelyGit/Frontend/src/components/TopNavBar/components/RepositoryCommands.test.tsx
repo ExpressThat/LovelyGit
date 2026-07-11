@@ -27,7 +27,24 @@ describe("remote website commands", () => {
 			arguments: {
 				knownRepositoryId: "repo",
 				kind: "Commit",
+				targetValue: null,
 				value: "abc123",
+			},
+			commandType: "OpenRemoteWebResource",
+		});
+	});
+
+	it("opens a provider pull-request route with source and target branches", async () => {
+		vi.mocked(sendRequestWithResponse).mockResolvedValueOnce({});
+
+		await openRemoteWebResource("repo", "PullRequest", "feature/demo", "main");
+
+		expect(sendRequestWithResponse).toHaveBeenCalledWith({
+			arguments: {
+				knownRepositoryId: "repo",
+				kind: "PullRequest",
+				targetValue: "main",
+				value: "feature/demo",
 			},
 			commandType: "OpenRemoteWebResource",
 		});

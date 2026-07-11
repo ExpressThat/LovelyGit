@@ -71,6 +71,14 @@ describe("BranchContextMenu", () => {
 		fireEvent.contextMenu(
 			screen.getByRole("button", { name: "feature/demo ref" }),
 		);
+		await user.click(
+			await screen.findByText("Create pull request: feature/demo → main"),
+		);
+		expect(onAction).toHaveBeenCalledWith("createPullRequest", "feature/demo");
+
+		fireEvent.contextMenu(
+			screen.getByRole("button", { name: "feature/demo ref" }),
+		);
 		await user.click(await screen.findByText("Create linked worktree…"));
 		expect(onAction).toHaveBeenCalledWith("worktree", "feature/demo");
 

@@ -11,20 +11,26 @@ public enum RemoteWebResourceKind
     Repository,
     Commit,
     Branch,
+    PullRequest,
 }
 
 internal static class RemoteWebUrlBuilder
 {
-    public static string Build(string remoteUrl, RemoteWebResourceKind kind, string? value)
+    public static string Build(
+        string remoteUrl,
+        RemoteWebResourceKind kind,
+        string? value,
+        string? targetValue = null)
     {
         var repositoryUrl = NormalizeRepositoryUrl(remoteUrl);
-        ValidateValue(kind, value);
+        ValidateValue(kind, value, targetValue);
 
         return kind switch
         {
             RemoteWebResourceKind.Repository => repositoryUrl,
             RemoteWebResourceKind.Commit => BuildCommitUrl(repositoryUrl, value!),
             RemoteWebResourceKind.Branch => BuildBranchUrl(repositoryUrl, value!),
+            RemoteWebResourceKind.PullRequest => BuildPullRequestUrl(repositoryUrl, value!, targetValue!),
             _ => throw new ArgumentOutOfRangeException(nameof(kind)),
         };
     }
@@ -108,11 +114,46 @@ internal static class RemoteWebUrlBuilder
             : $"{repositoryUrl}/tree/{segment}";
     }
 
-    private static void ValidateValue(RemoteWebResourceKind kind, string? value)
+    private static string BuildPullRequestUrl(string repositoryUrl, string source, string target)
+    {
+        var sourceQuery = Uri.EscapeDataString(source);
+        var targetQuery = Uri.EscapeDataString(target);
+        if (IsAzureDevOps(repositoryUrl))
+        {
+            return $"{repositoryUrl}/pullrequestcreate?sourceRef={Uri.EscapeDataString($"refs/heads/{source}")}" +
+                $"&targetRef={Uri.EscapeDataString($"refs/heads/{target}")}";
+        }
+
+        if (IsGitLab(repositoryUrl))
+        {
+            return $"{repositoryUrl}/-/merge_requests/new?merge_request%5Bsource_branch%5D={sourceQuery}" +
+                $"&merge_request%5Btarget_branch%5D={targetQuery}";
+        }
+
+        if (IsBitbucket(repositoryUrl))
+        {
+            return $"{repositoryUrl}/pull-requests/new?source={sourceQuery}&dest={targetQuery}";
+        }
+
+        return $"{repositoryUrl}/compare/{EscapeBranchPath(target)}...{EscapeBranchPath(source)}?expand=1";
+    }
+
+    private static string EscapeBranchPath(string branch) =>
+        string.Join('/', branch.Split('/').Select(Uri.EscapeDataString));
+
+    private static void ValidateValue(
+        RemoteWebResourceKind kind,
+        string? value,
+        string? targetValue)
     {
         if (kind != RemoteWebResourceKind.Repository && string.IsNullOrWhiteSpace(value))
         {
             throw new ArgumentException($"A {kind.ToString().ToLowerInvariant()} value is required.", nameof(value));
+        }
+
+        if (kind == RemoteWebResourceKind.PullRequest && string.IsNullOrWhiteSpace(targetValue))
+        {
+            throw new ArgumentException("A pull request target branch is required.", nameof(targetValue));
         }
     }
 

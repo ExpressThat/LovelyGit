@@ -43,10 +43,11 @@ export async function openRemoteWebResource(
 	repositoryId: string,
 	kind: RemoteWebResourceKind,
 	value: string | null = null,
+	targetValue: string | null = null,
 ) {
 	try {
 		await sendRequestWithResponse({
-			arguments: { knownRepositoryId: repositoryId, kind, value },
+			arguments: { knownRepositoryId: repositoryId, kind, targetValue, value },
 			commandType: NativeMessageType.OpenRemoteWebResource,
 		});
 	} catch (error) {

@@ -5,6 +5,7 @@ import {
 	GitBranch,
 	GitCompareArrows,
 	GitMerge,
+	GitPullRequestCreateArrow,
 	History,
 	Link2,
 	ListRestart,
@@ -106,6 +107,16 @@ export function BranchContextMenu({
 					Open branch on remote website
 				</ContextMenuItem>
 				<ContextMenuItem
+					disabled={!canIntegrate}
+					onClick={() => onAction("createPullRequest", branchName)}
+				>
+					<GitPullRequestCreateArrow aria-hidden="true" />
+					<span className="min-w-0 truncate">
+						Create pull request: {branchName} →{" "}
+						{currentBranchName ?? "current branch"}
+					</span>
+				</ContextMenuItem>
+				<ContextMenuItem
 					disabled={disabled}
 					onClick={() => onAction("worktree", branchName)}
 				>
@@ -156,6 +167,7 @@ export type BranchAction =
 	| "checkout"
 	| "checkoutRemote"
 	| "compare"
+	| "createPullRequest"
 	| "delete"
 	| "deleteRemote"
 	| "push"

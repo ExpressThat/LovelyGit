@@ -17,6 +17,8 @@ public sealed record OpenRemoteWebResourceCommandArguments
     public RemoteWebResourceKind Kind { get; set; }
 
     public string? Value { get; set; }
+
+    public string? TargetValue { get; set; }
 }
 
 internal sealed class OpenRemoteWebResourceCommandResolver
@@ -67,7 +69,11 @@ internal sealed class OpenRemoteWebResourceCommandResolver
                 return Failure(command, "Add a remote before opening this repository on the web.");
             }
 
-            _launcher.Open(RemoteWebUrlBuilder.Build(remoteUrl, arguments.Kind, arguments.Value));
+            _launcher.Open(RemoteWebUrlBuilder.Build(
+                remoteUrl,
+                arguments.Kind,
+                arguments.Value,
+                arguments.TargetValue));
             return Success(command);
         }
         catch (Exception exception)

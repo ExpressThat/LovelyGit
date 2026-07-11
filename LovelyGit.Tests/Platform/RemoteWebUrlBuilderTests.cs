@@ -35,6 +35,18 @@ public sealed class RemoteWebUrlBuilderTests
     }
 
     [Theory]
+    [InlineData("https://github.com/o/r", "https://github.com/o/r/compare/main...feature/nice-ui?expand=1")]
+    [InlineData("https://gitlab.com/o/r", "https://gitlab.com/o/r/-/merge_requests/new?merge_request%5Bsource_branch%5D=feature%2Fnice-ui&merge_request%5Btarget_branch%5D=main")]
+    [InlineData("https://bitbucket.org/o/r", "https://bitbucket.org/o/r/pull-requests/new?source=feature%2Fnice-ui&dest=main")]
+    [InlineData("https://dev.azure.com/o/p/_git/r", "https://dev.azure.com/o/p/_git/r/pullrequestcreate?sourceRef=refs%2Fheads%2Ffeature%2Fnice-ui&targetRef=refs%2Fheads%2Fmain")]
+    public void Build_UsesProviderPullRequestRoute(string remote, string expected)
+    {
+        Assert.Equal(
+            expected,
+            RemoteWebUrlBuilder.Build(remote, RemoteWebResourceKind.PullRequest, "feature/nice-ui", "main"));
+    }
+
+    [Theory]
     [InlineData("")]
     [InlineData("C:\\repo")]
     [InlineData("file:///repo")]
@@ -49,6 +61,13 @@ public sealed class RemoteWebUrlBuilderTests
     {
         Assert.Throws<ArgumentException>(() =>
             RemoteWebUrlBuilder.Build("https://github.com/o/r", RemoteWebResourceKind.Commit, " "));
+    }
+
+    [Fact]
+    public void Build_RequiresAPullRequestTarget()
+    {
+        Assert.Throws<ArgumentException>(() =>
+            RemoteWebUrlBuilder.Build("https://github.com/o/r", RemoteWebResourceKind.PullRequest, "feature", " "));
     }
 
     [Fact]

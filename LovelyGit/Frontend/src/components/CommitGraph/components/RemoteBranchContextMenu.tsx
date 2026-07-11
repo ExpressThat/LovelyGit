@@ -3,6 +3,7 @@ import {
 	ExternalLink,
 	GitCompareArrows,
 	GitMerge,
+	GitPullRequestCreateArrow,
 	ListRestart,
 	Trash2,
 } from "lucide-react";
@@ -81,6 +82,16 @@ export function RemoteBranchContextMenu({
 				>
 					<ExternalLink aria-hidden="true" />
 					Open branch on remote website
+				</ContextMenuItem>
+				<ContextMenuItem
+					disabled={!canIntegrate}
+					onClick={() => onAction("createPullRequest", webBranchName)}
+				>
+					<GitPullRequestCreateArrow aria-hidden="true" />
+					<span className="min-w-0 truncate">
+						Create pull request: {webBranchName} →{" "}
+						{currentBranchName ?? "current branch"}
+					</span>
 				</ContextMenuItem>
 				<ContextMenuSeparator />
 				<ContextMenuItem

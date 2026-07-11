@@ -42,6 +42,17 @@ export function useBranchWorktreeControllers({
 	});
 	const manageBranch = (action: BranchAction, branchName: string) => {
 		if (action === "reflog") reflogController.open(branchName);
+		else if (
+			action === "createPullRequest" &&
+			repositoryId &&
+			currentBranchName
+		)
+			void openRemoteWebResource(
+				repositoryId,
+				"PullRequest",
+				branchName,
+				currentBranchName,
+			);
 		else if (action === "openRemote" && repositoryId)
 			void openRemoteWebResource(repositoryId, "Branch", branchName);
 		else if (action === "worktree")

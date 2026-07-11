@@ -23,6 +23,12 @@ describe("RemoteBranchContextMenu", () => {
 
 		openMenu();
 		await user.click(
+			await screen.findByText("Create pull request: feature → main"),
+		);
+		expect(onAction).toHaveBeenCalledWith("createPullRequest", "feature");
+
+		openMenu();
+		await user.click(
 			await screen.findByText("Compare main with origin/feature…"),
 		);
 		expect(onAction).toHaveBeenCalledWith("compare", "origin/feature");
