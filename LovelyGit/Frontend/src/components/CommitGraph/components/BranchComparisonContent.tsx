@@ -1,6 +1,6 @@
-import { FileDiff, GitCommitHorizontal } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
 import type { ReactNode } from "react";
+import { FileDiff, GitCommitHorizontal } from "@/components/icons/lovelyIcons";
 import type {
 	BranchComparisonCommit,
 	BranchComparisonFile,

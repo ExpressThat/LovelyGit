@@ -1,11 +1,11 @@
+import { motion } from "motion/react";
 import {
 	Box,
 	LoaderCircle,
 	RefreshCw,
 	Unplug,
 	WandSparkles,
-} from "lucide-react";
-import { motion } from "motion/react";
+} from "@/components/icons/lovelyIcons";
 import { Button } from "@/components/ui/button";
 import type { GitSubmodule, SubmoduleAction } from "@/generated/types";
 

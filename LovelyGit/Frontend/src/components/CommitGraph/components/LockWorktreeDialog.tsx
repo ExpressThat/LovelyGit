@@ -1,5 +1,5 @@
-import { LoaderCircle, LockKeyhole } from "lucide-react";
 import { useState } from "react";
+import { LoaderCircle, LockKeyhole } from "@/components/icons/lovelyIcons";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,

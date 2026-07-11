@@ -1,5 +1,9 @@
-import { MinusSquare, SquareCheckBig, Trash2 } from "lucide-react";
 import { useMemo } from "react";
+import {
+	MinusSquare,
+	SquareCheckBig,
+	Trash2,
+} from "@/components/icons/lovelyIcons";
 import type {
 	WorkingTreeChangedFile,
 	WorkingTreeChangesResponse,

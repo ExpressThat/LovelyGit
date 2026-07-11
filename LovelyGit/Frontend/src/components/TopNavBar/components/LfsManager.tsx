@@ -1,6 +1,6 @@
-import { HardDriveDownload } from "lucide-react";
 import { lazy, Suspense, useState } from "react";
 import { SurfaceLoading } from "@/AppLazySurfaces";
+import { HardDriveDownload } from "@/components/icons/lovelyIcons";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 
 const LfsManagerContent = lazy(() =>

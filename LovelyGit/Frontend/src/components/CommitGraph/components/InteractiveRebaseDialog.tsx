@@ -1,6 +1,10 @@
-import { AlertTriangle, ListTree, LoaderCircle } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { toast } from "sonner";
+import {
+	AlertTriangle,
+	ListTree,
+	LoaderCircle,
+} from "@/components/icons/lovelyIcons";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,

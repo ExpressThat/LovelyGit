@@ -1,7 +1,7 @@
-import { Search } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
 import { useEffect, useMemo, useState } from "react";
 import { copyToClipboard } from "@/components/CommitGraph/utils/clipboard";
+import { Search } from "@/components/icons/lovelyIcons";
 import {
 	openRemoteWebResource,
 	openRepositoryTerminal,

@@ -1,5 +1,5 @@
-import { ShieldAlert } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
+import { ShieldAlert } from "@/components/icons/lovelyIcons";
 import {
 	AlertDialog,
 	AlertDialogAction,

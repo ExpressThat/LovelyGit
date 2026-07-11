@@ -6,7 +6,7 @@ import {
 	Plus,
 	Rows3,
 	WrapText,
-} from "lucide-react";
+} from "@/components/icons/lovelyIcons";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import type {

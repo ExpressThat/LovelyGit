@@ -1,5 +1,10 @@
-import { ChevronLeft, ChevronRight, Search, X } from "lucide-react";
 import { useMemo, useState } from "react";
+import {
+	ChevronLeft,
+	ChevronRight,
+	Search,
+	X,
+} from "@/components/icons/lovelyIcons";
 import { HorizontalPanelHandle } from "@/components/layout/HorizontalPanelHandle";
 import { useHorizontalPanelResize } from "@/components/layout/useHorizontalPanelResize";
 import type { BranchIntegrationMode } from "@/components/TopNavBar/components/BranchIntegrationDialog";

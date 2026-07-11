@@ -1,4 +1,4 @@
-import { GripVertical } from "lucide-react";
+import { GripVertical } from "@/components/icons/lovelyIcons";
 
 export function HorizontalPanelHandle({
 	label,

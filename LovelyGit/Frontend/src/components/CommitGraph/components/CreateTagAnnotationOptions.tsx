@@ -1,5 +1,5 @@
-import { BadgeCheck } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { BadgeCheck } from "@/components/icons/lovelyIcons";
 import { MutationOptionToggle } from "./MutationOptionToggle";
 
 export function CreateTagAnnotationOptions({

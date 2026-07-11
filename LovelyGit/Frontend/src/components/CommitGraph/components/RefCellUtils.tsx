@@ -1,4 +1,4 @@
-import { Archive, Cloud, HardDrive, Tag } from "lucide-react";
+import { Archive, Cloud, HardDrive, Tag } from "@/components/icons/lovelyIcons";
 import type { CommitRefInfo, CommitRefKind } from "@/generated/types";
 import { refLabel } from "../utils/format";
 

@@ -1,5 +1,10 @@
-import { LoaderCircle, Plus, RadioTower, Trash2 } from "lucide-react";
 import { AnimatePresence } from "motion/react";
+import {
+	LoaderCircle,
+	Plus,
+	RadioTower,
+	Trash2,
+} from "@/components/icons/lovelyIcons";
 import {
 	AlertDialog,
 	AlertDialogAction,

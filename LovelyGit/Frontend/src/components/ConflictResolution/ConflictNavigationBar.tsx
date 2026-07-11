@@ -4,7 +4,7 @@ import {
 	ChevronUp,
 	GripHorizontal,
 	RotateCcw,
-} from "lucide-react";
+} from "@/components/icons/lovelyIcons";
 import { Button } from "@/components/ui/button";
 
 export function ConflictNavigationBar({

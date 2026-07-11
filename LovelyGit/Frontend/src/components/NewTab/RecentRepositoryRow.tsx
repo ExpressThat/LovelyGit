@@ -1,5 +1,10 @@
-import { FolderGit2, FolderOpen, LoaderCircle, Trash2 } from "lucide-react";
 import { useState } from "react";
+import {
+	FolderGit2,
+	FolderOpen,
+	LoaderCircle,
+	Trash2,
+} from "@/components/icons/lovelyIcons";
 import { revealKnownRepository } from "@/components/TopNavBar/components/RepositoryCommands";
 import {
 	AlertDialog,

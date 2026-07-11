@@ -1,4 +1,4 @@
-import { X } from "lucide-react";
+import { X } from "@/components/icons/lovelyIcons";
 import { Button } from "@/components/ui/button";
 import type { CommitChangedFile } from "@/generated/types";
 import { DiffToolbarControls } from "./DiffToolbarControls";

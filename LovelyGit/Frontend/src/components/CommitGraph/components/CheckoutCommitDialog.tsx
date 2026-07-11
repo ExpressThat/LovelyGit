@@ -1,7 +1,10 @@
-import { GitCommitHorizontal, LoaderCircle } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
 import { useState } from "react";
 import { toast } from "sonner";
+import {
+	GitCommitHorizontal,
+	LoaderCircle,
+} from "@/components/icons/lovelyIcons";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,

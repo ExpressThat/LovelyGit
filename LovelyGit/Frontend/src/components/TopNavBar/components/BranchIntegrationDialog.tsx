@@ -1,6 +1,10 @@
-import { GitMerge, ListRestart, LoaderCircle } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import {
+	GitMerge,
+	ListRestart,
+	LoaderCircle,
+} from "@/components/icons/lovelyIcons";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,

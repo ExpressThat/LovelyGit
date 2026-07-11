@@ -1,3 +1,5 @@
+import { AnimatePresence } from "motion/react";
+import { useEffect, useState } from "react";
 import {
 	Download,
 	HardDriveDownload,
@@ -6,9 +8,7 @@ import {
 	RefreshCw,
 	Sparkles,
 	Trash2,
-} from "lucide-react";
-import { AnimatePresence } from "motion/react";
-import { useEffect, useState } from "react";
+} from "@/components/icons/lovelyIcons";
 import {
 	AlertDialog,
 	AlertDialogAction,

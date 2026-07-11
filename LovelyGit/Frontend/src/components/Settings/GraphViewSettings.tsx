@@ -1,4 +1,4 @@
-import { PanelLeft } from "lucide-react";
+import { PanelLeft } from "@/components/icons/lovelyIcons";
 import { Button } from "@/components/ui/button";
 import { setSetting, useSetting } from "@/lib/settings/settingsStore";
 import { SettingGroup } from "./SettingsControls";

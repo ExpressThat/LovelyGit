@@ -1,6 +1,6 @@
-import { LoaderCircle } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
 import { type ComponentProps, lazy, Suspense } from "react";
+import { LoaderCircle } from "@/components/icons/lovelyIcons";
 import type { CommitDetails as CommitDetailsComponent } from "./components/CommitDetails/CommitDetails";
 import type { CommitFileDiffView as CommitFileDiffComponent } from "./components/CommitFileDiff/CommitFileDiffView";
 import type { ConflictResolutionView as ConflictResolutionComponent } from "./components/ConflictResolution/ConflictResolutionView";

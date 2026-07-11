@@ -1,5 +1,10 @@
-import { FolderGit2, FolderOpen, GitBranch, LoaderCircle } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
+import {
+	FolderGit2,
+	FolderOpen,
+	GitBranch,
+	LoaderCircle,
+} from "@/components/icons/lovelyIcons";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,

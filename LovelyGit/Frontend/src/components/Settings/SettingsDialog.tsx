@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
 	BadgeCheck,
 	Brush,
@@ -5,8 +6,7 @@ import {
 	GitBranch,
 	GitPullRequestArrow,
 	Settings,
-} from "lucide-react";
-import { useState } from "react";
+} from "@/components/icons/lovelyIcons";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,

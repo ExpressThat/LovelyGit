@@ -1,4 +1,4 @@
-import { BadgeCheck } from "lucide-react";
+import { BadgeCheck } from "@/components/icons/lovelyIcons";
 import { Switch } from "@/components/ui/switch";
 import { setSetting, useSetting } from "@/lib/settings/settingsStore";
 import { SettingGroup } from "./SettingsControls";

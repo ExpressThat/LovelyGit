@@ -1,6 +1,6 @@
-import { FolderOpen, LoaderCircle } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { FolderOpen, LoaderCircle } from "@/components/icons/lovelyIcons";
 import { Button } from "@/components/ui/button";
 import { sendRequestWithResponse } from "@/lib/commands";
 import { nativeDialogTimeoutMs } from "@/lib/nativeDialogTimeout";

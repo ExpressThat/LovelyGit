@@ -1,3 +1,5 @@
+import { useMemo, useState } from "react";
+import { toast } from "sonner";
 import {
 	Check,
 	ChevronDown,
@@ -7,9 +9,7 @@ import {
 	LoaderCircle,
 	Plus,
 	Search,
-} from "lucide-react";
-import { useMemo, useState } from "react";
-import { toast } from "sonner";
+} from "@/components/icons/lovelyIcons";
 import {
 	DropdownMenu,
 	DropdownMenuContent,

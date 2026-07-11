@@ -1,6 +1,6 @@
-import { LoaderCircle, Play, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
+import { LoaderCircle, Play, X } from "@/components/icons/lovelyIcons";
 import {
 	AlertDialog,
 	AlertDialogAction,

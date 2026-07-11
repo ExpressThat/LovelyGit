@@ -1,4 +1,4 @@
-import { Download, GitPullRequestArrow } from "lucide-react";
+import { Download, GitPullRequestArrow } from "@/components/icons/lovelyIcons";
 import type { RemotePrimaryAction } from "@/generated/types";
 import { setSetting, useSetting } from "@/lib/settings/settingsStore";
 import {

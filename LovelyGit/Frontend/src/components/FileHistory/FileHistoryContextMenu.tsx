@@ -1,5 +1,10 @@
-import { EyeOff, FileSearch, HardDrive, History } from "lucide-react";
 import type { ReactNode } from "react";
+import {
+	EyeOff,
+	FileSearch,
+	HardDrive,
+	History,
+} from "@/components/icons/lovelyIcons";
 import {
 	ContextMenu,
 	ContextMenuContent,

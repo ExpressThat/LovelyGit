@@ -1,6 +1,6 @@
-import { SearchCode } from "lucide-react";
 import { motion } from "motion/react";
 import { lazy, Suspense, useState } from "react";
+import { SearchCode } from "@/components/icons/lovelyIcons";
 import {
 	Dialog,
 	DialogContent,

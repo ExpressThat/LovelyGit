@@ -1,3 +1,4 @@
+import { AnimatePresence, motion } from "motion/react";
 import {
 	CircleCheck,
 	CircleX,
@@ -5,8 +6,7 @@ import {
 	RotateCcw,
 	SearchCode,
 	SkipForward,
-} from "lucide-react";
-import { AnimatePresence, motion } from "motion/react";
+} from "@/components/icons/lovelyIcons";
 import { Button } from "@/components/ui/button";
 import type { GitBisectAction, GitBisectState } from "@/generated/types";
 

@@ -1,5 +1,5 @@
-import { ArrowDown, ArrowUp } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
+import { ArrowDown, ArrowUp } from "@/components/icons/lovelyIcons";
 import { Button } from "@/components/ui/button";
 import {
 	Select,

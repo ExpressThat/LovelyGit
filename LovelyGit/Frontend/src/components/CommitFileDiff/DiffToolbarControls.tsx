@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import {
 	Columns2,
 	FileText,
@@ -7,8 +8,7 @@ import {
 	Plus,
 	Rows3,
 	WrapText,
-} from "lucide-react";
-import type { ReactNode } from "react";
+} from "@/components/icons/lovelyIcons";
 import { Button } from "@/components/ui/button";
 import { setSetting, useSetting } from "@/lib/settings/settingsStore";
 import { cn } from "@/lib/utils";

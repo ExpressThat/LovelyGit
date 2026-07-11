@@ -1,5 +1,5 @@
-import { ArrowDown, ArrowUp } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { ArrowDown, ArrowUp } from "@/components/icons/lovelyIcons";
 
 export function SyncCountBadge({
 	count,

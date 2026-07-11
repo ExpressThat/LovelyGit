@@ -1,4 +1,4 @@
-import { Minus, Plus } from "lucide-react";
+import { Minus, Plus } from "@/components/icons/lovelyIcons";
 import type { CommitFileDiffLine } from "@/generated/types";
 
 export type DiffLineAction = {

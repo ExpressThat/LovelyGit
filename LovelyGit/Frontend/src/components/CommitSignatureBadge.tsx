@@ -1,4 +1,4 @@
-import { BadgeCheck } from "lucide-react";
+import { BadgeCheck } from "@/components/icons/lovelyIcons";
 import type { CommitSignatureKind } from "@/generated/types";
 
 export function CommitSignatureBadge({

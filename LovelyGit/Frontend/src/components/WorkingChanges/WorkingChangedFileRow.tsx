@@ -4,7 +4,7 @@ import {
 	FileQuestion,
 	FileX2,
 	GitPullRequestArrow,
-} from "lucide-react";
+} from "@/components/icons/lovelyIcons";
 import { Checkbox } from "@/components/ui/checkbox";
 import type { WorkingTreeChangedFile } from "@/generated/types";
 import { FileHistoryContextMenu } from "../FileHistory/FileHistoryContextMenu";

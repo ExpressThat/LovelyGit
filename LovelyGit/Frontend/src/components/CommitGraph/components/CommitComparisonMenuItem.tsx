@@ -1,4 +1,4 @@
-import { GitCompareArrows } from "lucide-react";
+import { GitCompareArrows } from "@/components/icons/lovelyIcons";
 import { ContextMenuItem } from "@/components/ui/context-menu";
 import type { CommitGraphRow } from "@/generated/types";
 import { shortHash } from "../utils/format";

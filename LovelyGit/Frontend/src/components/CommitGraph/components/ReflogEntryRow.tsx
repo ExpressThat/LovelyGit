@@ -1,4 +1,8 @@
-import { Clipboard, GitBranch, ListRestart } from "lucide-react";
+import {
+	Clipboard,
+	GitBranch,
+	ListRestart,
+} from "@/components/icons/lovelyIcons";
 import { Button } from "@/components/ui/button";
 import {
 	ContextMenu,

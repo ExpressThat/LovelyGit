@@ -1,4 +1,4 @@
-import { Archive, LoaderCircle, Trash2 } from "lucide-react";
+import { Archive, LoaderCircle, Trash2 } from "@/components/icons/lovelyIcons";
 import {
 	AlertDialog,
 	AlertDialogAction,

@@ -1,4 +1,9 @@
-import { GitBranch, HardDrive, LockKeyhole, Plus } from "lucide-react";
+import {
+	GitBranch,
+	HardDrive,
+	LockKeyhole,
+	Plus,
+} from "@/components/icons/lovelyIcons";
 import { Button } from "@/components/ui/button";
 import type { RepositoryWorktreeItem } from "@/generated/types";
 import type { WorktreeMutationController } from "../hooks/useWorktreeMutations";

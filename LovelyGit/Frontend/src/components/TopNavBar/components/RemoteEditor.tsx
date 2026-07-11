@@ -1,6 +1,6 @@
-import { LoaderCircle, Save, X } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
 import { useState } from "react";
+import { LoaderCircle, Save, X } from "@/components/icons/lovelyIcons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { RemoteDraft } from "./useRemoteManager";

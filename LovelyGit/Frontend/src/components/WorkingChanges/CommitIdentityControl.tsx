@@ -1,6 +1,11 @@
-import { AlertTriangle, LoaderCircle, Pencil, UserRound } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { lazy, Suspense, useState } from "react";
+import {
+	AlertTriangle,
+	LoaderCircle,
+	Pencil,
+	UserRound,
+} from "@/components/icons/lovelyIcons";
 import { Button } from "@/components/ui/button";
 import type {
 	GitCommitIdentity,

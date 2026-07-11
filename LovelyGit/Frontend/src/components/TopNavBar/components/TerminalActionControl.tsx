@@ -1,4 +1,4 @@
-import { SquareTerminal } from "lucide-react";
+import { SquareTerminal } from "@/components/icons/lovelyIcons";
 import { Button } from "@/components/ui/button";
 import { openRepositoryTerminal } from "./RepositoryCommands";
 

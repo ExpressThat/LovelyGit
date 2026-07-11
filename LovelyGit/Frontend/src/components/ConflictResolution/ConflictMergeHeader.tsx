@@ -1,4 +1,4 @@
-import { FileWarning, Save, Wrench, X } from "lucide-react";
+import { FileWarning, Save, Wrench, X } from "@/components/icons/lovelyIcons";
 import { Button } from "@/components/ui/button";
 
 export function ConflictMergeHeader({

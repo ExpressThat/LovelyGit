@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import {
 	CloudDownload,
 	ExternalLink,
@@ -6,8 +7,7 @@ import {
 	GitPullRequestCreateArrow,
 	ListRestart,
 	Trash2,
-} from "lucide-react";
-import type { ReactNode } from "react";
+} from "@/components/icons/lovelyIcons";
 import type { BranchIntegrationMode } from "@/components/TopNavBar/components/BranchIntegrationDialog";
 import {
 	ContextMenu,

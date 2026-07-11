@@ -1,5 +1,5 @@
-import { GitBranch } from "lucide-react";
 import { CommitSignatureBadge } from "@/components/CommitSignatureBadge";
+import { GitBranch } from "@/components/icons/lovelyIcons";
 import type { CommitChangedFile } from "@/generated/types";
 import { formatDate, shortHash } from "../CommitGraph/utils/format";
 import { CommitDetailsChangedFilesList } from "./CommitDetailsChangedFilesList";

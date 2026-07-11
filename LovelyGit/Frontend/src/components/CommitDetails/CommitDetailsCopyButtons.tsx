@@ -1,4 +1,4 @@
-import { Copy } from "lucide-react";
+import { Copy } from "@/components/icons/lovelyIcons";
 import { Button } from "@/components/ui/button";
 import type { CommitDetailsResponse } from "@/generated/types";
 import { copyToClipboard } from "../CommitGraph/utils/clipboard";

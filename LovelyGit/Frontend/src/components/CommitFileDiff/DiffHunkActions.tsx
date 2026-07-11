@@ -1,4 +1,4 @@
-import { ListMinus, ListPlus } from "lucide-react";
+import { ListMinus, ListPlus } from "@/components/icons/lovelyIcons";
 import type { CommitFileDiffLine } from "@/generated/types";
 
 export type DiffHunkAction = {

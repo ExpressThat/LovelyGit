@@ -1,6 +1,6 @@
-import { GitCommitHorizontal } from "lucide-react";
 import { motion } from "motion/react";
 import { formatDate, shortHash } from "@/components/CommitGraph/utils/format";
+import { GitCommitHorizontal } from "@/components/icons/lovelyIcons";
 import type { CommitSearchResult } from "@/generated/types";
 
 export function CommitSearchResultRow({

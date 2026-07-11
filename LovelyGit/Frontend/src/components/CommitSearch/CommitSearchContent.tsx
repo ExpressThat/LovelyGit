@@ -1,5 +1,5 @@
-import { AlertTriangle, Search } from "lucide-react";
 import { motion } from "motion/react";
+import { AlertTriangle, Search } from "@/components/icons/lovelyIcons";
 import { Button } from "@/components/ui/button";
 import type { CommitSearchResponse } from "@/generated/types";
 import { CommitSearchResultRow } from "./CommitSearchResultRow";

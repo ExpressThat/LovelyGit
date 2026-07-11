@@ -1,4 +1,4 @@
-import { Check, LoaderCircle } from "lucide-react";
+import { Check, LoaderCircle } from "@/components/icons/lovelyIcons";
 import type { CloneRepositoryProgressNotification } from "@/generated/types";
 
 export function CloneProgress({

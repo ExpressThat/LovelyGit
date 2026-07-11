@@ -1,4 +1,4 @@
-import { ExternalLink } from "lucide-react";
+import { ExternalLink } from "@/components/icons/lovelyIcons";
 import { Button } from "@/components/ui/button";
 import { openRemoteWebResource } from "./RepositoryCommands";
 

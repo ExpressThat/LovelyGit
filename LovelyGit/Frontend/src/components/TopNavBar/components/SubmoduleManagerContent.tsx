@@ -1,5 +1,5 @@
-import { Boxes, LoaderCircle, RefreshCw } from "lucide-react";
 import { useEffect, useState } from "react";
+import { Boxes, LoaderCircle, RefreshCw } from "@/components/icons/lovelyIcons";
 import {
 	AlertDialog,
 	AlertDialogAction,

@@ -1,4 +1,9 @@
-import { Command, GitCompareArrows, Search, Settings } from "lucide-react";
+import {
+	Command,
+	GitCompareArrows,
+	Search,
+	Settings,
+} from "@/components/icons/lovelyIcons";
 import { BisectControl } from "./components/BisectControl";
 import { BranchControl } from "./components/BranchControl";
 import { LfsManager } from "./components/LfsManager";

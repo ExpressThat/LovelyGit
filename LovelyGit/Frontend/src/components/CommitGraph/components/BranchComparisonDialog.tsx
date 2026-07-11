@@ -1,12 +1,12 @@
+import { AnimatePresence } from "motion/react";
+import { useState } from "react";
 import {
 	AlertTriangle,
 	GitCompareArrows,
 	GitMerge,
 	ListRestart,
 	LoaderCircle,
-} from "lucide-react";
-import { AnimatePresence } from "motion/react";
-import { useState } from "react";
+} from "@/components/icons/lovelyIcons";
 import type { BranchIntegrationMode } from "@/components/TopNavBar/components/BranchIntegrationDialog";
 import { Button } from "@/components/ui/button";
 import {

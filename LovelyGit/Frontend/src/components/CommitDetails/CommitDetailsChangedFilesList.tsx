@@ -1,6 +1,6 @@
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { File, FilePlus2, FileX2 } from "lucide-react";
 import { useRef } from "react";
+import { File, FilePlus2, FileX2 } from "@/components/icons/lovelyIcons";
 import { Button } from "@/components/ui/button";
 import type { CommitChangedFile } from "@/generated/types";
 import { FileHistoryContextMenu } from "../FileHistory/FileHistoryContextMenu";

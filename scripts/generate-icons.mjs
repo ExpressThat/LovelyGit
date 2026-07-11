@@ -3,7 +3,8 @@ import path from "node:path";
 
 const revision = "6d128ed935d4546607b1e4d5d08c8b27bdbe7758";
 const repository = "https://github.com/tabler/tabler-icons";
-const output = path.resolve("LovelyGit/Frontend/icon-review");
+const output = path.resolve("LovelyGit/Frontend/icons");
+const frontendAssets = path.resolve("LovelyGit/Frontend/src/assets");
 const checkout = path.resolve("artifacts/tabler-icons-upstream");
 const icons = [
 	["added-file", "file-plus"], ["amend-commit-message", "pencil"], ["appearance-settings", "brush"],
@@ -53,11 +54,23 @@ async function getUpstream(relativePath) {
 }
 
 await mkdir(path.join(output, "svg"), { recursive: true });
-await Promise.all(icons.map(async ([localName, upstreamName]) => {
+await mkdir(frontendAssets, { recursive: true });
+const resolvedIcons = await Promise.all(icons.map(async ([localName, upstreamName]) => {
 	const source = await getUpstream(`icons/outline/${upstreamName}.svg`);
 	await writeFile(path.join(output, "svg", `${localName}.svg`), source);
+	return { localName, source };
 }));
 await writeFile(path.join(output, "TABLER-LICENSE.txt"), await getUpstream("LICENSE"));
+
+const symbols = resolvedIcons.map(({ localName, source }) => {
+	const content = source.match(/<svg\b[^>]*>([\s\S]*?)<\/svg>/)?.[1]?.trim();
+	if (!content) throw new Error(`Unable to read upstream SVG content: ${localName}`);
+	return `<symbol id="lovely-${localName}" viewBox="0 0 24 24">${content}</symbol>`;
+}).join("");
+await writeFile(
+	path.join(frontendAssets, "lovely-icons.svg"),
+	`<svg xmlns="http://www.w3.org/2000/svg">${symbols}</svg>`,
+);
 
 const sourceRows = icons.map(([localName, upstreamName]) =>
 	`| \`${localName}.svg\` | [\`${upstreamName}\`](${repository}/blob/${revision}/icons/outline/${upstreamName}.svg) |`).join("\n");
@@ -66,5 +79,5 @@ await writeFile(path.join(output, "SOURCE-MAP.md"), sourceMap);
 
 const cards = icons.map(([localName, upstreamName]) =>
 	`<a href="svg/${localName}.svg" target="_blank" rel="noopener" aria-label="Open ${localName.replaceAll("-", " ")} SVG"><figure><div class="previews"><span><img class="large" src="svg/${localName}.svg" alt=""><small>42</small></span><span><img class="compact" src="svg/${localName}.svg" alt=""><small>20</small></span></div><figcaption>${localName}<small>Tabler: ${upstreamName}</small></figcaption></figure></a>`).join("");
-const html = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>LovelyGit icon review</title><style>:root{color-scheme:dark}body{margin:0;background:#0e0a12;color:#eee6f5;font:14px system-ui;padding:32px}h1{font-size:24px}p{color:#b7aabd}.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px}.grid>a{color:inherit;text-decoration:none;border-radius:12px}.grid>a:focus-visible{outline:2px solid #91f7dc;outline-offset:3px}figure{margin:0;border:1px solid #362c3e;border-radius:12px;background:#17111d;padding:14px;transition:border-color 120ms ease,transform 120ms ease}.grid>a:hover figure{border-color:#74617f;transform:translateY(-1px)}.previews{display:flex;align-items:center;justify-content:center;gap:24px;height:74px;border-radius:8px;background:#211827}.previews span{display:grid;place-items:center;gap:3px}.previews img{filter:invert(95%) sepia(15%) saturate(850%) hue-rotate(95deg)}.previews .large{width:42px;height:42px}.previews .compact{width:20px;height:20px}.previews small{color:#8f8299;font-size:9px;line-height:1}figcaption{margin-top:10px;font-size:12px;overflow-wrap:anywhere}figcaption small{display:block;margin-top:4px;color:#8f8299}@media(prefers-reduced-motion:reduce){figure{transition:none}.grid>a:hover figure{transform:none}}</style></head><body><h1>LovelyGit open-source icon review</h1><p>${icons.length} unmodified Tabler Icons at 42px and 20px. Select any card to open its local SVG.</p><main class="grid">${cards}</main></body></html>`;
+const html = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>LovelyGit icon catalog</title><style>:root{color-scheme:dark}body{margin:0;background:#0e0a12;color:#eee6f5;font:14px system-ui;padding:32px}h1{font-size:24px}p{color:#b7aabd}.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px}.grid>a{color:inherit;text-decoration:none;border-radius:12px}.grid>a:focus-visible{outline:2px solid #91f7dc;outline-offset:3px}figure{margin:0;border:1px solid #362c3e;border-radius:12px;background:#17111d;padding:14px;transition:border-color 120ms ease,transform 120ms ease}.grid>a:hover figure{border-color:#74617f;transform:translateY(-1px)}.previews{display:flex;align-items:center;justify-content:center;gap:24px;height:74px;border-radius:8px;background:#211827}.previews span{display:grid;place-items:center;gap:3px}.previews img{filter:invert(95%) sepia(15%) saturate(850%) hue-rotate(95deg)}.previews .large{width:42px;height:42px}.previews .compact{width:20px;height:20px}.previews small{color:#8f8299;font-size:9px;line-height:1}figcaption{margin-top:10px;font-size:12px;overflow-wrap:anywhere}figcaption small{display:block;margin-top:4px;color:#8f8299}@media(prefers-reduced-motion:reduce){figure{transition:none}.grid>a:hover figure{transform:none}}</style></head><body><h1>LovelyGit production icon catalog</h1><p>${icons.length} unmodified Tabler Icons at 42px and 20px. Select any card to open its local SVG.</p><main class="grid">${cards}</main></body></html>`;
 await writeFile(path.join(output, "index.html"), html);

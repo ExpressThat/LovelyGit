@@ -1,5 +1,5 @@
-import { Search } from "lucide-react";
 import { useMemo, useState } from "react";
+import { Search } from "@/components/icons/lovelyIcons";
 import { Input } from "@/components/ui/input";
 import { useRepositoryContext } from "@/lib/repositoryContext";
 import { RecentRepositoryRow } from "./RecentRepositoryRow";

@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import {
 	CloudUpload,
 	ExternalLink,
@@ -11,8 +12,7 @@ import {
 	ListRestart,
 	Pencil,
 	Trash2,
-} from "lucide-react";
-import type { ReactNode } from "react";
+} from "@/components/icons/lovelyIcons";
 import type { BranchIntegrationMode } from "@/components/TopNavBar/components/BranchIntegrationDialog";
 import {
 	ContextMenu,

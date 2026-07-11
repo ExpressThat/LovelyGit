@@ -1,6 +1,6 @@
-import { FileInput, LoaderCircle } from "lucide-react";
 import { lazy, Suspense } from "react";
 import { SurfaceLoading } from "@/AppLazySurfaces";
+import { FileInput, LoaderCircle } from "@/components/icons/lovelyIcons";
 import { usePatchApply } from "./usePatchApply";
 
 const PatchApplyDialog = lazy(() =>

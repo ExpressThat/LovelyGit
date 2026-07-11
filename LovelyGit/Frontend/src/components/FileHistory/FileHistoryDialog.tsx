@@ -1,5 +1,10 @@
-import { CornerDownLeft, FileClock, LoaderCircle, Search } from "lucide-react";
 import { useEffect, useState } from "react";
+import {
+	CornerDownLeft,
+	FileClock,
+	LoaderCircle,
+	Search,
+} from "@/components/icons/lovelyIcons";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,

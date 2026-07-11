@@ -3,7 +3,7 @@ import {
 	GitPullRequestArrow,
 	type LucideIcon,
 	Upload,
-} from "lucide-react";
+} from "@/components/icons/lovelyIcons";
 import type { GitPullMode, RemotePrimaryAction } from "@/generated/types";
 import {
 	NativeMessageType,

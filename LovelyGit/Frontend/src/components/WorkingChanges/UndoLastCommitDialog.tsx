@@ -1,5 +1,9 @@
-import { GitCommitHorizontal, LoaderCircle, Undo2 } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import {
+	GitCommitHorizontal,
+	LoaderCircle,
+	Undo2,
+} from "@/components/icons/lovelyIcons";
 import {
 	AlertDialog,
 	AlertDialogAction,

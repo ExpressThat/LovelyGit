@@ -1,11 +1,11 @@
+import { AnimatePresence } from "motion/react";
+import { useState } from "react";
 import {
 	AlertTriangle,
 	GitCompareArrows,
 	LoaderCircle,
 	RotateCcw,
-} from "lucide-react";
-import { AnimatePresence } from "motion/react";
-import { useState } from "react";
+} from "@/components/icons/lovelyIcons";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,

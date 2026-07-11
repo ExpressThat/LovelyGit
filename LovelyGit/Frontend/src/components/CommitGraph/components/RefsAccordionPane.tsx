@@ -1,5 +1,10 @@
-import { ChevronDown, ChevronRight, GripHorizontal, Plus } from "lucide-react";
 import type { ReactNode } from "react";
+import {
+	ChevronDown,
+	ChevronRight,
+	GripHorizontal,
+	Plus,
+} from "@/components/icons/lovelyIcons";
 import { Button } from "@/components/ui/button";
 
 export function RefsAccordionPane({

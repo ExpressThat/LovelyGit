@@ -1,6 +1,6 @@
-import { X } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import type { ReactNode } from "react";
+import { X } from "@/components/icons/lovelyIcons";
 import { HorizontalPanelHandle } from "@/components/layout/HorizontalPanelHandle";
 import { useHorizontalPanelResize } from "@/components/layout/useHorizontalPanelResize";
 import { setSetting, useSetting } from "@/lib/settings/settingsStore";

@@ -1,5 +1,10 @@
-import { CloudUpload, Copy, GitBranch, Trash2 } from "lucide-react";
 import type { ReactNode } from "react";
+import {
+	CloudUpload,
+	Copy,
+	GitBranch,
+	Trash2,
+} from "@/components/icons/lovelyIcons";
 import {
 	ContextMenu,
 	ContextMenuContent,

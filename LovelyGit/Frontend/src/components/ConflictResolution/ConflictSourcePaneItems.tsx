@@ -1,4 +1,4 @@
-import { Check, Minus, Plus } from "lucide-react";
+import { Check, Minus, Plus } from "@/components/icons/lovelyIcons";
 import { Checkbox } from "@/components/ui/checkbox";
 import type { ConflictHunk, ConflictSourceMetadata } from "@/generated/types";
 import { cn } from "@/lib/utils";

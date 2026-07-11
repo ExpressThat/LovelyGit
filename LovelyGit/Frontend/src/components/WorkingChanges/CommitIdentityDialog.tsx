@@ -1,6 +1,11 @@
-import { LoaderCircle, RotateCcw, Save, UserRound } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
 import { useEffect, useState } from "react";
+import {
+	LoaderCircle,
+	RotateCcw,
+	Save,
+	UserRound,
+} from "@/components/icons/lovelyIcons";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,

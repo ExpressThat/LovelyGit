@@ -1,5 +1,9 @@
-import { ChevronDown, ShieldAlert, Upload } from "lucide-react";
 import { lazy, Suspense, useState } from "react";
+import {
+	ChevronDown,
+	ShieldAlert,
+	Upload,
+} from "@/components/icons/lovelyIcons";
 import { Button } from "@/components/ui/button";
 import {
 	DropdownMenu,

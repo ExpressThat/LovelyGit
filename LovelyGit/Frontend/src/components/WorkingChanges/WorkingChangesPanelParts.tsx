@@ -1,5 +1,9 @@
-import { MinusSquare, RefreshCw, SquareCheckBig } from "lucide-react";
 import type { ReactNode } from "react";
+import {
+	MinusSquare,
+	RefreshCw,
+	SquareCheckBig,
+} from "@/components/icons/lovelyIcons";
 import type { WorkingTreeChangedFile } from "@/generated/types";
 
 export function WorkingChangesSkeleton() {

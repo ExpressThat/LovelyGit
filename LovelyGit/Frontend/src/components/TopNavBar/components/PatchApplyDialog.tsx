@@ -1,5 +1,5 @@
-import { FileDiff, LoaderCircle } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
+import { FileDiff, LoaderCircle } from "@/components/icons/lovelyIcons";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,

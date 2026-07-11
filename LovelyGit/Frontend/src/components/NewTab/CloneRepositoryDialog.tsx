@@ -1,4 +1,9 @@
-import { Download, FolderOpen, LoaderCircle, X } from "lucide-react";
+import {
+	Download,
+	FolderOpen,
+	LoaderCircle,
+	X,
+} from "@/components/icons/lovelyIcons";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {

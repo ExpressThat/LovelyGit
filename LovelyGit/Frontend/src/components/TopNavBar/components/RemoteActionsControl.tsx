@@ -1,6 +1,6 @@
-import { ChevronDown, RadioTower } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
+import { ChevronDown, RadioTower } from "@/components/icons/lovelyIcons";
 import { Button } from "@/components/ui/button";
 import {
 	DropdownMenu,

@@ -1,5 +1,5 @@
-import { FileSearch, LoaderCircle } from "lucide-react";
 import { useEffect, useState } from "react";
+import { FileSearch, LoaderCircle } from "@/components/icons/lovelyIcons";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,

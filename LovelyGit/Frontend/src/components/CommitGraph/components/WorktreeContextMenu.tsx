@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import {
 	FolderGit2,
 	FolderOpen,
@@ -5,8 +6,7 @@ import {
 	LockKeyholeOpen,
 	SquareTerminal,
 	Trash2,
-} from "lucide-react";
-import type { ReactNode } from "react";
+} from "@/components/icons/lovelyIcons";
 import {
 	ContextMenu,
 	ContextMenuContent,

@@ -1,5 +1,5 @@
-import { X } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
+import { X } from "@/components/icons/lovelyIcons";
 import type { KnownGitRepository } from "@/generated/types";
 import { cn, getPathTail } from "@/lib/utils";
 

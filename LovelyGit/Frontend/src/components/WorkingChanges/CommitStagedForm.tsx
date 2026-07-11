@@ -1,10 +1,10 @@
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import {
 	GitCommitHorizontal,
 	LoaderCircle,
 	PencilLine,
 	Undo2,
-} from "lucide-react";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+} from "@/components/icons/lovelyIcons";
 import { Switch } from "@/components/ui/switch";
 import { CommitIdentityControl } from "./CommitIdentityControl";
 import { ActionButton } from "./WorkingChangesPanelParts";

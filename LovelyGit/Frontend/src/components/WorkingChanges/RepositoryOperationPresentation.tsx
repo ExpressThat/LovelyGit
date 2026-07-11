@@ -3,7 +3,7 @@ import {
 	GitMerge,
 	ListRestart,
 	Undo2,
-} from "lucide-react";
+} from "@/components/icons/lovelyIcons";
 import type { GitRepositoryOperationKind } from "@/generated/types";
 
 export function repositoryOperationLabel(

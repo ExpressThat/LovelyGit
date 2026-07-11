@@ -1,4 +1,9 @@
-import { Archive, ArchiveRestore, PackageOpen, Trash2 } from "lucide-react";
+import {
+	Archive,
+	ArchiveRestore,
+	PackageOpen,
+	Trash2,
+} from "@/components/icons/lovelyIcons";
 import { Button } from "@/components/ui/button";
 import type { RepositoryStashItem, StashAction } from "@/generated/types";
 

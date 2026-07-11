@@ -1,6 +1,10 @@
-import { CornerDownLeft, LoaderCircle, Search } from "lucide-react";
 import { useReducedMotion } from "motion/react";
 import { useEffect, useState } from "react";
+import {
+	CornerDownLeft,
+	LoaderCircle,
+	Search,
+} from "@/components/icons/lovelyIcons";
 import {
 	Dialog,
 	DialogContent,

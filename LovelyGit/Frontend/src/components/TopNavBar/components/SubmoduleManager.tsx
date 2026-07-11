@@ -1,6 +1,6 @@
-import { Boxes } from "lucide-react";
 import { lazy, Suspense, useState } from "react";
 import { SurfaceLoading } from "@/AppLazySurfaces";
+import { Boxes } from "@/components/icons/lovelyIcons";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 
 const SubmoduleManagerContent = lazy(() =>

@@ -1,5 +1,9 @@
-import { FileArchive, LoaderCircle, Trash2 } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
+import {
+	FileArchive,
+	LoaderCircle,
+	Trash2,
+} from "@/components/icons/lovelyIcons";
 import { Button } from "@/components/ui/button";
 
 export function LfsPatternRow({

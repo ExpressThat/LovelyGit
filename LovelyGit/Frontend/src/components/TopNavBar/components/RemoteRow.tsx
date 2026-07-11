@@ -1,5 +1,5 @@
-import { GitFork, Pencil, Trash2 } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
+import { GitFork, Pencil, Trash2 } from "@/components/icons/lovelyIcons";
 import { Button } from "@/components/ui/button";
 import type { GitRemote } from "@/generated/types";
 

@@ -1,5 +1,9 @@
-import { Layers3, ListRestart, ShieldAlert } from "lucide-react";
 import { motion } from "motion/react";
+import {
+	Layers3,
+	ListRestart,
+	ShieldAlert,
+} from "@/components/icons/lovelyIcons";
 import {
 	GitResetMode,
 	type GitResetMode as GitResetModeValue,

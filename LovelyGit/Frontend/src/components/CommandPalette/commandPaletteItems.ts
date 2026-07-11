@@ -12,7 +12,7 @@ import {
 	Search,
 	Settings,
 	SquareTerminal,
-} from "lucide-react";
+} from "@/components/icons/lovelyIcons";
 import type { KnownGitRepository } from "@/generated/types";
 
 export type PaletteItem = {

@@ -1,6 +1,11 @@
-import { AlertTriangle, History, Search, X } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
 import { toast } from "sonner";
+import {
+	AlertTriangle,
+	History,
+	Search,
+	X,
+} from "@/components/icons/lovelyIcons";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,

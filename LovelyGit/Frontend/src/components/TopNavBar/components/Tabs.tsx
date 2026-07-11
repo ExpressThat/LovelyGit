@@ -1,6 +1,6 @@
-import { Plus } from "lucide-react";
 import { AnimatePresence, LayoutGroup, motion } from "motion/react";
 import { useState } from "react";
+import { Plus } from "@/components/icons/lovelyIcons";
 import { useRepositoryContext } from "@/lib/repositoryContext";
 import { cn } from "@/lib/utils";
 import { RepositoryTab } from "./RepositoryTab";

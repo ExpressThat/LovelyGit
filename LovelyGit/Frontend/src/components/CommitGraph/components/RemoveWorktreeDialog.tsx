@@ -1,6 +1,10 @@
-import { LoaderCircle, ShieldAlert, Trash2 } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useState } from "react";
+import {
+	LoaderCircle,
+	ShieldAlert,
+	Trash2,
+} from "@/components/icons/lovelyIcons";
 import {
 	AlertDialog,
 	AlertDialogAction,

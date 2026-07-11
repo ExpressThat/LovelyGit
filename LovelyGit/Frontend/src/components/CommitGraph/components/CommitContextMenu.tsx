@@ -1,3 +1,4 @@
+import { type ReactNode, useState } from "react";
 import {
 	ClipboardCopy,
 	Copy,
@@ -12,8 +13,7 @@ import {
 	Tag,
 	Undo2,
 	Unplug,
-} from "lucide-react";
-import { type ReactNode, useState } from "react";
+} from "@/components/icons/lovelyIcons";
 import { openRemoteWebResource } from "@/components/TopNavBar/components/RepositoryCommands";
 import {
 	ContextMenu,
