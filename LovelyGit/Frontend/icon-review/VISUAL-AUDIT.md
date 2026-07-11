@@ -17,11 +17,16 @@ The complete family was reviewed both at a large 64px inspection size and at Lov
 - `git-bisect`: placed a split Git path inside the search lens.
 - `apply-stash`, `submodules`, and `initialize-submodule`: clarified package direction, plurality, and initialization.
 - `remote-fork`: simplified the previous crowded fork into a single connected path.
+- `conflicted-file`, `added-file`, and `deleted-file`: moved status marks into a shared inner safe area so they do not collide with the document fold.
+- `confirm`, `create-new`, `remove-line`, and `close`: replaced undersized badge geometry with properly scaled standalone marks.
+- `remote-actions`: corrected a radio arc that crossed the view-box boundary and recentered the complete tower.
+- `incoming-commits`, `outgoing-commits`, `open-selected-result`, `amend-commit-message`, and `set-upstream`: corrected small optical-center offsets.
 
 ## Family-level checks
 
 - All drawings remain legible without color, fill, animation, or text inside the icon.
 - Destructive, remote, file, branch, navigation, and layout actions use consistent visual grammars.
 - Fine detail was removed where it disappeared or collided at 20px.
+- CMG geometry checks confirm all 100 rendered groups remain inside the stroked 24×24 safe area with no optical-center outliers over 1.5 units.
 - Every SVG has a distinct drawing and descriptive accessible title.
 - These remain review-only assets and are not imported by application source.
