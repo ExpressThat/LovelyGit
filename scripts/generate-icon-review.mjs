@@ -58,7 +58,11 @@ function draw(kind) {
 	if (kind === "merge") return `${circle(6,5)}${circle(18,5)}${circle(12,19)}${p("M6 7c0 6 6 5 6 10M18 7c0 6-6 5-6 10")}`;
 	if (kind === "commit") return `${line(3,12,21,12)}${circle(12,12,4)}`;
 	if (kind === "compare") return `${p("M4 8h13m-4-4 4 4-4 4M20 16H7m4-4-4 4 4 4")}`;
-	if (kind === "fork") return `${circle(6,5)}${circle(18,5)}${circle(12,19)}${p("M6 7v3c0 3 6 2 6 7M18 7v3c0 3-6 2-6 7")}`;
+	if (kind === "fork") return `${p("M4 16a4 4 0 0 1 4-4h8a4 4 0 0 0 4-4")}${circle(4,18)}${circle(20,6)}${circle(12,12)}`;
+	if (kind === "fileClock") return `${p("M5 3h7l4 4v4M12 3v5h4")}${circle(15,16,5)}${p("M15 13v3l2 1")}`;
+	if (kind === "fileSearch") return `${p("M5 3h7l4 4v5M12 3v5h4")}${circle(14,16,4)}${line(17,19,20,22)}`;
+	if (kind === "fileDiff") return `${file()}${p("M9 11h2m2 0h2M9 15h2m2 0h2M10 10v2m4 2v2")}`;
+	if (kind === "fileEmpty") return `${file()}${p("M9 15h6")}${line(8,10,16,18)}`;
 	if (kind.startsWith("file")) {
 		const overlay = kind.includes("Plus") ? marks.plus : kind.includes("Delete") ? marks.close : kind.includes("Minus") ? marks.minus
 			: kind.includes("Search") ? marks.search : kind.includes("Warning") ? "M12 10v4m0 3h.01"
@@ -68,22 +72,25 @@ function draw(kind) {
 			: kind === "fileEmpty" ? "M9 11h6m-6 3h6m-6 3h6" : "M9 12h6";
 		return `${file()}${kind === "file" ? "" : badge(overlay)}`;
 	}
-	if (kind.startsWith("folder")) return `${folder()}${kind==="folderOpen"?badge("M8 12h8m-4-4 4 4-4 4"):branch()}`;
+	if (kind === "folderOpen") return `${folder()}${p("M9 11h8m-3-3 3 3-3 3")}`;
+	if (kind === "folderGit") return `${folder()}${circle(8,11,1)}${circle(15,11,1)}${circle(11,16,1)}${p("M9 11h4a2 2 0 0 1 2 2v0a3 3 0 0 1-3 3")}`;
 	if (kind === "download") return `${arrow("down")}${line(5,20,19,20)}`;
-	if (kind === "moveDown" || kind === "moveUp") return `${arrow(kind==="moveUp"?"up":"down")}${circle(5,kind==="moveUp"?18:6,1)}`;
+	if (kind === "moveDown" || kind === "moveUp") return `${p("M4 6h7M4 12h5M4 18h7")}${p(kind==="moveUp"?"M17 19V5m-4 4 4-4 4 4":"M17 5v14m-4-4 4 4 4-4")}`;
 	if (kind === "incoming" || kind === "outgoing") return `${arrow(kind==="outgoing"?"up":"down")}${circle(5,12,1.5)}${line(3,12,7,12)}`;
 	if (kind === "expandDown" || kind === "expandUp") return p(kind==="expandUp"?"m5 15 7-7 7 7":"m5 9 7 7 7-7");
 	if (kind === "push") return `${arrow("up")}${line(5,4,19,4)}`;
-	if (kind === "downloadCloud" || kind === "uploadCloud" || kind === "remote") return `${p("M6 17h12a4 4 0 0 0 0-8 6 6 0 0 0-11.5 2A3 3 0 0 0 6 17")}${kind==="remote"?circle(12,13,1):badge(kind==="downloadCloud"?marks.download:marks.upload)}`;
-	if (kind === "pull") return `${branch()}${badge(marks.download)}`;
-	if (kind === "pullRequest") return `${branch()}${badge("M13 5h6v6m0-6-7 7")}`;
+	if (kind === "downloadCloud" || kind === "uploadCloud") return `${p("M5 18h14a3 3 0 0 0 .5-6A5 5 0 0 0 10 9a4 4 0 0 0-5 4 2.5 2.5 0 0 0 0 5")}${p(kind==="downloadCloud"?"M12 8v7m-3-3 3 3 3-3":"M12 16V9m-3 3 3-3 3 3")}`;
+	if (kind === "remote") return `${p("M5 18h14a3 3 0 0 0 .5-6A5 5 0 0 0 10 9a4 4 0 0 0-5 4 2.5 2.5 0 0 0 0 5")}${circle(9,14,1)}${circle(15,14,1)}${line(10,14,14,14)}`;
+	if (kind === "pull") return `${circle(5,5,1.5)}${circle(5,18,1.5)}${p("M5 7v9M11 6h7v11m-3-3 3 3 3-3")}`;
+	if (kind === "pullRequest") return `${circle(5,5,1.5)}${circle(5,19,1.5)}${p("M5 7v10M11 18h3a4 4 0 0 0 4-4V6m-3 3 3-3 3 3")}`;
 	if (kind === "drive" || kind === "driveDownload") return `${rect(4,6,16,12,3)}${line(7,14,17,14)}${circle(8,10,1)}${kind==="driveDownload"?badge(marks.download):""}`;
 	if (kind === "tag") return `${p("M4 5h8l8 8-7 7-9-9z")}${circle(8,9,1)}`;
 	if (kind === "archive" || kind === "archiveRestore") return `${rect(4,7,16,13,2)}${p("M3 4h18v4H3zM9 12h6")}${kind==="archiveRestore"?badge("M9 17H6v-3m0 3 4-4"):""}`;
 	if (kind === "history") return `${circle(12,12,8)}${p("M12 7v5l3 2M5 6H2v-3")}`;
-	if (kind === "search" || kind === "searchCode") return `${p(marks.search)}${kind==="searchCode"?badge("m7 10-2 2 2 2m7-4 2 2-2 2"):""}`;
+	if (kind === "search") return p(marks.search);
+	if (kind === "searchCode") return `${circle(10,10,6)}${line(14,14,20,20)}${circle(7,9,1)}${circle(13,9,1)}${p("M7 10v3m6-3v3M8 13h4")}`;
 	if (kind === "trash") return `${p("M6 7h12m-9 0V4h6v3m2 0-1 13H8L7 7m4 4v5m3-5v5")}`;
-	if (kind === "settings") return `${circle(12,12,3)}${p("M12 3v3m0 12v3M3 12h3m12 0h3M5.6 5.6l2.1 2.1m8.6 8.6 2.1 2.1m0-12.8-2.1 2.1m-8.6 8.6-2.1 2.1")}`;
+	if (kind === "settings") return `${circle(12,12,3)}${p("M9 4.5 10 2h4l1 2.5 2.4 1.4 2.6-.4 2 3.5-1.7 2v2.8l1.7 2-2 3.5-2.6-.4L15 19.5 14 22h-4l-1-2.5-2.4-1.4-2.6.4-2-3.5 1.7-2v-2.8L2 8l2-3.5 2.6.4z")}`;
 	if (kind === "alert" || kind === "shield") return `${p(kind==="shield"?"M12 3 20 6v6c0 5-3 8-8 10-5-2-8-5-8-10V6z":"M12 3 22 20H2z")}${badge("M12 8v5m0 4h.01")}`;
 	if (kind === "lock" || kind === "unlock") return `${rect(5,10,14,10,2)}${p(kind==="lock"?"M8 10V7a4 4 0 0 1 8 0v3":"M9 10V7a4 4 0 0 1 7-2")}${circle(12,15,1)}`;
 	if (kind === "external") return `${rect(4,6,14,14,2)}${p("M12 4h8v8m0-8-9 9")}`;
@@ -93,11 +100,14 @@ function draw(kind) {
 	if (kind === "rows") return `${rect(3,4,18,16,2)}${line(3,12,21,12)}`;
 	if (kind === "terminal") return `${rect(3,5,18,14,2)}${p("m7 9 3 3-3 3m6 0h4")}`;
 	if (kind === "user") return `${circle(12,8,4)}${p("M4 21c1-5 4-7 8-7s7 2 8 7")}`;
-	if (kind === "verified" || kind === "success") return `${circle(12,12,8)}${p(marks.check)}${kind==="verified"?badge("m17 4 1 2 2 1-1 2 1 2-2 1-1 2-2-1-2 1-1-2-2-1 1-2-1-2 2-1 1-2 2 1 2-1 1 2z"):""}`;
+	if (kind === "verified") return `${p("M12 3l2 2 3-.4.8 2.8 2.7 1.3-1.2 2.7 1.2 2.7-2.7 1.3-.8 2.8-3-.4-2 2-2-2-3 .4-.8-2.8-2.7-1.3 1.2-2.7-1.2-2.7 2.7-1.3.8-2.8 3 .4z")}${p(marks.check)}`;
+	if (kind === "success") return `${circle(12,12,8)}${p(marks.check)}`;
 	if (kind === "failure") return `${circle(12,12,8)}${p(marks.close)}`;
 	if (kind === "ban") return `${circle(12,12,8)}${line(6,18,18,6)}`;
-	if (kind === "box" || kind === "boxes" || kind === "packageOpen") return `${p("M4 8l8-4 8 4-8 4zM4 8v8l8 4 8-4V8M12 12v8")}${kind==="boxes"?badge("M3 3h5v3M21 3h-5v3"):kind==="packageOpen"?badge("m8 8 4 4 4-4"):""}`;
-	if (kind === "brush") return `${p("m5 15 9-9 4 4-9 9H5zM14 6l2-2 4 4-2 2M5 15c-2 1-2 4 0 5 2 1 5 0 4-2")}`;
+	if (kind === "box") return `${p("M4 8l8-4 8 4-8 4zM4 8v8l8 4 8-4V8M12 12v8")}`;
+	if (kind === "boxes") return `${rect(3,4,7,7,1)}${rect(14,4,7,7,1)}${rect(8.5,14,7,7,1)}${p("M6.5 11v1.5h5.5V14m5.5-3v1.5H12")}`;
+	if (kind === "packageOpen") return `${p("M4 9l8 4 8-4M4 9l4-5 8 0 4 5v7l-8 4-8-4zM12 13v7")}${p("M12 4v6m-3-3 3 3 3-3")}`;
+	if (kind === "brush") return `${p("m14 4 6 6-8 8H6v-6zM12 6l6 6M6 18c-3 0-4 2-3 3 2 1 5 0 5-2")}`;
 	if (kind === "command") return `${p("M8 8V6a3 3 0 1 0-3 3h14a3 3 0 1 0-3-3v12a3 3 0 1 0 3-3H5a3 3 0 1 0 3 3z")}`;
 	if (kind === "enter") return `${p("M19 5v7H7m4-4-4 4 4 4")}`;
 	if (kind === "hidden") return `${p("M3 12c3-5 6-7 9-7s6 2 9 7c-3 5-6 7-9 7s-6-2-9-7M4 4l16 16")}`;
@@ -114,9 +124,11 @@ function draw(kind) {
 	if (kind === "paragraph") return `${p("M18 5h-7a4 4 0 0 0 0 8h3m0-8v14m4-14v14")}`;
 	if (kind === "tower") return `${line(12,19,12,11)}${circle(12,8,2)}${p("M7 5a7 7 0 0 0 0 6m10-6a7 7 0 0 1 0 6M4 2a11 11 0 0 0 0 12m16-14a11 11 0 0 1 0 12")}`;
 	if (kind === "skip") return `${p("M6 5v14l9-7zM18 5v14")}`;
-	if (kind === "sparkle" || kind === "wand") return `${p("m12 3 1.2 3.8L17 8l-3.8 1.2L12 13l-1.2-3.8L7 8l3.8-1.2zM5 14l1 2 2 1-2 1-1 2-1-2-2-1 2-1z")}${kind==="wand"?line(9,15,18,6):""}`;
+	if (kind === "sparkle") return `${p("M4 19 15 8m-8 8 2 2M14 4l1 3 3 1-3 1-1 3-1-3-3-1 3-1zM19 14l.7 2.3L22 17l-2.3.7L19 20l-.7-2.3L16 17l2.3-.7z")}`;
+	if (kind === "wand") return `${p("M4 19 15 8m-8 8 2 2")}${p("M17 3l.8 2.2L20 6l-2.2.8L17 9l-.8-2.2L14 6l2.2-.8z")}${rect(4,4,7,7,1)}${line(7.5,4,7.5,11)}${line(4,7.5,11,7.5)}`;
 	if (kind === "wrap") return `${p("M4 7h12a4 4 0 0 1 0 8H9m3-3-3 3 3 3M4 11h8M4 15h2")}`;
-	if (kind === "gripH" || kind === "gripV") return kind==="gripH"?`${line(7,10,17,10)}${line(7,14,17,14)}`:`${line(10,7,10,17)}${line(14,7,14,17)}`;
+	if (kind === "gripH") return `${line(5,10,19,10)}${line(5,14,19,14)}${p("m12 7-2-2m2 2 2-2m-2 12-2 2m2-2 2 2")}`;
+	if (kind === "gripV") return `${line(10,5,10,19)}${line(14,5,14,19)}${p("m7 12-2-2m2 2-2 2m12-2 2-2m-2 2 2 2")}`;
 	if (kind === "unplug") return `${p("M8 3v5m8-5v5M6 8h12v3a6 6 0 0 1-6 6v4M4 4l16 16")}`;
 	if (kind === "close" || kind === "minus" || kind === "plus" || kind === "check") return p(marks[kind]);
 	if (kind === "left" || kind === "right") return p(kind==="left"?"m15 5-7 7 7 7":"m9 5 7 7-7 7");
