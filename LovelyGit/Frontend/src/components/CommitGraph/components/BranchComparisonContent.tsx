@@ -12,9 +12,11 @@ export type BranchComparisonSection = "ahead" | "behind" | "files";
 
 export function BranchComparisonContent({
 	comparison,
+	onOpenFile,
 	section,
 }: {
 	comparison: BranchComparisonResponse;
+	onOpenFile?: (file: BranchComparisonFile) => void;
 	section: BranchComparisonSection;
 }) {
 	const reduceMotion = useReducedMotion();
@@ -33,6 +35,7 @@ export function BranchComparisonContent({
 			{section === "files" ? (
 				<FileList
 					files={comparison.files}
+					onOpenFile={onOpenFile}
 					total={comparison.changedFileCount}
 					truncated={comparison.isFileListTruncated}
 				/>
@@ -88,10 +91,12 @@ function CommitList({
 
 function FileList({
 	files,
+	onOpenFile,
 	total,
 	truncated,
 }: {
 	files: BranchComparisonFile[];
+	onOpenFile?: (file: BranchComparisonFile) => void;
 	total: number;
 	truncated: boolean;
 }) {
@@ -106,17 +111,7 @@ function FileList({
 		<div className="grid gap-2 pr-1">
 			<ul className="grid gap-1.5">
 				{files.map((file) => (
-					<li
-						className="flex items-center gap-2 rounded-lg border bg-card px-2.5 py-2"
-						key={file.path}
-					>
-						<span className="w-16 shrink-0 rounded bg-muted px-1.5 py-0.5 text-center text-[9px] uppercase tracking-wide">
-							{file.status}
-						</span>
-						<span className="min-w-0 truncate font-mono text-xs">
-							{file.path}
-						</span>
-					</li>
+					<FileRow file={file} key={file.path} onOpen={onOpenFile} />
 				))}
 			</ul>
 			{truncated ? (
@@ -125,6 +120,39 @@ function FileList({
 				</p>
 			) : null}
 		</div>
+	);
+}
+
+function FileRow({
+	file,
+	onOpen,
+}: {
+	file: BranchComparisonFile;
+	onOpen?: (file: BranchComparisonFile) => void;
+}) {
+	const content = (
+		<>
+			<span className="w-16 shrink-0 rounded bg-muted px-1.5 py-0.5 text-center text-[9px] uppercase tracking-wide">
+				{file.status}
+			</span>
+			<span className="min-w-0 truncate font-mono text-xs">{file.path}</span>
+		</>
+	);
+	return (
+		<li className="rounded-lg border bg-card">
+			{onOpen ? (
+				<button
+					aria-label={`Open comparison diff for ${file.path}`}
+					className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+					onClick={() => onOpen(file)}
+					type="button"
+				>
+					{content}
+				</button>
+			) : (
+				<div className="flex items-center gap-2 px-2.5 py-2">{content}</div>
+			)}
+		</li>
 	);
 }
 

@@ -18,7 +18,7 @@ internal sealed partial class CommitFileDiffService
         if (hasSideBySide && hasCombined) return;
 
         var source = await BuildCommitFileDiffSourceAsync(
-                repositoryPath, commitHash, 0, path, cancellationToken)
+                repositoryPath, commitHash, null, 0, path, cancellationToken)
             .ConfigureAwait(false);
         if (!hasSideBySide)
         {

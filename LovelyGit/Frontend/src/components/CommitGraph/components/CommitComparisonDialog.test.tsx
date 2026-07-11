@@ -11,6 +11,22 @@ import { sendRequestWithResponse } from "@/lib/commands";
 import { CommitComparisonDialog } from "./CommitComparisonDialog";
 
 vi.mock("@/lib/commands", () => ({ sendRequestWithResponse: vi.fn() }));
+vi.mock("@/components/CommitFileDiff/CommitFileDiffView", () => ({
+	CommitFileDiffView: ({
+		comparisonCommitHash,
+		onClose,
+	}: {
+		comparisonCommitHash: string;
+		onClose: () => void;
+	}) => (
+		<div>
+			Direct diff from {comparisonCommitHash.slice(0, 7)}
+			<button onClick={onClose} type="button">
+				Close direct diff
+			</button>
+		</div>
+	),
+}));
 
 it("shows exact-commit file and history sections", async () => {
 	const user = userEvent.setup();
@@ -25,6 +41,11 @@ it("shows exact-commit file and history sections", async () => {
 	);
 
 	expect(await screen.findByText("src/new.ts")).toBeVisible();
+	await user.click(
+		screen.getByRole("button", { name: "Open comparison diff for src/new.ts" }),
+	);
+	expect(await screen.findByText("Direct diff from 1111111")).toBeVisible();
+	await user.click(screen.getByRole("button", { name: "Close direct diff" }));
 	await user.click(screen.getByRole("button", { name: /1111111 only/ }));
 	expect(await screen.findByText("Base-only work")).toBeVisible();
 	await user.click(screen.getByRole("button", { name: /2222222 only/ }));

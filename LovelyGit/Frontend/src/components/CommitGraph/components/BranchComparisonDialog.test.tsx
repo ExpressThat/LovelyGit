@@ -8,6 +8,22 @@ import { sendRequestWithResponse } from "@/lib/commands";
 import { BranchComparisonDialog } from "./BranchComparisonDialog";
 
 vi.mock("@/lib/commands", () => ({ sendRequestWithResponse: vi.fn() }));
+vi.mock("@/components/CommitFileDiff/CommitFileDiffView", () => ({
+	CommitFileDiffView: ({
+		comparisonCommitHash,
+		onClose,
+	}: {
+		comparisonCommitHash: string;
+		onClose: () => void;
+	}) => (
+		<div>
+			Branch diff from {comparisonCommitHash}
+			<button onClick={onClose} type="button">
+				Close branch diff
+			</button>
+		</div>
+	),
+}));
 
 describe("BranchComparisonDialog", () => {
 	beforeEach(() => vi.clearAllMocks());
@@ -39,6 +55,13 @@ describe("BranchComparisonDialog", () => {
 		});
 		await user.click(screen.getByRole("button", { name: /Changed files/ }));
 		expect(await screen.findByText("src/new.ts")).toBeVisible();
+		await user.click(
+			screen.getByRole("button", {
+				name: "Open comparison diff for src/new.ts",
+			}),
+		);
+		expect(await screen.findByText("Branch diff from 111111111")).toBeVisible();
+		await user.click(screen.getByRole("button", { name: "Close branch diff" }));
 		await user.click(
 			screen.getByRole("button", { name: "Merge feature/demo into main" }),
 		);

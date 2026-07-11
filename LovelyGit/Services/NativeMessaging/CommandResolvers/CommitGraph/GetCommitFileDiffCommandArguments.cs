@@ -8,6 +8,7 @@ public record GetCommitFileDiffCommandArguments
 {
     public Guid RepositoryId { get; set; }
     public string CommitHash { get; set; } = string.Empty;
+    public string? ComparisonCommitHash { get; set; }
     public int ParentIndex { get; set; }
     public string Path { get; set; } = string.Empty;
     public CommitDiffViewMode ViewMode { get; set; } = CommitDiffViewMode.SideBySide;

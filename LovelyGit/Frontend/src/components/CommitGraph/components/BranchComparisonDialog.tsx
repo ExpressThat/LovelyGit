@@ -17,11 +17,13 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
+import type { BranchComparisonFile } from "@/generated/types";
 import { useBranchComparison } from "../hooks/useBranchComparison";
 import {
 	BranchComparisonContent,
 	type BranchComparisonSection,
 } from "./BranchComparisonContent";
+import { ComparisonDiffDialog } from "./ComparisonDiffDialog";
 
 export function BranchComparisonDialog({
 	currentBranchName,
@@ -37,6 +39,9 @@ export function BranchComparisonDialog({
 	targetBranchName: string;
 }) {
 	const [section, setSection] = useState<BranchComparisonSection>("ahead");
+	const [selectedFile, setSelectedFile] = useState<BranchComparisonFile | null>(
+		null,
+	);
 	const { comparison, error, isLoading } = useBranchComparison(
 		repositoryId,
 		targetBranchName,
@@ -45,6 +50,17 @@ export function BranchComparisonDialog({
 		onClose();
 		onIntegrate(mode, targetBranchName);
 	};
+	if (selectedFile && repositoryId && comparison) {
+		return (
+			<ComparisonDiffDialog
+				baseCommitHash={comparison.currentHash}
+				file={selectedFile}
+				onClose={() => setSelectedFile(null)}
+				repositoryId={repositoryId}
+				targetCommitHash={comparison.targetHash}
+			/>
+		);
+	}
 	return (
 		<Dialog onOpenChange={(open) => !open && onClose()} open>
 			<DialogContent className="flex max-h-[min(84vh,760px)] flex-col sm:max-w-2xl">
@@ -96,6 +112,7 @@ export function BranchComparisonDialog({
 						<AnimatePresence initial={false} mode="wait">
 							<BranchComparisonContent
 								comparison={comparison}
+								onOpenFile={repositoryId ? setSelectedFile : undefined}
 								section={section}
 							/>
 						</AnimatePresence>

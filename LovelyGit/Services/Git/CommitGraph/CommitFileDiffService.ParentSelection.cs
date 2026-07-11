@@ -20,6 +20,7 @@ internal sealed partial class CommitFileDiffService
             return await BuildCommitFileDiffAsync(
                     repositoryPath,
                     commitHash,
+                    null,
                     parentIndex,
                     path,
                     viewMode,
@@ -48,4 +49,22 @@ internal sealed partial class CommitFileDiffService
                 cancellationToken)
             .ConfigureAwait(false);
     }
+
+    public Task<CommitFileDiffResponse> GetCommitComparisonFileDiffAsync(
+        string repositoryPath,
+        string commitHash,
+        string comparisonCommitHash,
+        string path,
+        CommitDiffViewMode viewMode,
+        bool ignoreWhitespace,
+        CancellationToken cancellationToken) =>
+        BuildCommitFileDiffAsync(
+            repositoryPath,
+            commitHash,
+            comparisonCommitHash,
+            0,
+            path,
+            viewMode,
+            ignoreWhitespace,
+            cancellationToken);
 }

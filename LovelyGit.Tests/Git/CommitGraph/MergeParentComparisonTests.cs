@@ -60,6 +60,45 @@ public sealed class MergeParentComparisonTests
         Assert.Contains(againstSecond.Lines, line => line.Text == "main");
     }
 
+    [Fact]
+    public async Task FileDiff_ComparesAgainstExplicitCommitWithoutUsingParentCache()
+    {
+        using var fixture = MergeFixture.Create();
+        using var repository = await LovelyGitRepository.OpenAsync(
+            fixture.Path,
+            CancellationToken.None);
+        var merge = await repository.GetCommitAsync(fixture.MergeId, CancellationToken.None);
+        using var service = new CommitFileDiffService(null!);
+
+        var diff = await service.GetCommitComparisonFileDiffAsync(
+            fixture.Path,
+            fixture.MergeId.ToString(),
+            merge.ParentHashes[1].ToString(),
+            "main.txt",
+            CommitDiffViewMode.Combined,
+            ignoreWhitespace: false,
+            CancellationToken.None);
+
+        Assert.Contains(diff.Lines, line => line.Text == "main");
+    }
+
+    [Fact]
+    public async Task FileDiff_RejectsInvalidExplicitComparisonCommit()
+    {
+        using var fixture = MergeFixture.Create();
+        using var service = new CommitFileDiffService(null!);
+
+        await Assert.ThrowsAsync<InvalidDataException>(() =>
+            service.GetCommitComparisonFileDiffAsync(
+                fixture.Path,
+                fixture.MergeId.ToString(),
+                "not-a-commit",
+                "main.txt",
+                CommitDiffViewMode.Combined,
+                ignoreWhitespace: false,
+                CancellationToken.None));
+    }
+
     [Theory]
     [InlineData(-1)]
     [InlineData(2)]

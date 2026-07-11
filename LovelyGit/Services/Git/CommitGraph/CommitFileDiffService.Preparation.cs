@@ -96,9 +96,10 @@ internal sealed partial class CommitFileDiffService : IDisposable
             }
 
             var response = await BuildCommitFileDiffAsync(
-                    repositoryPath,
-                    commitHash,
-                    0,
+                repositoryPath,
+                commitHash,
+                null,
+                0,
                     path,
                     viewMode,
                     ignoreWhitespace,

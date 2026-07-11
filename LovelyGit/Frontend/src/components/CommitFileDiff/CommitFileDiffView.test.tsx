@@ -61,6 +61,7 @@ describe("CommitFileDiffView", () => {
 				commandType: "GetCommitFileDiff",
 				arguments: {
 					commitHash: "merge",
+					comparisonCommitHash: null,
 					ignoreWhitespace: false,
 					parentIndex: 1,
 					path: "main.txt",
@@ -69,5 +70,38 @@ describe("CommitFileDiffView", () => {
 				},
 			}),
 		);
+	});
+
+	it("requests a direct diff against an explicit comparison commit", async () => {
+		render(
+			<CommitFileDiffView
+				commitHash="target"
+				comparisonCommitHash="base"
+				file={{
+					additions: 0,
+					deletions: 0,
+					isBinary: false,
+					path: "shared.txt",
+					status: "Modified",
+				}}
+				onClose={vi.fn()}
+				parentIndex={0}
+				repositoryId="repo"
+			/>,
+		);
+
+		await screen.findByText("Parent diff loaded");
+		expect(sendRequestWithResponse).toHaveBeenCalledWith({
+			commandType: "GetCommitFileDiff",
+			arguments: {
+				commitHash: "target",
+				comparisonCommitHash: "base",
+				ignoreWhitespace: false,
+				parentIndex: 0,
+				path: "shared.txt",
+				repositoryId: "repo",
+				viewMode: "Combined",
+			},
+		});
 	});
 });

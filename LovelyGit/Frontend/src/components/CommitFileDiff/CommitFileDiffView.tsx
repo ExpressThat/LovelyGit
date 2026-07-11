@@ -15,16 +15,20 @@ type DiffState =
 
 export function CommitFileDiffView({
 	commitHash,
+	comparisonCommitHash,
 	file,
 	onClose,
 	parentIndex,
 	repositoryId,
+	showFileStats = true,
 }: {
 	commitHash: string;
+	comparisonCommitHash?: string | null;
 	file: CommitChangedFile;
 	onClose: () => void;
 	parentIndex: number;
 	repositoryId: string;
+	showFileStats?: boolean;
 }) {
 	const viewMode = useSetting("CommitDiffViewMode");
 	const contextLines = useSetting("CommitDiffContextLines");
@@ -41,6 +45,7 @@ export function CommitFileDiffView({
 			commandType: "GetCommitFileDiff",
 			arguments: {
 				commitHash,
+				comparisonCommitHash: comparisonCommitHash ?? null,
 				path: file.path,
 				ignoreWhitespace,
 				parentIndex,
@@ -79,6 +84,7 @@ export function CommitFileDiffView({
 		};
 	}, [
 		commitHash,
+		comparisonCommitHash,
 		file.path,
 		ignoreWhitespace,
 		parentIndex,
@@ -93,7 +99,11 @@ export function CommitFileDiffView({
 
 	return (
 		<section className="flex h-full min-w-0 flex-1 flex-col overflow-hidden border-l bg-background text-foreground">
-			<CommitFileDiffHeader file={file} onClose={handleClose} />
+			<CommitFileDiffHeader
+				file={file}
+				onClose={handleClose}
+				showStats={showFileStats}
+			/>
 			<div className="min-h-0 flex-1 overflow-hidden bg-background">
 				{state.status === "loading" ? <LoadingDiff /> : null}
 				{state.status === "error" ? (

@@ -57,8 +57,8 @@ internal class GetCommitFileDiffCommandResolver : CommandResponder<GetCommitFile
 
         try
         {
-            var response = await _commitFileDiffService
-                .GetCommitFileDiffAsync(
+            var response = string.IsNullOrWhiteSpace(command.Arguments.ComparisonCommitHash)
+                ? await _commitFileDiffService.GetCommitFileDiffAsync(
                     foundRepo.Id,
                     foundRepo.Path,
                     command.Arguments.CommitHash,
@@ -66,8 +66,15 @@ internal class GetCommitFileDiffCommandResolver : CommandResponder<GetCommitFile
                     command.Arguments.Path,
                     command.Arguments.ViewMode,
                     command.Arguments.IgnoreWhitespace,
-                    CancellationToken.None)
-                .ConfigureAwait(false);
+                    CancellationToken.None).ConfigureAwait(false)
+                : await _commitFileDiffService.GetCommitComparisonFileDiffAsync(
+                    foundRepo.Path,
+                    command.Arguments.CommitHash,
+                    command.Arguments.ComparisonCommitHash,
+                    command.Arguments.Path,
+                    command.Arguments.ViewMode,
+                    command.Arguments.IgnoreWhitespace,
+                    CancellationToken.None).ConfigureAwait(false);
 
             return Success(command, response);
         }

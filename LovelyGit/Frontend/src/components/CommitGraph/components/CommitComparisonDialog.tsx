@@ -14,13 +14,14 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
-import type { CommitGraphRow } from "@/generated/types";
+import type { BranchComparisonFile, CommitGraphRow } from "@/generated/types";
 import { useCommitComparison } from "../hooks/useCommitComparison";
 import { shortHash } from "../utils/format";
 import {
 	BranchComparisonContent,
 	type BranchComparisonSection,
 } from "./BranchComparisonContent";
+import { ComparisonDiffDialog } from "./ComparisonDiffDialog";
 
 export function CommitComparisonDialog({
 	base,
@@ -34,6 +35,9 @@ export function CommitComparisonDialog({
 	target: CommitGraphRow;
 }) {
 	const [section, setSection] = useState<BranchComparisonSection>("files");
+	const [selectedFile, setSelectedFile] = useState<BranchComparisonFile | null>(
+		null,
+	);
 	const { comparison, error, isLoading, retry } = useCommitComparison(
 		repositoryId,
 		base.commit.hash,
@@ -41,6 +45,17 @@ export function CommitComparisonDialog({
 	);
 	const baseHash = shortHash(base.commit.hash);
 	const targetHash = shortHash(target.commit.hash);
+	if (selectedFile && repositoryId) {
+		return (
+			<ComparisonDiffDialog
+				baseCommitHash={base.commit.hash}
+				file={selectedFile}
+				onClose={() => setSelectedFile(null)}
+				repositoryId={repositoryId}
+				targetCommitHash={target.commit.hash}
+			/>
+		);
+	}
 	return (
 		<Dialog onOpenChange={(open) => !open && onClose()} open>
 			<DialogContent className="flex max-h-[min(84vh,760px)] flex-col sm:max-w-2xl">
@@ -92,6 +107,7 @@ export function CommitComparisonDialog({
 						<AnimatePresence initial={false} mode="wait">
 							<BranchComparisonContent
 								comparison={comparison}
+								onOpenFile={repositoryId ? setSelectedFile : undefined}
 								section={section}
 							/>
 						</AnimatePresence>

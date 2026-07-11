@@ -18,6 +18,7 @@ internal sealed partial class CommitFileDiffService : IDisposable
     private static async Task<CommitFileDiffResponse> BuildCommitFileDiffAsync(
         string repositoryPath,
         string commitHash,
+        string? comparisonCommitHash,
         int parentIndex,
         string path,
         CommitDiffViewMode viewMode,
@@ -27,6 +28,7 @@ internal sealed partial class CommitFileDiffService : IDisposable
         var source = await BuildCommitFileDiffSourceAsync(
                 repositoryPath,
                 commitHash,
+                comparisonCommitHash,
                 parentIndex,
                 path,
                 cancellationToken)
@@ -73,6 +75,7 @@ internal sealed partial class CommitFileDiffService : IDisposable
     private static async Task<CommitFileDiffSource> BuildCommitFileDiffSourceAsync(
         string repositoryPath,
         string commitHash,
+        string? comparisonCommitHash,
         int parentIndex,
         string path,
         CancellationToken cancellationToken)
@@ -85,16 +88,13 @@ internal sealed partial class CommitFileDiffService : IDisposable
         using var repository = await LovelyGitRepository.OpenAsync(repositoryPath, cancellationToken)
             .ConfigureAwait(false);
         var commit = await repository.GetCommitAsync(commitId, cancellationToken).ConfigureAwait(false);
-        GitCommit? comparisonParent = null;
-        if (commit.ParentHashes.Count > 0 && parentIndex < commit.ParentHashes.Count)
-        {
-            comparisonParent = await repository.GetCommitAsync(commit.ParentHashes[parentIndex], cancellationToken)
-                .ConfigureAwait(false);
-        }
-        else if (parentIndex != 0)
-        {
-            throw new ArgumentOutOfRangeException(nameof(parentIndex), "Commit parent does not exist.");
-        }
+        var comparisonParent = await ResolveComparisonCommitAsync(
+                repository,
+                commit,
+                comparisonCommitHash,
+                parentIndex,
+                cancellationToken)
+            .ConfigureAwait(false);
 
         var comparison = await repository
             .GetChangedTreeFilesAsync(comparisonParent?.TreeHash, commit.TreeHash, cancellationToken)

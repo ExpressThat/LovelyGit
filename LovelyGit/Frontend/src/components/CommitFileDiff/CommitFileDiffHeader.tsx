@@ -6,9 +6,11 @@ import { DiffToolbarControls } from "./DiffToolbarControls";
 export function CommitFileDiffHeader({
 	file,
 	onClose,
+	showStats = true,
 }: {
 	file: CommitChangedFile;
 	onClose: () => void;
+	showStats?: boolean;
 }) {
 	return (
 		<header className="shrink-0 border-b bg-popover text-popover-foreground">
@@ -21,9 +23,11 @@ export function CommitFileDiffHeader({
 				</div>
 				<div className="hidden items-center gap-2 text-[10px] uppercase text-muted-foreground md:flex">
 					<span>{file.status}</span>
-					<span>
-						+{file.additions} -{file.deletions}
-					</span>
+					{showStats ? (
+						<span>
+							+{file.additions} -{file.deletions}
+						</span>
+					) : null}
 				</div>
 				<Button
 					aria-label="Close diff"
