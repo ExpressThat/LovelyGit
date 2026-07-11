@@ -3,6 +3,7 @@ using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.CommitGrap
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Bisect;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Configuration;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.CherryPick;
+using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Checkout;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Branches;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.KnownRepository;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Merge;
@@ -178,6 +179,8 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging
         CheckoutBranch,
         [NativeMessageContract(typeof(CheckoutCommitCommandArguments), typeof(EmptyCommandArguments))]
         CheckoutCommit,
+        [NativeMessageContract(typeof(CheckoutTagCommandArguments), typeof(EmptyCommandArguments))]
+        CheckoutTag,
         [NativeMessageContract(typeof(CheckoutRemoteBranchCommandArguments), typeof(EmptyCommandArguments))]
         CheckoutRemoteBranch,
         [NativeMessageContract(typeof(CreateBranchCommandArguments), typeof(EmptyCommandArguments))]

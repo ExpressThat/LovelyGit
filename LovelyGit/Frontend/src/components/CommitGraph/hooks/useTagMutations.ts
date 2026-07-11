@@ -14,6 +14,7 @@ export function useTagMutations({
 	repositoryId: string | null;
 }) {
 	const [busyTag, setBusyTag] = useState<string | null>(null);
+	const [checkoutTagName, setCheckoutTagName] = useState<string | null>(null);
 	const [deleteTagName, setDeleteTagName] = useState<string | null>(null);
 
 	const pushTag = async (tagName: string) => {
@@ -64,10 +65,24 @@ export function useTagMutations({
 			setBusyTag(null);
 		}
 	};
-	const manageTag = (action: "delete" | "push", tagName: string) => {
+	const manageTag = (
+		action: "checkout" | "delete" | "push",
+		tagName: string,
+	) => {
 		if (action === "push") void pushTag(tagName);
+		else if (action === "checkout") setCheckoutTagName(tagName);
 		else setDeleteTagName(tagName);
 	};
 
-	return { busyTag, deleteTag, deleteTagName, manageTag, setDeleteTagName };
+	return {
+		busyTag,
+		checkoutTagName,
+		deleteTag,
+		deleteTagName,
+		manageTag,
+		setCheckoutTagName,
+		setDeleteTagName,
+	};
 }
+
+export type TagMutationController = ReturnType<typeof useTagMutations>;

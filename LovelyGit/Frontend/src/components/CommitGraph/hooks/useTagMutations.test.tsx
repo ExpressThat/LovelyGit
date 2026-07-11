@@ -79,4 +79,21 @@ describe("useTagMutations", () => {
 		expect(send).not.toHaveBeenCalled();
 		expect(result.current.busyTag).toBeNull();
 	});
+
+	it("opens and closes detached tag checkout confirmation", () => {
+		const { result } = renderHook(() =>
+			useTagMutations({
+				onRepositoryChanged: vi.fn(),
+				remoteName: "origin",
+				repositoryId: "repo",
+			}),
+		);
+
+		act(() => result.current.manageTag("checkout", "v1"));
+		expect(result.current.checkoutTagName).toBe("v1");
+
+		act(() => result.current.setCheckoutTagName(null));
+		expect(result.current.checkoutTagName).toBeNull();
+		expect(send).not.toHaveBeenCalled();
+	});
 });

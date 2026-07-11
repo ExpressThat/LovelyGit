@@ -69,8 +69,6 @@ export function CommitGraphView({
 		repositoryId,
 	});
 	const branchCreation = useBranchCreation();
-	const { busyTag, deleteTag, deleteTagName, manageTag, setDeleteTagName } =
-		tagController;
 	useNotifyCurrentBranch(currentBranchName, onCurrentBranchNameChange);
 	const {
 		graphContentWidth,
@@ -96,11 +94,11 @@ export function CommitGraphView({
 						onCreateBranchFromTag={branchCreation.createFromTag}
 						onIntegrateBranch={dialogs.integrateBranch}
 						onSelectCommit={onSelectCommit}
-						onTagAction={manageTag}
+						onTagAction={tagController.manageTag}
 						remotePrefixes={remotePrefixes}
 						repositoryRefs={repositoryRefs.refs}
 						rows={rows}
-						tagMutationBusy={busyTag !== null}
+						tagMutationBusy={tagController.busyTag !== null}
 						tagRemoteName={tagRemoteName}
 						worktreeController={worktreeController}
 					/>
@@ -172,13 +170,13 @@ export function CommitGraphView({
 											onRevert={dialogs.setRevertCommit}
 											onReset={dialogs.setResetCommit}
 											onSelect={onSelectCommit}
-											onTagAction={manageTag}
+											onTagAction={tagController.manageTag}
 											currentBranchName={currentBranchName}
 											remotePrefixes={remotePrefixes}
 											row={rows[item.index] ?? null}
 											rowIndex={item.index}
 											templateColumns={templateColumns}
-											tagMutationBusy={busyTag !== null}
+											tagMutationBusy={tagController.busyTag !== null}
 											tagRemoteName={tagRemoteName}
 										/>
 									</div>
@@ -230,12 +228,9 @@ export function CommitGraphView({
 				upstreams={branchUpstreams}
 			/>
 			<TagManagementDialogs
-				busyTag={busyTag}
-				deleteTagName={deleteTagName}
+				controller={tagController}
 				existingTagNames={existingTagNames}
 				onCreateOpenChange={dialogs.setTagCommit}
-				onDelete={() => void deleteTag()}
-				onDeleteOpenChange={setDeleteTagName}
 				onRepositoryChanged={onRepositoryChanged}
 				remoteName={tagRemoteName}
 				repositoryId={repositoryId}

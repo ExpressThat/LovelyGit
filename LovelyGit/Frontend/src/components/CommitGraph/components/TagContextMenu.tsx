@@ -3,6 +3,7 @@ import {
 	CloudUpload,
 	Copy,
 	GitBranch,
+	GitCommitHorizontal,
 	Trash2,
 } from "@/components/icons/lovelyIcons";
 import {
@@ -16,7 +17,7 @@ import {
 } from "@/components/ui/context-menu";
 import { copyToClipboard } from "../utils/clipboard";
 
-export type TagAction = "delete" | "push";
+export type TagAction = "checkout" | "delete" | "push";
 
 export function TagContextMenu({
 	children,
@@ -62,6 +63,13 @@ export function TagContextMenu({
 				<ContextMenuItem onClick={() => onCreateBranch(tagName, commitHash)}>
 					<GitBranch aria-hidden="true" />
 					Create branch from {tagName}…
+				</ContextMenuItem>
+				<ContextMenuItem
+					disabled={disabled}
+					onClick={() => onAction("checkout", tagName)}
+				>
+					<GitCommitHorizontal aria-hidden="true" />
+					Checkout {tagName} detached…
 				</ContextMenuItem>
 				<ContextMenuItem
 					disabled={disabled || remoteName === null}

@@ -2,6 +2,7 @@ import { type ComponentProps, lazy, type ReactNode, Suspense } from "react";
 import { SurfaceLoading } from "@/AppLazySurfaces";
 import type { BranchComparisonDialog } from "./BranchComparisonDialog";
 import type { BranchUpstreamDialog } from "./BranchUpstreamDialog";
+import type { CheckoutTagDialog } from "./CheckoutTagDialog";
 import type { CommitComparisonDialog } from "./CommitComparisonDialog";
 import type { CreateTagDialog } from "./CreateTagDialog";
 import type { CreateWorktreeDialog } from "./CreateWorktreeDialog";
@@ -25,6 +26,9 @@ const CommitComparison = lazy(() =>
 		"CommitComparisonDialog",
 		() => import("./CommitComparisonDialog"),
 	),
+);
+const CheckoutTag = lazy(() =>
+	importDialog("CheckoutTagDialog", () => import("./CheckoutTagDialog")),
 );
 const CreateTag = lazy(() =>
 	importDialog("CreateTagDialog", () => import("./CreateTagDialog")),
@@ -66,6 +70,11 @@ export function LazyCommitComparisonDialog(
 	props: ComponentProps<typeof CommitComparisonDialog>,
 ) {
 	return <Boundary>{<CommitComparison {...props} />}</Boundary>;
+}
+export function LazyCheckoutTagDialog(
+	props: ComponentProps<typeof CheckoutTagDialog>,
+) {
+	return <Boundary>{<CheckoutTag {...props} />}</Boundary>;
 }
 export function LazyCreateTagDialog(
 	props: ComponentProps<typeof CreateTagDialog>,

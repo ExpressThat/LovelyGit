@@ -4,6 +4,7 @@ using ExpressThat.LovelyGit.Services.Git.Patches;
 using ExpressThat.LovelyGit.Services.Git.Submodules;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Branches;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.CherryPick;
+using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Checkout;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Merge;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Rebase;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.RepositoryOperations;
@@ -22,6 +23,7 @@ internal static class WorkingTreeServiceCollectionExtensions
         services.AddLovelyGitJsonTypeInfoResolver(WorkingTreeJsonSerializerContext.Default);
         services.AddLovelyGitJsonTypeInfoResolver(BranchesJsonSerializerContext.Default);
         services.AddLovelyGitJsonTypeInfoResolver(CherryPickJsonSerializerContext.Default);
+        services.AddLovelyGitJsonTypeInfoResolver(CheckoutJsonSerializerContext.Default);
         services.AddLovelyGitJsonTypeInfoResolver(MergeJsonSerializerContext.Default);
         services.AddLovelyGitJsonTypeInfoResolver(RebaseJsonSerializerContext.Default);
         services.AddLovelyGitJsonTypeInfoResolver(RepositoryOperationsJsonSerializerContext.Default);
@@ -77,6 +79,7 @@ internal static class WorkingTreeServiceCollectionExtensions
         services.AddSingleton<ICommandResponder, PushRepositoryCommandResolver>();
         services.AddSingleton<ICommandResponder, CheckoutBranchCommandResolver>();
         services.AddSingleton<ICommandResponder, CheckoutCommitCommandResolver>();
+        services.AddSingleton<ICommandResponder, CheckoutTagCommandResolver>();
         services.AddSingleton<ICommandResponder, CheckoutRemoteBranchCommandResolver>();
         services.AddSingleton<ICommandResponder, CreateBranchCommandResolver>();
         services.AddSingleton<ICommandResponder, RenameBranchCommandResolver>();

@@ -1,34 +1,39 @@
 import type { CommitGraphRow } from "@/generated/types";
+import type { TagMutationController } from "../hooks/useTagMutations";
 import {
+	LazyCheckoutTagDialog,
 	LazyCreateTagDialog,
 	LazyDeleteTagDialog,
 } from "./LazyGraphManagementDialogs";
 
 export function TagManagementDialogs({
-	busyTag,
+	controller,
 	existingTagNames,
 	onCreateOpenChange,
-	onDelete,
-	onDeleteOpenChange,
 	onRepositoryChanged,
 	remoteName,
 	repositoryId,
 	tagCommit,
-	deleteTagName,
 }: {
-	busyTag: string | null;
-	deleteTagName: string | null;
+	controller: TagMutationController;
 	existingTagNames: string[];
 	onCreateOpenChange: (commit: CommitGraphRow | null) => void;
-	onDelete: () => void;
-	onDeleteOpenChange: (tagName: string | null) => void;
 	onRepositoryChanged: () => void;
 	remoteName: string | null;
 	repositoryId: string | null;
 	tagCommit: CommitGraphRow | null;
 }) {
+	const { busyTag, checkoutTagName, deleteTag, deleteTagName } = controller;
 	return (
 		<>
+			{checkoutTagName ? (
+				<LazyCheckoutTagDialog
+					onClose={() => controller.setCheckoutTagName(null)}
+					onRepositoryChanged={onRepositoryChanged}
+					repositoryId={repositoryId}
+					tagName={checkoutTagName}
+				/>
+			) : null}
 			{tagCommit ? (
 				<LazyCreateTagDialog
 					commit={tagCommit}
@@ -42,8 +47,8 @@ export function TagManagementDialogs({
 			) : null}
 			<LazyDeleteTagDialog
 				isBusy={busyTag !== null}
-				onConfirm={onDelete}
-				onOpenChange={onDeleteOpenChange}
+				onConfirm={() => void deleteTag()}
+				onOpenChange={controller.setDeleteTagName}
 				tagName={deleteTagName}
 			/>
 		</>
