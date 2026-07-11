@@ -5,6 +5,7 @@ interface MutationOptionToggleProps {
 	accessibleName: string;
 	checked: boolean;
 	children: ReactNode;
+	disabled?: boolean;
 	icon?: ReactNode;
 	id: string;
 	onCheckedChange: (checked: boolean) => void;
@@ -14,6 +15,7 @@ export function MutationOptionToggle({
 	accessibleName,
 	checked,
 	children,
+	disabled = false,
 	icon,
 	id,
 	onCheckedChange,
@@ -23,11 +25,13 @@ export function MutationOptionToggle({
 			<Checkbox
 				aria-label={accessibleName}
 				checked={checked}
+				disabled={disabled}
 				onCheckedChange={onCheckedChange}
 			/>
 			{icon}
 			<button
 				className="text-left"
+				disabled={disabled}
 				id={id}
 				onClick={() => onCheckedChange(!checked)}
 				type="button"

@@ -22,6 +22,7 @@ public sealed class GitTagCommandServiceFailureTests
             tagName,
             repository.HeadCommitHash,
             false,
+            false,
             null,
             CancellationToken.None));
 
@@ -41,6 +42,7 @@ public sealed class GitTagCommandServiceFailureTests
             "v-missing-message",
             repository.HeadCommitHash,
             true,
+            false,
             "  ",
             CancellationToken.None));
 
@@ -60,6 +62,7 @@ public sealed class GitTagCommandServiceFailureTests
             "v-missing-commit",
             new string('0', 40),
             false,
+            false,
             null,
             CancellationToken.None));
 
@@ -75,7 +78,7 @@ public sealed class GitTagCommandServiceFailureTests
         var service = new GitTagCommandService(
             new GitOperationService(repository.GitCliService));
         await service.CreateTagAsync(
-            repository.Path, "v-keep", repository.HeadCommitHash, false, null,
+            repository.Path, "v-keep", repository.HeadCommitHash, false, false, null,
             CancellationToken.None);
 
         await Assert.ThrowsAsync<GitOperationException>(() => service.DeleteTagAsync(
@@ -91,7 +94,7 @@ public sealed class GitTagCommandServiceFailureTests
         var service = new GitTagCommandService(
             new GitOperationService(repository.GitCliService));
         await service.CreateTagAsync(
-            repository.Path, "v-local", repository.HeadCommitHash, false, null,
+            repository.Path, "v-local", repository.HeadCommitHash, false, false, null,
             CancellationToken.None);
 
         await Assert.ThrowsAsync<ArgumentException>(() => service.PushTagAsync(

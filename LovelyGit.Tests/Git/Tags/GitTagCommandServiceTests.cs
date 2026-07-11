@@ -16,6 +16,7 @@ public sealed class GitTagCommandServiceTests
             "v-test-create-tag",
             repository.HeadCommitHash,
             isAnnotated: false,
+            sign: false,
             message: string.Empty,
             CancellationToken.None);
 
@@ -38,6 +39,7 @@ public sealed class GitTagCommandServiceTests
             "v-test-annotated-tag",
             repository.HeadCommitHash,
             isAnnotated: true,
+            sign: false,
             message: "LovelyGit annotated tag",
             CancellationToken.None);
 
@@ -64,6 +66,7 @@ public sealed class GitTagCommandServiceTests
             "v-test-delete-tag",
             repository.HeadCommitHash,
             isAnnotated: false,
+            sign: false,
             message: string.Empty,
             CancellationToken.None);
 
@@ -96,6 +99,7 @@ public sealed class GitTagCommandServiceTests
             "v-test-push-tag",
             repository.HeadCommitHash,
             isAnnotated: false,
+            sign: false,
             message: string.Empty,
             CancellationToken.None);
 

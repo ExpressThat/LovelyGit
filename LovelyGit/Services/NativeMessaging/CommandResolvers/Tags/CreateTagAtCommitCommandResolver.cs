@@ -45,6 +45,7 @@ internal sealed class CreateTagAtCommitCommandResolver
                 arguments.TagName,
                 arguments.CommitHash,
                 arguments.IsAnnotated,
+                arguments.Sign,
                 arguments.Message,
                 CancellationToken.None).ConfigureAwait(false);
             return Success(command);

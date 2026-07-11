@@ -1,5 +1,4 @@
 import { CloudUpload, LoaderCircle, Tag } from "lucide-react";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -17,6 +16,7 @@ import { sendRequestWithResponse } from "@/lib/commands";
 import { gitMutationTimeoutMs } from "@/lib/gitMutationTimeout";
 import { NativeMessageType } from "@/lib/nativeMessaging";
 import { shortHash } from "../utils/format";
+import { CreateTagAnnotationOptions } from "./CreateTagAnnotationOptions";
 import { MutationOptionToggle } from "./MutationOptionToggle";
 
 export function CreateTagDialog({
@@ -36,10 +36,10 @@ export function CreateTagDialog({
 }) {
 	const [isAnnotated, setIsAnnotated] = useState(false);
 	const [isRunning, setIsRunning] = useState(false);
+	const [isSigned, setIsSigned] = useState(false);
 	const [message, setMessage] = useState("");
 	const [pushAfterCreate, setPushAfterCreate] = useState(false);
 	const [tagName, setTagName] = useState("");
-	const reduceMotion = useReducedMotion();
 	const hash = shortHash(commit.commit.hash);
 	const normalizedName = tagName.trim();
 	const duplicate = existingTagNames.includes(normalizedName);
@@ -60,6 +60,7 @@ export function CreateTagDialog({
 						isAnnotated,
 						message: isAnnotated ? message.trim() : null,
 						repositoryId,
+						sign: isSigned,
 						tagName: normalizedName,
 					},
 					commandType: NativeMessageType.CreateTagAtCommit,
@@ -130,6 +131,7 @@ export function CreateTagDialog({
 								autoFocus
 								id="tag-name"
 								onChange={(event) => setTagName(event.currentTarget.value)}
+								onInput={(event) => setTagName(event.currentTarget.value)}
 								placeholder="v1.0.0"
 								value={tagName}
 							/>
@@ -139,56 +141,23 @@ export function CreateTagDialog({
 								</p>
 							) : null}
 						</div>
-						<MutationOptionToggle
-							accessibleName="Annotated tag with a message"
-							checked={isAnnotated}
-							id="toggle-annotated-tag"
-							onCheckedChange={setIsAnnotated}
-						>
-							Annotated tag with a message
-						</MutationOptionToggle>
-						<AnimatePresence initial={false}>
-							{isAnnotated ? (
-								<motion.div
-									animate={{ height: "auto", opacity: 1, y: 0 }}
-									exit={
-										reduceMotion
-											? { opacity: 0 }
-											: { height: 0, opacity: 0, y: -4 }
-									}
-									initial={
-										reduceMotion
-											? { opacity: 0 }
-											: { height: 0, opacity: 0, y: -4 }
-									}
-									className="overflow-hidden"
-									transition={{
-										duration: reduceMotion ? 0 : 0.2,
-										ease: [0.22, 1, 0.36, 1],
-									}}
-								>
-									<label
-										className="grid gap-2 font-medium text-sm"
-										htmlFor="tag-message"
-									>
-										Message
-										<textarea
-											aria-label="Tag message"
-											className="min-h-20 resize-y rounded-md border bg-background px-3 py-2 font-normal text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-											id="tag-message"
-											onChange={(event) =>
-												setMessage(event.currentTarget.value)
-											}
-											value={message}
-										/>
-									</label>
-								</motion.div>
-							) : null}
-						</AnimatePresence>
+						<CreateTagAnnotationOptions
+							disabled={isRunning}
+							isAnnotated={isAnnotated}
+							isSigned={isSigned}
+							message={message}
+							onAnnotatedChange={(checked) => {
+								setIsAnnotated(checked);
+								if (!checked) setIsSigned(false);
+							}}
+							onMessageChange={setMessage}
+							onSignedChange={setIsSigned}
+						/>
 						{remoteName ? (
 							<MutationOptionToggle
 								accessibleName={`Push to ${remoteName} after creating`}
 								checked={pushAfterCreate}
+								disabled={isRunning}
 								icon={
 									<CloudUpload
 										aria-hidden="true"

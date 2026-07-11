@@ -17,6 +17,7 @@ internal sealed class GitTagCommandService
         string tagName,
         string commitHash,
         bool isAnnotated,
+        bool sign,
         string? message,
         CancellationToken cancellationToken)
     {
@@ -24,14 +25,21 @@ internal sealed class GitTagCommandService
         var target = NormalizeCommitHash(commitHash);
         await EnsureCommitExistsAsync(repositoryPath, target, cancellationToken)
             .ConfigureAwait(false);
+        if (sign && !isAnnotated)
+        {
+            throw new ArgumentException("Signed tags must be annotated.", nameof(isAnnotated));
+        }
+
         IReadOnlyList<string> arguments = isAnnotated
-            ? ["tag", "--annotate", "--message", NormalizeMessage(message), "--", name, target]
+            ? ["tag", sign ? "--sign" : "--annotate", "--message", NormalizeMessage(message), "--", name, target]
             : ["tag", "--", name, target];
         await RunAsync(
             repositoryPath,
             "Create tag",
             arguments,
-            "Choose a unique valid tag name and verify the target commit exists.",
+            sign
+                ? "Configure user.signingKey and gpg.format, then verify the target commit exists."
+                : "Choose a unique valid tag name and verify the target commit exists.",
             cancellationToken).ConfigureAwait(false);
     }
 

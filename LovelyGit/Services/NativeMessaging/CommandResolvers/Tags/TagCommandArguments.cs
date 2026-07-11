@@ -9,6 +9,7 @@ public sealed record CreateTagAtCommitCommandArguments
     public string CommitHash { get; init; } = string.Empty;
     public string TagName { get; init; } = string.Empty;
     public bool IsAnnotated { get; init; }
+    public bool Sign { get; init; }
     public string? Message { get; init; }
 }
 
