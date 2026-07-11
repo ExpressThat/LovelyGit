@@ -28,34 +28,13 @@ internal static partial class NativeBranchComparisonReader
             throw new ArgumentException("The target branch was not found.", nameof(targetBranchName));
         }
 
-        var history = await PaintHistoryAsync(
-            repository, currentHash, target.Target, MaximumHistoryNodes, cancellationToken)
-            .ConfigureAwait(false);
-        var tips = await Task.WhenAll(
-            repository.GetCommitAsync(currentHash, cancellationToken),
-            repository.GetCommitAsync(target.Target, cancellationToken)).ConfigureAwait(false);
-        var comparison = await repository.GetChangedTreeFilesAsync(
-            tips[0].TreeHash, tips[1].TreeHash, cancellationToken).ConfigureAwait(false);
-        var files = BuildFiles(comparison.ParentFiles, comparison.CurrentFiles);
-
-        return new BranchComparisonResponse
-        {
-            CurrentBranchName = currentName,
-            TargetBranchName = targetName,
-            CurrentHash = currentHash.ToString(),
-            TargetHash = target.Target.ToString(),
-            MergeBaseHash = history.MergeBaseHash?.ToString(),
-            AheadCount = history.Ahead.Count,
-            BehindCount = history.Behind.Count,
-            ChangedFileCount = files.Count,
-            IsHistoryPartial = history.IsPartial,
-            IsFileListTruncated = files.Count > MaximumDisplayedFiles,
-            AheadCommits = await BuildCommitsAsync(
-                repository, history.Ahead, cancellationToken).ConfigureAwait(false),
-            BehindCommits = await BuildCommitsAsync(
-                repository, history.Behind, cancellationToken).ConfigureAwait(false),
-            Files = files.Take(MaximumDisplayedFiles).ToList(),
-        };
+        return await BuildResponseAsync(
+            repository,
+            currentHash,
+            target.Target,
+            currentName,
+            targetName,
+            cancellationToken).ConfigureAwait(false);
     }
 
     private static string NormalizeBranchName(string branchName)

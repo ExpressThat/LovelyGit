@@ -29,7 +29,12 @@ describe("BranchComparisonDialog", () => {
 
 		expect(await screen.findByText("Current work")).toBeVisible();
 		expect(sendRequestWithResponse).toHaveBeenCalledWith({
-			arguments: { repositoryId: "repo-id", targetBranchName: "feature/demo" },
+			arguments: {
+				currentCommitHash: null,
+				repositoryId: "repo-id",
+				targetBranchName: "feature/demo",
+				targetCommitHash: null,
+			},
 			commandType: "GetBranchComparison",
 		});
 		await user.click(screen.getByRole("button", { name: /Changed files/ }));

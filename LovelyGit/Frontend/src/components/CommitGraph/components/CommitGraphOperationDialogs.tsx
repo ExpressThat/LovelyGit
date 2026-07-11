@@ -9,6 +9,7 @@ import type {
 	GitReflogEntry,
 	RepositoryRefsResponse,
 } from "@/generated/types";
+import type { CommitComparisonController } from "../hooks/useCommitGraphDialogs";
 import type { ReflogManagementController } from "../hooks/useReflogManagement";
 import {
 	LazyCherryPickDialog,
@@ -18,6 +19,7 @@ import {
 	LazyResetCommitDialog,
 	LazyRevertDialog,
 } from "./LazyCommitOperationDialogs";
+import { LazyCommitComparisonDialog } from "./LazyGraphManagementDialogs";
 
 type IntegrationTarget = {
 	branchName: string;
@@ -26,6 +28,7 @@ type IntegrationTarget = {
 
 export function CommitGraphOperationDialogs({
 	cherryPickCommit,
+	commitComparison,
 	branchCreationSource,
 	branchNames,
 	currentBranchName,
@@ -48,6 +51,7 @@ export function CommitGraphOperationDialogs({
 	setRevertCommit,
 }: {
 	cherryPickCommit: CommitGraphRow | null;
+	commitComparison: CommitComparisonController;
 	branchCreationSource: BranchCreationSource | null;
 	branchNames: string[];
 	currentBranchName: string | null;
@@ -71,6 +75,14 @@ export function CommitGraphOperationDialogs({
 }) {
 	return (
 		<>
+			{commitComparison.base && commitComparison.target ? (
+				<LazyCommitComparisonDialog
+					base={commitComparison.base}
+					onClose={() => commitComparison.setTarget(null)}
+					repositoryId={repositoryId}
+					target={commitComparison.target}
+				/>
+			) : null}
 			<LazyCreateBranchDialog
 				currentBranchName={currentBranchName}
 				existingBranchNames={branchNames}

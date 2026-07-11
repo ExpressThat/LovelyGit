@@ -19,7 +19,6 @@ import { useCommitGraphViewport } from "./hooks/useCommitGraphViewport";
 import { useCommitPatchActions } from "./hooks/useCommitPatchActions";
 import { useRepositoryRefs } from "./hooks/useRepositoryRefs";
 import { buildCommitGraphRefView } from "./utils/commitGraphRefView";
-
 export function CommitGraphView({
 	onCurrentBranchNameChange,
 	onOpenWorkingChanges,
@@ -31,7 +30,6 @@ export function CommitGraphView({
 }: CommitGraphViewProps) {
 	const dialogs = useCommitGraphDialogs();
 	const patchActions = useCommitPatchActions(repositoryId);
-
 	const {
 		currentBranchName,
 		ensureRangeLoaded,
@@ -144,6 +142,7 @@ export function CommitGraphView({
 										<CommitRow
 											branchMutationBusy={branchController.busyBranch !== null}
 											branchRemoteName={tagRemoteName}
+											comparison={dialogs.comparison}
 											copyPatchBusy={
 												patchActions.busyAction === "copy" &&
 												patchActions.busyCommitHash ===
@@ -201,6 +200,7 @@ export function CommitGraphView({
 				branchCreationSource={branchCreation.source}
 				branchNames={branchNames}
 				cherryPickCommit={dialogs.cherryPickCommit}
+				commitComparison={dialogs.comparison}
 				currentBranchName={currentBranchName}
 				integrationTarget={dialogs.integrationTarget}
 				interactiveRebaseBase={dialogs.interactiveRebaseBase}

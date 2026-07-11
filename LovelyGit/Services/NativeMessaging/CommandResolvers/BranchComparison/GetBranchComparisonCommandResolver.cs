@@ -39,8 +39,11 @@ internal sealed class GetBranchComparisonCommandResolver
 
         try
         {
-            var result = await NativeBranchComparisonReader.ReadAsync(
-                known.Path, arguments.TargetBranchName, CancellationToken.None).ConfigureAwait(false);
+            var result = arguments is { CurrentCommitHash: { } current, TargetCommitHash: { } target }
+                ? await NativeBranchComparisonReader.ReadCommitsAsync(
+                    known.Path, current, target, CancellationToken.None).ConfigureAwait(false)
+                : await NativeBranchComparisonReader.ReadAsync(
+                    known.Path, arguments.TargetBranchName, CancellationToken.None).ConfigureAwait(false);
             return new CommandResponse<BranchComparisonResponse>
             {
                 CommandUniqueId = command.CommandUniqueId,

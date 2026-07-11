@@ -119,35 +119,71 @@ describe("CommitContextMenu", () => {
 			await screen.findByRole("heading", { name: "Start a bisect session?" }),
 		).toBeVisible();
 	});
+
+	it("marks a comparison base then compares another commit against it", async () => {
+		const user = userEvent.setup();
+		const onSetComparisonBase = vi.fn();
+		const first = renderMenu({ onSetComparisonBase });
+		fireEvent.contextMenu(screen.getByRole("button", { name: "commit row" }));
+		await user.click(
+			await screen.findByText("Select 1111111 as comparison base"),
+		);
+		expect(onSetComparisonBase).toHaveBeenCalledWith(row);
+		first.unmount();
+
+		const onCompare = vi.fn();
+		renderMenu({
+			comparisonBase: {
+				...row,
+				commit: {
+					...row.commit,
+					hash: "2222222222222222222222222222222222222222",
+				},
+			},
+			onCompare,
+		});
+		fireEvent.contextMenu(screen.getByRole("button", { name: "commit row" }));
+		await user.click(await screen.findByText("Compare 2222222 with 1111111"));
+		expect(onCompare).toHaveBeenCalledWith(row);
+	});
 });
 
 function renderMenu({
+	comparisonBase = null,
 	isHead = false,
 	onCreateBranch = vi.fn(),
 	onInteractiveRebase = vi.fn(),
 	onCopyPatch = vi.fn(),
 	onSavePatch = vi.fn(),
 	onReset = vi.fn(),
+	onCompare = vi.fn(),
+	onSetComparisonBase = vi.fn(),
 }: {
+	comparisonBase?: CommitGraphRow | null;
 	isHead?: boolean;
 	onCreateBranch?: (selected: CommitGraphRow) => void;
 	onInteractiveRebase?: (selected: CommitGraphRow) => void;
 	onCopyPatch?: (selected: CommitGraphRow) => void;
 	onSavePatch?: (selected: CommitGraphRow) => void;
 	onReset?: (selected: CommitGraphRow) => void;
+	onCompare?: (selected: CommitGraphRow) => void;
+	onSetComparisonBase?: (selected: CommitGraphRow | null) => void;
 }) {
 	return render(
 		<CommitContextMenu
+			comparisonBase={comparisonBase}
 			copyPatchBusy={false}
 			savePatchBusy={false}
 			currentBranchName="main"
 			isHead={isHead}
 			onCherryPick={vi.fn()}
+			onCompare={onCompare}
 			onCreateBranch={onCreateBranch}
 			onCopyPatch={onCopyPatch}
 			onSavePatch={onSavePatch}
 			onCreateTag={vi.fn()}
 			onOpenDetails={vi.fn()}
+			onSetComparisonBase={onSetComparisonBase}
 			onInteractiveRebase={onInteractiveRebase}
 			onReset={onReset}
 			onRevert={vi.fn()}

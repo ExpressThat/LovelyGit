@@ -2,6 +2,7 @@
 import type { ReactNode } from "react";
 import type { BranchIntegrationMode } from "@/components/TopNavBar/components/BranchIntegrationDialog";
 import type { CommitGraphRow } from "@/generated/types";
+import type { CommitComparisonController } from "../hooks/useCommitGraphDialogs";
 import { AuthorCell } from "./AuthorCell";
 import type { BranchAction } from "./BranchContextMenu";
 import { CommitContextMenu } from "./CommitContextMenu";
@@ -16,6 +17,7 @@ export function CommitRow({
 	branchMutationBusy,
 	branchRemoteName,
 	copyPatchBusy,
+	comparison,
 	savePatchBusy,
 	currentBranchName,
 	graph,
@@ -44,6 +46,7 @@ export function CommitRow({
 	branchMutationBusy: boolean;
 	branchRemoteName: string | null;
 	copyPatchBusy: boolean;
+	comparison: CommitComparisonController;
 	savePatchBusy: boolean;
 	currentBranchName: string | null;
 	graph: {
@@ -146,16 +149,19 @@ export function CommitRow({
 
 	return (
 		<CommitContextMenu
+			comparisonBase={comparison.base}
 			copyPatchBusy={copyPatchBusy}
 			savePatchBusy={savePatchBusy}
 			currentBranchName={currentBranchName}
 			isHead={isHead}
 			onCherryPick={onCherryPick}
+			onCompare={comparison.compare}
 			onCreateTag={onCreateTag}
 			onCreateBranch={onCreateBranch}
 			onCopyPatch={onCopyPatch}
 			onSavePatch={onSavePatch}
 			onOpenDetails={onSelect}
+			onSetComparisonBase={comparison.setBase}
 			onInteractiveRebase={onInteractiveRebase}
 			onRevert={onRevert}
 			onReset={onReset}

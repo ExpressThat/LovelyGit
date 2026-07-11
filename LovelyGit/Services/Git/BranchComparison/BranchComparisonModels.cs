@@ -7,6 +7,8 @@ public sealed record GetBranchComparisonCommandArguments
 {
     public Guid RepositoryId { get; init; }
     public string TargetBranchName { get; init; } = string.Empty;
+    public string? CurrentCommitHash { get; init; }
+    public string? TargetCommitHash { get; init; }
 }
 
 [TypeSharp]

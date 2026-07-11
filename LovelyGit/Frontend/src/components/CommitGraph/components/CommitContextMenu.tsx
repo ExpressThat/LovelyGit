@@ -5,6 +5,7 @@ import {
 	ExternalLink,
 	GitBranch,
 	GitCommitHorizontal,
+	GitCompareArrows,
 	Info,
 	ListRestart,
 	ListTree,
@@ -31,32 +32,38 @@ import { StartBisectDialog } from "./StartBisectDialog";
 
 export function CommitContextMenu({
 	children,
+	comparisonBase,
 	copyPatchBusy,
 	savePatchBusy,
 	currentBranchName,
 	isHead,
 	onCherryPick,
+	onCompare,
 	onCreateTag,
 	onCreateBranch,
 	onCopyPatch,
 	onSavePatch,
 	onOpenDetails,
+	onSetComparisonBase,
 	onInteractiveRebase,
 	onRevert,
 	onReset,
 	row,
 }: {
 	children: ReactNode;
+	comparisonBase: CommitGraphRow | null;
 	copyPatchBusy: boolean;
 	savePatchBusy: boolean;
 	currentBranchName: string | null;
 	isHead: boolean;
 	onCherryPick: (row: CommitGraphRow) => void;
+	onCompare: (row: CommitGraphRow) => void;
 	onCreateTag: (row: CommitGraphRow) => void;
 	onCreateBranch: (row: CommitGraphRow) => void;
 	onCopyPatch: (row: CommitGraphRow) => void;
 	onSavePatch: (row: CommitGraphRow) => void;
 	onOpenDetails: (row: CommitGraphRow) => void;
+	onSetComparisonBase: (row: CommitGraphRow | null) => void;
 	onInteractiveRebase: (row: CommitGraphRow) => void;
 	onRevert: (row: CommitGraphRow) => void;
 	onReset: (row: CommitGraphRow) => void;
@@ -67,6 +74,10 @@ export function CommitContextMenu({
 	const subject =
 		row.commit.message.split(/\r?\n/, 1)[0] || "(no commit message)";
 	const [bisectCommit, setBisectCommit] = useState<CommitGraphRow | null>(null);
+	const comparisonBaseHash = comparisonBase
+		? shortHash(comparisonBase.commit.hash)
+		: null;
+	const isComparisonBase = comparisonBase?.commit.hash === row.commit.hash;
 	return (
 		<>
 			<ContextMenu>
@@ -87,6 +98,23 @@ export function CommitContextMenu({
 						<Info aria-hidden="true" />
 						Open commit details
 					</ContextMenuItem>
+					{comparisonBase ? (
+						<ContextMenuItem
+							onClick={() =>
+								isComparisonBase ? onSetComparisonBase(null) : onCompare(row)
+							}
+						>
+							<GitCompareArrows aria-hidden="true" />
+							{isComparisonBase
+								? `Clear comparison base ${comparisonBaseHash}`
+								: `Compare ${comparisonBaseHash} with ${abbreviatedHash}`}
+						</ContextMenuItem>
+					) : (
+						<ContextMenuItem onClick={() => onSetComparisonBase(row)}>
+							<GitCompareArrows aria-hidden="true" />
+							Select {abbreviatedHash} as comparison base
+						</ContextMenuItem>
+					)}
 					<ContextMenuItem
 						disabled={currentBranchName === null || isHead}
 						onClick={() => onInteractiveRebase(row)}

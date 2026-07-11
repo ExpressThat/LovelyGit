@@ -3,6 +3,11 @@ import type { BranchIntegrationMode } from "@/components/TopNavBar/components/Br
 import type { CommitGraphRow } from "@/generated/types";
 
 export function useCommitGraphDialogs() {
+	const [comparisonBase, setComparisonBase] = useState<CommitGraphRow | null>(
+		null,
+	);
+	const [comparisonTarget, setComparisonTarget] =
+		useState<CommitGraphRow | null>(null);
 	const [integrationTarget, setIntegrationTarget] = useState<{
 		branchName: string;
 		mode: BranchIntegrationMode;
@@ -19,6 +24,13 @@ export function useCommitGraphDialogs() {
 
 	return {
 		cherryPickCommit,
+		comparison: {
+			base: comparisonBase,
+			compare: setComparisonTarget,
+			setBase: setComparisonBase,
+			setTarget: setComparisonTarget,
+			target: comparisonTarget,
+		},
 		integrationTarget,
 		interactiveRebaseBase,
 		integrateBranch,
@@ -33,6 +45,14 @@ export function useCommitGraphDialogs() {
 		tagCommit,
 	};
 }
+
+export type CommitComparisonController = {
+	base: CommitGraphRow | null;
+	compare: (row: CommitGraphRow) => void;
+	setBase: (row: CommitGraphRow | null) => void;
+	setTarget: (row: CommitGraphRow | null) => void;
+	target: CommitGraphRow | null;
+};
 
 export function useNotifyCurrentBranch(
 	currentBranchName: string | null,

@@ -87,6 +87,41 @@ public sealed class NativeBranchComparisonReaderTests
             repository.Path, "master", CancellationToken.None));
     }
 
+    [Fact]
+    public async Task ReadCommitsAsync_ComparesTwoAuthoritativeCommitTrees()
+    {
+        using var repository = TemporaryGitRepository.Create();
+        await CommitFilesAsync(repository, "Base", ("shared.txt", "base"));
+        var baseHash = await HeadAsync(repository);
+        await CommitFilesAsync(repository, "Later", ("shared.txt", "later"), ("later.txt", "added"));
+        var laterHash = await HeadAsync(repository);
+
+        var comparison = await NativeBranchComparisonReader.ReadCommitsAsync(
+            repository.Path, baseHash, laterHash, CancellationToken.None);
+
+        Assert.Equal(baseHash[..7], comparison.CurrentBranchName);
+        Assert.Equal(laterHash[..7], comparison.TargetBranchName);
+        Assert.Equal(0, comparison.AheadCount);
+        Assert.Equal(1, comparison.BehindCount);
+        Assert.Equal("Later", Assert.Single(comparison.BehindCommits).Subject);
+        Assert.Equal(
+            [("later.txt", "Added"), ("shared.txt", "Modified")],
+            comparison.Files.Select(file => (file.Path, file.Status)));
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("not-a-hash")]
+    [InlineData("0123456")]
+    public async Task ReadCommitsAsync_RejectsInvalidCommitIdentity(string value)
+    {
+        using var repository = TemporaryGitRepository.Create();
+        var head = await HeadAsync(repository);
+        await Assert.ThrowsAsync<ArgumentException>(() =>
+            NativeBranchComparisonReader.ReadCommitsAsync(
+                repository.Path, value, head, CancellationToken.None));
+    }
+
     private static async Task CommitFilesAsync(
         TemporaryGitRepository repository,
         string subject,
