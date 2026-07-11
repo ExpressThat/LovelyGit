@@ -96,6 +96,39 @@ public sealed class LovelyGitRepositoryRefSummaryTests
         Assert.Null(refs["refs/tags/v1.0.0"].PeeledTarget);
     }
 
+    [Fact]
+    public async Task LoadRefs_ReusesSnapshotAndInvalidatesAfterRefChange()
+    {
+        using var temporary = TemporaryGitRepository.Create();
+        var paths = await GitRepositoryDiscovery.ResolveRepositoryPathsAsync(
+            temporary.Path,
+            CancellationToken.None);
+        var objectFormat = await GitRepositoryDiscovery.ReadObjectFormatAsync(
+            paths.GitDirectory,
+            CancellationToken.None);
+
+        var first = await GitRefReader.LoadRefsAsync(
+            paths.GitDirectory,
+            objectFormat,
+            GitRefReader.DefaultTagLimit,
+            CancellationToken.None);
+        var second = await GitRefReader.LoadRefsAsync(
+            paths.GitDirectory,
+            objectFormat,
+            GitRefReader.DefaultTagLimit,
+            CancellationToken.None);
+        await temporary.RunGitAsync(["tag", "new-snapshot-tag"]);
+        var changed = await GitRefReader.LoadRefsAsync(
+            paths.GitDirectory,
+            objectFormat,
+            GitRefReader.DefaultTagLimit,
+            CancellationToken.None);
+
+        Assert.Same(first, second);
+        Assert.NotSame(second, changed);
+        Assert.Contains("refs/tags/new-snapshot-tag", changed.Keys);
+    }
+
     private sealed class TemporaryGitRepository : IDisposable
     {
         private readonly DirectoryInfo _directory;

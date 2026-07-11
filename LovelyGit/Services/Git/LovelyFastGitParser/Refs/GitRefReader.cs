@@ -1,10 +1,10 @@
 namespace ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser.Refs;
 
-internal static class GitRefReader
+internal static partial class GitRefReader
 {
     public const int DefaultTagLimit = 500;
 
-    public static async Task<Dictionary<string, GitRawRef>> LoadRefsAsync(
+    private static async Task<Dictionary<string, GitRawRef>> LoadRefsCoreAsync(
         string gitDirectory,
         GitObjectFormat objectFormat,
         int maxTags,
