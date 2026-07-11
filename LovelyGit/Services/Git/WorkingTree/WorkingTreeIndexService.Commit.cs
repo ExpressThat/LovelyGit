@@ -9,6 +9,7 @@ internal sealed partial class WorkingTreeIndexService
         string title,
         string body,
         bool amend,
+        bool sign,
         CancellationToken cancellationToken)
     {
         var trimmedTitle = title.Trim();
@@ -20,7 +21,7 @@ internal sealed partial class WorkingTreeIndexService
         var repositoryPaths = await GitRepositoryDiscovery
             .ResolveRepositoryPathsAsync(repositoryPath, cancellationToken)
             .ConfigureAwait(false);
-        var arguments = BuildCommitArguments(trimmedTitle, body.Trim(), amend);
+        var arguments = BuildCommitArguments(trimmedTitle, body.Trim(), amend, sign);
         var result = await _gitCliService
             .ExecuteBufferedAsync(
                 arguments,
@@ -36,16 +37,22 @@ internal sealed partial class WorkingTreeIndexService
         var message = FirstNonEmptyLine(result.StandardError)
             ?? FirstNonEmptyLine(result.StandardOutput)
             ?? "Git could not create the commit.";
-        throw new InvalidOperationException(message);
+        throw new InvalidOperationException(sign
+            ? $"Git could not sign the commit. {message} Configure user.signingKey and gpg.format, then try again."
+            : message);
     }
 
-    private static string[] BuildCommitArguments(string title, string body, bool amend)
+    private static string[] BuildCommitArguments(string title, string body, bool amend, bool sign)
     {
-        var arguments = new List<string>(amend ? 7 : 5) { "commit" };
+        var arguments = new List<string>(amend ? 8 : 6) { "commit" };
         if (amend)
         {
             arguments.Add("--amend");
             arguments.Add("--allow-empty");
+        }
+        if (sign)
+        {
+            arguments.Add("--gpg-sign");
         }
 
         arguments.Add("-m");

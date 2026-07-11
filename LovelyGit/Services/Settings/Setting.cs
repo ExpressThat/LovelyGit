@@ -31,6 +31,7 @@ namespace ExpressThat.LovelyGit.Services.Settings
         CommitDiffWrapLines,
         CommitDiffIgnoreWhitespace,
         CommitGraphRefsPanelOpen,
+        SignCommitsByDefault,
         RemotePrimaryAction
     }
 

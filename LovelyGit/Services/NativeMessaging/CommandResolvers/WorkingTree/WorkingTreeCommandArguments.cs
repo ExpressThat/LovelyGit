@@ -53,6 +53,7 @@ public record CommitStagedChangesCommandArguments
     public string Title { get; set; } = string.Empty;
     public string Body { get; set; } = string.Empty;
     public bool Amend { get; set; }
+    public bool Sign { get; set; }
 }
 
 [TypeSharp]

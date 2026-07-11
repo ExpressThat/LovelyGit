@@ -2,6 +2,7 @@
 
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { useSetting } from "@/lib/settings/settingsStore";
 import { useWorkingChangesPanelActions } from "./useWorkingChangesPanelActions";
 import { loadHeadCommitMessage } from "./WorkingChangesPanelCommands";
 
@@ -11,9 +12,22 @@ vi.mock("./WorkingChangesPanelCommands", () => ({
 	loadHeadCommitMessage: vi.fn(),
 	runIndexCommand: vi.fn(),
 }));
+vi.mock("@/lib/settings/settingsStore", () => ({ useSetting: vi.fn() }));
 
 describe("useWorkingChangesPanelActions amend state", () => {
-	beforeEach(() => vi.clearAllMocks());
+	beforeEach(() => {
+		vi.clearAllMocks();
+		vi.mocked(useSetting).mockReturnValue(false);
+	});
+
+	it("starts with the persisted signing preference and permits an override", () => {
+		vi.mocked(useSetting).mockReturnValue(true);
+		const { result } = renderActions();
+
+		expect(result.current.isSigningCommit).toBe(true);
+		act(() => result.current.setIsSigningCommit(false));
+		expect(result.current.isSigningCommit).toBe(false);
+	});
 
 	it("loads HEAD and restores the user's draft when amend is disabled", async () => {
 		vi.mocked(loadHeadCommitMessage).mockResolvedValueOnce({

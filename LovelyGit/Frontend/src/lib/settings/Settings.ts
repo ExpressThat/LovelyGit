@@ -27,6 +27,7 @@ export type Settings = {
 	LightTheme: string;
 	LightUiFont: string;
 	RemotePrimaryAction: RemotePrimaryAction;
+	SignCommitsByDefault: boolean;
 	Theme: string;
 	UiFont: string;
 };
@@ -55,6 +56,7 @@ export const DEFAULT_SETTINGS: Settings = {
 	LightTheme: "Morning",
 	LightUiFont: "Inter",
 	RemotePrimaryAction: "Fetch",
+	SignCommitsByDefault: false,
 	Theme: "System",
 	UiFont: "Inter",
 };

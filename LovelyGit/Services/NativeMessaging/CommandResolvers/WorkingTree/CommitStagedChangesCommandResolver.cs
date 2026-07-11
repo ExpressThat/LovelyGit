@@ -50,6 +50,7 @@ internal sealed class CommitStagedChangesCommandResolver : CommandResponder<Comm
                     command.Arguments.Title,
                     command.Arguments.Body,
                     command.Arguments.Amend,
+                    command.Arguments.Sign,
                     CancellationToken.None)
                 .ConfigureAwait(false);
             return Success(command);

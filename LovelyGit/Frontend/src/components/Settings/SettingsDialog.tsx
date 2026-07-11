@@ -1,4 +1,5 @@
 import {
+	BadgeCheck,
 	Brush,
 	FileText,
 	GitBranch,
@@ -17,6 +18,7 @@ import {
 } from "@/components/ui/dialog";
 import { AppearanceSettings } from "./AppearanceSettings";
 import { FileDiffViewSettings } from "./FileDiffViewSettings";
+import { GitSettings } from "./GitSettings";
 import { GraphViewSettings } from "./GraphViewSettings";
 import { RemoteOperationSettings } from "./RemoteOperationSettings";
 
@@ -24,6 +26,7 @@ type SettingsCategory =
 	| "appearance"
 	| "fileDiffView"
 	| "graphView"
+	| "git"
 	| "remoteOperations";
 
 const categories: Array<{
@@ -32,6 +35,12 @@ const categories: Array<{
 	id: SettingsCategory;
 	label: string;
 }> = [
+	{
+		description: "Commit signing and Git behavior",
+		icon: BadgeCheck,
+		id: "git",
+		label: "Git",
+	},
 	{
 		description: "Theme, fonts, and visual style",
 		icon: Brush,
@@ -101,6 +110,7 @@ export function SettingsDialog() {
 							<FileDiffViewSettings />
 						) : null}
 						{activeCategory === "graphView" ? <GraphViewSettings /> : null}
+						{activeCategory === "git" ? <GitSettings /> : null}
 						{activeCategory === "remoteOperations" ? (
 							<RemoteOperationSettings />
 						) : null}

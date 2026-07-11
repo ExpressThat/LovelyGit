@@ -137,6 +137,11 @@ namespace ExpressThat.LovelyGit.Services.Settings
             true,
             GetJsonTypeInfo<bool>());
 
+        public static readonly SettingDefinition<bool> SignCommitsByDefault = new(
+            nameof(Setting.SignCommitsByDefault),
+            false,
+            GetJsonTypeInfo<bool>());
+
         public static readonly SettingDefinition<RemotePrimaryAction> RemotePrimaryAction = new(
             nameof(Setting.RemotePrimaryAction),
             Settings.RemotePrimaryAction.Fetch,
@@ -168,6 +173,7 @@ namespace ExpressThat.LovelyGit.Services.Settings
                 [Setting.CommitDiffWrapLines] = CommitDiffWrapLines,
                 [Setting.CommitDiffIgnoreWhitespace] = CommitDiffIgnoreWhitespace,
                 [Setting.CommitGraphRefsPanelOpen] = CommitGraphRefsPanelOpen,
+                [Setting.SignCommitsByDefault] = SignCommitsByDefault,
                 [Setting.RemotePrimaryAction] = RemotePrimaryAction,
             };
 

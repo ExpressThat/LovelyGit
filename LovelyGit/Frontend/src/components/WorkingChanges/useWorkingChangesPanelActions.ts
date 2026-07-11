@@ -3,6 +3,7 @@ import type {
 	WorkingTreeChangedFile,
 	WorkingTreeChangesResponse,
 } from "@/generated/types";
+import { useSetting } from "@/lib/settings/settingsStore";
 import {
 	commitStagedChanges,
 	discardWorkingChanges,
@@ -24,6 +25,7 @@ export function useWorkingChangesPanelActions({
 	onRefresh: () => Promise<void> | void;
 	repositoryId: string;
 }) {
+	const signCommitsByDefault = useSetting("SignCommitsByDefault");
 	const [selectedKeys, setSelectedKeys] = useState<Set<string>>(
 		() => new Set(),
 	);
@@ -33,6 +35,9 @@ export function useWorkingChangesPanelActions({
 	const [commitBody, setCommitBody] = useState("");
 	const [isCommitting, setIsCommitting] = useState(false);
 	const [isAmending, setIsAmending] = useState(false);
+	const [isSigningCommit, setIsSigningCommit] = useState(
+		() => signCommitsByDefault,
+	);
 	const [isLoadingAmendMessage, setIsLoadingAmendMessage] = useState(false);
 	const [draftBeforeAmend, setDraftBeforeAmend] = useState({
 		body: "",
@@ -72,6 +77,7 @@ export function useWorkingChangesPanelActions({
 				commitTitle,
 				onCommitSuccess,
 				repositoryId,
+				sign: isSigningCommit,
 				setActionError,
 				setCommitBody,
 				setCommitTitle,
@@ -104,6 +110,7 @@ export function useWorkingChangesPanelActions({
 		isAmending,
 		isCommitting,
 		isLoadingAmendMessage,
+		isSigningCommit,
 		isMutating,
 		runIndexCommand: (
 			commandType: IndexCommandType,
@@ -130,6 +137,7 @@ export function useWorkingChangesPanelActions({
 		setCommitBody,
 		setCommitTitle,
 		setDiscardFiles,
+		setIsSigningCommit,
 		toggleSelected: (file: WorkingTreeChangedFile) => {
 			const key = fileKey(file);
 			setSelectedKeys((current) => {

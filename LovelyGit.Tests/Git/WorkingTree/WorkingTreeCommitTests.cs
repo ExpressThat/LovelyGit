@@ -18,6 +18,7 @@ public sealed class WorkingTreeCommitTests
             "Feature title",
             "Feature body",
             amend: false,
+            sign: false,
             CancellationToken.None);
 
         Assert.Equal("Feature title\nFeature body", await ReadHeadMessageAsync(repository));
@@ -36,6 +37,7 @@ public sealed class WorkingTreeCommitTests
             "Rewritten title",
             "Rewritten body",
             amend: true,
+            sign: false,
             CancellationToken.None);
 
         Assert.NotEqual(originalHead, await ReadHeadHashAsync(repository));
@@ -55,6 +57,7 @@ public sealed class WorkingTreeCommitTests
                 "  ",
                 string.Empty,
                 amend: false,
+                sign: false,
                 CancellationToken.None));
 
         Assert.Equal("Commit title is required.", exception.Message);

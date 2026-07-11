@@ -42,7 +42,9 @@ describe("CommitStagedForm", () => {
 		renderForm({ isLoadingAmendMessage: true });
 
 		expect(screen.getByLabelText("Loading last commit")).toBeVisible();
-		expect(screen.queryByRole("switch")).not.toBeInTheDocument();
+		expect(
+			screen.queryByRole("switch", { name: /^Amend last commit/ }),
+		).not.toBeInTheDocument();
 	});
 
 	it("rejects blank titles and unavailable commit state", () => {
@@ -76,6 +78,16 @@ describe("CommitStagedForm", () => {
 
 		expect(onUndo).toHaveBeenCalledOnce();
 	});
+
+	it("allows signing to be overridden for this commit", async () => {
+		const user = userEvent.setup();
+		const onSigningChange = vi.fn();
+		renderForm({ isSigningCommit: true, onSigningChange });
+		const signing = screen.getByRole("switch", { name: /^Sign this commit/ });
+		expect(signing).toBeChecked();
+		await user.click(signing);
+		expect(onSigningChange.mock.calls[0]?.[0]).toBe(false);
+	});
 });
 
 function renderForm(
@@ -90,10 +102,12 @@ function renderForm(
 			isBusy={false}
 			isCommitting={false}
 			isLoadingAmendMessage={false}
+			isSigningCommit={false}
 			onAmendChange={vi.fn()}
 			onCommit={vi.fn()}
 			onCommitBodyChange={vi.fn()}
 			onCommitTitleChange={vi.fn()}
+			onSigningChange={vi.fn()}
 			onUndo={vi.fn()}
 			repositoryId="repository-1"
 			{...overrides}

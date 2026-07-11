@@ -19,10 +19,12 @@ export function CommitStagedForm({
 	isAmending,
 	isCommitting,
 	isLoadingAmendMessage,
+	isSigningCommit,
 	onAmendChange,
 	onCommit,
 	onCommitBodyChange,
 	onCommitTitleChange,
+	onSigningChange,
 	onUndo,
 	repositoryId,
 }: {
@@ -33,10 +35,12 @@ export function CommitStagedForm({
 	isAmending: boolean;
 	isCommitting: boolean;
 	isLoadingAmendMessage: boolean;
+	isSigningCommit: boolean;
 	onAmendChange: (enabled: boolean) => void;
 	onCommit: () => void;
 	onCommitBodyChange: (value: string) => void;
 	onCommitTitleChange: (value: string) => void;
+	onSigningChange: (enabled: boolean) => void;
 	onUndo: () => void;
 	repositoryId: string;
 }) {
@@ -125,6 +129,23 @@ export function CommitStagedForm({
 					</motion.p>
 				) : null}
 			</AnimatePresence>
+			<label
+				className="flex cursor-pointer items-center justify-between gap-3 rounded-md border bg-background px-3 py-2"
+				htmlFor="sign-this-commit"
+			>
+				<span className="grid gap-0.5">
+					<span className="font-medium text-xs">Sign this commit</span>
+					<span className="text-muted-foreground text-xs">
+						Use the GPG or SSH signing key configured in Git.
+					</span>
+				</span>
+				<Switch
+					checked={isSigningCommit}
+					disabled={isBusy}
+					id="sign-this-commit"
+					onCheckedChange={onSigningChange}
+				/>
+			</label>
 			<div className="flex justify-between gap-2">
 				<ActionButton
 					disabled={isBusy}

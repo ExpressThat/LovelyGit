@@ -101,6 +101,7 @@ export async function commitStagedChanges({
 	commitTitle,
 	onCommitSuccess,
 	repositoryId,
+	sign,
 	setActionError,
 	setCommitBody,
 	setCommitTitle,
@@ -114,6 +115,7 @@ export async function commitStagedChanges({
 	commitTitle: string;
 	onCommitSuccess: () => Promise<void> | void;
 	repositoryId: string;
+	sign: boolean;
 	setActionError: (message: string | null) => void;
 	setCommitBody: (body: string) => void;
 	setCommitTitle: (title: string) => void;
@@ -138,6 +140,7 @@ export async function commitStagedChanges({
 				amend,
 				body: commitBody,
 				repositoryId,
+				sign,
 				title: commitTitle,
 			},
 		});

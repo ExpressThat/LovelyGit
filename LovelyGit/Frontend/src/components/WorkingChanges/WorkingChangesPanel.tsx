@@ -59,6 +59,7 @@ export function WorkingChangesPanel({
 		isAmending,
 		isCommitting,
 		isLoadingAmendMessage,
+		isSigningCommit,
 		isMutating,
 		runIndexCommand,
 		restoreCommitDraft,
@@ -66,6 +67,7 @@ export function WorkingChangesPanel({
 		setCommitBody,
 		setCommitTitle,
 		setDiscardFiles,
+		setIsSigningCommit,
 		toggleSelected,
 		toggleAmend,
 	} = useWorkingChangesPanelActions({
@@ -136,10 +138,12 @@ export function WorkingChangesPanel({
 				isAmending={isAmending}
 				isCommitting={isCommitting}
 				isLoadingAmendMessage={isLoadingAmendMessage}
+				isSigningCommit={isSigningCommit}
 				onAmendChange={(enabled) => void toggleAmend(enabled)}
 				onCommit={() => void commitStagedChanges()}
 				onCommitBodyChange={setCommitBody}
 				onCommitTitleChange={setCommitTitle}
+				onSigningChange={setIsSigningCommit}
 				onUndo={() => void undo.open()}
 				repositoryId={repositoryId}
 			/>
