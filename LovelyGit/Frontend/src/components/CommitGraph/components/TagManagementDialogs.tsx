@@ -1,6 +1,8 @@
 import type { CommitGraphRow } from "@/generated/types";
-import { CreateTagDialog } from "./CreateTagDialog";
-import { DeleteTagDialog } from "./DeleteTagDialog";
+import {
+	LazyCreateTagDialog,
+	LazyDeleteTagDialog,
+} from "./LazyGraphManagementDialogs";
 
 export function TagManagementDialogs({
 	busyTag,
@@ -28,7 +30,7 @@ export function TagManagementDialogs({
 	return (
 		<>
 			{tagCommit ? (
-				<CreateTagDialog
+				<LazyCreateTagDialog
 					commit={tagCommit}
 					existingTagNames={existingTagNames}
 					key={tagCommit.commit.hash}
@@ -38,7 +40,7 @@ export function TagManagementDialogs({
 					repositoryId={repositoryId}
 				/>
 			) : null}
-			<DeleteTagDialog
+			<LazyDeleteTagDialog
 				isBusy={busyTag !== null}
 				onConfirm={onDelete}
 				onOpenChange={onDeleteOpenChange}

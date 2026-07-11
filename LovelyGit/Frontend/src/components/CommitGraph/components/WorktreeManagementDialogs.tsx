@@ -1,8 +1,10 @@
 import type { RepositoryWorktreeItem } from "@/generated/types";
 import type { WorktreeMutationController } from "../hooks/useWorktreeMutations";
-import { CreateWorktreeDialog } from "./CreateWorktreeDialog";
-import { LockWorktreeDialog } from "./LockWorktreeDialog";
-import { RemoveWorktreeDialog } from "./RemoveWorktreeDialog";
+import {
+	LazyCreateWorktreeDialog,
+	LazyLockWorktreeDialog,
+	LazyRemoveWorktreeDialog,
+} from "./LazyGraphManagementDialogs";
 
 export function WorktreeManagementDialogs({
 	controller,
@@ -21,7 +23,7 @@ export function WorktreeManagementDialogs({
 	return (
 		<>
 			{controller.createBranchName ? (
-				<CreateWorktreeDialog
+				<LazyCreateWorktreeDialog
 					branchName={controller.createBranchName}
 					existingWorktree={existingWorktree}
 					isBusy={controller.busyPath !== null}
@@ -34,7 +36,7 @@ export function WorktreeManagementDialogs({
 				/>
 			) : null}
 			{lockTarget ? (
-				<LockWorktreeDialog
+				<LazyLockWorktreeDialog
 					isBusy={controller.busyPath !== null}
 					onClose={() => controller.setLockTarget(null)}
 					onConfirm={(lockReason) =>
@@ -46,7 +48,7 @@ export function WorktreeManagementDialogs({
 				/>
 			) : null}
 			{removeTarget ? (
-				<RemoveWorktreeDialog
+				<LazyRemoveWorktreeDialog
 					isBusy={controller.busyPath !== null}
 					onClose={() => controller.setRemoveTarget(null)}
 					onConfirm={(force) =>

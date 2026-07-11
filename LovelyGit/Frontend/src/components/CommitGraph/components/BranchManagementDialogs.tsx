@@ -1,9 +1,12 @@
 import { lazy, Suspense } from "react";
 import type { BranchIntegrationMode } from "@/components/TopNavBar/components/BranchIntegrationDialog";
 import type { BranchMutationController } from "../hooks/useBranchMutations";
-import { BranchComparisonDialog } from "./BranchComparisonDialog";
-import { BranchUpstreamDialog } from "./BranchUpstreamDialog";
-import { DeleteBranchDialog } from "./DeleteBranchDialog";
+import {
+	LazyBranchComparisonDialog,
+	LazyBranchUpstreamDialog,
+	LazyDeleteBranchDialog,
+	LazyRenameBranchDialog,
+} from "./LazyGraphManagementDialogs";
 
 const CheckoutRemoteBranchDialog = lazy(() =>
 	import("./RemoteBranchDialogs").then((module) => ({
@@ -15,8 +18,6 @@ const DeleteRemoteBranchDialog = lazy(() =>
 		default: module.DeleteRemoteBranchDialog,
 	})),
 );
-
-import { RenameBranchDialog } from "./RenameBranchDialog";
 
 export function BranchManagementDialogs({
 	branchNames,
@@ -38,7 +39,7 @@ export function BranchManagementDialogs({
 	return (
 		<>
 			{controller.comparisonBranchName ? (
-				<BranchComparisonDialog
+				<LazyBranchComparisonDialog
 					currentBranchName={currentBranchName}
 					onClose={() => controller.setComparisonBranchName(null)}
 					onIntegrate={onIntegrateBranch}
@@ -47,7 +48,7 @@ export function BranchManagementDialogs({
 				/>
 			) : null}
 			{controller.renameBranchName ? (
-				<RenameBranchDialog
+				<LazyRenameBranchDialog
 					branchName={controller.renameBranchName}
 					existingBranchNames={branchNames}
 					isBusy={controller.busyBranch !== null}
@@ -57,7 +58,7 @@ export function BranchManagementDialogs({
 				/>
 			) : null}
 			{controller.deleteBranchName ? (
-				<DeleteBranchDialog
+				<LazyDeleteBranchDialog
 					branchName={controller.deleteBranchName}
 					isBusy={controller.busyBranch !== null}
 					key={controller.deleteBranchName}
@@ -66,7 +67,7 @@ export function BranchManagementDialogs({
 				/>
 			) : null}
 			{controller.upstreamBranchName ? (
-				<BranchUpstreamDialog
+				<LazyBranchUpstreamDialog
 					branchName={controller.upstreamBranchName}
 					currentUpstream={upstreams[controller.upstreamBranchName] ?? null}
 					isBusy={controller.busyBranch !== null}
