@@ -15,7 +15,7 @@ public sealed class PatchApplyServiceTests
         using var repository = TestRepository.Create();
         repository.WriteFile("sample.txt", "old\n");
         repository.Commit("Initial");
-		using var patch = TemporaryPatch.Create(PatchText + "\n");
+		using var patch = TemporaryPatch.Create(PatchText.ReplaceLineEndings("\n") + "\n");
         var service = new PatchApplyService(repository.Git);
 
         await service.ApplyAsync(
@@ -35,7 +35,7 @@ public sealed class PatchApplyServiceTests
         using var repository = TestRepository.Create();
         repository.WriteFile("sample.txt", "different\n");
         repository.Commit("Initial");
-		using var patch = TemporaryPatch.Create(PatchText + "\n");
+		using var patch = TemporaryPatch.Create(PatchText.ReplaceLineEndings("\n") + "\n");
         var service = new PatchApplyService(repository.Git);
 
         await Assert.ThrowsAsync<InvalidOperationException>(() => service.ApplyAsync(
