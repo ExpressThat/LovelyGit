@@ -12,7 +12,7 @@ import {
 } from "@/lib/commands";
 import { useSetting } from "@/lib/settings/settingsStore";
 
-const PAGE_SIZE = 400;
+const PAGE_SIZE = 128;
 const PREFETCH_PAGES = 1;
 type CommitGraphState = {
 	currentBranchName: string | null;
