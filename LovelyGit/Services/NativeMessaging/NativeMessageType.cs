@@ -33,6 +33,8 @@ using ExpressThat.LovelyGit.Services.Git.Configuration;
 using ExpressThat.LovelyGit.Services.Git.RemoteSync;
 using ExpressThat.LovelyGit.Services.Git.Lfs;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Lfs;
+using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.SparseCheckout;
+using ExpressThat.LovelyGit.Services.Git.SparseCheckout;
 using System.Text.Json;
 
 namespace ExpressThat.LovelyGit.Services.NativeMessaging
@@ -157,6 +159,12 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging
         GetGitLfsState,
         [NativeMessageContract(typeof(ManageGitLfsCommandArguments), typeof(LfsRepositoryState))]
         ManageGitLfs,
+
+        // Native sparse-checkout reads and explicit worktree/index mutations.
+        [NativeMessageContract(typeof(GetSparseCheckoutStateCommandArguments), typeof(SparseCheckoutState))]
+        GetSparseCheckoutState,
+        [NativeMessageContract(typeof(ManageSparseCheckoutCommandArguments), typeof(SparseCheckoutState))]
+        ManageSparseCheckout,
 
         // Linked worktree creation, navigation, locking, and removal.
         [NativeMessageContract(typeof(EmptyCommandArguments), typeof(WorktreeDestinationResponse))]

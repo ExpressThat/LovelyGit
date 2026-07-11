@@ -7,6 +7,7 @@ using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Configurat
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.KnownRepository;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Lfs;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Settings;
+using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.SparseCheckout;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.WorkingTree;
 using ExpressThat.LovelyGit.Services.NativeMessaging.Commands;
 using ExpressThat.LovelyGit.Services.Json;
@@ -30,6 +31,7 @@ namespace ExpressThat.LovelyGit.Services
                 .AddBisectCommands()
                 .AddConfigurationCommands()
                 .AddLfsCommands()
+                .AddSparseCheckoutCommands()
                 .AddWorkingTreeCommands()
                 .AddSettingsCommands();
 

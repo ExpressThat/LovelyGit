@@ -2,6 +2,7 @@
 
 ## Visual Testing
 - Use CMG from `C:\CMG\CMG.exe` for visual checks of the real LovelyGit desktop app, not a plain browser-only `localhost` session.
+- Use CMG for every WebView-hosted LovelyGit interaction. Use Windows Computer Use only when the workflow opens a native operating-system dialog that CMG cannot inspect or drive; do not substitute Computer Use for ordinary app UI testing.
 - Treat the shipped release skill `C:\CMG\SKILL.md` as the CMG usage contract. Do not inspect or depend on CMG source internals for normal LovelyGit testing guidance.
 - When debugging, set `WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS=--remote-debugging-port=9333` in the Debug/launch profile environment before starting LovelyGit. For this repo's `http` profile, add it beside `ASPNETCORE_ENVIRONMENT` in `LovelyGit/Properties/launchSettings.json`, or set the same variable in the IDE's debug environment UI.
 - Visual-test launches should keep the native LovelyGit window visible unless the user explicitly asks for an offscreen/minimized run.

@@ -10,6 +10,7 @@ import { LfsManager } from "./components/LfsManager";
 import { PatchApplyControl } from "./components/PatchApplyControl";
 import { RemoteActionsControl } from "./components/RemoteActionsControl";
 import { RemoteWebActionControl } from "./components/RemoteWebActionControl";
+import { SparseCheckoutManager } from "./components/SparseCheckoutManager";
 import { SubmoduleManager } from "./components/SubmoduleManager";
 import { Tabs } from "./components/Tabs";
 import { TerminalActionControl } from "./components/TerminalActionControl";
@@ -77,6 +78,7 @@ export function TopNavBar({
 					</button>
 					<BisectControl repositoryId={repositoryId} />
 					<LfsManager repositoryId={repositoryId} />
+					<SparseCheckoutManager repositoryId={repositoryId} />
 					<SubmoduleManager repositoryId={repositoryId} />
 					<button
 						aria-label="Search commits"
