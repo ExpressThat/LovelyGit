@@ -1,6 +1,9 @@
 import { X } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import type { ReactNode } from "react";
+import { HorizontalPanelHandle } from "@/components/layout/HorizontalPanelHandle";
+import { useHorizontalPanelResize } from "@/components/layout/useHorizontalPanelResize";
+import { setSetting, useSetting } from "@/lib/settings/settingsStore";
 
 export function SlidingDetailsPanel({
 	children,
@@ -13,17 +16,34 @@ export function SlidingDetailsPanel({
 	onClose: () => void;
 	title: string;
 }) {
+	const savedWidth = useSetting("DetailsPanelWidth");
+	const resize = useHorizontalPanelResize({
+		direction: -1,
+		max: 800,
+		min: 320,
+		onCommit: (width) => void setSetting("DetailsPanelWidth", width),
+		width: savedWidth,
+	});
 	return (
 		<AnimatePresence>
 			{isOpen ? (
 				<motion.aside
-					animate={{ flexBasis: "clamp(320px, 38vw, 520px)", opacity: 1 }}
+					animate={{ flexBasis: `${resize.width}px`, opacity: 1 }}
 					className="relative z-10 flex h-full shrink-0 overflow-hidden border-l bg-popover text-popover-foreground shadow-xl"
-					exit={{ flexBasis: 0, opacity: 0 }}
-					initial={{ flexBasis: 0, opacity: 0 }}
+					exit={{ flexBasis: "0px", opacity: 0 }}
+					initial={{ flexBasis: "0px", opacity: 0 }}
 					transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
 				>
-					<div className="flex h-full w-[clamp(320px,38vw,520px)] shrink-0 flex-col">
+					<HorizontalPanelHandle
+						label="Resize details panel"
+						onPointerDown={resize.startResize}
+						onResizeBy={(amount) => resize.resizeBy(-amount)}
+						side="left"
+					/>
+					<div
+						className="flex h-full shrink-0 flex-col"
+						style={{ width: resize.width }}
+					>
 						<header className="flex h-11 shrink-0 items-center justify-between border-b px-3">
 							<h2 className="truncate text-sm font-semibold leading-none text-foreground">
 								{title}

@@ -1,5 +1,7 @@
 import { ChevronLeft, ChevronRight, Search, X } from "lucide-react";
 import { useMemo, useState } from "react";
+import { HorizontalPanelHandle } from "@/components/layout/HorizontalPanelHandle";
+import { useHorizontalPanelResize } from "@/components/layout/useHorizontalPanelResize";
 import type { BranchIntegrationMode } from "@/components/TopNavBar/components/BranchIntegrationDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,10 +9,10 @@ import type { CommitGraphRow, RepositoryRefsResponse } from "@/generated/types";
 import { setSetting, useSetting } from "@/lib/settings/settingsStore";
 import type { WorktreeMutationController } from "../hooks/useWorktreeMutations";
 import type { BranchAction } from "./BranchContextMenu";
+import { RefsAccordion } from "./RefsAccordion";
 import { buildRefPanelSections, filterRefPanelSections } from "./RefsPanelData";
-import { RefsPanelList } from "./RefsPanelList";
 import type { TagAction } from "./TagContextMenu";
-import { filterWorktrees, WorktreeSection } from "./WorktreeSection";
+import { filterWorktrees } from "./WorktreeSection";
 
 export function RefsPanel({
 	branchMutationBusy,
@@ -44,6 +46,14 @@ export function RefsPanel({
 	worktreeController: WorktreeMutationController;
 }) {
 	const isOpen = useSetting("CommitGraphRefsPanelOpen");
+	const savedWidth = useSetting("CommitGraphRefsPanelWidth");
+	const resize = useHorizontalPanelResize({
+		direction: 1,
+		max: 520,
+		min: 208,
+		onCommit: (width) => void setSetting("CommitGraphRefsPanelWidth", width),
+		width: savedWidth,
+	});
 	const [query, setQuery] = useState("");
 	const sections = useMemo(
 		() =>
@@ -82,7 +92,16 @@ export function RefsPanel({
 	}
 
 	return (
-		<aside className="flex w-56 shrink-0 flex-col border-r bg-sidebar text-sidebar-foreground">
+		<aside
+			className="relative flex shrink-0 flex-col border-r bg-sidebar text-sidebar-foreground"
+			style={{ width: resize.width }}
+		>
+			<HorizontalPanelHandle
+				label="Resize refs panel"
+				onPointerDown={resize.startResize}
+				onResizeBy={resize.resizeBy}
+				side="right"
+			/>
 			<header className="flex h-[34px] items-center justify-between border-b px-2">
 				<h2 className="text-xs font-semibold uppercase text-muted-foreground">
 					Refs
@@ -128,28 +147,23 @@ export function RefsPanel({
 				</div>
 			</div>
 			{filteredSections.length > 0 || filteredWorktrees.length > 0 ? (
-				<>
-					<div className="custom-scrollbar max-h-36 overflow-y-auto p-2 pb-0">
-						<WorktreeSection
-							controller={worktreeController}
-							query={query}
-							worktrees={repositoryRefs?.worktrees ?? []}
-						/>
-					</div>
-					<RefsPanelList
-						branchMutationBusy={branchMutationBusy}
-						branchRemoteName={branchRemoteName}
-						currentBranchName={currentBranchName}
-						onIntegrateBranch={onIntegrateBranch}
-						onBranchAction={onBranchAction}
-						onCreateBranchFromTag={onCreateBranchFromTag}
-						onSelectCommit={onSelectCommit}
-						sections={filteredSections}
-						onTagAction={onTagAction}
-						tagMutationBusy={tagMutationBusy}
-						tagRemoteName={tagRemoteName}
-					/>
-				</>
+				<RefsAccordion
+					actions={{
+						branchMutationBusy,
+						branchRemoteName,
+						currentBranchName,
+						onBranchAction,
+						onCreateBranchFromTag,
+						onIntegrateBranch,
+						onSelectCommit,
+						onTagAction,
+						tagMutationBusy,
+						tagRemoteName,
+					}}
+					controller={worktreeController}
+					sections={filteredSections}
+					worktrees={filteredWorktrees}
+				/>
 			) : (
 				<div className="p-2">
 					<RefsEmptyState hasQuery={query.trim().length > 0} />

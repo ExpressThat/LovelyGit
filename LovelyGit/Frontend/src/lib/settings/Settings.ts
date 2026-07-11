@@ -11,6 +11,8 @@ export type Settings = {
 	CommitDiffViewMode: CommitDiffViewMode;
 	CommitDiffWrapLines: boolean;
 	CommitGraphRefsPanelOpen: boolean;
+	CommitGraphRefsPanelWidth: number;
+	DetailsPanelWidth: number;
 	CodeFont: string;
 	CurrentGitRepositoryId: string | null;
 	DarkAccent: string;
@@ -40,6 +42,8 @@ export const DEFAULT_SETTINGS: Settings = {
 	CommitDiffViewMode: "SideBySide",
 	CommitDiffWrapLines: false,
 	CommitGraphRefsPanelOpen: true,
+	CommitGraphRefsPanelWidth: 256,
+	DetailsPanelWidth: 440,
 	CodeFont: "Consolas",
 	CurrentGitRepositoryId: null,
 	DarkAccent: "",

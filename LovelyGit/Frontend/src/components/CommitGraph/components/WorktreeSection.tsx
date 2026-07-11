@@ -38,16 +38,28 @@ export function WorktreeSection({
 					</Button>
 				</span>
 			</div>
-			<div className="grid gap-1">
-				{filtered.map((worktree) => (
-					<WorktreeRow
-						controller={controller}
-						key={worktree.path}
-						worktree={worktree}
-					/>
-				))}
-			</div>
+			<WorktreeList controller={controller} worktrees={filtered} />
 		</section>
+	);
+}
+
+export function WorktreeList({
+	controller,
+	worktrees,
+}: {
+	controller: WorktreeMutationController;
+	worktrees: RepositoryWorktreeItem[];
+}) {
+	return (
+		<div className="grid gap-1">
+			{worktrees.map((worktree) => (
+				<WorktreeRow
+					controller={controller}
+					key={worktree.path}
+					worktree={worktree}
+				/>
+			))}
+		</div>
 	);
 }
 

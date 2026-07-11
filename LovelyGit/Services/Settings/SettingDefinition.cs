@@ -137,6 +137,16 @@ namespace ExpressThat.LovelyGit.Services.Settings
             true,
             GetJsonTypeInfo<bool>());
 
+        public static readonly SettingDefinition<int> CommitGraphRefsPanelWidth = new(
+            nameof(Setting.CommitGraphRefsPanelWidth),
+            256,
+            GetJsonTypeInfo<int>());
+
+        public static readonly SettingDefinition<int> DetailsPanelWidth = new(
+            nameof(Setting.DetailsPanelWidth),
+            440,
+            GetJsonTypeInfo<int>());
+
         public static readonly SettingDefinition<bool> SignCommitsByDefault = new(
             nameof(Setting.SignCommitsByDefault),
             false,
@@ -173,6 +183,8 @@ namespace ExpressThat.LovelyGit.Services.Settings
                 [Setting.CommitDiffWrapLines] = CommitDiffWrapLines,
                 [Setting.CommitDiffIgnoreWhitespace] = CommitDiffIgnoreWhitespace,
                 [Setting.CommitGraphRefsPanelOpen] = CommitGraphRefsPanelOpen,
+                [Setting.CommitGraphRefsPanelWidth] = CommitGraphRefsPanelWidth,
+                [Setting.DetailsPanelWidth] = DetailsPanelWidth,
                 [Setting.SignCommitsByDefault] = SignCommitsByDefault,
                 [Setting.RemotePrimaryAction] = RemotePrimaryAction,
             };
