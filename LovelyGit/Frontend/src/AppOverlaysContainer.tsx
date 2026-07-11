@@ -45,12 +45,14 @@ export function AppOverlaysContainer({
 			onRemoteManagerOpenChange={overlays.setRemoteManagerOpen}
 			onRepositoryChanged={onRepositoryChanged}
 			onSearchOpenChange={overlays.setCommitSearchOpen}
+			onSettingsOpenChange={overlays.setSettingsOpen}
 			onStashOpenChange={overlays.setStashOpen}
 			onSelectCommit={(commitHash) =>
 				setDetailsPanel({ commitHash, kind: "commit" })
 			}
 			remoteManagerOpen={overlays.remoteManagerOpen}
 			repositoryId={repositoryId}
+			settingsOpen={overlays.settingsOpen}
 			stashOpen={overlays.stashOpen}
 		/>
 	);

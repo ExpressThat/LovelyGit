@@ -70,9 +70,11 @@ const categories: Array<{
 export function SettingsDialog({
 	onOpenChange,
 	open: controlledOpen,
+	showTrigger = true,
 }: {
 	onOpenChange?: (open: boolean) => void;
 	open?: boolean;
+	showTrigger?: boolean;
 } = {}) {
 	const [internalOpen, setInternalOpen] = useState(false);
 	const open = controlledOpen ?? internalOpen;
@@ -82,18 +84,20 @@ export function SettingsDialog({
 	const active = categories.find((category) => category.id === activeCategory);
 	return (
 		<Dialog open={open} onOpenChange={setOpen}>
-			<DialogTrigger
-				render={
-					<Button
-						aria-label="Open settings"
-						className="size-9"
-						title="Settings"
-						variant="ghost"
-					/>
-				}
-			>
-				<Settings aria-hidden="true" className="size-6" />
-			</DialogTrigger>
+			{showTrigger ? (
+				<DialogTrigger
+					render={
+						<Button
+							aria-label="Open settings"
+							className="size-9"
+							title="Settings"
+							variant="ghost"
+						/>
+					}
+				>
+					<Settings aria-hidden="true" className="size-6" />
+				</DialogTrigger>
+			) : null}
 			<DialogContent className="grid h-[min(560px,calc(100vh-2rem))] max-w-[min(920px,calc(100vw-2rem))] grid-rows-[auto_minmax(0,1fr)] gap-0 overflow-hidden p-0 sm:max-w-[min(920px,calc(100vw-2rem))]">
 				<DialogHeader className="border-b px-5 py-4">
 					<DialogTitle>Settings</DialogTitle>

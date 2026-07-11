@@ -26,6 +26,10 @@ vi.mock("./components/WorkingChanges/StashDialog", () => ({
 	StashDialog: ({ open }: { open?: boolean }) =>
 		open ? <div>Stash manager loaded</div> : null,
 }));
+vi.mock("./components/Settings/SettingsDialog", () => ({
+	SettingsDialog: ({ open }: { open?: boolean }) =>
+		open ? <div>Settings loaded</div> : null,
+}));
 vi.mock("./components/ui/sonner", () => ({ Toaster: () => null }));
 
 const defaultProps = {
@@ -37,6 +41,7 @@ const defaultProps = {
 	isCommitSearchOpen: false,
 	isCommandPaletteOpen: false,
 	remoteManagerOpen: false,
+	settingsOpen: false,
 	stashOpen: false,
 	onBranchChanged: vi.fn(),
 	onCommandPaletteOpenChange: vi.fn(),
@@ -44,6 +49,7 @@ const defaultProps = {
 	onFileBlameOpenChange: vi.fn(),
 	onFileHistoryOpenChange: vi.fn(),
 	onSearchOpenChange: vi.fn(),
+	onSettingsOpenChange: vi.fn(),
 	onOpenSettings: vi.fn(),
 	onRemoteManagerOpenChange: vi.fn(),
 	onRepositoryChanged: vi.fn(),
@@ -62,6 +68,8 @@ describe("AppOverlays", () => {
 		expect(screen.getByText("Remote manager loaded")).toBeVisible();
 		view.rerender(<AppOverlays {...defaultProps} stashOpen />);
 		expect(await screen.findByText("Stash manager loaded")).toBeVisible();
+		view.rerender(<AppOverlays {...defaultProps} settingsOpen />);
+		expect(await screen.findByText("Settings loaded")).toBeVisible();
 	});
 
 	it("loads an overlay only after it is requested and retains it for exit", async () => {

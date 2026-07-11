@@ -31,6 +31,11 @@ const StashDialog = lazy(() =>
 		default: module.StashDialog,
 	})),
 );
+const SettingsDialog = lazy(() =>
+	import("./components/Settings/SettingsDialog").then((module) => ({
+		default: module.SettingsDialog,
+	})),
+);
 
 export function AppOverlays({
 	fileHistoryTarget,
@@ -41,6 +46,7 @@ export function AppOverlays({
 	isCommitSearchOpen,
 	isCommandPaletteOpen,
 	remoteManagerOpen,
+	settingsOpen,
 	stashOpen,
 	onFileHistoryOpenChange,
 	onFileBlameOpenChange,
@@ -50,6 +56,7 @@ export function AppOverlays({
 	onCreateBranchOpenChange,
 	onOpenSettings,
 	onRemoteManagerOpenChange,
+	onSettingsOpenChange,
 	onStashOpenChange,
 	onRepositoryChanged,
 	onOpenWorkingChanges,
@@ -65,6 +72,7 @@ export function AppOverlays({
 	isCommitSearchOpen: boolean;
 	isCommandPaletteOpen: boolean;
 	remoteManagerOpen: boolean;
+	settingsOpen: boolean;
 	stashOpen: boolean;
 	onFileHistoryOpenChange: (open: boolean) => void;
 	onFileBlameOpenChange: (open: boolean) => void;
@@ -74,6 +82,7 @@ export function AppOverlays({
 	onCreateBranchOpenChange: (open: boolean) => void;
 	onOpenSettings: () => void;
 	onRemoteManagerOpenChange: (open: boolean) => void;
+	onSettingsOpenChange: (open: boolean) => void;
 	onStashOpenChange: (open: boolean) => void;
 	onRepositoryChanged: () => void;
 	onOpenWorkingChanges: () => void;
@@ -86,6 +95,7 @@ export function AppOverlays({
 	const retainBlame = useRetainedSurface(fileBlameTarget !== null);
 	const retainPalette = useRetainedSurface(isCommandPaletteOpen);
 	const retainStash = useRetainedSurface(stashOpen);
+	const retainSettings = useRetainedSurface(settingsOpen);
 	return (
 		<>
 			<CreateBranchDialog
@@ -102,6 +112,13 @@ export function AppOverlays({
 				repositoryId={repositoryId}
 			/>
 			<Suspense fallback={<SurfaceLoading label="Opening tool" overlay />}>
+				{retainSettings ? (
+					<SettingsDialog
+						onOpenChange={onSettingsOpenChange}
+						open={settingsOpen}
+						showTrigger={false}
+					/>
+				) : null}
 				{retainStash && repositoryId ? (
 					<StashDialog
 						canCreate={canCreateStash}

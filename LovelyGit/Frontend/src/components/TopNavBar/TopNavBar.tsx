@@ -1,5 +1,4 @@
-import { Command, GitCompareArrows, Search } from "lucide-react";
-import { SettingsDialog } from "../Settings/SettingsDialog";
+import { Command, GitCompareArrows, Search, Settings } from "lucide-react";
 import { BisectControl } from "./components/BisectControl";
 import { BranchControl } from "./components/BranchControl";
 import { PatchApplyControl } from "./components/PatchApplyControl";
@@ -96,10 +95,16 @@ export function TopNavBar({
 							</span>
 						) : null}
 					</button>
-					<SettingsDialog
-						onOpenChange={onSettingsOpenChange}
-						open={settingsOpen}
-					/>
+					<button
+						aria-expanded={settingsOpen}
+						aria-label="Open settings"
+						className="inline-flex size-9 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+						onClick={() => onSettingsOpenChange(true)}
+						title="Settings"
+						type="button"
+					>
+						<Settings aria-hidden="true" className="size-6" />
+					</button>
 				</div>
 			</div>
 		</header>
