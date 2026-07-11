@@ -12,6 +12,7 @@ import type {
 import type { CommitComparisonController } from "../hooks/useCommitGraphDialogs";
 import type { ReflogManagementController } from "../hooks/useReflogManagement";
 import {
+	LazyCheckoutCommitDialog,
 	LazyCherryPickDialog,
 	LazyInteractiveRebaseDialog,
 	LazyReflogDialog,
@@ -28,6 +29,7 @@ type IntegrationTarget = {
 
 export function CommitGraphOperationDialogs({
 	cherryPickCommit,
+	checkoutCommit,
 	commitComparison,
 	branchCreationSource,
 	branchNames,
@@ -45,12 +47,14 @@ export function CommitGraphOperationDialogs({
 	resetCommit,
 	revertCommit,
 	setCherryPickCommit,
+	setCheckoutCommit,
 	setIntegrationTarget,
 	setInteractiveRebaseBase,
 	setResetCommit,
 	setRevertCommit,
 }: {
 	cherryPickCommit: CommitGraphRow | null;
+	checkoutCommit: CommitGraphRow | null;
 	commitComparison: CommitComparisonController;
 	branchCreationSource: BranchCreationSource | null;
 	branchNames: string[];
@@ -68,6 +72,7 @@ export function CommitGraphOperationDialogs({
 	resetCommit: CommitGraphRow | null;
 	revertCommit: CommitGraphRow | null;
 	setCherryPickCommit: (commit: CommitGraphRow | null) => void;
+	setCheckoutCommit: (commit: CommitGraphRow | null) => void;
 	setIntegrationTarget: (target: IntegrationTarget) => void;
 	setInteractiveRebaseBase: (commit: CommitGraphRow | null) => void;
 	setResetCommit: (commit: CommitGraphRow | null) => void;
@@ -81,6 +86,14 @@ export function CommitGraphOperationDialogs({
 					onClose={() => commitComparison.setTarget(null)}
 					repositoryId={repositoryId}
 					target={commitComparison.target}
+				/>
+			) : null}
+			{checkoutCommit ? (
+				<LazyCheckoutCommitDialog
+					commit={checkoutCommit}
+					onClose={() => setCheckoutCommit(null)}
+					onRepositoryChanged={onRepositoryChanged}
+					repositoryId={repositoryId}
 				/>
 			) : null}
 			<LazyCreateBranchDialog

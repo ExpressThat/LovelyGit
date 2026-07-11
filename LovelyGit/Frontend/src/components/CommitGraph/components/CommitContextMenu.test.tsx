@@ -120,6 +120,16 @@ describe("CommitContextMenu", () => {
 		).toBeVisible();
 	});
 
+	it("offers an explicit detached checkout", async () => {
+		const user = userEvent.setup();
+		const onCheckoutCommit = vi.fn();
+		renderMenu({ onCheckoutCommit });
+		fireEvent.contextMenu(screen.getByRole("button", { name: "commit row" }));
+
+		await user.click(await screen.findByText("Checkout 1111111 (detached)…"));
+		expect(onCheckoutCommit).toHaveBeenCalledWith(row);
+	});
+
 	it("marks a comparison base then compares another commit against it", async () => {
 		const user = userEvent.setup();
 		const onSetComparisonBase = vi.fn();
@@ -157,6 +167,7 @@ function renderMenu({
 	onSavePatch = vi.fn(),
 	onReset = vi.fn(),
 	onCompare = vi.fn(),
+	onCheckoutCommit = vi.fn(),
 	onSetComparisonBase = vi.fn(),
 }: {
 	comparisonBase?: CommitGraphRow | null;
@@ -167,6 +178,7 @@ function renderMenu({
 	onSavePatch?: (selected: CommitGraphRow) => void;
 	onReset?: (selected: CommitGraphRow) => void;
 	onCompare?: (selected: CommitGraphRow) => void;
+	onCheckoutCommit?: (selected: CommitGraphRow) => void;
 	onSetComparisonBase?: (selected: CommitGraphRow | null) => void;
 }) {
 	return render(
@@ -177,6 +189,7 @@ function renderMenu({
 			currentBranchName="main"
 			isHead={isHead}
 			onCherryPick={vi.fn()}
+			onCheckoutCommit={onCheckoutCommit}
 			onCompare={onCompare}
 			onCreateBranch={onCreateBranch}
 			onCopyPatch={onCopyPatch}

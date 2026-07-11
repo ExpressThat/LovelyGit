@@ -5,13 +5,13 @@ import {
 	ExternalLink,
 	GitBranch,
 	GitCommitHorizontal,
-	GitCompareArrows,
 	Info,
 	ListRestart,
 	ListTree,
 	SearchCode,
 	Tag,
 	Undo2,
+	Unplug,
 } from "lucide-react";
 import { type ReactNode, useState } from "react";
 import { openRemoteWebResource } from "@/components/TopNavBar/components/RepositoryCommands";
@@ -28,6 +28,7 @@ import type { CommitGraphRow } from "@/generated/types";
 import { useRepositoryContext } from "@/lib/repositoryContext";
 import { copyToClipboard } from "../utils/clipboard";
 import { shortHash } from "../utils/format";
+import { CommitComparisonMenuItem } from "./CommitComparisonMenuItem";
 import { StartBisectDialog } from "./StartBisectDialog";
 
 export function CommitContextMenu({
@@ -38,6 +39,7 @@ export function CommitContextMenu({
 	currentBranchName,
 	isHead,
 	onCherryPick,
+	onCheckoutCommit,
 	onCompare,
 	onCreateTag,
 	onCreateBranch,
@@ -57,6 +59,7 @@ export function CommitContextMenu({
 	currentBranchName: string | null;
 	isHead: boolean;
 	onCherryPick: (row: CommitGraphRow) => void;
+	onCheckoutCommit: (row: CommitGraphRow) => void;
 	onCompare: (row: CommitGraphRow) => void;
 	onCreateTag: (row: CommitGraphRow) => void;
 	onCreateBranch: (row: CommitGraphRow) => void;
@@ -74,10 +77,6 @@ export function CommitContextMenu({
 	const subject =
 		row.commit.message.split(/\r?\n/, 1)[0] || "(no commit message)";
 	const [bisectCommit, setBisectCommit] = useState<CommitGraphRow | null>(null);
-	const comparisonBaseHash = comparisonBase
-		? shortHash(comparisonBase.commit.hash)
-		: null;
-	const isComparisonBase = comparisonBase?.commit.hash === row.commit.hash;
 	return (
 		<>
 			<ContextMenu>
@@ -98,23 +97,24 @@ export function CommitContextMenu({
 						<Info aria-hidden="true" />
 						Open commit details
 					</ContextMenuItem>
-					{comparisonBase ? (
-						<ContextMenuItem
-							onClick={() =>
-								isComparisonBase ? onSetComparisonBase(null) : onCompare(row)
-							}
-						>
-							<GitCompareArrows aria-hidden="true" />
-							{isComparisonBase
-								? `Clear comparison base ${comparisonBaseHash}`
-								: `Compare ${comparisonBaseHash} with ${abbreviatedHash}`}
-						</ContextMenuItem>
-					) : (
-						<ContextMenuItem onClick={() => onSetComparisonBase(row)}>
-							<GitCompareArrows aria-hidden="true" />
-							Select {abbreviatedHash} as comparison base
-						</ContextMenuItem>
-					)}
+					<ContextMenuItem
+						disabled={currentBranchName === null && isHead}
+						onClick={() => onCheckoutCommit(row)}
+						title={
+							currentBranchName === null && isHead
+								? "This commit is already checked out in detached HEAD mode"
+								: `Checkout ${abbreviatedHash} without moving a branch`
+						}
+					>
+						<Unplug aria-hidden="true" />
+						Checkout {abbreviatedHash} (detached)…
+					</ContextMenuItem>
+					<CommitComparisonMenuItem
+						base={comparisonBase}
+						onCompare={onCompare}
+						onSetBase={onSetComparisonBase}
+						row={row}
+					/>
 					<ContextMenuItem
 						disabled={currentBranchName === null || isHead}
 						onClick={() => onInteractiveRebase(row)}

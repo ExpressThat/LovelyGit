@@ -24,6 +24,7 @@ export function CommitRow({
 	isSelected,
 	isHead,
 	onCherryPick,
+	onCheckoutCommit,
 	onBranchAction,
 	onCreateTag,
 	onCreateBranch,
@@ -60,6 +61,7 @@ export function CommitRow({
 	onRevert: (row: CommitGraphRow) => void;
 	onReset: (row: CommitGraphRow) => void;
 	onCherryPick: (row: CommitGraphRow) => void;
+	onCheckoutCommit: (row: CommitGraphRow) => void;
 	onBranchAction: (action: BranchAction, branchName: string) => void;
 	onCreateTag: (row: CommitGraphRow) => void;
 	onCreateBranch: (row: CommitGraphRow) => void;
@@ -155,6 +157,7 @@ export function CommitRow({
 			currentBranchName={currentBranchName}
 			isHead={isHead}
 			onCherryPick={onCherryPick}
+			onCheckoutCommit={onCheckoutCommit}
 			onCompare={comparison.compare}
 			onCreateTag={onCreateTag}
 			onCreateBranch={onCreateBranch}

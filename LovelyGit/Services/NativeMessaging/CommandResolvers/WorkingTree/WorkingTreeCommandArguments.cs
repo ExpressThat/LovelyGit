@@ -121,6 +121,13 @@ public record CheckoutBranchCommandArguments
 }
 
 [TypeSharp]
+public record CheckoutCommitCommandArguments
+{
+    public Guid RepositoryId { get; set; }
+    public string CommitHash { get; set; } = string.Empty;
+}
+
+[TypeSharp]
 public record CreateBranchCommandArguments
 {
     public Guid RepositoryId { get; set; }

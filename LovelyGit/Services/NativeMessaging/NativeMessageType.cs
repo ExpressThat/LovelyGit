@@ -176,6 +176,8 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging
         PushRepository,
         [NativeMessageContract(typeof(CheckoutBranchCommandArguments), typeof(EmptyCommandArguments))]
         CheckoutBranch,
+        [NativeMessageContract(typeof(CheckoutCommitCommandArguments), typeof(EmptyCommandArguments))]
+        CheckoutCommit,
         [NativeMessageContract(typeof(CheckoutRemoteBranchCommandArguments), typeof(EmptyCommandArguments))]
         CheckoutRemoteBranch,
         [NativeMessageContract(typeof(CreateBranchCommandArguments), typeof(EmptyCommandArguments))]

@@ -72,7 +72,6 @@ export function CommitGraphView({
 	const { busyTag, deleteTag, deleteTagName, manageTag, setDeleteTagName } =
 		tagController;
 	useNotifyCurrentBranch(currentBranchName, onCurrentBranchNameChange);
-
 	const {
 		graphContentWidth,
 		graphScrollerRef,
@@ -85,7 +84,6 @@ export function CommitGraphView({
 		virtualizer,
 		viewportRef,
 	} = useCommitGraphViewport({ ensureRangeLoaded, laneCount, totalRows });
-
 	return (
 		<>
 			<section className="h-full w-full overflow-hidden bg-background">
@@ -115,7 +113,6 @@ export function CommitGraphView({
 							onResizeStart={handleResizeStart}
 							templateColumns={templateColumns}
 						/>
-
 						{error ? (
 							<div className="h-7 border-b border-destructive/40 bg-destructive/10 px-[10px] leading-[27px] text-destructive">
 								{error}
@@ -163,6 +160,7 @@ export function CommitGraphView({
 											}
 											isHead={rows[item.index]?.commit.hash === currentHeadHash}
 											onCherryPick={dialogs.setCherryPickCommit}
+											onCheckoutCommit={dialogs.setCheckoutCommit}
 											onBranchAction={manageBranch}
 											onCreateBranch={branchCreation.createAtCommit}
 											onCopyPatch={patchActions.copyPatch}
@@ -200,6 +198,7 @@ export function CommitGraphView({
 				branchCreationSource={branchCreation.source}
 				branchNames={branchNames}
 				cherryPickCommit={dialogs.cherryPickCommit}
+				checkoutCommit={dialogs.checkoutCommit}
 				commitComparison={dialogs.comparison}
 				currentBranchName={currentBranchName}
 				integrationTarget={dialogs.integrationTarget}
@@ -215,6 +214,7 @@ export function CommitGraphView({
 				resetCommit={dialogs.resetCommit}
 				revertCommit={dialogs.revertCommit}
 				setCherryPickCommit={dialogs.setCherryPickCommit}
+				setCheckoutCommit={dialogs.setCheckoutCommit}
 				setIntegrationTarget={dialogs.setIntegrationTarget}
 				setInteractiveRebaseBase={dialogs.setInteractiveRebaseBase}
 				setResetCommit={dialogs.setResetCommit}

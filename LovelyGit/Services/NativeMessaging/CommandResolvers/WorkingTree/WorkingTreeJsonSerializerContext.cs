@@ -54,6 +54,7 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Workin
 [JsonSerializable(typeof(GitRemote))]
 [JsonSerializable(typeof(List<GitRemote>))]
 [JsonSerializable(typeof(CheckoutBranchCommandArguments))]
+[JsonSerializable(typeof(CheckoutCommitCommandArguments))]
 [JsonSerializable(typeof(CreateBranchCommandArguments))]
 [JsonSerializable(typeof(StashCommandArguments))]
 [JsonSerializable(typeof(StashAction))]

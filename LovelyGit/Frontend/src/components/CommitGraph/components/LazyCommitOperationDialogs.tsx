@@ -1,5 +1,6 @@
 import { type ComponentProps, lazy, type ReactNode, Suspense } from "react";
 import { SurfaceLoading } from "@/AppLazySurfaces";
+import type { CheckoutCommitDialog } from "./CheckoutCommitDialog";
 import type { CherryPickDialog } from "./CherryPickDialog";
 import type { InteractiveRebaseDialog } from "./InteractiveRebaseDialog";
 import type { ReflogDialog } from "./ReflogDialog";
@@ -9,6 +10,9 @@ import type { RevertDialog } from "./RevertDialog";
 
 const CherryPick = lazy(() =>
 	importDialog("CherryPickDialog", () => import("./CherryPickDialog")),
+);
+const CheckoutCommit = lazy(() =>
+	importDialog("CheckoutCommitDialog", () => import("./CheckoutCommitDialog")),
 );
 const InteractiveRebase = lazy(() =>
 	importDialog(
@@ -33,6 +37,11 @@ export function LazyCherryPickDialog(
 	props: ComponentProps<typeof CherryPickDialog>,
 ) {
 	return props.commit ? <Boundary>{<CherryPick {...props} />}</Boundary> : null;
+}
+export function LazyCheckoutCommitDialog(
+	props: ComponentProps<typeof CheckoutCommitDialog>,
+) {
+	return <Boundary>{<CheckoutCommit {...props} />}</Boundary>;
 }
 export function LazyInteractiveRebaseDialog(
 	props: ComponentProps<typeof InteractiveRebaseDialog>,

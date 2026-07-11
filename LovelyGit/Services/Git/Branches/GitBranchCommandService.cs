@@ -24,6 +24,32 @@ internal sealed partial class GitBranchCommandService
             "Commit, stash, or discard conflicting working changes, then try again.",
             cancellationToken);
 
+    public async Task CheckoutCommitAsync(
+        string repositoryPath,
+        string commitHash,
+        CancellationToken cancellationToken)
+    {
+        var normalizedHash = NormalizeCommitHash(commitHash);
+        using (var repository = await LovelyGitRepository
+            .OpenAsync(repositoryPath, cancellationToken)
+            .ConfigureAwait(false))
+        {
+            if (!GitObjectId.TryParse(normalizedHash, repository.ObjectFormat, out var commitId))
+            {
+                throw new ArgumentException(
+                    "Commit hash does not match this repository.",
+                    nameof(commitHash));
+            }
+            await repository.GetCommitAsync(commitId, cancellationToken).ConfigureAwait(false);
+        }
+        await RunAsync(
+            repositoryPath,
+            "Checkout commit",
+            ["switch", "--quiet", "--detach", normalizedHash],
+            "Commit, stash, or discard conflicting working changes, then try again.",
+            cancellationToken).ConfigureAwait(false);
+    }
+
     public Task CreateAsync(
         string repositoryPath,
         string branchName,

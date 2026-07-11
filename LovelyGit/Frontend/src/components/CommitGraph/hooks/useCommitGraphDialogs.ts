@@ -14,6 +14,9 @@ export function useCommitGraphDialogs() {
 	} | null>(null);
 	const [cherryPickCommit, setCherryPickCommit] =
 		useState<CommitGraphRow | null>(null);
+	const [checkoutCommit, setCheckoutCommit] = useState<CommitGraphRow | null>(
+		null,
+	);
 	const [revertCommit, setRevertCommit] = useState<CommitGraphRow | null>(null);
 	const [resetCommit, setResetCommit] = useState<CommitGraphRow | null>(null);
 	const [tagCommit, setTagCommit] = useState<CommitGraphRow | null>(null);
@@ -24,6 +27,7 @@ export function useCommitGraphDialogs() {
 
 	return {
 		cherryPickCommit,
+		checkoutCommit,
 		comparison: {
 			base: comparisonBase,
 			compare: setComparisonTarget,
@@ -37,6 +41,7 @@ export function useCommitGraphDialogs() {
 		resetCommit,
 		revertCommit,
 		setCherryPickCommit,
+		setCheckoutCommit,
 		setIntegrationTarget,
 		setInteractiveRebaseBase,
 		setResetCommit,
