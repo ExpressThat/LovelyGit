@@ -33,6 +33,13 @@ internal sealed class TestRepository : IDisposable
         return repository;
     }
 
+    public TestRepository Copy()
+    {
+        var directory = Directory.CreateTempSubdirectory("lovelygit-integration-copy-");
+        CopyDirectory(_directory, directory);
+        return new TestRepository(directory, new GitCliService());
+    }
+
     public async Task CommitFileAsync(
         string relativePath,
         string content,
@@ -81,5 +88,23 @@ internal sealed class TestRepository : IDisposable
             arguments,
             Path,
             cancellationToken: CancellationToken.None);
+    }
+
+    private static void CopyDirectory(DirectoryInfo source, DirectoryInfo destination)
+    {
+        foreach (var directory in source.EnumerateDirectories("*", SearchOption.AllDirectories))
+        {
+            Directory.CreateDirectory(System.IO.Path.Combine(
+                destination.FullName,
+                System.IO.Path.GetRelativePath(source.FullName, directory.FullName)));
+        }
+
+        foreach (var file in source.EnumerateFiles("*", SearchOption.AllDirectories))
+        {
+            var target = System.IO.Path.Combine(
+                destination.FullName,
+                System.IO.Path.GetRelativePath(source.FullName, file.FullName));
+            file.CopyTo(target);
+        }
     }
 }

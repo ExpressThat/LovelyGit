@@ -4,7 +4,15 @@ using LovelyGit.Tests.Git.RepositoryOperations;
 namespace LovelyGit.Tests.Git.WorkingTree;
 
 public sealed class ConflictExternalMergeToolServiceTests
+    : IClassFixture<ConflictRepositoryFixture>
 {
+    private readonly ConflictRepositoryFixture _fixture;
+
+    public ConflictExternalMergeToolServiceTests(ConflictRepositoryFixture fixture)
+    {
+        _fixture = fixture;
+    }
+
     [Fact]
     public async Task OpenAsync_UsesConfiguredToolAndLeavesResolvedFileStaged()
     {
@@ -76,21 +84,24 @@ public sealed class ConflictExternalMergeToolServiceTests
         await AssertStateUnchangedAsync(repository, state);
     }
 
+    [Fact]
+    public async Task RepositoryTemplate_CopiesAreIsolated()
+    {
+        using var first = await CreateConflictAsync();
+        using var second = await CreateConflictAsync();
+
+        await File.WriteAllTextAsync(Path.Combine(first.Path, "shared.txt"), "changed");
+
+        Assert.Contains("<<<<<<<", await File.ReadAllTextAsync(
+            Path.Combine(second.Path, "shared.txt")));
+        Assert.NotEmpty(await ReadUnmergedAsync(second));
+    }
+
     private static ConflictExternalMergeToolService CreateService(TestRepository repository) =>
         new(repository.Git);
 
-    private static async Task<TestRepository> CreateConflictAsync()
-    {
-        var repository = TestRepository.Create();
-        await repository.CreateBranchCommitAsync("conflict", "shared.txt", "feature");
-        await repository.SwitchAsync("main");
-        await repository.CommitFileAsync("shared.txt", "main", "main conflict");
-        Assert.False((await repository.Service.MergeAsync(
-            repository.Path,
-            "conflict",
-            CancellationToken.None)).IsCompleted);
-        return repository;
-    }
+    private Task<TestRepository> CreateConflictAsync() =>
+        Task.FromResult(_fixture.CreateCopy());
 
     private static async Task ConfigureToolAsync(TestRepository repository, string command)
     {
