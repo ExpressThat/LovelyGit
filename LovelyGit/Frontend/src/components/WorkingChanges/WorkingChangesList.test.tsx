@@ -26,6 +26,22 @@ describe("WorkingChangesList bulk actions", () => {
 			screen.getByRole("button", { name: "Discard all changes" }),
 		).toBeDisabled();
 	});
+
+	it("reserves row space for conflicts while keeping an empty section compact", () => {
+		const conflict = file("conflict.txt", "Unmerged");
+		renderList([conflict], []);
+
+		expect(
+			screen
+				.getByRole("heading", { name: "Unstaged files (1)" })
+				.closest("section"),
+		).toHaveClass("min-h-32", "flex-1");
+		expect(
+			screen
+				.getByRole("heading", { name: "Staged files (0)" })
+				.closest("section"),
+		).toHaveClass("min-h-16", "flex-none");
+	});
 });
 
 function renderList(

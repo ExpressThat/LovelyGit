@@ -23,7 +23,7 @@ export function ConflictMergeHeader({
 	saveDisabled: boolean;
 }) {
 	return (
-		<header className="flex h-12 shrink-0 items-center gap-3 border-b bg-popover px-3">
+		<header className="custom-scrollbar flex h-12 shrink-0 items-center gap-3 overflow-x-auto overflow-y-hidden border-b bg-popover px-3">
 			<FileWarning className="size-4 text-amber-500" />
 			<div className="min-w-0">
 				<div className="truncate text-xs font-semibold">{fileName}</div>
@@ -31,10 +31,11 @@ export function ConflictMergeHeader({
 					{conflictCount} {conflictCount === 1 ? "conflict" : "conflicts"}
 				</div>
 			</div>
-			<span className="ml-auto rounded border bg-card px-2 py-1 text-[9px] font-semibold uppercase tracking-wide text-muted-foreground">
+			<span className="ml-auto shrink-0 rounded border bg-card px-2 py-1 text-[9px] font-semibold uppercase tracking-wide text-muted-foreground">
 				UTF-8
 			</span>
 			<Button
+				className="shrink-0"
 				disabled={controlsDisabled || isBusy}
 				onClick={onExternalTool}
 				size="sm"
@@ -45,6 +46,7 @@ export function ConflictMergeHeader({
 			</Button>
 			<Button
 				aria-label="Save & stage"
+				className="shrink-0"
 				disabled={saveDisabled || isBusy}
 				onClick={onSave}
 				size="sm"
@@ -53,6 +55,7 @@ export function ConflictMergeHeader({
 			</Button>
 			<Button
 				aria-label="Close conflict resolver"
+				className="shrink-0"
 				disabled={isBusy}
 				onClick={onClose}
 				size="icon-sm"

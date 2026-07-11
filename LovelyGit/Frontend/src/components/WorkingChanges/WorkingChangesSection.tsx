@@ -2,6 +2,7 @@ import { useVirtualizer } from "@tanstack/react-virtual";
 import type { ReactNode } from "react";
 import { useRef } from "react";
 import type { WorkingTreeChangedFile } from "@/generated/types";
+import { cn } from "@/lib/utils";
 import { ChangedFileRow } from "./WorkingChangedFileRow";
 import { fileKey } from "./WorkingChangesPanelParts";
 
@@ -51,7 +52,12 @@ export function WorkingChangesSection({
 	const virtualRows = virtualizer.getVirtualItems();
 
 	return (
-		<section className="flex min-h-0 flex-1 flex-col rounded-md border bg-card">
+		<section
+			className={cn(
+				"flex flex-col rounded-md border bg-card",
+				files.length > 0 ? "min-h-32 flex-1" : "min-h-16 flex-none",
+			)}
+		>
 			<header className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-b px-3 py-2">
 				<h3 className="text-sm font-semibold text-foreground">
 					{title} ({files.length})

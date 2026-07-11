@@ -13,9 +13,12 @@ import {
 vi.mock("@/lib/commands", () => ({ sendRequestWithResponse: vi.fn() }));
 vi.mock("sonner", () => ({ toast: { success: vi.fn() } }));
 vi.mock("@/lib/settings/settingsStore", () => ({
+	setSetting: vi.fn(),
 	useSetting: (name: string) =>
 		({
 			CommitDiffViewMode: "SideBySide",
+			CommitDiffContextLines: 3,
+			CommitDiffLineDisplayMode: "Changes",
 			CommitDiffWrapLines: false,
 			CommitDiffIgnoreWhitespace: false,
 		})[name],
@@ -24,7 +27,9 @@ vi.mock("@/lib/settings/settingsStore", () => ({
 const send = vi.mocked(sendRequestWithResponse);
 
 describe("ConflictResolutionView", () => {
-	beforeEach(() => send.mockReset());
+	beforeEach(() => {
+		send.mockReset();
+	});
 
 	it("shows marker-free base content but keeps the untouched conflict unresolved", async () => {
 		send.mockResolvedValueOnce(response());

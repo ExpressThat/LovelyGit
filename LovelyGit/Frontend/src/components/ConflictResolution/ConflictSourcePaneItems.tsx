@@ -43,7 +43,7 @@ export function ConflictSourceHeader({
 				</div>
 			</div>
 			{metadata.objectId ? (
-				<code className="ml-auto text-[10px] text-muted-foreground">
+				<code className="ml-auto shrink-0 text-[10px] text-muted-foreground">
 					{metadata.objectId.slice(0, 8)}
 				</code>
 			) : null}

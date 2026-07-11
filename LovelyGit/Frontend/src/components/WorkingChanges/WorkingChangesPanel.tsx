@@ -85,7 +85,7 @@ export function WorkingChangesPanel({
 	});
 	const controlsBusy = isBusy || undo.isBusy;
 	return (
-		<div className="flex h-full min-h-0 flex-col gap-4 p-4 text-left text-sm">
+		<div className="custom-scrollbar flex h-full min-h-0 flex-col gap-4 overflow-y-auto p-4 text-left text-sm">
 			<WorkingChangesHeader
 				actions={
 					<StashDialog
@@ -110,7 +110,7 @@ export function WorkingChangesPanel({
 				repositoryId={repositoryId}
 				workingTreeCount={visibleChanges.totalCount}
 			/>
-			<div className="min-h-0 flex-1">
+			<div className="min-h-56 flex-1 shrink-0">
 				<WorkingChangesList
 					isBusy={controlsBusy}
 					isLoading={!changes && isLoading}

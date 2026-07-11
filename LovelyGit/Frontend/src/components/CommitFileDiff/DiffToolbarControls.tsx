@@ -31,9 +31,11 @@ export function DiffToolbarControls({
 	return (
 		<div
 			className={cn(
-				"diff-toolbar flex h-10 items-center justify-center border-t bg-card/60 px-3",
+				"diff-toolbar custom-scrollbar flex h-10 items-center justify-start overflow-x-auto overflow-y-hidden border-t bg-card/60 px-3 lg:justify-center",
 				className,
 			)}
+			role="toolbar"
+			aria-label="Diff display controls"
 		>
 			{showViewMode ? (
 				<ToolbarGroup>
