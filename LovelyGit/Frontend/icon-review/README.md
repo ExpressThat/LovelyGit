@@ -1,15 +1,14 @@
-# LovelyGit icon concepts
+# LovelyGit open-source icon review
 
-This folder is a review-only visual proposal. Nothing in the application imports these SVGs.
+This folder contains review-only, unmodified SVGs from [Tabler Icons](https://tabler.io/icons). Nothing in the application imports them yet.
 
-- Open `index.html` to review the complete family; every card links directly to its SVG source.
-- Read `VISUAL-AUDIT.md` for the production-size findings and redraw decisions.
-- Read `ICON-CHECKLIST.md` for the individual verdict on every asset.
-- Individual assets live in `svg/` and use descriptive, action-oriented filenames.
-- Every icon uses a 24×24 view box, `currentColor`, rounded 2px strokes, geometric-precision rendering, and no baked-in theme color.
-- Git actions combine a recognizable Git structure with a directional or status cue instead of relying on a generic arrow alone.
+- Open `index.html` to compare the complete family at 42px and 20px.
+- Individual assets live in `svg/` under LovelyGit-specific filenames.
+- `SOURCE-MAP.md` links every local filename to its exact upstream SVG.
+- `TABLER-LICENSE.txt` contains the required MIT license notice.
+- The upstream revision is pinned in `scripts/generate-icon-review.mjs`; the script copies the SVGs without modification.
 
-Regenerate the catalog from the repository root with:
+Regenerate from the repository root with network access, or with the matching Tabler checkout under `artifacts/tabler-icons-upstream`:
 
 ```powershell
 node scripts/generate-icon-review.mjs

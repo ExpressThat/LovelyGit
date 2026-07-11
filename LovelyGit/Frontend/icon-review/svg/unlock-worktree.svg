@@ -1,1 +1,21 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" shape-rendering="geometricPrecision" role="img" aria-labelledby="title"><title id="title">unlock worktree</title><g><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M9 10V7a4 4 0 0 1 7-2"/><circle cx="12" cy="15" r="1"/></g></svg>
+<!--
+tags: [security, password, secure, unprotected, lock, open, private, control, operation, protected]
+category: System
+version: "1.0"
+unicode: "eae1"
+-->
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <path d="M5 13a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v6a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2l0 -6" />
+  <path d="M11 16a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
+  <path d="M8 11v-5a4 4 0 0 1 8 0" />
+</svg>

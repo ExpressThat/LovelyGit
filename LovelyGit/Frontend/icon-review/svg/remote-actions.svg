@@ -1,1 +1,24 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" shape-rendering="geometricPrecision" role="img" aria-labelledby="title"><title id="title">remote actions</title><g><path d="M12 20L12 12"/><circle cx="12" cy="9" r="2"/><path d="M7 6a7 7 0 0 0 0 6M17 6a7 7 0 0 1 0 6M4 3a11 11 0 0 0 0 12M20 3a11 11 0 0 1 0 12"/></g></svg>
+<!--
+tags: [reach, tv, network, connetion, signal, communication, antenna, hardware, technology, electronic]
+category: Devices
+version: "1.61"
+unicode: "f094"
+-->
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <path d="M20 4v8" />
+  <path d="M16 4.5v7" />
+  <path d="M12 5v16" />
+  <path d="M8 5.5v5" />
+  <path d="M4 6v4" />
+  <path d="M20 8h-16" />
+</svg>

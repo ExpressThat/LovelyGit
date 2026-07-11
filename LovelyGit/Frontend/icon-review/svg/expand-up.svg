@@ -1,1 +1,19 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" shape-rendering="geometricPrecision" role="img" aria-labelledby="title"><title id="title">expand up</title><g><path d="m5 15 7-7 7 7"/></g></svg>
+<!--
+tags: [move, top, chevron, increase, navigation, flow, rise, upward, up, movement]
+category: Arrows
+version: "1.0"
+unicode: "ea62"
+-->
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <path d="M6 15l6 -6l6 6" />
+</svg>
