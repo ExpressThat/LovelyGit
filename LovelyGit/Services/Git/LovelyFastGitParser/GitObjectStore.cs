@@ -5,14 +5,14 @@ namespace ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser;
 
 internal sealed partial class GitObjectStore : IDisposable
 {
-    private const int ObjectCacheSize = 256;
     private const int ObjectCacheBytes = 8 * 1024 * 1024;
+    private const int SharedObjectCacheSize = 4_096;
 
     private readonly IReadOnlyList<string> _objectDirectories;
     private readonly GitObjectFormat _objectFormat;
     private readonly GitPackReader _packReader;
-    private readonly LruCache<GitObjectId, GitObjectData> _objectCache =
-        new(ObjectCacheSize, ObjectCacheBytes, ObjectWeight);
+    private static readonly LruCache<GitObjectId, GitObjectData> SharedObjectCache =
+        new(SharedObjectCacheSize, ObjectCacheBytes, ObjectWeight);
     private readonly SemaphoreSlim _packIndexesLock = new(1, 1);
     private readonly object _looseObjectIndexGate = new();
     private List<GitPackIndex>? _packIndexes;
@@ -38,7 +38,7 @@ internal sealed partial class GitObjectStore : IDisposable
         bool cacheObject,
         CancellationToken cancellationToken)
     {
-        if (_objectCache.TryGet(id, out var cached))
+        if (SharedObjectCache.TryGet(id, out var cached))
         {
             return cached;
         }
@@ -46,9 +46,9 @@ internal sealed partial class GitObjectStore : IDisposable
         var loose = await TryReadLooseObjectAsync(id, cancellationToken).ConfigureAwait(false);
         if (loose != null)
         {
-            if (cacheObject)
+            if (ShouldCache(cacheObject, loose))
             {
-                _objectCache.Set(id, loose);
+                SharedObjectCache.Set(id, loose);
             }
 
             return loose;
@@ -57,9 +57,9 @@ internal sealed partial class GitObjectStore : IDisposable
         var packed = await TryReadPackedObjectAsync(id, cancellationToken).ConfigureAwait(false);
         if (packed != null)
         {
-            if (cacheObject)
+            if (ShouldCache(cacheObject, packed))
             {
-                _objectCache.Set(id, packed);
+                SharedObjectCache.Set(id, packed);
             }
 
             return packed;
@@ -70,7 +70,6 @@ internal sealed partial class GitObjectStore : IDisposable
 
     public void ClearObjectCaches()
     {
-        _objectCache.Clear();
         _packReader.ClearObjectCache();
     }
 
@@ -155,9 +154,11 @@ internal sealed partial class GitObjectStore : IDisposable
         return data.Data.LongLength;
     }
 
+    private static bool ShouldCache(bool cacheObject, GitObjectData data) =>
+        cacheObject || data.Kind == GitObjectKind.Commit;
+
     public void Dispose()
     {
-        _objectCache.Clear();
         if (Volatile.Read(ref _packIndexes) is { } indexes)
         {
             foreach (var index in indexes)

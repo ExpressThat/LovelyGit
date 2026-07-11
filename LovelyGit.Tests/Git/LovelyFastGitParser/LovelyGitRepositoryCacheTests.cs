@@ -20,6 +20,24 @@ public sealed class LovelyGitRepositoryCacheTests
         Assert.Equal(first.Subject, second.Subject);
     }
 
+    [Fact]
+    public async Task GraphCommitCache_IsSharedWithLaterRepositoryInstance()
+    {
+        using var temporary = TemporaryGitRepository.Create();
+        var commitId = GitObjectId.Parse(temporary.HeadCommitHash);
+        using (var graphRepository = await OpenRepositoryAsync(temporary.Path))
+        {
+            _ = await graphRepository.GetGraphCommitAsync(commitId, CancellationToken.None);
+        }
+
+        temporary.RemoveLooseObject(commitId);
+        using var detailsRepository = await OpenRepositoryAsync(temporary.Path);
+        var commit = await detailsRepository.GetCommitAsync(commitId, CancellationToken.None);
+
+        Assert.Equal("Initial", commit.Subject);
+        Assert.NotEmpty(commit.Body);
+    }
+
     private static Task<LovelyGitRepository> OpenRepositoryAsync(string path)
     {
         return LovelyGitRepository.OpenAsync(path, CancellationToken.None);
@@ -39,6 +57,14 @@ public sealed class LovelyGitRepositoryCacheTests
         public string HeadCommitHash { get; }
 
         public string Path { get; }
+
+        public void RemoveLooseObject(GitObjectId id)
+        {
+            var value = id.ToString();
+            var path = System.IO.Path.Combine(Path, ".git", "objects", value[..2], value[2..]);
+            File.SetAttributes(path, FileAttributes.Normal);
+            File.Delete(path);
+        }
 
         public static TemporaryGitRepository Create()
         {
