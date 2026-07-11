@@ -18,6 +18,10 @@ describe("RemoteBranchContextMenu", () => {
 		expect(onAction).toHaveBeenCalledWith("checkoutRemote", "origin/feature");
 
 		openMenu();
+		await user.click(await screen.findByText("Open branch on remote website"));
+		expect(onAction).toHaveBeenCalledWith("openRemote", "feature");
+
+		openMenu();
 		await user.click(
 			await screen.findByText("Compare main with origin/feature…"),
 		);

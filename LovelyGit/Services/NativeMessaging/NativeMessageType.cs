@@ -48,6 +48,8 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging
         RevealKnownGitRepository,
         [NativeMessageContract(typeof(OpenRepositoryTerminalCommandArguments), typeof(EmptyCommandArguments))]
         OpenRepositoryTerminal,
+        [NativeMessageContract(typeof(OpenRemoteWebResourceCommandArguments), typeof(EmptyCommandArguments))]
+        OpenRemoteWebResource,
         [NativeMessageContract(typeof(EmptyCommandArguments), typeof(CloneDestinationResponse))]
         ChooseCloneDestination,
         [NativeMessageContract(typeof(CloneRepositoryCommandArguments), typeof(KnownGitRepository))]

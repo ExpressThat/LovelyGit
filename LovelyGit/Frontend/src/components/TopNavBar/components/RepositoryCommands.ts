@@ -1,4 +1,5 @@
 import { toast } from "sonner";
+import type { RemoteWebResourceKind } from "@/generated/types";
 import { sendRequestWithResponse } from "@/lib/commands";
 import { NativeMessageType } from "@/lib/nativeMessaging";
 
@@ -19,6 +20,23 @@ export async function openRepositoryTerminal(repositoryId: string) {
 
 		toast.error(
 			error instanceof Error ? error.message : "Could not open terminal",
+		);
+	}
+}
+
+export async function openRemoteWebResource(
+	repositoryId: string,
+	kind: RemoteWebResourceKind,
+	value: string | null = null,
+) {
+	try {
+		await sendRequestWithResponse({
+			arguments: { knownRepositoryId: repositoryId, kind, value },
+			commandType: NativeMessageType.OpenRemoteWebResource,
+		});
+	} catch (error) {
+		toast.error(
+			error instanceof Error ? error.message : "Could not open remote website",
 		);
 	}
 }

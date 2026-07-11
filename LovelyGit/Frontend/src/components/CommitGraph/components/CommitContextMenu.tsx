@@ -2,6 +2,7 @@ import {
 	ClipboardCopy,
 	Copy,
 	Download,
+	ExternalLink,
 	GitBranch,
 	GitCommitHorizontal,
 	Info,
@@ -12,6 +13,7 @@ import {
 	Undo2,
 } from "lucide-react";
 import { type ReactNode, useState } from "react";
+import { openRemoteWebResource } from "@/components/TopNavBar/components/RepositoryCommands";
 import {
 	ContextMenu,
 	ContextMenuContent,
@@ -22,6 +24,7 @@ import {
 	ContextMenuTrigger,
 } from "@/components/ui/context-menu";
 import type { CommitGraphRow } from "@/generated/types";
+import { useRepositoryContext } from "@/lib/repositoryContext";
 import { copyToClipboard } from "../utils/clipboard";
 import { shortHash } from "../utils/format";
 import { StartBisectDialog } from "./StartBisectDialog";
@@ -59,6 +62,7 @@ export function CommitContextMenu({
 	onReset: (row: CommitGraphRow) => void;
 	row: CommitGraphRow;
 }) {
+	const { currentRepositoryId: repositoryId } = useRepositoryContext();
 	const abbreviatedHash = shortHash(row.commit.hash);
 	const subject =
 		row.commit.message.split(/\r?\n/, 1)[0] || "(no commit message)";
@@ -120,6 +124,20 @@ export function CommitContextMenu({
 					>
 						<ClipboardCopy aria-hidden="true" />
 						Copy commit hash
+					</ContextMenuItem>
+					<ContextMenuItem
+						disabled={!repositoryId}
+						onClick={() =>
+							repositoryId &&
+							void openRemoteWebResource(
+								repositoryId,
+								"Commit",
+								row.commit.hash,
+							)
+						}
+					>
+						<ExternalLink aria-hidden="true" />
+						Open commit on remote website
 					</ContextMenuItem>
 					<ContextMenuItem
 						disabled={copyPatchBusy || savePatchBusy}

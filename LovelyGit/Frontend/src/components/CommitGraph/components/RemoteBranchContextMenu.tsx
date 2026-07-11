@@ -1,5 +1,6 @@
 import {
 	CloudDownload,
+	ExternalLink,
 	GitCompareArrows,
 	GitMerge,
 	ListRestart,
@@ -36,6 +37,11 @@ export function RemoteBranchContextMenu({
 	remoteBranchName: string;
 }) {
 	const canIntegrate = !disabled && currentBranchName !== null;
+	const remoteSeparator = remoteBranchName.indexOf("/");
+	const webBranchName =
+		remoteSeparator < 0
+			? remoteBranchName
+			: remoteBranchName.slice(remoteSeparator + 1);
 	return (
 		<ContextMenu>
 			<ContextMenuTrigger
@@ -68,6 +74,13 @@ export function RemoteBranchContextMenu({
 				>
 					<CloudDownload aria-hidden="true" />
 					Check out as local branch…
+				</ContextMenuItem>
+				<ContextMenuItem
+					disabled={disabled}
+					onClick={() => onAction("openRemote", webBranchName)}
+				>
+					<ExternalLink aria-hidden="true" />
+					Open branch on remote website
 				</ContextMenuItem>
 				<ContextMenuSeparator />
 				<ContextMenuItem

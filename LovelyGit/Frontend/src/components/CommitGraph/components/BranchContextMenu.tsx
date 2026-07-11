@@ -1,5 +1,6 @@
 import {
 	CloudUpload,
+	ExternalLink,
 	FolderGit2,
 	GitBranch,
 	GitCompareArrows,
@@ -99,6 +100,13 @@ export function BranchContextMenu({
 				</ContextMenuItem>
 				<ContextMenuItem
 					disabled={disabled}
+					onClick={() => onAction("openRemote", branchName)}
+				>
+					<ExternalLink aria-hidden="true" />
+					Open branch on remote website
+				</ContextMenuItem>
+				<ContextMenuItem
+					disabled={disabled}
 					onClick={() => onAction("worktree", branchName)}
 				>
 					<FolderGit2 aria-hidden="true" />
@@ -152,6 +160,7 @@ export type BranchAction =
 	| "deleteRemote"
 	| "push"
 	| "reflog"
+	| "openRemote"
 	| "rename"
 	| "upstream"
 	| "worktree";

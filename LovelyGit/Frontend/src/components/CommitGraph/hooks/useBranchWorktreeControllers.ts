@@ -1,3 +1,4 @@
+import { openRemoteWebResource } from "@/components/TopNavBar/components/RepositoryCommands";
 import type { BranchAction } from "../components/BranchContextMenu";
 import { useBranchMutations } from "./useBranchMutations";
 import { useReflogManagement } from "./useReflogManagement";
@@ -41,6 +42,8 @@ export function useBranchWorktreeControllers({
 	});
 	const manageBranch = (action: BranchAction, branchName: string) => {
 		if (action === "reflog") reflogController.open(branchName);
+		else if (action === "openRemote" && repositoryId)
+			void openRemoteWebResource(repositoryId, "Branch", branchName);
 		else if (action === "worktree")
 			worktreeController.setCreateBranchName(branchName);
 		else branchController.manageBranch(action, branchName);

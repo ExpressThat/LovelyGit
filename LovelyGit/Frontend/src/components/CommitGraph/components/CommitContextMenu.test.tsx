@@ -6,6 +6,12 @@ import { describe, expect, it, vi } from "vitest";
 import type { CommitGraphRow } from "@/generated/types";
 import { CommitContextMenu } from "./CommitContextMenu";
 
+const openRemoteWebResource = vi.hoisted(() => vi.fn());
+
+vi.mock("@/components/TopNavBar/components/RepositoryCommands", () => ({
+	openRemoteWebResource,
+}));
+
 vi.mock("@/lib/repositoryContext", () => ({
 	useRepositoryContext: () => ({ currentRepositoryId: "repo" }),
 }));
@@ -71,6 +77,20 @@ describe("CommitContextMenu", () => {
 		await user.click(await screen.findByText("Copy commit as patch"));
 
 		expect(onCopyPatch).toHaveBeenCalledWith(row);
+	});
+
+	it("opens the selected commit on the remote website", async () => {
+		const user = userEvent.setup();
+		renderMenu({});
+		fireEvent.contextMenu(screen.getByRole("button", { name: "commit row" }));
+
+		await user.click(await screen.findByText("Open commit on remote website"));
+
+		expect(openRemoteWebResource).toHaveBeenCalledWith(
+			"repo",
+			"Commit",
+			row.commit.hash,
+		);
 	});
 
 	it("saves the selected commit as a patch", async () => {

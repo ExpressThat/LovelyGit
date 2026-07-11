@@ -65,6 +65,12 @@ describe("BranchContextMenu", () => {
 		fireEvent.contextMenu(
 			screen.getByRole("button", { name: "feature/demo ref" }),
 		);
+		await user.click(await screen.findByText("Open branch on remote website"));
+		expect(onAction).toHaveBeenCalledWith("openRemote", "feature/demo");
+
+		fireEvent.contextMenu(
+			screen.getByRole("button", { name: "feature/demo ref" }),
+		);
 		await user.click(await screen.findByText("Create linked worktree…"));
 		expect(onAction).toHaveBeenCalledWith("worktree", "feature/demo");
 
