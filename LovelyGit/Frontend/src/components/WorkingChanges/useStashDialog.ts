@@ -8,6 +8,10 @@ import {
 import { sendRequestWithResponse } from "@/lib/commands";
 import { gitMutationTimeoutMs } from "@/lib/gitMutationTimeout";
 import { NativeMessageType } from "@/lib/nativeMessaging";
+import {
+	invalidateRepositoryRefs,
+	loadRepositoryRefs,
+} from "@/lib/repositoryRefsCache";
 
 export function useStashDialog(
 	repositoryId: string,
@@ -35,28 +39,28 @@ export function useStashDialog(
 	const [restoreIndex, setRestoreIndex] = useState(true);
 	const [stashes, setStashes] = useState<RepositoryStashItem[]>([]);
 
-	const loadStashes = useCallback(async () => {
-		setIsLoading(true);
-		setLoadError(null);
-		try {
-			const response = await sendRequestWithResponse({
-				arguments: { knownRepositoryId: repositoryId },
-				commandType: NativeMessageType.GetRepositoryRefs,
-			});
-			setStashes(response.stashes);
-			setBranchNames(
-				(response.refs ?? [])
-					.filter((item) => item.kind === CommitRefKind.Local)
-					.map((item) => item.name),
-			);
-		} catch (error) {
-			setLoadError(
-				error instanceof Error ? error.message : "Failed to load stashes.",
-			);
-		} finally {
-			setIsLoading(false);
-		}
-	}, [repositoryId]);
+	const loadStashes = useCallback(
+		async (forceRefresh = false) => {
+			setIsLoading(true);
+			setLoadError(null);
+			try {
+				const response = await loadRepositoryRefs(repositoryId, forceRefresh);
+				setStashes(response.stashes);
+				setBranchNames(
+					(response.refs ?? [])
+						.filter((item) => item.kind === CommitRefKind.Local)
+						.map((item) => item.name),
+				);
+			} catch (error) {
+				setLoadError(
+					error instanceof Error ? error.message : "Failed to load stashes.",
+				);
+			} finally {
+				setIsLoading(false);
+			}
+		},
+		[repositoryId],
+	);
 
 	useEffect(() => {
 		if (open) void loadStashes();
@@ -93,8 +97,9 @@ export function useStashDialog(
 			if (action === StashAction.Branch) setBranchTarget(null);
 			setDropTarget(null);
 			await onRepositoryChanged();
-			if (action === StashAction.Create) await loadStashes();
+			if (action === StashAction.Create) await loadStashes(true);
 			else if (stash && action !== StashAction.Apply) {
+				invalidateRepositoryRefs(repositoryId);
 				setStashes((current) =>
 					current.filter((item) => item.selector !== stash.selector),
 				);

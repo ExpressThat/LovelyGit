@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { type RepositoryStashItem, StashAction } from "@/generated/types";
 import { sendRequestWithResponse } from "@/lib/commands";
+import { clearRepositoryRefsCache } from "@/lib/repositoryRefsCache";
 import { useStashDialog } from "./useStashDialog";
 
 vi.mock("@/lib/commands", () => ({ sendRequestWithResponse: vi.fn() }));
@@ -25,7 +26,10 @@ const stash: RepositoryStashItem = {
 };
 
 describe("useStashDialog", () => {
-	beforeEach(() => vi.clearAllMocks());
+	beforeEach(() => {
+		clearRepositoryRefsCache();
+		vi.clearAllMocks();
+	});
 
 	it("honors controlled open state and delegates close requests", async () => {
 		send.mockResolvedValueOnce({ stashes: [] });

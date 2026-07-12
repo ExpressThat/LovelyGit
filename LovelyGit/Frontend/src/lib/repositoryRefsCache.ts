@@ -47,6 +47,10 @@ export function clearRepositoryRefsCache() {
 	entries.clear();
 }
 
+export function invalidateRepositoryRefs(repositoryId: string) {
+	entries.delete(repositoryId);
+}
+
 function setEntry(repositoryId: string, entry: CacheEntry) {
 	entries.delete(repositoryId);
 	entries.set(repositoryId, entry);
