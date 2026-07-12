@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import type { CommitDetailsResponse } from "@/generated/types";
-import { sendRequestWithResponse } from "@/lib/commands";
+import { loadCommitDetails } from "@/lib/commitDetailsCache";
 
 export type CommitDetailsState =
 	| { status: "loading" }
@@ -30,10 +30,7 @@ export function useCommitDetails(
 				? { ...current, isRefreshing: true, refreshError: null }
 				: { status: "loading" },
 		);
-		sendRequestWithResponse({
-			commandType: "GetCommitDetails",
-			arguments: { repositoryId, commitHash, parentIndex },
-		})
+		loadCommitDetails(repositoryId, commitHash, parentIndex)
 			.then((details) => {
 				if (!isActive) return;
 				if (!details) {

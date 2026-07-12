@@ -2,6 +2,7 @@
 import type { ReactNode } from "react";
 import type { BranchIntegrationMode } from "@/components/TopNavBar/components/BranchIntegrationDialog";
 import type { CommitGraphRow } from "@/generated/types";
+import { useCommitDetailsPrefetch } from "../hooks/useCommitDetailsPrefetch";
 import type { CommitComparisonController } from "../hooks/useCommitGraphDialogs";
 import { AuthorCell } from "./AuthorCell";
 import type { BranchAction } from "./BranchContextMenu";
@@ -85,6 +86,10 @@ export function CommitRow({
 	tagRemoteName: string | null;
 	templateColumns: string;
 }) {
+	const detailsPrefetch = useCommitDetailsPrefetch(
+		repositoryId,
+		row?.commit.hash ?? null,
+	);
 	const rowClassName = `grid h-[22px] leading-[22px] ${isSelected ? "bg-primary/12 ring-1 ring-inset ring-primary/35 dark:bg-primary/20" : rowIndex % 2 === 0 ? "bg-background dark:bg-background" : "bg-card/70 dark:bg-card/45"} hover:bg-accent/75 dark:hover:bg-accent/60`;
 
 	if (!row) {
@@ -120,6 +125,8 @@ export function CommitRow({
 		<button
 			className={`${rowClassName} w-full cursor-pointer border-0 p-0 text-left text-inherit focus-visible:bg-accent focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-ring`}
 			onClick={() => onSelect(row)}
+			onPointerEnter={detailsPrefetch.start}
+			onPointerLeave={detailsPrefetch.cancel}
 			style={{ gridTemplateColumns: templateColumns }}
 			type="button"
 		>

@@ -4,12 +4,16 @@ import { act, renderHook, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { CommitDetailsResponse } from "@/generated/types";
 import { sendRequestWithResponse } from "@/lib/commands";
+import { clearCommitDetailsCache } from "@/lib/commitDetailsCache";
 import { useCommitDetails } from "./useCommitDetails";
 
 vi.mock("@/lib/commands", () => ({ sendRequestWithResponse: vi.fn() }));
 
 describe("useCommitDetails", () => {
-	beforeEach(() => vi.clearAllMocks());
+	beforeEach(() => {
+		clearCommitDetailsCache();
+		vi.clearAllMocks();
+	});
 
 	it("loads details relative to the selected merge parent", async () => {
 		vi.mocked(sendRequestWithResponse).mockResolvedValue(
