@@ -3,6 +3,7 @@ import type { RepositoryRefsResponse } from "@/generated/types";
 import { sendRequestWithResponse } from "@/lib/commands";
 import {
 	clearRepositoryRefsCache,
+	getCachedRepositoryRefs,
 	loadRepositoryRefs,
 } from "./repositoryRefsCache";
 
@@ -34,6 +35,7 @@ describe("repositoryRefsCache", () => {
 		await expect(second).resolves.toBe(response);
 		await expect(loadRepositoryRefs("repo")).resolves.toBe(response);
 		expect(send).toHaveBeenCalledTimes(1);
+		expect(getCachedRepositoryRefs("repo")).toBe(response);
 	});
 
 	it("does not let an older forced request overwrite fresher refs", async () => {

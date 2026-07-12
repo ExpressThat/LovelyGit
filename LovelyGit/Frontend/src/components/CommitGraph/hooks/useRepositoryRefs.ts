@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { RepositoryRefsResponse } from "@/generated/types";
 import { subscribeToServerEvent } from "@/lib/commands";
 import {
+	getCachedRepositoryRefs,
 	loadRepositoryRefs,
 	setCachedRepositoryRefs,
 } from "@/lib/repositoryRefsCache";
@@ -13,6 +14,8 @@ type RepositoryRefsState =
 	| { status: "loaded"; refs: RepositoryRefsResponse }
 	| { status: "error"; refs: null; message: string };
 
+export const CACHED_REFS_REFRESH_DELAY_MS = 500;
+
 export function useRepositoryRefs(
 	repositoryId: string | null,
 	refreshToken: number,
@@ -23,6 +26,7 @@ export function useRepositoryRefs(
 		status: "idle",
 		refs: null,
 	});
+	const previousRepositoryIdRef = useRef<string | null>(null);
 
 	useEffect(() => {
 		return subscribeToServerEvent("CommitGraphChanged", () => {
@@ -31,30 +35,48 @@ export function useRepositoryRefs(
 	}, []);
 
 	useEffect(() => {
+		const repositoryChanged = previousRepositoryIdRef.current !== repositoryId;
+		previousRepositoryIdRef.current = repositoryId;
 		if (!repositoryId) {
 			setState({ status: "idle", refs: null });
 			return;
 		}
 
 		let isActive = true;
+		let refreshTimer: number | null = null;
 		const activeLoadKey = loadKey;
-		setState((current) => ({ status: "loading", refs: current.refs }));
-		loadRepositoryRefs(repositoryId, true)
-			.then((refs) => {
-				if (isActive && activeLoadKey === loadKey) {
-					setState({ status: "loaded", refs });
-				}
-			})
-			.catch((error) => {
-				const message =
-					error instanceof Error ? error.message : "Failed to load refs.";
-				if (isActive && activeLoadKey === loadKey) {
-					setState({ status: "error", refs: null, message });
-				}
-			});
+		const cached = repositoryChanged
+			? getCachedRepositoryRefs(repositoryId)
+			: null;
+		const load = () => {
+			loadRepositoryRefs(repositoryId, true)
+				.then((refs) => {
+					if (isActive && activeLoadKey === loadKey) {
+						setState({ status: "loaded", refs });
+					}
+				})
+				.catch((error) => {
+					const message =
+						error instanceof Error ? error.message : "Failed to load refs.";
+					if (isActive && activeLoadKey === loadKey) {
+						setState({ status: "error", refs: null, message });
+					}
+				});
+		};
+		if (cached) {
+			setState({ status: "loaded", refs: cached });
+			refreshTimer = window.setTimeout(load, CACHED_REFS_REFRESH_DELAY_MS);
+		} else {
+			setState((current) => ({
+				status: "loading",
+				refs: repositoryChanged ? null : current.refs,
+			}));
+			load();
+		}
 
 		return () => {
 			isActive = false;
+			if (refreshTimer != null) window.clearTimeout(refreshTimer);
 		};
 	}, [repositoryId, loadKey]);
 

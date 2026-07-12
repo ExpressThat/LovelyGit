@@ -43,6 +43,12 @@ export function setCachedRepositoryRefs(
 	setEntry(repositoryId, { response });
 }
 
+export function getCachedRepositoryRefs(repositoryId: string) {
+	const response = entries.get(repositoryId)?.response;
+	if (response) setEntry(repositoryId, { response });
+	return response ?? null;
+}
+
 export function clearRepositoryRefsCache() {
 	entries.clear();
 }
