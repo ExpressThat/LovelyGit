@@ -1,6 +1,4 @@
-using System.IO.Compression;
 using System.Text;
-using System.Text.Json;
 using ExpressThat.LovelyGit.Services.Git.WorkingTree;
 using ExpressThat.LovelyGit.Services.Git.WorkingTree.Models;
 
@@ -24,7 +22,7 @@ public sealed class ConflictTextPayloadBuilderTests
 
         Assert.Equal(
             new[] { text, text + " ours", text + " theirs", text + " result" },
-            Decode(response));
+            Expand(response));
         Assert.Equal("interleaved-lines-v2:gzip-base64:utf-8", response.CompactTextSchema);
         Assert.All(
             new[] { response.Base, response.Ours, response.Theirs, response.Result },
@@ -47,6 +45,21 @@ public sealed class ConflictTextPayloadBuilderTests
         Assert.Null(response.Base.TextGzipBase64);
         Assert.Null(response.Base.TextEncoding);
         Assert.Null(response.CompactTextBundleGzipBase64);
+        Assert.Equal(new[] { "small", null, null, null }, Expand(response));
+    }
+
+    [Fact]
+    public void Expand_RejectsUnknownCompactSchema()
+    {
+        var response = new ConflictResolutionResponse
+        {
+            CompactTextSchema = "future",
+            CompactTextBundleGzipBase64 = Convert.ToBase64String([1]),
+        };
+
+        var error = Assert.Throws<InvalidOperationException>(() => ConflictTextPayloadBuilder.Expand(response));
+
+        Assert.Contains("future", error.Message, StringComparison.Ordinal);
     }
 
     private static ConflictFileVersion Version(string text) => new()
@@ -56,21 +69,9 @@ public sealed class ConflictTextPayloadBuilderTests
         SizeBytes = Encoding.UTF8.GetByteCount(text),
     };
 
-    private static string[] Decode(ConflictResolutionResponse response)
+    private static string?[] Expand(ConflictResolutionResponse response)
     {
-        var bytes = Convert.FromBase64String(response.CompactTextBundleGzipBase64!);
-        using var input = new MemoryStream(bytes);
-        using var gzip = new GZipStream(input, CompressionMode.Decompress);
-        using var document = JsonDocument.Parse(gzip);
-        var texts = new[] { new StringBuilder(), new StringBuilder(), new StringBuilder() };
-        foreach (var row in document.RootElement[0].EnumerateArray())
-        {
-            for (var index = 0; index < texts.Length; index++)
-            {
-                if (row[index].ValueKind is not JsonValueKind.Null)
-                    texts[index].Append(row[index].GetString());
-            }
-        }
-        return [.. texts.Select(text => text.ToString()), document.RootElement[1].GetString()!];
+        var texts = ConflictTextPayloadBuilder.Expand(response);
+        return [texts.Base, texts.Ours, texts.Theirs, texts.Result];
     }
 }

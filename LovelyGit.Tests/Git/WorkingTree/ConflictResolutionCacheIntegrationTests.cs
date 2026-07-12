@@ -23,6 +23,13 @@ public sealed class ConflictResolutionCacheIntegrationTests(ConflictRepositoryFi
         Assert.NotSame(exact, ignored);
         Assert.Same(ignored, ignoredAgain);
         Assert.Equal(exact.WorktreeFingerprint, ignored.WorktreeFingerprint);
+        Assert.Equal(exact.Hunks, ignored.Hunks);
+        Assert.Equal(exact.CurrentSource, ignored.CurrentSource);
+        Assert.Equal(exact.IncomingSource, ignored.IncomingSource);
+        Assert.Equal(exact.Base.Text, ignored.Base.Text);
+        Assert.Equal(exact.Ours.Text, ignored.Ours.Text);
+        Assert.Equal(exact.Theirs.Text, ignored.Theirs.Text);
+        Assert.Equal(exact.Result.Text, ignored.Result.Text);
     }
 
     [Fact]

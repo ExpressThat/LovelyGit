@@ -39,6 +39,18 @@ internal sealed partial class ConflictResolutionService
             return cached;
         }
 
+        if (_responseCache.TryGetSibling(
+                repositoryPath,
+                path,
+                fingerprint,
+                ignoreWhitespace,
+                out var sibling))
+        {
+            var variant = BuildCachedVariant(sibling, ignoreWhitespace);
+            _responseCache.Set(repositoryPath, path, fingerprint, ignoreWhitespace, variant);
+            return variant;
+        }
+
         var baseVersion = await ReadVersionAsync(repository, entries.GetValueOrDefault(1), cancellationToken)
             .ConfigureAwait(false);
         var ours = await ReadVersionAsync(repository, entries.GetValueOrDefault(2), cancellationToken)

@@ -17,6 +17,8 @@ public sealed class ConflictResolutionResponseCacheTests
         Assert.False(cache.TryGet("repo-b", "file.txt", "fingerprint", false, out _));
         Assert.False(cache.TryGet("repo-a", "other.txt", "fingerprint", false, out _));
         Assert.False(cache.TryGet("repo-a", "file.txt", "fingerprint", true, out _));
+        Assert.True(cache.TryGetSibling("repo-a", "file.txt", "fingerprint", true, out var sibling));
+        Assert.Same(exact, sibling);
     }
 
     [Fact]

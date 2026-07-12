@@ -25,21 +25,62 @@ public sealed class ConflictPreparationPerformanceTests(ITestOutputHelper output
             $"Prepared path allocated {shared.Allocated:N0} vs {duplicated.Allocated:N0} bytes.");
     }
 
-    private static object PrepareShared(Fixture fixture)
+    [Fact]
+    public void WhitespaceVariant_ReusingExactHunksAvoidsDuplicateExactDiffWork()
+    {
+        var fixture = CreateFixture(5_000);
+        var exact = PrepareShared(fixture);
+        _ = PrepareWhitespaceFromScratch(fixture);
+        _ = PrepareWhitespaceWithHunks(fixture, exact.Hunks);
+
+        var fromScratch = Measure(() => PrepareWhitespaceFromScratch(fixture));
+        var reused = Measure(() => PrepareWhitespaceWithHunks(fixture, exact.Hunks));
+
+        output.WriteLine($"Whitespace from scratch: {fromScratch.Elapsed.TotalMilliseconds:N1} ms, {fromScratch.Allocated:N0} bytes");
+        output.WriteLine($"Whitespace with exact hunks: {reused.Elapsed.TotalMilliseconds:N1} ms, {reused.Allocated:N0} bytes");
+        Assert.True(
+            reused.Allocated < fromScratch.Allocated * 0.75,
+            $"Reused path allocated {reused.Allocated:N0} vs {fromScratch.Allocated:N0} bytes.");
+    }
+
+    private static PreparedConflict PrepareShared(Fixture fixture)
     {
         var currentModel = ConflictHunkBuilder.BuildModel(fixture.Base, fixture.Current);
         var incomingModel = ConflictHunkBuilder.BuildModel(fixture.Base, fixture.Incoming);
-        return new
-        {
-            Hunks = ConflictHunkBuilder.Build(
+        return new PreparedConflict(
+            ConflictHunkBuilder.Build(
                 fixture.Current,
                 fixture.Incoming,
                 fixture.Result,
                 currentModel,
                 incomingModel),
-            Current = BuildPrepared(fixture.Base, fixture.Current, currentModel),
-            Incoming = BuildPrepared(fixture.Base, fixture.Incoming, incomingModel),
-        };
+            BuildPrepared(fixture.Base, fixture.Current, currentModel),
+            BuildPrepared(fixture.Base, fixture.Incoming, incomingModel));
+    }
+
+    private static PreparedConflict PrepareWhitespaceFromScratch(Fixture fixture)
+    {
+        var exactCurrent = ConflictHunkBuilder.BuildModel(fixture.Base, fixture.Current);
+        var exactIncoming = ConflictHunkBuilder.BuildModel(fixture.Base, fixture.Incoming);
+        var hunks = ConflictHunkBuilder.Build(
+            fixture.Current,
+            fixture.Incoming,
+            fixture.Result,
+            exactCurrent,
+            exactIncoming);
+        return PrepareWhitespaceWithHunks(fixture, hunks);
+    }
+
+    private static PreparedConflict PrepareWhitespaceWithHunks(
+        Fixture fixture,
+        List<ExpressThat.LovelyGit.Services.Git.WorkingTree.Models.ConflictHunk> hunks)
+    {
+        var current = ConflictHunkBuilder.BuildModel(fixture.Base, fixture.Current, ignoreWhitespace: true);
+        var incoming = ConflictHunkBuilder.BuildModel(fixture.Base, fixture.Incoming, ignoreWhitespace: true);
+        return new PreparedConflict(
+            hunks,
+            BuildPrepared(fixture.Base, fixture.Current, current),
+            BuildPrepared(fixture.Base, fixture.Incoming, incoming));
     }
 
     private static object PrepareDuplicated(Fixture fixture)
@@ -99,5 +140,9 @@ public sealed class ConflictPreparationPerformanceTests(ITestOutputHelper output
     }
 
     private sealed record Fixture(string Base, string Current, string Incoming, string Result);
+    private sealed record PreparedConflict(
+        List<ExpressThat.LovelyGit.Services.Git.WorkingTree.Models.ConflictHunk> Hunks,
+        CommitFileDiffResponse Current,
+        CommitFileDiffResponse Incoming);
     private readonly record struct Measurement(TimeSpan Elapsed, long Allocated);
 }

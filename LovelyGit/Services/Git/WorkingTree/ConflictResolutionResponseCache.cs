@@ -39,6 +39,14 @@ internal sealed class ConflictResolutionResponseCache(int capacity = 8)
         }
     }
 
+    public bool TryGetSibling(
+        string repositoryPath,
+        string path,
+        string fingerprint,
+        bool ignoreWhitespace,
+        out ConflictResolutionResponse response) =>
+        TryGet(repositoryPath, path, fingerprint, !ignoreWhitespace, out response);
+
     public void Set(
         string repositoryPath,
         string path,

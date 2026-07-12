@@ -1,4 +1,5 @@
 using System.IO.Compression;
+using System.Text;
 using System.Text.Json;
 using ExpressThat.LovelyGit.Services.Git.WorkingTree.Models;
 
@@ -38,6 +39,45 @@ internal static class ConflictTextPayloadBuilder
             version.TextGzipBase64 = null;
             version.TextEncoding = null;
         }
+    }
+
+    public static ConflictTexts Expand(ConflictResolutionResponse response)
+    {
+        if (response.CompactTextBundleGzipBase64 is not { } bundle)
+        {
+            return new(
+                response.Base.Text,
+                response.Ours.Text,
+                response.Theirs.Text,
+                response.Result.Text);
+        }
+
+        if (response.CompactTextSchema != BundleSchema)
+        {
+            throw new InvalidOperationException($"Unsupported conflict text schema: {response.CompactTextSchema}");
+        }
+
+        var bytes = Convert.FromBase64String(bundle);
+        using var input = new MemoryStream(bytes);
+        using var gzip = new GZipStream(input, CompressionMode.Decompress);
+        using var document = JsonDocument.Parse(gzip);
+        var sources = new[] { new StringBuilder(), new StringBuilder(), new StringBuilder() };
+        foreach (var row in document.RootElement[0].EnumerateArray())
+        {
+            for (var index = 0; index < sources.Length; index++)
+            {
+                if (row[index].ValueKind is not JsonValueKind.Null)
+                {
+                    sources[index].Append(row[index].GetString());
+                }
+            }
+        }
+
+        return new(
+            sources[0].ToString(),
+            sources[1].ToString(),
+            sources[2].ToString(),
+            document.RootElement[1].GetString());
     }
 
     private static void WriteInterleavedSources(
@@ -84,3 +124,5 @@ internal static class ConflictTextPayloadBuilder
         position += length;
     }
 }
+
+internal readonly record struct ConflictTexts(string? Base, string? Ours, string? Theirs, string? Result);
