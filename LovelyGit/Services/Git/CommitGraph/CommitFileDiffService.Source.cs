@@ -46,7 +46,7 @@ internal sealed partial class CommitFileDiffService : IDisposable
     {
         try
         {
-            return await _commitGraphRepository
+            var cached = await _commitGraphRepository
                 .GetCommitFileDiffAsync(
                     repositoryId,
                     commitHash,
@@ -55,6 +55,9 @@ internal sealed partial class CommitFileDiffService : IDisposable
                     ignoreWhitespace,
                     cancellationToken)
                 .ConfigureAwait(false);
+            if (cached is not null && !IsValidCachedDiff(cached))
+                throw new InvalidDataException("Cached diff payload is incomplete.");
+            return cached;
         }
         catch when (!cancellationToken.IsCancellationRequested)
         {
