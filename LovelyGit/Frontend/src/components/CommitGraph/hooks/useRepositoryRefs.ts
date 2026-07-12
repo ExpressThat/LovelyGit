@@ -14,7 +14,7 @@ type RepositoryRefsState =
 	| { status: "loaded"; refs: RepositoryRefsResponse }
 	| { status: "error"; refs: null; message: string };
 
-export const CACHED_REFS_REFRESH_DELAY_MS = 500;
+export const CACHED_REFS_REFRESH_DELAY_MS = 3_000;
 
 export function useRepositoryRefs(
 	repositoryId: string | null,

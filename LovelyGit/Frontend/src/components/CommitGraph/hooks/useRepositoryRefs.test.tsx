@@ -63,7 +63,7 @@ describe("useRepositoryRefs", () => {
 		expect(result.current.refs?.currentBranchName).toBe("fresh");
 	});
 
-	it("cancels an abandoned cached refresh on a rapid tab switch", () => {
+	it("does not start an expensive refs read for an abandoned tab", () => {
 		getCached.mockImplementation((repositoryId) => refs(repositoryId));
 		load.mockResolvedValue(refs("fresh"));
 		const { rerender } = renderHook(
@@ -72,6 +72,8 @@ describe("useRepositoryRefs", () => {
 		);
 
 		rerender({ repositoryId: "repo-b" });
+		act(() => vi.advanceTimersByTime(CACHED_REFS_REFRESH_DELAY_MS - 1));
+		expect(load).not.toHaveBeenCalled();
 		act(() => vi.advanceTimersByTime(CACHED_REFS_REFRESH_DELAY_MS));
 
 		expect(load).toHaveBeenCalledOnce();
