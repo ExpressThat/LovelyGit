@@ -1,4 +1,5 @@
 import { GripVertical } from "@/components/icons/lovelyIcons";
+import { horizontalPanelHandleClassName } from "./workspaceLayering";
 
 export function HorizontalPanelHandle({
 	label,
@@ -14,7 +15,7 @@ export function HorizontalPanelHandle({
 	return (
 		<button
 			aria-label={label}
-			className={`${side === "left" ? "-left-1" : "-right-1"} group absolute inset-y-0 z-20 w-2 cursor-col-resize focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring`}
+			className={`${side === "left" ? "-left-1" : "-right-1"} ${horizontalPanelHandleClassName}`}
 			onKeyDown={(event) => {
 				if (event.key === "ArrowLeft") onResizeBy(-16);
 				if (event.key === "ArrowRight") onResizeBy(16);

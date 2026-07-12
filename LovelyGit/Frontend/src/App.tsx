@@ -7,6 +7,7 @@ import { AppOverlaysContainer } from "./AppOverlaysContainer";
 import { commitDetailsPanel, panelTitle } from "./AppPanelState";
 import { CommitGraphLayer } from "./components/CommitGraph/CommitGraphLayer";
 import { SlidingDetailsPanel } from "./components/DetailsPanel/SlidingDetailsPanel";
+import { workspaceDrillInLayerClassName } from "./components/layout/workspaceLayering";
 import { TopNavBar } from "./components/TopNavBar/TopNavBar";
 import { useWorkingTreeChanges } from "./components/WorkingChanges/useWorkingTreeChanges";
 import type { CommitGraphRow } from "./generated/types";
@@ -99,7 +100,7 @@ function App() {
 									scopedDetailsPanel.selectedFile ? (
 										<motion.div
 											animate={{ opacity: 1, x: 0, scale: 1 }}
-											className="absolute inset-0 z-10 min-w-0 overflow-hidden"
+											className={workspaceDrillInLayerClassName}
 											exit={{ opacity: 0, x: 56, scale: 0.995 }}
 											initial={{ opacity: 0, x: 56, scale: 0.995 }}
 											key={`diff:${scopedDetailsPanel.commitHash}:${scopedDetailsPanel.parentIndex ?? 0}:${scopedDetailsPanel.selectedFile.path}`}
@@ -129,7 +130,7 @@ function App() {
 									currentGitRepositoryId ? (
 										<motion.div
 											animate={{ opacity: 1, x: 0, scale: 1 }}
-											className="absolute inset-0 z-10 min-w-0 overflow-hidden"
+											className={workspaceDrillInLayerClassName}
 											exit={{ opacity: 0, x: 56, scale: 0.995 }}
 											initial={{ opacity: 0, x: 56, scale: 0.995 }}
 											key={`working-diff:${scopedDetailsPanel.selectedFile.group}:${scopedDetailsPanel.selectedFile.path}`}
