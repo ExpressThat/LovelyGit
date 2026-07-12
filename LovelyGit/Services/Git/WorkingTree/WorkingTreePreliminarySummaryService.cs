@@ -4,7 +4,7 @@ using ExpressThat.LovelyGit.Services.Git.WorkingTree.Models;
 
 namespace ExpressThat.LovelyGit.Services.Git.WorkingTree;
 
-internal sealed class WorkingTreePreliminarySummaryService
+internal sealed partial class WorkingTreePreliminarySummaryService
 {
     public Task<WorkingTreeChangeSummaryResponse> GetSummaryAsync(
         string workTreeDirectory,
@@ -23,7 +23,7 @@ internal sealed class WorkingTreePreliminarySummaryService
             return Task.FromResult(Incomplete(0));
         }
 
-        var count = CountRootEntriesMissingFromIndex(gitDirectory, candidates, cancellationToken);
+        var count = CountRootEntriesMissingFromIndexCached(gitDirectory, candidates, cancellationToken);
         return Task.FromResult(Incomplete(count));
     }
 
