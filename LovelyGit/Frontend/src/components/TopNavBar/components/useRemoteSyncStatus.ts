@@ -10,10 +10,14 @@ export function useRemoteSyncStatus(
 	currentBranchName: string | null,
 ) {
 	const [status, setStatus] = useState<RemoteSyncStatusResponse | null>(null);
+	const branchNameRef = useRef(currentBranchName);
+	const statusRef = useRef<RemoteSyncStatusResponse | null>(null);
 	const requestVersion = useRef(0);
+	branchNameRef.current = currentBranchName;
 	const load = useCallback(async () => {
 		const version = ++requestVersion.current;
 		if (!repositoryId) {
+			statusRef.current = null;
 			setStatus(null);
 			return;
 		}
@@ -24,25 +28,41 @@ export function useRemoteSyncStatus(
 				arguments: { repositoryId },
 			});
 			if (version === requestVersion.current) {
-				setStatus(
-					(response?.branchName ?? null) === currentBranchName
+				const nextStatus =
+					(response?.branchName ?? null) === branchNameRef.current
 						? (response ?? null)
-						: null,
-				);
+						: null;
+				statusRef.current = nextStatus;
+				setStatus(nextStatus);
 			}
 		} catch (error) {
-			if (version === requestVersion.current) setStatus(null);
+			if (version === requestVersion.current) {
+				statusRef.current = null;
+				setStatus(null);
+			}
 			console.error(
 				"Failed to read native remote synchronization status.",
 				error,
 			);
 		}
-	}, [currentBranchName, repositoryId]);
+	}, [repositoryId]);
 
 	useEffect(() => {
+		statusRef.current = null;
 		setStatus(null);
 		void load();
 	}, [load]);
+
+	useEffect(() => {
+		const loadedStatus = statusRef.current;
+		if (!loadedStatus || loadedStatus.branchName === currentBranchName) {
+			return;
+		}
+
+		statusRef.current = null;
+		setStatus(null);
+		void load();
+	}, [currentBranchName, load]);
 
 	useEffect(
 		() =>

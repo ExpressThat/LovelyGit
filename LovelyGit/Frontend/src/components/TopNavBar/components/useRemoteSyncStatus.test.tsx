@@ -61,6 +61,76 @@ describe("useRemoteSyncStatus", () => {
 		expect(result.current.status?.aheadCount).toBe(4);
 	});
 
+	it("does not duplicate a pending read for transient branch states", async () => {
+		const pending = deferred<RemoteSyncStatusResponse>();
+		send.mockReturnValueOnce(pending.promise);
+		const { result, rerender } = renderHook(
+			({ branch }) => useRemoteSyncStatus("repo-1", branch),
+			{ initialProps: { branch: "previous" as string | null } },
+		);
+
+		rerender({ branch: null });
+		rerender({ branch: "main" });
+		expect(send).toHaveBeenCalledOnce();
+
+		await act(async () => pending.resolve(status(2, 1)));
+		expect(result.current.status?.aheadCount).toBe(2);
+	});
+
+	it("reloads when a loaded status belongs to the previous branch", async () => {
+		send
+			.mockResolvedValueOnce(status(1, 0))
+			.mockResolvedValueOnce(status(0, 3, "feature"));
+		const { result, rerender } = renderHook(
+			({ branch }) => useRemoteSyncStatus("repo-1", branch),
+			{ initialProps: { branch: "main" } },
+		);
+		await waitFor(() => expect(result.current.status?.aheadCount).toBe(1));
+
+		rerender({ branch: "feature" });
+
+		await waitFor(() => expect(result.current.status?.behindCount).toBe(3));
+		expect(send).toHaveBeenCalledTimes(2);
+	});
+
+	it("suppresses a response that does not match the latest branch", async () => {
+		const pending = deferred<RemoteSyncStatusResponse>();
+		send.mockReturnValueOnce(pending.promise);
+		const { result, rerender } = renderHook(
+			({ branch }) => useRemoteSyncStatus("repo-1", branch),
+			{ initialProps: { branch: "main" } },
+		);
+		rerender({ branch: "feature" });
+
+		await act(async () => pending.resolve(status(8, 8, "main")));
+
+		expect(result.current.status).toBeNull();
+		expect(send).toHaveBeenCalledOnce();
+	});
+
+	it("can refresh successfully after an initial read failure", async () => {
+		let graphChanged: (() => void) | undefined;
+		subscribe.mockImplementation((_event, listener) => {
+			graphChanged = listener as () => void;
+			return vi.fn();
+		});
+		const consoleError = vi
+			.spyOn(console, "error")
+			.mockImplementation(() => {});
+		send
+			.mockRejectedValueOnce(new Error("read failed"))
+			.mockResolvedValueOnce(status(5, 2));
+		const { result } = renderHook(() => useRemoteSyncStatus("repo-1", "main"));
+		await waitFor(() => expect(consoleError).toHaveBeenCalledOnce());
+		expect(result.current.status).toBeNull();
+
+		act(() => graphChanged?.());
+
+		await waitFor(() => expect(result.current.status?.aheadCount).toBe(5));
+		expect(send).toHaveBeenCalledTimes(2);
+		consoleError.mockRestore();
+	});
+
 	it("does not issue a read without a selected repository", () => {
 		const { result } = renderHook(() => useRemoteSyncStatus(null, null));
 		expect(result.current.status).toBeNull();
@@ -71,9 +141,10 @@ describe("useRemoteSyncStatus", () => {
 function status(
 	aheadCount: number,
 	behindCount: number,
+	branchName = "main",
 ): RemoteSyncStatusResponse {
 	return {
-		branchName: "main",
+		branchName,
 		upstreamName: "origin/main",
 		localHash: "local",
 		upstreamHash: "remote",
