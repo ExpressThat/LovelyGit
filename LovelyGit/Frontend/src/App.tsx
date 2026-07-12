@@ -4,11 +4,7 @@ import { useState } from "react";
 import { AppCommitDetailsPanel } from "./AppCommitDetailsPanel";
 import * as LazySurfaces from "./AppLazySurfaces";
 import { AppOverlaysContainer } from "./AppOverlaysContainer";
-import {
-	commitDetailsPanel,
-	type DetailsPanelState,
-	panelTitle,
-} from "./AppPanelState";
+import { commitDetailsPanel, panelTitle } from "./AppPanelState";
 import { CommitGraphLayer } from "./components/CommitGraph/CommitGraphLayer";
 import { SlidingDetailsPanel } from "./components/DetailsPanel/SlidingDetailsPanel";
 import { TopNavBar } from "./components/TopNavBar/TopNavBar";
@@ -22,22 +18,26 @@ import { NewTabSurface } from "./NewTabSurface";
 import { useAppOverlayState } from "./useAppOverlayState";
 import { useFileDiscoveryTargets } from "./useFileDiscoveryTargets";
 import { createRepositoryRefreshAction } from "./useRepositoryRefresh";
-import { useResetOnRepositoryChange } from "./useResetOnRepositoryChange";
+import { useRepositoryScopedDetailsPanel } from "./useRepositoryScopedDetailsPanel";
 
 function App() {
 	useApplyTheme();
 	useApplyFont();
 	const currentGitRepositoryId = useSetting("CurrentGitRepositoryId");
-	const [detailsPanel, setDetailsPanel] = useState<DetailsPanelState | null>(
-		null,
-	);
 	const [commitGraphRefreshToken, setCommitGraphRefreshToken] = useState(0);
 	const overlays = useAppOverlayState(Boolean(currentGitRepositoryId));
 	const fileDiscovery = useFileDiscoveryTargets();
 	const [currentBranchName, setCurrentBranchName] = useState<string | null>(
 		null,
 	);
-	const isWorkingChangesPanelOpen = detailsPanel?.kind === "workingChanges";
+	const [scopedDetailsPanel, setDetailsPanel] = useRepositoryScopedDetailsPanel(
+		currentGitRepositoryId,
+		setCurrentBranchName,
+		overlays.resetRepositoryOverlays,
+		fileDiscovery.reset,
+	);
+	const isWorkingChangesPanelOpen =
+		scopedDetailsPanel?.kind === "workingChanges";
 	const workingTreeChanges = useWorkingTreeChanges(
 		currentGitRepositoryId,
 		isWorkingChangesPanelOpen,
@@ -45,13 +45,6 @@ function App() {
 	const refreshRepository = createRepositoryRefreshAction(
 		workingTreeChanges.reload,
 		setCommitGraphRefreshToken,
-	);
-	useResetOnRepositoryChange(
-		currentGitRepositoryId,
-		setCurrentBranchName,
-		setDetailsPanel,
-		overlays.resetRepositoryOverlays,
-		fileDiscovery.reset,
 	);
 	const selectCommit = (row: CommitGraphRow) => {
 		setDetailsPanel({ commitHash: row.commit.hash, kind: "commit" });
@@ -82,8 +75,8 @@ function App() {
 							<>
 								<CommitGraphLayer
 									isDimmed={Boolean(
-										detailsPanel?.kind === "commit" &&
-											detailsPanel.selectedFile,
+										scopedDetailsPanel?.kind === "commit" &&
+											scopedDetailsPanel.selectedFile,
 									)}
 									onCurrentBranchNameChange={setCurrentBranchName}
 									onOpenWorkingChanges={() =>
@@ -96,57 +89,57 @@ function App() {
 									refreshToken={commitGraphRefreshToken}
 									repositoryId={currentGitRepositoryId}
 									selectedCommitHash={
-										detailsPanel?.kind === "commit"
-											? detailsPanel.commitHash
+										scopedDetailsPanel?.kind === "commit"
+											? scopedDetailsPanel.commitHash
 											: null
 									}
 								/>
 								<AnimatePresence initial={false}>
-									{detailsPanel?.kind === "commit" &&
-									detailsPanel.selectedFile ? (
+									{scopedDetailsPanel?.kind === "commit" &&
+									scopedDetailsPanel.selectedFile ? (
 										<motion.div
 											animate={{ opacity: 1, x: 0, scale: 1 }}
 											className="absolute inset-0 z-10 min-w-0 overflow-hidden"
 											exit={{ opacity: 0, x: 56, scale: 0.995 }}
 											initial={{ opacity: 0, x: 56, scale: 0.995 }}
-											key={`diff:${detailsPanel.commitHash}:${detailsPanel.parentIndex ?? 0}:${detailsPanel.selectedFile.path}`}
+											key={`diff:${scopedDetailsPanel.commitHash}:${scopedDetailsPanel.parentIndex ?? 0}:${scopedDetailsPanel.selectedFile.path}`}
 											transition={{
 												duration: 0.24,
 												ease: [0.22, 1, 0.36, 1],
 											}}
 										>
 											<LazySurfaces.CommitFileDiffSurface
-												commitHash={detailsPanel.commitHash}
-												file={detailsPanel.selectedFile}
+												commitHash={scopedDetailsPanel.commitHash}
+												file={scopedDetailsPanel.selectedFile}
 												onClose={() =>
 													setDetailsPanel(
 														commitDetailsPanel(
-															detailsPanel.commitHash,
-															detailsPanel.parentIndex,
+															scopedDetailsPanel.commitHash,
+															scopedDetailsPanel.parentIndex,
 														),
 													)
 												}
-												parentIndex={detailsPanel.parentIndex ?? 0}
+												parentIndex={scopedDetailsPanel.parentIndex ?? 0}
 												repositoryId={currentGitRepositoryId}
 											/>
 										</motion.div>
 									) : null}
-									{detailsPanel?.kind === "workingChanges" &&
-									detailsPanel.selectedFile &&
+									{scopedDetailsPanel?.kind === "workingChanges" &&
+									scopedDetailsPanel.selectedFile &&
 									currentGitRepositoryId ? (
 										<motion.div
 											animate={{ opacity: 1, x: 0, scale: 1 }}
 											className="absolute inset-0 z-10 min-w-0 overflow-hidden"
 											exit={{ opacity: 0, x: 56, scale: 0.995 }}
 											initial={{ opacity: 0, x: 56, scale: 0.995 }}
-											key={`working-diff:${detailsPanel.selectedFile.group}:${detailsPanel.selectedFile.path}`}
+											key={`working-diff:${scopedDetailsPanel.selectedFile.group}:${scopedDetailsPanel.selectedFile.path}`}
 											transition={{
 												duration: 0.24,
 												ease: [0.22, 1, 0.36, 1],
 											}}
 										>
 											<LazySurfaces.WorkingTreeDiffSurface
-												file={detailsPanel.selectedFile}
+												file={scopedDetailsPanel.selectedFile}
 												onChange={() => workingTreeChanges.reload()}
 												onClose={() =>
 													setDetailsPanel({
@@ -172,25 +165,31 @@ function App() {
 						)}
 					</div>
 					<SlidingDetailsPanel
-						isOpen={Boolean(detailsPanel && currentGitRepositoryId)}
+						isOpen={Boolean(scopedDetailsPanel && currentGitRepositoryId)}
 						onClose={() => setDetailsPanel(null)}
-						title={panelTitle(detailsPanel)}
+						title={panelTitle(scopedDetailsPanel)}
 					>
-						{detailsPanel?.kind === "commit" && currentGitRepositoryId ? (
+						{scopedDetailsPanel?.kind === "commit" && currentGitRepositoryId ? (
 							<AppCommitDetailsPanel
 								onOpenFileBlame={(file) =>
-									fileDiscovery.openBlame(file.path, detailsPanel.commitHash)
+									fileDiscovery.openBlame(
+										file.path,
+										scopedDetailsPanel.commitHash,
+									)
 								}
 								onOpenFileHistory={(file) =>
-									fileDiscovery.openHistory(file.path, detailsPanel.commitHash)
+									fileDiscovery.openHistory(
+										file.path,
+										scopedDetailsPanel.commitHash,
+									)
 								}
 								onPanelChange={setDetailsPanel}
-								panel={detailsPanel}
+								panel={scopedDetailsPanel}
 								refreshToken={commitGraphRefreshToken}
 								repositoryId={currentGitRepositoryId}
 							/>
 						) : null}
-						{detailsPanel?.kind === "workingChanges" &&
+						{scopedDetailsPanel?.kind === "workingChanges" &&
 						currentGitRepositoryId ? (
 							<LazySurfaces.WorkingChangesSurface
 								changes={workingTreeChanges.changes}

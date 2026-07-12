@@ -8,6 +8,8 @@ import { useResetOnRepositoryChange } from "./useResetOnRepositoryChange";
 
 describe("useResetOnRepositoryChange", () => {
 	it("clears repository-scoped overlays and selections when the tab changes", () => {
+		const scopeHistory: Array<{ repositoryId: string; isCurrent: boolean }> =
+			[];
 		const { result, rerender } = renderHook(
 			({ repositoryId }) => {
 				const [branch, setBranch] = useState<string | null>("main");
@@ -17,14 +19,15 @@ describe("useResetOnRepositoryChange", () => {
 				});
 				const [fileDiscoveryOpen, setFileDiscoveryOpen] = useState(true);
 				const [searchOpen, setSearchOpen] = useState(true);
-				useResetOnRepositoryChange(
+				const isCurrent = useResetOnRepositoryChange(
 					repositoryId,
 					setBranch,
 					setDetails,
 					() => setSearchOpen(false),
 					() => setFileDiscoveryOpen(false),
 				);
-				return { branch, details, fileDiscoveryOpen, searchOpen };
+				scopeHistory.push({ repositoryId, isCurrent });
+				return { branch, details, fileDiscoveryOpen, searchOpen, isCurrent };
 			},
 			{ initialProps: { repositoryId: "one" } },
 		);
@@ -35,7 +38,12 @@ describe("useResetOnRepositoryChange", () => {
 			branch: null,
 			details: null,
 			fileDiscoveryOpen: false,
+			isCurrent: true,
 			searchOpen: false,
+		});
+		expect(scopeHistory).toContainEqual({
+			repositoryId: "two",
+			isCurrent: false,
 		});
 	});
 });

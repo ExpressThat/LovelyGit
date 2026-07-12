@@ -9,6 +9,8 @@ export function useResetOnRepositoryChange(
 	resetFileDiscovery: () => void,
 ) {
 	const previousRepositoryIdRef = useRef<string | null>(repositoryId);
+	const isRepositoryStateCurrent =
+		previousRepositoryIdRef.current === repositoryId;
 	useEffect(() => {
 		if (previousRepositoryIdRef.current === repositoryId) return;
 		previousRepositoryIdRef.current = repositoryId;
@@ -23,4 +25,5 @@ export function useResetOnRepositoryChange(
 		resetRepositoryOverlays,
 		resetFileDiscovery,
 	]);
+	return isRepositoryStateCurrent;
 }
