@@ -5,6 +5,7 @@ using LovelyGit.Tests.Git.Branches;
 
 namespace LovelyGit.Tests.Git.WorkingTree;
 
+[Collection(GitShellIntegrationCollection.Name)]
 public sealed class WorkingTreeCommitSigningTests
 {
     [Fact]

@@ -10,10 +10,12 @@ internal static partial class NativeBranchComparisonReader
         string targetCommitHash,
         CancellationToken cancellationToken)
     {
+        var normalizedCurrent = NormalizeCommitHash(currentCommitHash, nameof(currentCommitHash));
+        var normalizedTarget = NormalizeCommitHash(targetCommitHash, nameof(targetCommitHash));
         using var repository = await LovelyGitRepository.OpenAsync(repositoryPath, cancellationToken)
             .ConfigureAwait(false);
-        var current = ParseCommitId(repository, currentCommitHash, nameof(currentCommitHash));
-        var target = ParseCommitId(repository, targetCommitHash, nameof(targetCommitHash));
+        var current = ParseCommitId(repository, normalizedCurrent, nameof(currentCommitHash));
+        var target = ParseCommitId(repository, normalizedTarget, nameof(targetCommitHash));
         await Task.WhenAll(
             repository.GetCommitAsync(current, cancellationToken),
             repository.GetCommitAsync(target, cancellationToken)).ConfigureAwait(false);
@@ -31,12 +33,22 @@ internal static partial class NativeBranchComparisonReader
         string value,
         string parameterName)
     {
-        var normalized = value.Trim();
-        if (!GitObjectId.TryParse(normalized, repository.ObjectFormat, out var id))
+        if (!GitObjectId.TryParse(value, repository.ObjectFormat, out var id))
         {
             throw new ArgumentException("Commit hash is invalid for this repository.", parameterName);
         }
         return id;
+    }
+
+    private static string NormalizeCommitHash(string value, string parameterName)
+    {
+        var normalized = value.Trim();
+        if ((normalized.Length is not 40 and not 64)
+            || normalized.Any(character => !Uri.IsHexDigit(character)))
+        {
+            throw new ArgumentException("Commit hash is invalid.", parameterName);
+        }
+        return normalized;
     }
 
     private static string ShortHash(GitObjectId id) => id.ToString()[..7];

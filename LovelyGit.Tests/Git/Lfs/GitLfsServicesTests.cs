@@ -3,6 +3,7 @@ using ExpressThat.LovelyGit.Services.Git.Lfs;
 
 namespace LovelyGit.Tests.Git.Lfs;
 
+[Collection(GitShellIntegrationCollection.Name)]
 public sealed class GitLfsServicesTests
 {
     [Fact]

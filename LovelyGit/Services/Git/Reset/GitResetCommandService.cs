@@ -21,6 +21,8 @@ internal sealed class GitResetCommandService
         GitResetMode mode,
         CancellationToken cancellationToken)
     {
+        var normalizedCommitHash = NormalizeCommitHash(commitHash);
+        var modeArgument = ModeArgument(mode);
         var paths = await GitRepositoryDiscovery
             .ResolveRepositoryPathsAsync(repositoryPath, cancellationToken)
             .ConfigureAwait(false);
@@ -29,7 +31,7 @@ internal sealed class GitResetCommandService
 
         await _operations.ExecuteRequiredBufferedAsync(
             $"{FormatMode(mode)} reset {branchName}",
-            ["reset", ModeArgument(mode), NormalizeCommitHash(commitHash)],
+            ["reset", modeArgument, normalizedCommitHash],
             paths.WorkTreeDirectory,
             RecoveryHint(mode),
             cancellationToken).ConfigureAwait(false);

@@ -115,11 +115,21 @@ public sealed class NativeBranchComparisonReaderTests
     [InlineData("0123456")]
     public async Task ReadCommitsAsync_RejectsInvalidCommitIdentity(string value)
     {
-        using var repository = TemporaryGitRepository.Create();
-        var head = await HeadAsync(repository);
-        await Assert.ThrowsAsync<ArgumentException>(() =>
-            NativeBranchComparisonReader.ReadCommitsAsync(
-                repository.Path, value, head, CancellationToken.None));
+        var directory = Directory.CreateTempSubdirectory("lovelygit-invalid-comparison-");
+        try
+        {
+            await Assert.ThrowsAsync<ArgumentException>(() =>
+                NativeBranchComparisonReader.ReadCommitsAsync(
+                    directory.FullName,
+                    value,
+                    new string('1', 40),
+                    CancellationToken.None));
+            Assert.False(Directory.Exists(Path.Combine(directory.FullName, ".git")));
+        }
+        finally
+        {
+            directory.Delete(recursive: true);
+        }
     }
 
     private static async Task CommitFilesAsync(

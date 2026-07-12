@@ -50,16 +50,28 @@ public sealed class GitResetCommandServiceTests
     [Fact]
     public async Task ResetCurrentBranchToCommitAsync_RejectsInvalidHashWithoutMutation()
     {
-        using var repository = TemporaryGitRepository.Create();
+        var directory = Directory.CreateTempSubdirectory("lovelygit-invalid-reset-");
+        var sentinel = Path.Combine(directory.FullName, "sentinel.txt");
+        await File.WriteAllTextAsync(sentinel, "unchanged");
 
-        await Assert.ThrowsAsync<ArgumentException>(() =>
-            repository.Service.ResetCurrentBranchToCommitAsync(
-                repository.Path,
-                "not-a-hash",
-                GitResetMode.Mixed,
-                CancellationToken.None));
+        try
+        {
+            var service = new GitResetCommandService(
+                new GitOperationService(new GitCliService()));
+            await Assert.ThrowsAsync<ArgumentException>(() =>
+                service.ResetCurrentBranchToCommitAsync(
+                    directory.FullName,
+                    "not-a-hash",
+                    GitResetMode.Mixed,
+                    CancellationToken.None));
 
-        Assert.Equal(repository.SecondCommitHash, repository.RunGit(["rev-parse", "HEAD"]));
+            Assert.Equal("unchanged", await File.ReadAllTextAsync(sentinel));
+            Assert.False(Directory.Exists(Path.Combine(directory.FullName, ".git")));
+        }
+        finally
+        {
+            directory.Delete(recursive: true);
+        }
     }
 
     [Fact]

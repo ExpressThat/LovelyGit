@@ -3,6 +3,7 @@ using LovelyGit.Tests.Git.RepositoryOperations;
 
 namespace LovelyGit.Tests.Git.WorkingTree;
 
+[Collection(GitShellIntegrationCollection.Name)]
 public sealed class ConflictExternalMergeToolServiceTests
     : IClassFixture<ConflictRepositoryFixture>
 {

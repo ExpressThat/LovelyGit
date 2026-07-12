@@ -66,12 +66,10 @@ public sealed class GitStashCommandServiceTests
     [Fact]
     public async Task StashChangesAsync_RejectsEmptyMessage()
     {
-        using var repository = TemporaryGitRepository.Create();
-        var stashService = new GitStashCommandService(repository.GitOperationService);
-
-        await Assert.ThrowsAsync<ArgumentException>(() =>
-            stashService.StashChangesAsync(
-                repository.Path,
+        await AssertInvalidDoesNotMutateAsync(path =>
+            new GitStashCommandService(new GitOperationService(new GitCliService()))
+                .StashChangesAsync(
+                path,
                 " ",
                 includeUntracked: false,
                 CancellationToken.None));
@@ -166,18 +164,30 @@ public sealed class GitStashCommandServiceTests
         string branchName,
         string selector)
     {
-        using var repository = TemporaryGitRepository.Create();
-        var stashService = new GitStashCommandService(repository.GitOperationService);
-        await CreateTrackedStashAsync(repository, stashService);
-
-        await Assert.ThrowsAsync<ArgumentException>(() =>
-            stashService.BranchFromStashAsync(
-                repository.Path,
+        await AssertInvalidDoesNotMutateAsync(path =>
+            new GitStashCommandService(new GitOperationService(new GitCliService()))
+                .BranchFromStashAsync(
+                path,
                 selector,
                 branchName,
                 CancellationToken.None));
+    }
 
-        Assert.Contains("LovelyGit action stash", await StashListAsync(repository));
+    private static async Task AssertInvalidDoesNotMutateAsync(Func<string, Task> action)
+    {
+        var directory = Directory.CreateTempSubdirectory("lovelygit-invalid-stash-");
+        var sentinel = Path.Combine(directory.FullName, "sentinel.txt");
+        await File.WriteAllTextAsync(sentinel, "unchanged");
+        try
+        {
+            await Assert.ThrowsAsync<ArgumentException>(() => action(directory.FullName));
+            Assert.Equal("unchanged", await File.ReadAllTextAsync(sentinel));
+            Assert.False(Directory.Exists(Path.Combine(directory.FullName, ".git")));
+        }
+        finally
+        {
+            directory.Delete(recursive: true);
+        }
     }
 
     private static async Task CreateTrackedStashAsync(

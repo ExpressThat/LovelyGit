@@ -67,13 +67,17 @@ public sealed class GitIgnoreServiceTests
     [InlineData("unsafe\nrule.txt")]
     public async Task AddExactPathAsync_RejectsUnsafePaths(string path)
     {
-        using var repository = await CreateRepositoryAsync();
+        using var directory = TemporaryDirectory.Create("lovelygit-invalid-ignore-");
+        var sentinel = Path.Combine(directory.Path, "sentinel.txt");
+        await File.WriteAllTextAsync(sentinel, "unchanged");
 
         await Assert.ThrowsAsync<ArgumentException>(() => new GitIgnoreService().AddExactPathAsync(
-            repository.Path,
+            directory.Path,
             path,
             GitIgnoreTarget.Shared,
             CancellationToken.None));
+        Assert.Equal("unchanged", await File.ReadAllTextAsync(sentinel));
+        Assert.False(File.Exists(Path.Combine(directory.Path, ".gitignore")));
     }
 
     [Fact]

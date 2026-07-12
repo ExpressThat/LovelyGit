@@ -40,12 +40,23 @@ public sealed class GitCommitIdentityCommandServiceTests
         string email,
         string expectedMessage)
     {
-        using var repository = TemporaryCommandRepository.Create();
+        var directory = Directory.CreateTempSubdirectory("lovelygit-invalid-identity-");
+        var sentinel = Path.Combine(directory.FullName, "sentinel.txt");
+        await File.WriteAllTextAsync(sentinel, "unchanged");
 
-        var exception = await Assert.ThrowsAsync<ArgumentException>(() =>
-            CreateService().SaveAsync(repository.Path, name, email, CancellationToken.None));
+        try
+        {
+            var exception = await Assert.ThrowsAsync<ArgumentException>(() =>
+                CreateService().SaveAsync(directory.FullName, name, email, CancellationToken.None));
 
-        Assert.Contains(expectedMessage, exception.Message, StringComparison.OrdinalIgnoreCase);
+            Assert.Contains(expectedMessage, exception.Message, StringComparison.OrdinalIgnoreCase);
+            Assert.Equal("unchanged", await File.ReadAllTextAsync(sentinel));
+            Assert.False(Directory.Exists(Path.Combine(directory.FullName, ".git")));
+        }
+        finally
+        {
+            directory.Delete(recursive: true);
+        }
     }
 
     private static GitCommitIdentityCommandService CreateService() => new(

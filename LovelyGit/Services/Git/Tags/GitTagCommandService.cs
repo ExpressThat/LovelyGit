@@ -23,15 +23,16 @@ internal sealed class GitTagCommandService
     {
         var name = NormalizeTagName(tagName);
         var target = NormalizeCommitHash(commitHash);
-        await EnsureCommitExistsAsync(repositoryPath, target, cancellationToken)
-            .ConfigureAwait(false);
         if (sign && !isAnnotated)
         {
             throw new ArgumentException("Signed tags must be annotated.", nameof(isAnnotated));
         }
+        var normalizedMessage = isAnnotated ? NormalizeMessage(message) : null;
+        await EnsureCommitExistsAsync(repositoryPath, target, cancellationToken)
+            .ConfigureAwait(false);
 
         IReadOnlyList<string> arguments = isAnnotated
-            ? ["tag", sign ? "--sign" : "--annotate", "--message", NormalizeMessage(message), "--", name, target]
+            ? ["tag", sign ? "--sign" : "--annotate", "--message", normalizedMessage!, "--", name, target]
             : ["tag", "--", name, target];
         await RunAsync(
             repositoryPath,

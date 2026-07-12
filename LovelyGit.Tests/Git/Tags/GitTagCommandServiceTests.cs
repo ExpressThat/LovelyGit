@@ -167,16 +167,27 @@ public sealed class GitTagCommandServiceTests
         string remoteName,
         string tagName)
     {
-        using var repository = TemporaryTagGitRepository.Create();
-        var tagService = new GitTagCommandService(repository.GitOperationService);
+        var directory = Directory.CreateTempSubdirectory("lovelygit-invalid-remote-tag-");
+        var sentinel = Path.Combine(directory.FullName, "sentinel.txt");
+        await File.WriteAllTextAsync(sentinel, "unchanged");
 
-        await Assert.ThrowsAsync<ArgumentException>(() => tagService.DeleteRemoteTagAsync(
-            repository.Path,
-            remoteName,
-            tagName,
-            CancellationToken.None));
+        try
+        {
+            var service = new GitTagCommandService(
+                new GitOperationService(new GitCliService()));
+            await Assert.ThrowsAsync<ArgumentException>(() => service.DeleteRemoteTagAsync(
+                directory.FullName,
+                remoteName,
+                tagName,
+                CancellationToken.None));
 
-        Assert.Equal(repository.HeadCommitHash, await repository.ResolveHeadAsync());
+            Assert.Equal("unchanged", await File.ReadAllTextAsync(sentinel));
+            Assert.False(Directory.Exists(Path.Combine(directory.FullName, ".git")));
+        }
+        finally
+        {
+            directory.Delete(recursive: true);
+        }
     }
 
 }

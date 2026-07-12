@@ -84,19 +84,26 @@ public sealed class SparseCheckoutServicesTests
     [InlineData("/absolute")]
     public async Task InvalidConePath_DoesNotMutateRepository(string path)
     {
-        using var repository = SparseRepository.Create();
-        var service = CreateService();
+        var directory = Directory.CreateTempSubdirectory("lovelygit-invalid-sparse-");
+        var sentinel = Path.Combine(directory.FullName, "sentinel.txt");
+        await File.WriteAllTextAsync(sentinel, "unchanged");
 
-        await Assert.ThrowsAsync<ArgumentException>(() => service.ExecuteAsync(
-            repository.Path,
-            SparseCheckoutAction.Set,
-            true,
-            [path],
-            CancellationToken.None));
+        try
+        {
+            await Assert.ThrowsAsync<ArgumentException>(() => CreateService().ExecuteAsync(
+                directory.FullName,
+                SparseCheckoutAction.Set,
+                true,
+                [path],
+                CancellationToken.None));
 
-        Assert.False((await new NativeSparseCheckoutReader().ReadAsync(
-            repository.Path,
-            CancellationToken.None)).Enabled);
+            Assert.Equal("unchanged", await File.ReadAllTextAsync(sentinel));
+            Assert.False(Directory.Exists(Path.Combine(directory.FullName, ".git")));
+        }
+        finally
+        {
+            directory.Delete(recursive: true);
+        }
     }
 
     [Fact]

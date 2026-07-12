@@ -17,6 +17,7 @@ internal sealed class GitIgnoreService
         {
             throw new ArgumentOutOfRangeException(nameof(target));
         }
+        _ = NormalizeRepositoryPath(repositoryPath, relativePath);
 
         var paths = await GitRepositoryDiscovery
             .ResolveRepositoryPathsAsync(repositoryPath, cancellationToken)

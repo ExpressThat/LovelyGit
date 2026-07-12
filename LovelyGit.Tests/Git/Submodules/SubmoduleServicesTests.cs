@@ -3,6 +3,7 @@ using ExpressThat.LovelyGit.Services.Git.Submodules;
 
 namespace LovelyGit.Tests.Git.Submodules;
 
+[Collection(GitShellIntegrationCollection.Name)]
 public sealed class SubmoduleServicesTests
 {
     [Fact]

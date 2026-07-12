@@ -3,6 +3,7 @@ using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.WorkingTre
 
 namespace LovelyGit.Tests.Git.Cli;
 
+[Collection(GitShellIntegrationCollection.Name)]
 public sealed class GitRemoteCommandServiceTests
 {
     [Theory]
@@ -223,11 +224,26 @@ public sealed class GitRemoteCommandServiceTests
     [InlineData("backup", "https://example.invalid/repository.git\nunsafe")]
     public async Task AddAsync_RejectsUnsafeNameOrUrl(string name, string url)
     {
-        using var repository = TemporaryRemoteGitRepository.Create();
-        var service = new GitRemoteCommandService(repository.GitCliService);
+        var directory = Directory.CreateTempSubdirectory("lovelygit-invalid-remote-");
+        var sentinel = Path.Combine(directory.FullName, "sentinel.txt");
+        await File.WriteAllTextAsync(sentinel, "unchanged");
 
-        await Assert.ThrowsAsync<ArgumentException>(() =>
-            service.AddAsync(repository.ClonePath, name, url, null, CancellationToken.None));
+        try
+        {
+            await Assert.ThrowsAsync<ArgumentException>(() =>
+                new GitRemoteCommandService(new GitCliService()).AddAsync(
+                    directory.FullName,
+                    name,
+                    url,
+                    null,
+                    CancellationToken.None));
+            Assert.Equal("unchanged", await File.ReadAllTextAsync(sentinel));
+            Assert.False(Directory.Exists(Path.Combine(directory.FullName, ".git")));
+        }
+        finally
+        {
+            directory.Delete(recursive: true);
+        }
     }
 
 }

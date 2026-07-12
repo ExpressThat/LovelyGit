@@ -4,6 +4,7 @@ using LovelyGit.Tests.Git.WorkingTree;
 
 namespace LovelyGit.Tests.Git.Bisect;
 
+[Collection(GitShellIntegrationCollection.Name)]
 public sealed class GitBisectServicesTests
 {
     [Fact]

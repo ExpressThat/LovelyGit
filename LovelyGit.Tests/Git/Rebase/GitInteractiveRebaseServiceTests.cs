@@ -5,6 +5,7 @@ using LovelyGit.Tests.Git.Branches;
 
 namespace LovelyGit.Tests.Git.Rebase;
 
+[Collection(GitShellIntegrationCollection.Name)]
 public sealed class GitInteractiveRebaseServiceTests
 {
     [Fact]

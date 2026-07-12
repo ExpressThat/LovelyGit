@@ -26,16 +26,25 @@ public sealed class GitCheckoutCommitCommandServiceTests
     [InlineData("0123456")]
     public async Task CheckoutCommitAsync_RejectsInvalidHashWithoutMovingHead(string hash)
     {
-        using var repository = TemporaryGitRepository.Create();
-        var service = new GitBranchCommandService(repository.GitCliService);
+        var directory = Directory.CreateTempSubdirectory("lovelygit-invalid-checkout-commit-");
+        var sentinel = Path.Combine(directory.FullName, "sentinel.txt");
+        await File.WriteAllTextAsync(sentinel, "unchanged");
 
-        await Assert.ThrowsAsync<ArgumentException>(() => service.CheckoutCommitAsync(
-            repository.Path,
-            hash,
-            CancellationToken.None));
+        try
+        {
+            await Assert.ThrowsAsync<ArgumentException>(() =>
+                new GitBranchCommandService(new GitCliService()).CheckoutCommitAsync(
+                    directory.FullName,
+                    hash,
+                    CancellationToken.None));
 
-        Assert.Equal(repository.HeadCommitHash, await OutputAsync(repository, "rev-parse", "HEAD"));
-        Assert.NotEqual(string.Empty, await OutputAsync(repository, "branch", "--show-current"));
+            Assert.Equal("unchanged", await File.ReadAllTextAsync(sentinel));
+            Assert.False(Directory.Exists(Path.Combine(directory.FullName, ".git")));
+        }
+        finally
+        {
+            directory.Delete(recursive: true);
+        }
     }
 
     [Fact]

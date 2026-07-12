@@ -13,41 +13,33 @@ public sealed class GitTagCommandServiceFailureTests
         string tagName,
         string expectedMessage)
     {
-        using var repository = TemporaryGitRepository.Create();
-        var service = new GitTagCommandService(
-            new GitOperationService(repository.GitCliService));
-
-        var exception = await Assert.ThrowsAsync<ArgumentException>(() => service.CreateTagAsync(
-            repository.Path,
-            tagName,
-            repository.HeadCommitHash,
-            false,
-            false,
-            null,
-            CancellationToken.None));
+        var exception = await AssertInvalidDoesNotMutateAsync(path =>
+            CreateService().CreateTagAsync(
+                path,
+                tagName,
+                new string('1', 40),
+                false,
+                false,
+                null,
+                CancellationToken.None));
 
         Assert.Contains(expectedMessage, exception.Message, StringComparison.OrdinalIgnoreCase);
-        Assert.Empty(await ReadTagsAsync(repository));
     }
 
     [Fact]
     public async Task CreateTagAsync_AnnotatedTagRequiresMessageWithoutCreatingARef()
     {
-        using var repository = TemporaryGitRepository.Create();
-        var service = new GitTagCommandService(
-            new GitOperationService(repository.GitCliService));
-
-        var exception = await Assert.ThrowsAsync<ArgumentException>(() => service.CreateTagAsync(
-            repository.Path,
-            "v-missing-message",
-            repository.HeadCommitHash,
-            true,
-            false,
-            "  ",
-            CancellationToken.None));
+        var exception = await AssertInvalidDoesNotMutateAsync(path =>
+            CreateService().CreateTagAsync(
+                path,
+                "v-missing-message",
+                new string('1', 40),
+                true,
+                false,
+                "  ",
+                CancellationToken.None));
 
         Assert.Contains("message is required", exception.Message, StringComparison.OrdinalIgnoreCase);
-        Assert.Empty(await ReadTagsAsync(repository));
     }
 
     [Fact]
@@ -88,19 +80,13 @@ public sealed class GitTagCommandServiceFailureTests
     }
 
     [Fact]
-    public async Task PushTagAsync_InvalidRemotePreservesLocalTag()
+    public async Task PushTagAsync_InvalidRemoteIsRejectedBeforeRepositoryMutation()
     {
-        using var repository = TemporaryGitRepository.Create();
-        var service = new GitTagCommandService(
-            new GitOperationService(repository.GitCliService));
-        await service.CreateTagAsync(
-            repository.Path, "v-local", repository.HeadCommitHash, false, false, null,
-            CancellationToken.None);
-
-        await Assert.ThrowsAsync<ArgumentException>(() => service.PushTagAsync(
-            repository.Path, "bad remote", "v-local", CancellationToken.None));
-
-        Assert.Equal(["v-local"], await ReadTagsAsync(repository));
+        await AssertInvalidDoesNotMutateAsync(path => CreateService().PushTagAsync(
+            path,
+            "bad remote",
+            "v-local",
+            CancellationToken.None));
     }
 
     private static async Task<string> ReadHeadAsync(TemporaryGitRepository repository)
@@ -116,5 +102,27 @@ public sealed class GitTagCommandServiceFailureTests
             ["tag", "--list"], repository.Path, cancellationToken: CancellationToken.None);
         return result.StandardOutput.Split(
             ['\r', '\n'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+    }
+
+    private static GitTagCommandService CreateService() =>
+        new(new GitOperationService(new GitCliService()));
+
+    private static async Task<ArgumentException> AssertInvalidDoesNotMutateAsync(
+        Func<string, Task> action)
+    {
+        var directory = Directory.CreateTempSubdirectory("lovelygit-invalid-tag-command-");
+        var sentinel = Path.Combine(directory.FullName, "sentinel.txt");
+        await File.WriteAllTextAsync(sentinel, "unchanged");
+        try
+        {
+            var error = await Assert.ThrowsAsync<ArgumentException>(() => action(directory.FullName));
+            Assert.Equal("unchanged", await File.ReadAllTextAsync(sentinel));
+            Assert.False(Directory.Exists(Path.Combine(directory.FullName, ".git")));
+            return error;
+        }
+        finally
+        {
+            directory.Delete(recursive: true);
+        }
     }
 }

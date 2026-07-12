@@ -77,9 +77,23 @@ public sealed class NativeFileHistoryReaderTests
     [InlineData("folder//file.txt")]
     public async Task ReadAsync_RejectsInvalidRepositoryRelativePaths(string path)
     {
-        using var repository = TemporaryGitRepository.Create();
-
-        await Assert.ThrowsAsync<ArgumentException>(() => ReadAsync(repository, path));
+        var directory = Directory.CreateTempSubdirectory("lovelygit-invalid-history-path-");
+        try
+        {
+            await Assert.ThrowsAsync<ArgumentException>(() => NativeFileHistoryReader.ReadAsync(
+                directory.FullName,
+                path,
+                null,
+                limit: 100,
+                maximumCommits: 100,
+                maximumDuration: Timeout.InfiniteTimeSpan,
+                CancellationToken.None));
+            Assert.False(Directory.Exists(Path.Combine(directory.FullName, ".git")));
+        }
+        finally
+        {
+            directory.Delete(recursive: true);
+        }
     }
 
     private static Task<FileHistoryResponse> ReadAsync(
