@@ -68,12 +68,7 @@ export function useRemoteSyncStatus(
 			(cached?.branchName ?? null) === branchNameRef.current ? cached : null;
 		statusRef.current = visibleCached;
 		setStatus(visibleCached);
-		if (cached) {
-			refreshTimerRef.current = window.setTimeout(
-				() => void load(),
-				CACHED_SYNC_REFRESH_DELAY_MS,
-			);
-		} else {
+		if (!cached) {
 			void load();
 		}
 

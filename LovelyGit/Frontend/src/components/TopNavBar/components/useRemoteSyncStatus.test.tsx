@@ -33,7 +33,7 @@ describe("useRemoteSyncStatus", () => {
 
 	afterEach(() => vi.useRealTimers());
 
-	it("shows cached status immediately and defers revalidation", async () => {
+	it("keeps cached status until refs or remote actions invalidate it", () => {
 		vi.useFakeTimers();
 		setCachedRemoteSyncStatus("repo-1", status(3, 2));
 		send.mockResolvedValueOnce(status(1, 0));
@@ -42,13 +42,11 @@ describe("useRemoteSyncStatus", () => {
 		expect(result.current.status?.aheadCount).toBe(3);
 		expect(send).not.toHaveBeenCalled();
 		act(() => vi.advanceTimersByTime(CACHED_SYNC_REFRESH_DELAY_MS));
-		await act(async () => Promise.resolve());
-
-		expect(send).toHaveBeenCalledOnce();
-		expect(result.current.status?.aheadCount).toBe(1);
+		expect(send).not.toHaveBeenCalled();
+		expect(result.current.status?.aheadCount).toBe(3);
 	});
 
-	it("cancels an abandoned cached refresh on a rapid tab switch", () => {
+	it("does not reread cached status while switching tabs", () => {
 		vi.useFakeTimers();
 		setCachedRemoteSyncStatus("repo-1", status(1, 0));
 		setCachedRemoteSyncStatus("repo-2", status(2, 0));
@@ -61,11 +59,7 @@ describe("useRemoteSyncStatus", () => {
 		rerender({ repositoryId: "repo-2" });
 		act(() => vi.advanceTimersByTime(CACHED_SYNC_REFRESH_DELAY_MS));
 
-		expect(send).toHaveBeenCalledOnce();
-		expect(send).toHaveBeenCalledWith({
-			commandType: "GetRemoteSyncStatus",
-			arguments: { repositoryId: "repo-2" },
-		});
+		expect(send).not.toHaveBeenCalled();
 	});
 
 	it("loads native status and refreshes after graph notifications", async () => {
