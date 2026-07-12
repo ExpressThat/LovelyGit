@@ -4,6 +4,12 @@ import {
 	sendRequestWithResponse,
 	subscribeToServerEvent,
 } from "@/lib/commands";
+import {
+	getCachedRemoteSyncStatus,
+	setCachedRemoteSyncStatus,
+} from "./remoteSyncStatusCache";
+
+export const CACHED_SYNC_REFRESH_DELAY_MS = 500;
 
 export function useRemoteSyncStatus(
 	repositoryId: string | null,
@@ -13,8 +19,13 @@ export function useRemoteSyncStatus(
 	const branchNameRef = useRef(currentBranchName);
 	const statusRef = useRef<RemoteSyncStatusResponse | null>(null);
 	const requestVersion = useRef(0);
+	const refreshTimerRef = useRef<number | null>(null);
 	branchNameRef.current = currentBranchName;
 	const load = useCallback(async () => {
+		if (refreshTimerRef.current != null) {
+			window.clearTimeout(refreshTimerRef.current);
+			refreshTimerRef.current = null;
+		}
 		const version = ++requestVersion.current;
 		if (!repositoryId) {
 			statusRef.current = null;
@@ -32,6 +43,7 @@ export function useRemoteSyncStatus(
 					(response?.branchName ?? null) === branchNameRef.current
 						? (response ?? null)
 						: null;
+				if (response) setCachedRemoteSyncStatus(repositoryId, response);
 				statusRef.current = nextStatus;
 				setStatus(nextStatus);
 			}
@@ -48,21 +60,49 @@ export function useRemoteSyncStatus(
 	}, [repositoryId]);
 
 	useEffect(() => {
-		statusRef.current = null;
-		setStatus(null);
-		void load();
-	}, [load]);
+		requestVersion.current++;
+		const cached = repositoryId
+			? getCachedRemoteSyncStatus(repositoryId)
+			: null;
+		const visibleCached =
+			(cached?.branchName ?? null) === branchNameRef.current ? cached : null;
+		statusRef.current = visibleCached;
+		setStatus(visibleCached);
+		if (cached) {
+			refreshTimerRef.current = window.setTimeout(
+				() => void load(),
+				CACHED_SYNC_REFRESH_DELAY_MS,
+			);
+		} else {
+			void load();
+		}
+
+		return () => {
+			if (refreshTimerRef.current != null) {
+				window.clearTimeout(refreshTimerRef.current);
+				refreshTimerRef.current = null;
+			}
+		};
+	}, [load, repositoryId]);
 
 	useEffect(() => {
 		const loadedStatus = statusRef.current;
-		if (!loadedStatus || loadedStatus.branchName === currentBranchName) {
+		if (loadedStatus?.branchName === currentBranchName) {
+			return;
+		}
+		if (!loadedStatus && repositoryId) {
+			const cached = getCachedRemoteSyncStatus(repositoryId);
+			if (cached?.branchName === currentBranchName) {
+				statusRef.current = cached;
+				setStatus(cached);
+			}
 			return;
 		}
 
 		statusRef.current = null;
 		setStatus(null);
 		void load();
-	}, [currentBranchName, load]);
+	}, [currentBranchName, load, repositoryId]);
 
 	useEffect(
 		() =>

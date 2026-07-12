@@ -1,13 +1,20 @@
 // @vitest-environment jsdom
 
 import { act, renderHook, waitFor } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { RemoteSyncStatusResponse } from "@/generated/types";
 import {
 	sendRequestWithResponse,
 	subscribeToServerEvent,
 } from "@/lib/commands";
-import { useRemoteSyncStatus } from "./useRemoteSyncStatus";
+import {
+	clearRemoteSyncStatusCache,
+	setCachedRemoteSyncStatus,
+} from "./remoteSyncStatusCache";
+import {
+	CACHED_SYNC_REFRESH_DELAY_MS,
+	useRemoteSyncStatus,
+} from "./useRemoteSyncStatus";
 
 vi.mock("@/lib/commands", () => ({
 	sendRequestWithResponse: vi.fn(),
@@ -19,8 +26,46 @@ const subscribe = vi.mocked(subscribeToServerEvent);
 
 describe("useRemoteSyncStatus", () => {
 	beforeEach(() => {
+		clearRemoteSyncStatusCache();
 		send.mockReset();
 		subscribe.mockClear();
+	});
+
+	afterEach(() => vi.useRealTimers());
+
+	it("shows cached status immediately and defers revalidation", async () => {
+		vi.useFakeTimers();
+		setCachedRemoteSyncStatus("repo-1", status(3, 2));
+		send.mockResolvedValueOnce(status(1, 0));
+		const { result } = renderHook(() => useRemoteSyncStatus("repo-1", "main"));
+
+		expect(result.current.status?.aheadCount).toBe(3);
+		expect(send).not.toHaveBeenCalled();
+		act(() => vi.advanceTimersByTime(CACHED_SYNC_REFRESH_DELAY_MS));
+		await act(async () => Promise.resolve());
+
+		expect(send).toHaveBeenCalledOnce();
+		expect(result.current.status?.aheadCount).toBe(1);
+	});
+
+	it("cancels an abandoned cached refresh on a rapid tab switch", () => {
+		vi.useFakeTimers();
+		setCachedRemoteSyncStatus("repo-1", status(1, 0));
+		setCachedRemoteSyncStatus("repo-2", status(2, 0));
+		send.mockResolvedValue(status(0, 0));
+		const { rerender } = renderHook(
+			({ repositoryId }) => useRemoteSyncStatus(repositoryId, "main"),
+			{ initialProps: { repositoryId: "repo-1" } },
+		);
+
+		rerender({ repositoryId: "repo-2" });
+		act(() => vi.advanceTimersByTime(CACHED_SYNC_REFRESH_DELAY_MS));
+
+		expect(send).toHaveBeenCalledOnce();
+		expect(send).toHaveBeenCalledWith({
+			commandType: "GetRemoteSyncStatus",
+			arguments: { repositoryId: "repo-2" },
+		});
 	});
 
 	it("loads native status and refreshes after graph notifications", async () => {
