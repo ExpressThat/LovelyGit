@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import type { RepositoryRefItem } from "@/generated/types";
-import { sendRequestWithResponse } from "@/lib/commands";
-import { NativeMessageType } from "@/lib/nativeMessaging";
+import { loadRepositoryRefs } from "@/lib/repositoryRefsCache";
 
 export function useLocalBranches(
 	menuOpen: boolean,
@@ -17,10 +16,7 @@ export function useLocalBranches(
 		let isActive = true;
 		setIsLoading(true);
 		setError(null);
-		sendRequestWithResponse({
-			arguments: { knownRepositoryId: repositoryId },
-			commandType: NativeMessageType.GetRepositoryRefs,
-		})
+		loadRepositoryRefs(repositoryId)
 			.then((response) => {
 				if (isActive) {
 					setBranches(response.refs.filter((ref) => ref.kind === "Local"));

@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import type { RepositoryRefsResponse } from "@/generated/types";
+import { subscribeToServerEvent } from "@/lib/commands";
 import {
-	sendRequestWithResponse,
-	subscribeToServerEvent,
-} from "@/lib/commands";
-import { NativeMessageType } from "@/lib/nativeMessaging";
+	loadRepositoryRefs,
+	setCachedRepositoryRefs,
+} from "@/lib/repositoryRefsCache";
 import { withBranchUpstream } from "../utils/refMetadata";
 
 type RepositoryRefsState =
@@ -39,10 +39,7 @@ export function useRepositoryRefs(
 		let isActive = true;
 		const activeLoadKey = loadKey;
 		setState((current) => ({ status: "loading", refs: current.refs }));
-		sendRequestWithResponse({
-			arguments: { knownRepositoryId: repositoryId },
-			commandType: NativeMessageType.GetRepositoryRefs,
-		})
+		loadRepositoryRefs(repositoryId, true)
 			.then((refs) => {
 				if (isActive && activeLoadKey === loadKey) {
 					setState({ status: "loaded", refs });
@@ -65,14 +62,12 @@ export function useRepositoryRefs(
 		branchName: string,
 		upstreamName: string | null,
 	) => {
-		setState((current) =>
-			current.refs
-				? {
-						...current,
-						refs: withBranchUpstream(current.refs, branchName, upstreamName),
-					}
-				: current,
-		);
+		setState((current) => {
+			if (!current.refs || !repositoryId) return current;
+			const refs = withBranchUpstream(current.refs, branchName, upstreamName);
+			setCachedRepositoryRefs(repositoryId, refs);
+			return { ...current, refs };
+		});
 	};
 	const refresh = () => setInvalidationToken((token) => token + 1);
 
