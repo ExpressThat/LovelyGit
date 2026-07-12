@@ -117,6 +117,7 @@ describe("useCommitGraphData", () => {
 	});
 
 	it("cancels cached graph refreshes when a tab is abandoned quickly", async () => {
+		vi.useFakeTimers({ shouldAdvanceTime: true });
 		mocks.sendRequest.mockImplementation(({ arguments: request }) => {
 			const start = request.cursor ? Number(request.cursor) : 0;
 			return Promise.resolve(response(start, 128, true));
@@ -134,7 +135,9 @@ describe("useCommitGraphData", () => {
 		rerender();
 
 		expect(mocks.sendRequest).toHaveBeenCalledTimes(2);
+		await vi.advanceTimersByTimeAsync(1_500);
 		await waitFor(() => expect(mocks.sendRequest).toHaveBeenCalledTimes(3));
+		vi.useRealTimers();
 	});
 });
 

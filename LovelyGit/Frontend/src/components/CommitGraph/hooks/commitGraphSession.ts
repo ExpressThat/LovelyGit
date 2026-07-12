@@ -28,8 +28,8 @@ type GraphSession = {
 };
 
 const MAX_CACHED_REPOSITORIES = 4;
-const MAX_CACHED_ROWS = 128;
-const CACHED_REFRESH_DELAY_MS = 500;
+export const MAX_CACHED_ROWS = 64;
+export const CACHED_REFRESH_DELAY_MS = 1_500;
 const cachedViews = new Map<string, CachedGraphView>();
 let generation = 0;
 
@@ -50,7 +50,7 @@ export function deferCachedCommitGraphRefresh(runLoader: () => void) {
 	const repositoryId = session.repositoryId;
 	const generation = session.generation;
 	session.loading = true;
-	const timeout = window.setTimeout(() => {
+	const timeout = globalThis.setTimeout(() => {
 		if (
 			session.repositoryId !== repositoryId ||
 			session.generation !== generation
@@ -61,7 +61,7 @@ export function deferCachedCommitGraphRefresh(runLoader: () => void) {
 		runLoader();
 	}, CACHED_REFRESH_DELAY_MS);
 	return () => {
-		window.clearTimeout(timeout);
+		globalThis.clearTimeout(timeout);
 		if (
 			session.repositoryId === repositoryId &&
 			session.generation === generation
