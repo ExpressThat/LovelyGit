@@ -82,6 +82,27 @@ describe("useCommitGraphData", () => {
 		expect(mocks.sendRequest).toHaveBeenCalledTimes(1);
 		expect(result.current.rows).toEqual([]);
 	});
+
+	it("cancels cached graph refreshes when a tab is abandoned quickly", async () => {
+		mocks.sendRequest.mockImplementation(({ arguments: request }) => {
+			const start = request.cursor ? Number(request.cursor) : 0;
+			return Promise.resolve(response(start, 128, true));
+		});
+		const { useCommitGraphData } = await import("./useCommitGraphData");
+		const { rerender } = renderHook(() => useCommitGraphData());
+		await waitFor(() => expect(mocks.sendRequest).toHaveBeenCalledTimes(2));
+
+		mocks.repositoryId = "repo-b";
+		rerender();
+		await waitFor(() => expect(mocks.sendRequest).toHaveBeenCalledTimes(4));
+		mocks.repositoryId = "repo-a";
+		rerender();
+		mocks.repositoryId = "repo-b";
+		rerender();
+
+		expect(mocks.sendRequest).toHaveBeenCalledTimes(4);
+		await waitFor(() => expect(mocks.sendRequest).toHaveBeenCalledTimes(5));
+	});
 });
 
 function response(

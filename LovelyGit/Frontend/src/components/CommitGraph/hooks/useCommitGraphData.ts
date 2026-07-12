@@ -15,6 +15,7 @@ import {
 	activateCommitGraphSession,
 	type CommitGraphState,
 	currentSessionRepositoryId,
+	deferCachedCommitGraphRefresh,
 	session,
 } from "./commitGraphSession";
 import { compactCommitGraphRow } from "./compactCommitGraphRow";
@@ -152,6 +153,9 @@ export function useCommitGraphData(externalRefreshToken = 0) {
 			return;
 		}
 		session.requestedEnd = PAGE_SIZE;
+		if (repositoryChanged && session.rows.length > 0) {
+			return deferCachedCommitGraphRefresh(() => void runLoader());
+		}
 		void runLoader();
 	}, [currentGitRepositoryId, externalRefreshToken, graphInvalidation]);
 	return {

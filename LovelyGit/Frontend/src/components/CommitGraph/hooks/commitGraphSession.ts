@@ -29,6 +29,7 @@ type GraphSession = {
 
 const MAX_CACHED_REPOSITORIES = 4;
 const MAX_CACHED_ROWS = 256;
+const CACHED_REFRESH_DELAY_MS = 500;
 const cachedViews = new Map<string, CachedGraphView>();
 let generation = 0;
 
@@ -43,6 +44,31 @@ export function activateCommitGraphSession(repositoryId: string | null) {
 
 export function currentSessionRepositoryId() {
 	return session.repositoryId;
+}
+
+export function deferCachedCommitGraphRefresh(runLoader: () => void) {
+	const repositoryId = session.repositoryId;
+	const generation = session.generation;
+	session.loading = true;
+	const timeout = window.setTimeout(() => {
+		if (
+			session.repositoryId !== repositoryId ||
+			session.generation !== generation
+		) {
+			return;
+		}
+		session.loading = false;
+		runLoader();
+	}, CACHED_REFRESH_DELAY_MS);
+	return () => {
+		window.clearTimeout(timeout);
+		if (
+			session.repositoryId === repositoryId &&
+			session.generation === generation
+		) {
+			session.loading = false;
+		}
+	};
 }
 
 export function resetCommitGraphSessionCacheForTests() {
