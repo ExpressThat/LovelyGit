@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
 import type { CommitDetailsResponse } from "@/generated/types";
-import { loadCommitDetails } from "@/lib/commitDetailsCache";
+import {
+	getCachedCommitDetails,
+	loadCommitDetails,
+} from "@/lib/commitDetailsCache";
 
 export type CommitDetailsState =
 	| { status: "loading" }
@@ -19,12 +22,28 @@ export function useCommitDetails(
 	refreshToken: number,
 ) {
 	const [retryToken, setRetryToken] = useState(0);
-	const [state, setState] = useState<CommitDetailsState>({ status: "loading" });
+	const [state, setState] = useState<CommitDetailsState>(() =>
+		cachedState(repositoryId, commitHash, parentIndex),
+	);
 
 	useEffect(() => {
 		void refreshToken;
 		void retryToken;
 		let isActive = true;
+		const cached = getCachedCommitDetails(
+			repositoryId,
+			commitHash,
+			parentIndex,
+		);
+		if (cached) {
+			setState({
+				status: "loaded",
+				details: cached,
+				isRefreshing: false,
+				refreshError: null,
+			});
+			return;
+		}
 		setState((current) =>
 			current.status === "loaded"
 				? { ...current, isRefreshing: true, refreshError: null }
@@ -63,6 +82,17 @@ export function useCommitDetails(
 	}, [commitHash, parentIndex, refreshToken, repositoryId, retryToken]);
 
 	return { retry: () => setRetryToken((token) => token + 1), state };
+}
+
+function cachedState(
+	repositoryId: string,
+	commitHash: string,
+	parentIndex: number,
+): CommitDetailsState {
+	const details = getCachedCommitDetails(repositoryId, commitHash, parentIndex);
+	return details
+		? { status: "loaded", details, isRefreshing: false, refreshError: null }
+		: { status: "loading" };
 }
 
 function message(error: unknown) {

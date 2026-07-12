@@ -1,17 +1,12 @@
 import { motion, useReducedMotion } from "motion/react";
 import { type ComponentProps, lazy, Suspense } from "react";
 import { LoaderCircle } from "@/components/icons/lovelyIcons";
-import type { CommitDetails as CommitDetailsComponent } from "./components/CommitDetails/CommitDetails";
+import { CommitDetails } from "./components/CommitDetails/CommitDetails";
 import type { CommitFileDiffView as CommitFileDiffComponent } from "./components/CommitFileDiff/CommitFileDiffView";
 import type { ConflictResolutionView as ConflictResolutionComponent } from "./components/ConflictResolution/ConflictResolutionView";
 import type { WorkingChangesPanel as WorkingChangesComponent } from "./components/WorkingChanges/WorkingChangesPanel";
 import type { WorkingTreeFileDiffView as WorkingTreeDiffComponent } from "./components/WorkingChanges/WorkingTreeFileDiffView";
 
-const LazyCommitDetails = lazy(() =>
-	import("./components/CommitDetails/CommitDetails").then((module) => ({
-		default: module.CommitDetails,
-	})),
-);
 const LazyCommitFileDiff = lazy(() =>
 	import("./components/CommitFileDiff/CommitFileDiffView").then((module) => ({
 		default: module.CommitFileDiffView,
@@ -34,13 +29,9 @@ const LazyConflictResolution = lazy(() =>
 );
 
 export function CommitDetailsSurface(
-	props: ComponentProps<typeof CommitDetailsComponent>,
+	props: ComponentProps<typeof CommitDetails>,
 ) {
-	return (
-		<Suspense fallback={<SurfaceLoading label="Loading commit details" />}>
-			<LazyCommitDetails {...props} />
-		</Suspense>
-	);
+	return <CommitDetails {...props} />;
 }
 
 export function CommitFileDiffSurface(

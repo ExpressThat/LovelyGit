@@ -8,7 +8,7 @@ vi.mock("./components/CommitDetails/CommitDetails", () => ({
 }));
 
 describe("AppLazySurfaces", () => {
-	it("loads commit details on demand through its suspense boundary", async () => {
+	it("renders commit details synchronously without a suspense delay", () => {
 		render(
 			<CommitDetailsSurface
 				commitHash={"a".repeat(40)}
@@ -21,6 +21,6 @@ describe("AppLazySurfaces", () => {
 			/>,
 		);
 
-		expect(await screen.findByText("Loaded commit details")).toBeVisible();
+		expect(screen.getByText("Loaded commit details")).toBeVisible();
 	});
 });

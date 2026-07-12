@@ -39,6 +39,14 @@ export function loadCommitDetails(
 	return pending;
 }
 
+export function getCachedCommitDetails(
+	repositoryId: string,
+	commitHash: string,
+	parentIndex: number,
+) {
+	return entries.get(cacheKey(repositoryId, commitHash, parentIndex))?.response;
+}
+
 export async function prefetchCommitDetails(
 	repositoryId: string,
 	commitHash: string,

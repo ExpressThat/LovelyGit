@@ -3,6 +3,7 @@ import type { CommitDetailsResponse } from "@/generated/types";
 import { sendRequestWithResponse } from "@/lib/commands";
 import {
 	clearCommitDetailsCache,
+	getCachedCommitDetails,
 	loadCommitDetails,
 } from "./commitDetailsCache";
 
@@ -30,6 +31,20 @@ describe("commitDetailsCache", () => {
 		await expect(second).resolves.toBe(value);
 		await expect(loadCommitDetails("repo", "hash", 0)).resolves.toBe(value);
 		expect(send).toHaveBeenCalledTimes(1);
+	});
+
+	it("exposes only completed responses with repository and parent isolation", async () => {
+		let complete: (response: CommitDetailsResponse) => void = () => undefined;
+		send.mockReturnValueOnce(new Promise((resolve) => (complete = resolve)));
+		const pending = loadCommitDetails("repo", "hash", 1);
+		expect(getCachedCommitDetails("repo", "hash", 1)).toBeUndefined();
+
+		const value = details(2);
+		complete(value);
+		await pending;
+		expect(getCachedCommitDetails("repo", "hash", 1)).toBe(value);
+		expect(getCachedCommitDetails("other", "hash", 1)).toBeUndefined();
+		expect(getCachedCommitDetails("repo", "hash", 0)).toBeUndefined();
 	});
 
 	it("retains one oversized response for instant selection", async () => {

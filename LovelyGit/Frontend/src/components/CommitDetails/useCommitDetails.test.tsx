@@ -4,7 +4,10 @@ import { act, renderHook, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { CommitDetailsResponse } from "@/generated/types";
 import { sendRequestWithResponse } from "@/lib/commands";
-import { clearCommitDetailsCache } from "@/lib/commitDetailsCache";
+import {
+	clearCommitDetailsCache,
+	loadCommitDetails,
+} from "@/lib/commitDetailsCache";
 import { useCommitDetails } from "./useCommitDetails";
 
 vi.mock("@/lib/commands", () => ({ sendRequestWithResponse: vi.fn() }));
@@ -32,6 +35,23 @@ describe("useCommitDetails", () => {
 				repositoryId: "repo",
 			},
 		});
+	});
+
+	it("renders prefetched details in the initial state", async () => {
+		vi.mocked(sendRequestWithResponse).mockResolvedValue(details("large.txt"));
+		await loadCommitDetails("repo", "large", 0);
+		const { result } = renderHook(() =>
+			useCommitDetails("repo", "large", 0, 0),
+		);
+
+		expect(result.current.state.status).toBe("loaded");
+		if (result.current.state.status === "loaded") {
+			expect(result.current.state.details.changedFiles[0]?.path).toBe(
+				"large.txt",
+			);
+			expect(result.current.state.isRefreshing).toBe(false);
+		}
+		expect(sendRequestWithResponse).toHaveBeenCalledTimes(1);
 	});
 
 	it("keeps existing details visible while another parent loads", async () => {
