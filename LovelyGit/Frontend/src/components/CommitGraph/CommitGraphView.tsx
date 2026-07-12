@@ -167,6 +167,7 @@ export function CommitGraphView({
 											onCopyPatch={patchActions.copyPatch}
 											onSaveArchive={patchActions.saveArchive}
 											onSavePatch={patchActions.savePatch}
+											onStartBisect={dialogs.setBisectCommit}
 											onCreateBranchFromTag={branchCreation.createFromTag}
 											onCreateTag={dialogs.setTagCommit}
 											onIntegrateBranch={dialogs.integrateBranch}
@@ -200,12 +201,8 @@ export function CommitGraphView({
 			<CommitGraphOperationDialogs
 				branchCreationSource={branchCreation.source}
 				branchNames={branchNames}
-				cherryPickCommit={dialogs.cherryPickCommit}
-				checkoutCommit={dialogs.checkoutCommit}
-				commitComparison={dialogs.comparison}
 				currentBranchName={currentBranchName}
-				integrationTarget={dialogs.integrationTarget}
-				interactiveRebaseBase={dialogs.interactiveRebaseBase}
+				dialogs={dialogs}
 				onCreateBranchFromReflog={branchCreation.createFromReflog}
 				onOpenWorkingChanges={onOpenWorkingChanges}
 				onBranchCreationClose={branchCreation.close}
@@ -214,14 +211,6 @@ export function CommitGraphView({
 				repositoryId={repositoryId}
 				repositoryRefs={repositoryRefs.refs}
 				reflogController={reflogController}
-				resetCommit={dialogs.resetCommit}
-				revertCommit={dialogs.revertCommit}
-				setCherryPickCommit={dialogs.setCherryPickCommit}
-				setCheckoutCommit={dialogs.setCheckoutCommit}
-				setIntegrationTarget={dialogs.setIntegrationTarget}
-				setInteractiveRebaseBase={dialogs.setInteractiveRebaseBase}
-				setResetCommit={dialogs.setResetCommit}
-				setRevertCommit={dialogs.setRevertCommit}
 			/>
 			<BranchManagementDialogs
 				branchNames={branchNames}

@@ -1,15 +1,10 @@
-import type { BranchIntegrationMode } from "@/components/TopNavBar/components/BranchIntegrationDialog";
 import type { BranchCreationSource } from "@/components/TopNavBar/components/CreateBranchDialog";
 import {
 	LazyBranchIntegrationDialog,
 	LazyCreateBranchDialog,
 } from "@/components/TopNavBar/components/LazyRepositoryDialogs";
-import type {
-	CommitGraphRow,
-	GitReflogEntry,
-	RepositoryRefsResponse,
-} from "@/generated/types";
-import type { CommitComparisonController } from "../hooks/useCommitGraphDialogs";
+import type { GitReflogEntry, RepositoryRefsResponse } from "@/generated/types";
+import type { useCommitGraphDialogs } from "../hooks/useCommitGraphDialogs";
 import type { ReflogManagementController } from "../hooks/useReflogManagement";
 import {
 	LazyCheckoutCommitDialog,
@@ -21,21 +16,13 @@ import {
 	LazyRevertDialog,
 } from "./LazyCommitOperationDialogs";
 import { LazyCommitComparisonDialog } from "./LazyGraphManagementDialogs";
-
-type IntegrationTarget = {
-	branchName: string;
-	mode: BranchIntegrationMode;
-} | null;
+import { StartBisectDialog } from "./StartBisectDialog";
 
 export function CommitGraphOperationDialogs({
-	cherryPickCommit,
-	checkoutCommit,
-	commitComparison,
 	branchCreationSource,
 	branchNames,
 	currentBranchName,
-	integrationTarget,
-	interactiveRebaseBase,
+	dialogs,
 	onOpenWorkingChanges,
 	onCreateBranchFromReflog,
 	onBranchCreationClose,
@@ -44,23 +31,11 @@ export function CommitGraphOperationDialogs({
 	repositoryId,
 	repositoryRefs,
 	reflogController,
-	resetCommit,
-	revertCommit,
-	setCherryPickCommit,
-	setCheckoutCommit,
-	setIntegrationTarget,
-	setInteractiveRebaseBase,
-	setResetCommit,
-	setRevertCommit,
 }: {
-	cherryPickCommit: CommitGraphRow | null;
-	checkoutCommit: CommitGraphRow | null;
-	commitComparison: CommitComparisonController;
 	branchCreationSource: BranchCreationSource | null;
 	branchNames: string[];
 	currentBranchName: string | null;
-	integrationTarget: IntegrationTarget;
-	interactiveRebaseBase: CommitGraphRow | null;
+	dialogs: ReturnType<typeof useCommitGraphDialogs>;
 	onOpenWorkingChanges: () => void;
 	onCreateBranchFromReflog: (entry: GitReflogEntry) => void;
 	onBranchCreationClose: () => void;
@@ -69,17 +44,33 @@ export function CommitGraphOperationDialogs({
 	repositoryId: string | null;
 	repositoryRefs: RepositoryRefsResponse | null;
 	reflogController: ReflogManagementController;
-	resetCommit: CommitGraphRow | null;
-	revertCommit: CommitGraphRow | null;
-	setCherryPickCommit: (commit: CommitGraphRow | null) => void;
-	setCheckoutCommit: (commit: CommitGraphRow | null) => void;
-	setIntegrationTarget: (target: IntegrationTarget) => void;
-	setInteractiveRebaseBase: (commit: CommitGraphRow | null) => void;
-	setResetCommit: (commit: CommitGraphRow | null) => void;
-	setRevertCommit: (commit: CommitGraphRow | null) => void;
 }) {
+	const {
+		bisectCommit,
+		cherryPickCommit,
+		checkoutCommit,
+		comparison: commitComparison,
+		integrationTarget,
+		interactiveRebaseBase,
+		resetCommit,
+		revertCommit,
+		setBisectCommit,
+		setCherryPickCommit,
+		setCheckoutCommit,
+		setIntegrationTarget,
+		setInteractiveRebaseBase,
+		setResetCommit,
+		setRevertCommit,
+	} = dialogs;
 	return (
 		<>
+			{bisectCommit ? (
+				<StartBisectDialog
+					commit={bisectCommit}
+					onOpenChange={(open) => !open && setBisectCommit(null)}
+					repositoryId={repositoryId}
+				/>
+			) : null}
 			{commitComparison.base && commitComparison.target ? (
 				<LazyCommitComparisonDialog
 					base={commitComparison.base}

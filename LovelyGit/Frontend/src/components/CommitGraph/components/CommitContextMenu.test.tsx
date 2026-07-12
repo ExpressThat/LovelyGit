@@ -112,9 +112,10 @@ describe("CommitContextMenu", () => {
 		expect(onSaveArchive).toHaveBeenCalledWith(row);
 	});
 
-	it("opens a commit-aware bisect confirmation", async () => {
+	it("selects the commit for graph-level bisect confirmation", async () => {
 		const user = userEvent.setup();
-		renderMenu({});
+		const onStartBisect = vi.fn();
+		renderMenu({ onStartBisect });
 		fireEvent.contextMenu(screen.getByRole("button", { name: "commit row" }));
 
 		await user.click(
@@ -123,9 +124,7 @@ describe("CommitContextMenu", () => {
 			}),
 		);
 
-		expect(
-			await screen.findByRole("heading", { name: "Start a bisect session?" }),
-		).toBeVisible();
+		expect(onStartBisect).toHaveBeenCalledWith(row);
 	});
 
 	it("offers an explicit detached checkout", async () => {
@@ -178,6 +177,7 @@ function renderMenu({
 	onCompare = vi.fn(),
 	onCheckoutCommit = vi.fn(),
 	onSetComparisonBase = vi.fn(),
+	onStartBisect = vi.fn(),
 }: {
 	comparisonBase?: CommitGraphRow | null;
 	isHead?: boolean;
@@ -190,6 +190,7 @@ function renderMenu({
 	onCompare?: (selected: CommitGraphRow) => void;
 	onCheckoutCommit?: (selected: CommitGraphRow) => void;
 	onSetComparisonBase?: (selected: CommitGraphRow | null) => void;
+	onStartBisect?: (selected: CommitGraphRow) => void;
 }) {
 	return render(
 		<CommitContextMenu
@@ -209,6 +210,7 @@ function renderMenu({
 			onCreateTag={vi.fn()}
 			onOpenDetails={vi.fn()}
 			onSetComparisonBase={onSetComparisonBase}
+			onStartBisect={onStartBisect}
 			onInteractiveRebase={onInteractiveRebase}
 			onReset={onReset}
 			onRevert={vi.fn()}

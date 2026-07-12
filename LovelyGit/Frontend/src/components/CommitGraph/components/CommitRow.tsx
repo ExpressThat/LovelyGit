@@ -32,6 +32,7 @@ export function CommitRow({
 	onCopyPatch,
 	onSaveArchive,
 	onSavePatch,
+	onStartBisect,
 	onCreateBranchFromTag,
 	onIntegrateBranch,
 	onInteractiveRebase,
@@ -72,6 +73,7 @@ export function CommitRow({
 	onCopyPatch: (row: CommitGraphRow) => void;
 	onSaveArchive: (row: CommitGraphRow) => void;
 	onSavePatch: (row: CommitGraphRow) => void;
+	onStartBisect: (row: CommitGraphRow) => void;
 	onCreateBranchFromTag: (tagName: string, commitHash: string) => void;
 	onSelect: (row: CommitGraphRow) => void;
 	onTagAction: (action: TagAction, tagName: string) => void;
@@ -173,6 +175,7 @@ export function CommitRow({
 			onSavePatch={onSavePatch}
 			onOpenDetails={onSelect}
 			onSetComparisonBase={comparison.setBase}
+			onStartBisect={onStartBisect}
 			onInteractiveRebase={onInteractiveRebase}
 			onRevert={onRevert}
 			onReset={onReset}
