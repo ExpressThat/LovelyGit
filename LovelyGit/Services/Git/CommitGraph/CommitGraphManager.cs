@@ -9,7 +9,8 @@ public sealed partial class CommitGraphManager : IDisposable
 {
     private readonly LovelyGitRepository _repository;
     private readonly Guid _repositoryId;
-    private readonly string? _remoteUrl;
+    private readonly string? _remoteRepositoryUrl;
+    private readonly List<string> _remotePrefixes;
     private CommitGraphTraversalSession? _session;
     private bool _disposed;
 
@@ -20,7 +21,8 @@ public sealed partial class CommitGraphManager : IDisposable
     {
         _repository = repository;
         _repositoryId = repositoryId;
-        _remoteUrl = remoteUrl;
+        _remoteRepositoryUrl = RemoteCommitUrlBuilder.BuildRepository(remoteUrl);
+        _remotePrefixes = repository.RemotePrefixes.ToList();
     }
 
     public int CommitCount => -1;

@@ -10,7 +10,7 @@ public sealed class CommitGraphCommitMapperTests
     [Fact]
     public void BuildInfo_ReusesEmptyCollectionsForCommitWithoutRefs()
     {
-        var info = CommitGraphCommitMapper.BuildInfo(CreateCommit(), remoteUrl: null);
+        var info = CommitGraphCommitMapper.BuildInfo(CreateCommit(), remoteRepositoryUrl: null);
 
         Assert.Same(CommitGraphEmptyLists.Refs, info.Refs);
     }
@@ -25,7 +25,7 @@ public sealed class CommitGraphCommitMapperTests
             new GitCommitRef("origin/main", GitRefKind.Remote),
         ]);
 
-        var info = CommitGraphCommitMapper.BuildInfo(commit, remoteUrl: null);
+        var info = CommitGraphCommitMapper.BuildInfo(commit, remoteRepositoryUrl: null);
 
         Assert.Collection(
             info.Refs,
@@ -61,9 +61,24 @@ public sealed class CommitGraphCommitMapperTests
         commit.SignatureKind = GitSignatureKind.Ssh;
 
         var json = JsonSerializer.Serialize(
-            CommitGraphCommitMapper.BuildInfo(commit, remoteUrl: null));
+            CommitGraphCommitMapper.BuildInfo(commit, remoteRepositoryUrl: null));
 
         Assert.Contains("\"SignatureKind\":\"Ssh\"", json, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void BuildInfo_UsesPreparedRepositoryUrlForTags()
+    {
+        var commit = CreateCommit();
+        commit.AddRefs([new GitCommitRef("release/test", GitRefKind.Tag)]);
+
+        var info = CommitGraphCommitMapper.BuildInfo(
+            commit,
+            "https://github.com/example/repo");
+
+        Assert.Equal(
+            "https://github.com/example/repo/releases/tag/release%2Ftest",
+            Assert.Single(info.Refs).RemoteUrl);
     }
 
     [Fact]

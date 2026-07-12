@@ -13,7 +13,7 @@ internal static partial class CommitGraphRowBuilder
         List<int> activeLaneColors,
         Func<int> allocateColor,
         ref int maxLaneCount,
-        string? remoteUrl = null)
+        string? remoteRepositoryUrl = null)
     {
         var isStash = IsStashRef(commit);
         var incomingLanes = CommitGraphLaneLayout.FindAllLanesByTarget(activeLaneTargets, commit.Hash);
@@ -102,7 +102,7 @@ internal static partial class CommitGraphRowBuilder
         edgesBelow = CompactLanesBelow(activeLaneTargets, activeLaneColors, edgesBelow);
         maxLaneCount = Math.Max(maxLaneCount, activeLaneTargets.Count);
 
-        var commitInfo = CommitGraphCommitMapper.BuildInfo(commit, remoteUrl);
+        var commitInfo = CommitGraphCommitMapper.BuildInfo(commit, remoteRepositoryUrl);
         return new CommitGraphRow
         {
             Commit = commitInfo,

@@ -37,8 +37,12 @@ internal static class RemoteCommitUrlBuilder
             return null;
         }
 
-        var webUrl = BuildRepository(remoteUrl);
-        if (webUrl == null)
+        return BuildTagFromRepository(BuildRepository(remoteUrl), tagName);
+    }
+
+    public static string? BuildTagFromRepository(string? webUrl, string tagName)
+    {
+        if (string.IsNullOrWhiteSpace(webUrl) || string.IsNullOrWhiteSpace(tagName))
         {
             return null;
         }

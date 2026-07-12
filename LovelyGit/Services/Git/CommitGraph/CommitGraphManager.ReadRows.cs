@@ -45,7 +45,7 @@ public sealed partial class CommitGraphManager
                     activeLaneColors,
                     session.AllocateColor,
                     ref maxLaneCount,
-                    _remoteUrl));
+                    _remoteRepositoryUrl));
             }
             else
             {
@@ -69,8 +69,8 @@ public sealed partial class CommitGraphManager
             TotalRows = hasMore ? nextOffset + limit : nextOffset,
             LaneCount = maxLaneCount,
             Rows = rows,
-            RemotePrefixes = _repository.RemotePrefixes.ToList(),
-            RemoteRepositoryUrl = RemoteCommitUrlBuilder.BuildRepository(_remoteUrl),
+            RemotePrefixes = _remotePrefixes,
+            RemoteRepositoryUrl = _remoteRepositoryUrl,
             CurrentBranchName = _repository.CurrentBranchName,
             HasMore = hasMore,
         };

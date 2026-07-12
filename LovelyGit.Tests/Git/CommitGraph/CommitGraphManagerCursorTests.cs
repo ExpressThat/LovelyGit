@@ -74,6 +74,32 @@ public sealed class CommitGraphManagerCursorTests
         Assert.DoesNotContain("\"SignatureKind\"", json, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public async Task GetCommitGraphPageAsync_ReusesImmutableRepositoryMetadata()
+    {
+        using var temporary = TemporaryGitRepository.Create();
+        temporary.AddRemote("origin", "git@github.com:example/repo.git");
+        var open = await CommitGraphManager.TryOpenAsync(
+            temporary.Path,
+            Guid.NewGuid(),
+            null!,
+            CancellationToken.None);
+        Assert.True(open.Success);
+        using var graph = open.Graph!;
+
+        var first = await graph.GetCommitGraphPageAsync(
+            new CommitGraphCursorState(null, 0),
+            1,
+            CancellationToken.None);
+        var second = await graph.GetCommitGraphPageAsync(
+            first.NextCursor,
+            1,
+            CancellationToken.None);
+
+        Assert.Same(first.Response.RemotePrefixes, second.Response.RemotePrefixes);
+        Assert.Same(first.Response.RemoteRepositoryUrl, second.Response.RemoteRepositoryUrl);
+    }
+
     private static int CountOccurrences(string value, string search)
     {
         var count = 0;
