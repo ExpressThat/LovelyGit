@@ -41,7 +41,7 @@
 ## Project Shape
 - Single .NET solution: `LovelyGit.slnx` contains `LovelyGit/LovelyGit.csproj`, a `net10.0` Web SDK app with warnings treated as errors and AOT publishing enabled.
 - Frontend lives under `LovelyGit/Frontend` and is a Vite + React 19 + TypeScript app; production frontend assets are copied into `LovelyGit/wwwroot` by the frontend build.
-- App startup is `LovelyGit/Program.cs`; it hosts InfiniFrame, serves `/` from `wwwroot/index.html`, maps SignalR at `/commsHub`, and clears the git repo cache on startup/shutdown.
+- App startup is `LovelyGit/Program.cs`; it hosts InfiniFrame, serves `/` from `wwwroot/index.html`, maps SignalR at `/commsHub`, and initializes the versioned Git cache when its schema changes.
 
 ## Where Code Lives
 - `LovelyGit/Program.cs` wires the desktop web host, window settings, static assets, SignalR hub, startup update check, and cache cleanup.
@@ -132,4 +132,4 @@
 
 ## Release/Runtime Gotchas
 - Release CI requires Node 24, .NET 10.x and 8.x, restored .NET tools, frozen pnpm install, frontend `pnpm run prod`, then runtime-specific `dotnet publish` and Velopack packaging.
-- App data is stored in `%LOCALAPPDATA%/LovelyGit/LovelyGit.blite`; the cache DB `%LOCALAPPDATA%/LovelyGit/LovelyGit.Cache.blite` is deleted at startup.
+- App data is stored in `%LOCALAPPDATA%/LovelyGit/LovelyGit.blite`; the cache DB `%LOCALAPPDATA%/LovelyGit/LovelyGit.Cache.blite` persists across launches and is rebuilt when `CacheSchemaVersion` changes.

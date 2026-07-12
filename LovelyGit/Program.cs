@@ -33,7 +33,7 @@ public static class Program
         Directory.SetCurrentDirectory(AppContext.BaseDirectory);
 #endif
         AppDbContext.RegisterBsonKeys();
-        GitRepoCacheDbContext.ClearCache();
+        GitRepoCacheDbContext.EnsureCacheReady();
         VelopackApp.Build().Run();
         CheckForUpdatesAtStartup(args);
 
@@ -71,7 +71,6 @@ public static class Program
             application.WebApp.Services.GetService<CommitFileDiffService>()?.StopAndWait();
             application.WebApp.Services.GetService<CommitDetailsPreloadService>()?.StopAndWait();
             application.WebApp.Services.GetService<GitRepoCacheDbContext>()?.Dispose();
-            GitRepoCacheDbContext.ClearCache(registerKeys: false);
         });
 
         application.WebApp.MapGet("/", async (IWebHostEnvironment env) =>

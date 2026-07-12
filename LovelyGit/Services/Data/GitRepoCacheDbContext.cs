@@ -6,6 +6,7 @@ namespace ExpressThat.LovelyGit.Services.Data;
 
 public partial class GitRepoCacheDbContext : DocumentDbContext
 {
+    private const string CacheSchemaVersion = "1";
     public DocumentCollection<Guid, CommitGraphRepositoryState> CommitGraphStates { get; set; } = null!;
     public DocumentCollection<string, CommitGraphFrontierEntry> CommitGraphFrontier { get; set; } = null!;
     public DocumentCollection<string, CommitGraphSeenEntry> CommitGraphSeen { get; set; } = null!;
@@ -24,11 +25,29 @@ public partial class GitRepoCacheDbContext : DocumentDbContext
     {
         DeleteIfExists(GetBasePath());
         DeleteIfExists(GetBasePath().Replace(".blite", ".wal"));
+        DeleteIfExists(GetVersionPath());
 
         if (registerKeys)
         {
             RegisterBsonKeys();
         }
+    }
+
+    public static void EnsureCacheReady()
+    {
+        var databasePath = GetBasePath();
+        var versionPath = GetVersionPath();
+        if (CacheDatabaseLifecycle.IsCurrent(
+                databasePath,
+                versionPath,
+                CacheSchemaVersion))
+        {
+            return;
+        }
+
+        ClearCache(registerKeys: false);
+        RegisterBsonKeys();
+        CacheDatabaseLifecycle.WriteVersion(versionPath, CacheSchemaVersion);
     }
 
     public static void RegisterBsonKeys()
@@ -71,6 +90,8 @@ public partial class GitRepoCacheDbContext : DocumentDbContext
 
         return Path.Combine(dataDirectory, "LovelyGit.Cache.blite");
     }
+
+    private static string GetVersionPath() => GetBasePath() + ".version";
 
     protected override void OnModelCreating(BLite.Core.Metadata.ModelBuilder modelBuilder)
     {
