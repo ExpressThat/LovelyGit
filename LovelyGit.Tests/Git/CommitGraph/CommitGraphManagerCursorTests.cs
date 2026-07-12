@@ -71,6 +71,7 @@ public sealed class CommitGraphManagerCursorTests
         Assert.DoesNotContain("\"Parents\"", json, StringComparison.Ordinal);
         Assert.DoesNotContain("\"Branches\"", json, StringComparison.Ordinal);
         Assert.DoesNotContain("\"Tags\"", json, StringComparison.Ordinal);
+        Assert.DoesNotContain("\"SignatureKind\"", json, StringComparison.Ordinal);
     }
 
     private static int CountOccurrences(string value, string search)

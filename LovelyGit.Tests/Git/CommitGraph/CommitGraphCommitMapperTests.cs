@@ -1,6 +1,7 @@
 using ExpressThat.LovelyGit.Services.Git.CommitGraph;
 using ExpressThat.LovelyGit.Services.Git.CommitGraph.Models;
 using ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser;
+using System.Text.Json;
 
 namespace LovelyGit.Tests.Git.CommitGraph;
 
@@ -51,6 +52,18 @@ public sealed class CommitGraphCommitMapperTests
         Assert.Equal(
             ["v1.0"],
             CommitDetailsBuilder.BuildRefNames(commit, includeBranches: false));
+    }
+
+    [Fact]
+    public void BuildInfo_SerializesNonDefaultSignatureKind()
+    {
+        var commit = CreateCommit();
+        commit.SignatureKind = GitSignatureKind.Ssh;
+
+        var json = JsonSerializer.Serialize(
+            CommitGraphCommitMapper.BuildInfo(commit, remoteUrl: null));
+
+        Assert.Contains("\"SignatureKind\":\"Ssh\"", json, StringComparison.Ordinal);
     }
 
     private static GitCommit CreateCommit()

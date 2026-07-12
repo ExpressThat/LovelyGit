@@ -3,6 +3,7 @@ import type { CommitGraphRow, CommitLaneColor } from "@/generated/types";
 const EMPTY_ARRAY = Object.freeze([]) as unknown as never[];
 
 export function compactCommitGraphRow(row: CommitGraphRow) {
+	row.commit.signatureKind ||= "None";
 	row.activeLanesAbove = reuseEmpty(row.activeLanesAbove);
 	row.activeLanesBelow = reuseEmpty(row.activeLanesBelow);
 	row.laneColorsAbove = reuseEmpty(row.laneColorsAbove);

@@ -44,6 +44,7 @@ namespace ExpressThat.LovelyGit.Services.Git.CommitGraph.Models
         public string Message { get; set; } = string.Empty;
         public List<CommitRefInfo> Refs { get; set; } = new();
         public CommitStats? Stats { get; set; }
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         public CommitSignatureKind SignatureKind { get; set; }
     }
 }

@@ -6,10 +6,12 @@ describe("compactCommitGraphRow", () => {
 	it("shares frozen empty collections without replacing populated data", () => {
 		const first = row();
 		const second = row();
+		delete (first.commit as Partial<typeof first.commit>).signatureKind;
 		compactCommitGraphRow(first);
 		compactCommitGraphRow(second);
 
 		expect(first.commit.refs).toBe(second.commit.refs);
+		expect(first.commit.signatureKind).toBe("None");
 		expect(first.edgesAbove).toBe(second.edgesAbove);
 		expect(Object.isFrozen(first.commit.refs)).toBe(true);
 	});
