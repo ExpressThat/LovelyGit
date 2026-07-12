@@ -25,13 +25,26 @@ internal sealed partial class ConflictResolutionService
         using var repository = await LovelyGitRepository.OpenAsync(repositoryPath, cancellationToken)
             .ConfigureAwait(false);
         var entries = await ReadConflictEntriesAsync(repository, path, cancellationToken).ConfigureAwait(false);
+        var resultPath = WorkingTreePath.Resolve(repository.WorkTreeDirectory, path);
+        var fingerprint = await ConflictFingerprintAsync(resultPath, entries, cancellationToken)
+            .ConfigureAwait(false);
+        _responseCache.RemoveStale(repositoryPath, path, fingerprint);
+        if (_responseCache.TryGet(
+                repositoryPath,
+                path,
+                fingerprint,
+                ignoreWhitespace,
+                out var cached))
+        {
+            return cached;
+        }
+
         var baseVersion = await ReadVersionAsync(repository, entries.GetValueOrDefault(1), cancellationToken)
             .ConfigureAwait(false);
         var ours = await ReadVersionAsync(repository, entries.GetValueOrDefault(2), cancellationToken)
             .ConfigureAwait(false);
         var theirs = await ReadVersionAsync(repository, entries.GetValueOrDefault(3), cancellationToken)
             .ConfigureAwait(false);
-        var resultPath = WorkingTreePath.Resolve(repository.WorkTreeDirectory, path);
         var result = await ReadWorktreeVersionAsync(resultPath, cancellationToken).ConfigureAwait(false);
         var currentSource = CreateCurrentSource(repository, entries.GetValueOrDefault(2));
         var incomingSource = await CreateIncomingSourceAsync(
@@ -47,8 +60,7 @@ internal sealed partial class ConflictResolutionService
         var response = new ConflictResolutionResponse
         {
             Path = path,
-            WorktreeFingerprint = await ConflictFingerprintAsync(resultPath, entries, cancellationToken)
-                .ConfigureAwait(false),
+            WorktreeFingerprint = fingerprint,
             Base = baseVersion,
             Ours = ours,
             Theirs = theirs,
@@ -68,6 +80,7 @@ internal sealed partial class ConflictResolutionService
         ConflictComparisonPayloadBuilder.Compact(response.CurrentComparison);
         ConflictComparisonPayloadBuilder.Compact(response.IncomingComparison);
         ConflictTextPayloadBuilder.Compact(response);
+        _responseCache.Set(repositoryPath, path, fingerprint, ignoreWhitespace, response);
         return response;
     }
 

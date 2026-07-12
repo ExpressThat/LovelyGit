@@ -7,6 +7,7 @@ namespace ExpressThat.LovelyGit.Services.Git.WorkingTree;
 internal sealed partial class ConflictResolutionService
 {
     private readonly WorkingTreeIndexService _indexService;
+    private readonly ConflictResolutionResponseCache _responseCache = new();
 
     public ConflictResolutionService(WorkingTreeIndexService indexService)
     {
@@ -83,6 +84,8 @@ internal sealed partial class ConflictResolutionService
             if (File.Exists(temporaryPath)) File.Delete(temporaryPath);
             if (staged && File.Exists(backupPath)) File.Delete(backupPath);
         }
+
+        if (staged) _responseCache.Invalidate(repositoryPath, path);
     }
 
     private static async Task<byte[]?> SelectResultAsync(
