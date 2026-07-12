@@ -25,6 +25,32 @@ internal sealed partial class WorkingTreeChangeService
         bool ignoreWhitespace)
     {
         var model = new SideBySideDiffBuilder(new Differ()).BuildDiffModel(oldText, newText, ignoreWhitespace);
+        return BuildSideBySideResponse(commitHash, path, status, oldText, newText, language, model);
+    }
+
+    internal static CommitFileDiffResponse BuildPreparedSideBySideResponse(
+        string commitHash,
+        string path,
+        string status,
+        string oldText,
+        string newText,
+        SideBySideDiffModel model)
+    {
+        var language = oldText.Length + newText.Length <= MaxSyntaxHighlightedCharacters
+            ? ResolveLanguage(path)
+            : null;
+        return BuildSideBySideResponse(commitHash, path, status, oldText, newText, language, model);
+    }
+
+    private static CommitFileDiffResponse BuildSideBySideResponse(
+        string commitHash,
+        string path,
+        string status,
+        string oldText,
+        string newText,
+        ILanguage? language,
+        SideBySideDiffModel model)
+    {
         var syntaxSpanBuilder = SyntaxSpanBuilder.Create(
             language,
             oldText.Length + newText.Length,

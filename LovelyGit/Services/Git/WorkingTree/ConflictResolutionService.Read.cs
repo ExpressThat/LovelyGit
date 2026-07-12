@@ -56,6 +56,18 @@ internal sealed partial class ConflictResolutionService
             ours.Text != null &&
             theirs.Text != null &&
             result.Text != null;
+        var currentHunkModel = canBuildTextMerge
+            ? ConflictHunkBuilder.BuildModel(baseVersion.Text!, ours.Text!)
+            : null;
+        var incomingHunkModel = canBuildTextMerge
+            ? ConflictHunkBuilder.BuildModel(baseVersion.Text!, theirs.Text!)
+            : null;
+        var currentComparisonModel = canBuildTextMerge && ignoreWhitespace
+            ? ConflictHunkBuilder.BuildModel(baseVersion.Text!, ours.Text!, ignoreWhitespace: true)
+            : currentHunkModel;
+        var incomingComparisonModel = canBuildTextMerge && ignoreWhitespace
+            ? ConflictHunkBuilder.BuildModel(baseVersion.Text!, theirs.Text!, ignoreWhitespace: true)
+            : incomingHunkModel;
 
         var response = new ConflictResolutionResponse
         {
@@ -68,13 +80,18 @@ internal sealed partial class ConflictResolutionService
             CurrentSource = currentSource,
             IncomingSource = incomingSource,
             Hunks = canBuildTextMerge
-                ? ConflictHunkBuilder.Build(baseVersion.Text!, ours.Text!, theirs.Text!, result.Text!)
+                ? ConflictHunkBuilder.Build(
+                    ours.Text!,
+                    theirs.Text!,
+                    result.Text!,
+                    currentHunkModel!,
+                    incomingHunkModel!)
                 : new List<ConflictHunk>(),
             CurrentComparison = canBuildTextMerge
-                ? BuildBaseComparison(path, ignoreWhitespace, baseVersion.Text!, ours.Text!)
+                ? BuildBaseComparison(path, baseVersion.Text!, ours.Text!, currentComparisonModel!)
                 : null,
             IncomingComparison = canBuildTextMerge
-                ? BuildBaseComparison(path, ignoreWhitespace, baseVersion.Text!, theirs.Text!)
+                ? BuildBaseComparison(path, baseVersion.Text!, theirs.Text!, incomingComparisonModel!)
                 : null,
         };
         ConflictComparisonPayloadBuilder.Compact(response.CurrentComparison);
@@ -86,19 +103,17 @@ internal sealed partial class ConflictResolutionService
 
     private static CommitFileDiffResponse BuildBaseComparison(
         string path,
-        bool ignoreWhitespace,
         string baseText,
-        string sourceText)
+        string sourceText,
+        DiffPlex.DiffBuilder.Model.SideBySideDiffModel model)
     {
-        return WorkingTreeChangeService.BuildDiffResponse(
+        return WorkingTreeChangeService.BuildPreparedSideBySideResponse(
             "CONFLICT",
             path,
             "Unmerged",
-            CommitDiffViewMode.SideBySide,
-            ignoreWhitespace,
-            Encoding.UTF8.GetBytes(baseText),
-            Encoding.UTF8.GetBytes(sourceText),
-            compact: false);
+            baseText,
+            sourceText,
+            model);
     }
 
     private static async Task<Dictionary<int, GitIndexEntry>> ReadConflictEntriesAsync(

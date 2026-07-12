@@ -13,13 +13,23 @@ internal static class ConflictHunkBuilder
         string incomingText,
         string resultText)
     {
+        var currentDiff = BuildModel(baseText, currentText);
+        var incomingDiff = BuildModel(baseText, incomingText);
+        return Build(currentText, incomingText, resultText, currentDiff, incomingDiff);
+    }
+
+    public static List<ConflictHunk> Build(
+        string currentText,
+        string incomingText,
+        string resultText,
+        SideBySideDiffModel currentDiff,
+        SideBySideDiffModel incomingDiff)
+    {
         var parsed = Parse(resultText);
         var currentLines = SplitLines(currentText);
         var incomingLines = SplitLines(incomingText);
         var currentCursor = 0;
         var incomingCursor = 0;
-        var currentDiff = new SideBySideDiffBuilder(new Differ()).BuildDiffModel(baseText, currentText);
-        var incomingDiff = new SideBySideDiffBuilder(new Differ()).BuildDiffModel(baseText, incomingText);
         var hunks = new List<ConflictHunk>(parsed.Count);
 
         foreach (var conflict in parsed)
@@ -45,6 +55,15 @@ internal static class ConflictHunkBuilder
 
         return hunks;
     }
+
+    internal static SideBySideDiffModel BuildModel(
+        string baseText,
+        string sourceText,
+        bool ignoreWhitespace = false) =>
+        new SideBySideDiffBuilder(new Differ()).BuildDiffModel(
+            baseText,
+            sourceText,
+            ignoreWhitespace);
 
     internal static IReadOnlyList<string> SplitLines(string text)
     {

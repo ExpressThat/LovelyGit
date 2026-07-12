@@ -92,4 +92,23 @@ public sealed class ConflictHunkBuilderTests
         Assert.Equal(2, hunk.IncomingStartLine);
         Assert.Equal(0, hunk.IncomingLineCount);
     }
+
+    [Fact]
+    public void Build_WithPreparedModelsMatchesStandaloneMapping()
+    {
+        const string baseText = "before\nbase\nafter\n";
+        const string current = "before\ncurrent\nafter\n";
+        const string incoming = "before\nincoming\nafter\n";
+        const string result = "before\n<<<<<<< HEAD\ncurrent\n=======\nincoming\n>>>>>>> feature\nafter\n";
+        var expected = ConflictHunkBuilder.Build(baseText, current, incoming, result);
+
+        var actual = ConflictHunkBuilder.Build(
+            current,
+            incoming,
+            result,
+            ConflictHunkBuilder.BuildModel(baseText, current),
+            ConflictHunkBuilder.BuildModel(baseText, incoming));
+
+        Assert.Equal(expected, actual);
+    }
 }
