@@ -1,4 +1,5 @@
 using ExpressThat.LovelyGit.Services.TypeGeneration;
+using System.Text.Json.Serialization;
 
 namespace ExpressThat.LovelyGit.Services.Git.CommitGraph.Models
 {
@@ -15,7 +16,9 @@ namespace ExpressThat.LovelyGit.Services.Git.CommitGraph.Models
         public List<CommitLaneColor> LaneColorsBelow { get; set; } = new();
         public List<CommitLaneEdge> EdgesAbove { get; set; } = new();
         public List<CommitLaneEdge> EdgesBelow { get; set; } = new();
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         public bool IsMergeCommit { get; set; }
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         public bool IsBranchTip { get; set; }
     }
 }

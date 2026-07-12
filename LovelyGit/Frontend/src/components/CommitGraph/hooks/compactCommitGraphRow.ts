@@ -4,6 +4,8 @@ const EMPTY_ARRAY = Object.freeze([]) as unknown as never[];
 
 export function compactCommitGraphRow(row: CommitGraphRow) {
 	row.commit.signatureKind ||= "None";
+	row.isBranchTip ||= false;
+	row.isMergeCommit ||= false;
 	row.activeLanesAbove = reuseEmpty(row.activeLanesAbove);
 	row.activeLanesBelow = reuseEmpty(row.activeLanesBelow);
 	row.laneColorsAbove = reuseEmpty(row.laneColorsAbove);

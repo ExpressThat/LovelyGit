@@ -66,6 +66,21 @@ public sealed class CommitGraphCommitMapperTests
         Assert.Contains("\"SignatureKind\":\"Ssh\"", json, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void CommitGraphRow_SerializesOnlyTrueBooleanFlags()
+    {
+        var row = new CommitGraphRow();
+        var defaults = JsonSerializer.Serialize(row);
+        row.IsMergeCommit = true;
+        row.IsBranchTip = true;
+        var flags = JsonSerializer.Serialize(row);
+
+        Assert.DoesNotContain("IsMergeCommit", defaults, StringComparison.Ordinal);
+        Assert.DoesNotContain("IsBranchTip", defaults, StringComparison.Ordinal);
+        Assert.Contains("\"IsMergeCommit\":true", flags, StringComparison.Ordinal);
+        Assert.Contains("\"IsBranchTip\":true", flags, StringComparison.Ordinal);
+    }
+
     private static GitCommit CreateCommit()
     {
         return new GitCommit

@@ -7,11 +7,15 @@ describe("compactCommitGraphRow", () => {
 		const first = row();
 		const second = row();
 		delete (first.commit as Partial<typeof first.commit>).signatureKind;
+		delete (first as Partial<typeof first>).isBranchTip;
+		delete (first as Partial<typeof first>).isMergeCommit;
 		compactCommitGraphRow(first);
 		compactCommitGraphRow(second);
 
 		expect(first.commit.refs).toBe(second.commit.refs);
 		expect(first.commit.signatureKind).toBe("None");
+		expect(first.isBranchTip).toBe(false);
+		expect(first.isMergeCommit).toBe(false);
 		expect(first.edgesAbove).toBe(second.edgesAbove);
 		expect(Object.isFrozen(first.commit.refs)).toBe(true);
 	});
