@@ -4,20 +4,6 @@ namespace ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser;
 
 internal sealed partial class LovelyGitRepository : IDisposable
 {
-    private static void AddName(Dictionary<GitObjectId, List<string>> map, GitObjectId id, string name)
-    {
-        if (!map.TryGetValue(id, out var names))
-        {
-            names = new List<string>();
-            map[id] = names;
-        }
-
-        if (!names.Contains(name, StringComparer.Ordinal))
-        {
-            names.Add(name);
-        }
-    }
-
     private static void AddRef(Dictionary<GitObjectId, List<GitCommitRef>> map, GitObjectId id, string name, GitRefKind kind)
     {
         if (!map.TryGetValue(id, out var refs))

@@ -29,8 +29,6 @@ internal sealed class GitCommit
     private GitObjectId _firstParentHash;
     private List<GitObjectId>? _extraParentHashes;
     private List<GitObjectId>? _parentHashesSnapshot;
-    private List<string>? _branches;
-    private List<string>? _tags;
     private List<GitCommitRef>? _refs;
 
     public GitObjectId Hash { get; init; }
@@ -44,8 +42,6 @@ internal sealed class GitCommit
     public string Subject { get; set; } = string.Empty;
     public string Body { get; set; } = string.Empty;
     public GitSignatureKind SignatureKind { get; set; }
-    public IReadOnlyList<string> Branches => _branches ?? [];
-    public IReadOnlyList<string> Tags => _tags ?? [];
     public IReadOnlyList<GitCommitRef> Refs => _refs ?? [];
 
     public void AddParentHash(GitObjectId id)
@@ -71,18 +67,6 @@ internal sealed class GitCommit
         }
 
         return index == 0 ? _firstParentHash : _extraParentHashes![index - 1];
-    }
-
-    public void AddBranches(IEnumerable<string> branches)
-    {
-        _branches ??= new List<string>();
-        _branches.AddRange(branches);
-    }
-
-    public void AddTags(IEnumerable<string> tags)
-    {
-        _tags ??= new List<string>();
-        _tags.AddRange(tags);
     }
 
     public void AddRefs(IEnumerable<GitCommitRef> refs)

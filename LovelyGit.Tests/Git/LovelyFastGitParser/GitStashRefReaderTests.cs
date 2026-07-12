@@ -18,9 +18,6 @@ public sealed class GitStashRefReaderTests
             commit.Refs.Any(reference =>
                 reference.Kind == GitRefKind.Stash &&
                 reference.Name == "stash"));
-
-        Assert.DoesNotContain("stash", stashCommit.Branches);
-        Assert.DoesNotContain("stash", stashCommit.Tags);
     }
 
     [Fact]

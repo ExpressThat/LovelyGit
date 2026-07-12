@@ -12,8 +12,6 @@ internal sealed partial class LovelyGitRepository : IDisposable
     private readonly LruCache<GitObjectId, GitCommit> _graphCommitCache = new(GraphCommitCacheSize);
     private readonly LruCache<GitObjectId, GitCommit> _graphHeaderCache = new(GraphHeaderCacheSize);
     private readonly Dictionary<string, GitRef> _refsByFullName;
-    private readonly Dictionary<GitObjectId, List<string>> _branchNamesByCommit;
-    private readonly Dictionary<GitObjectId, List<string>> _tagNamesByCommit;
     private readonly Dictionary<GitObjectId, List<GitCommitRef>> _refsByCommit;
     private readonly IReadOnlyList<string> _remotePrefixes;
     private bool _disposed;
@@ -26,8 +24,6 @@ internal sealed partial class LovelyGitRepository : IDisposable
         GitObjectId? headTarget,
         string? currentBranchName,
         Dictionary<string, GitRef> refsByFullName,
-        Dictionary<GitObjectId, List<string>> branchNamesByCommit,
-        Dictionary<GitObjectId, List<string>> tagNamesByCommit,
         Dictionary<GitObjectId, List<GitCommitRef>> refsByCommit,
         IReadOnlyList<string> remotePrefixes)
     {
@@ -38,8 +34,6 @@ internal sealed partial class LovelyGitRepository : IDisposable
         HeadTarget = headTarget;
         CurrentBranchName = currentBranchName;
         _refsByFullName = refsByFullName;
-        _branchNamesByCommit = branchNamesByCommit;
-        _tagNamesByCommit = tagNamesByCommit;
         _refsByCommit = refsByCommit;
         _remotePrefixes = remotePrefixes;
     }
@@ -73,8 +67,6 @@ internal sealed partial class LovelyGitRepository : IDisposable
             .ConfigureAwait(false);
 
         var refsByFullName = new Dictionary<string, GitRef>(StringComparer.Ordinal);
-        var branchNamesByCommit = new Dictionary<GitObjectId, List<string>>();
-        var tagNamesByCommit = new Dictionary<GitObjectId, List<string>>();
         var refsByCommit = new Dictionary<GitObjectId, List<GitCommitRef>>();
         var remotePrefixes = new HashSet<string>(StringComparer.Ordinal);
 
@@ -87,7 +79,6 @@ internal sealed partial class LovelyGitRepository : IDisposable
             if (kind is GitRefKind.Head or GitRefKind.Remote)
             {
                 refsByFullName[fullName] = new GitRef(displayName, rawRef.Target, kind);
-                AddName(branchNamesByCommit, rawRef.Target, displayName);
                 AddRef(refsByCommit, rawRef.Target, displayName, kind);
                 if (kind == GitRefKind.Remote)
                 {
@@ -110,7 +101,6 @@ internal sealed partial class LovelyGitRepository : IDisposable
                     kind);
                 if (commitTarget is not null)
                 {
-                    AddName(tagNamesByCommit, commitTarget.Value, displayName);
                     AddRef(refsByCommit, commitTarget.Value, displayName, kind);
                 }
             }
@@ -129,8 +119,6 @@ internal sealed partial class LovelyGitRepository : IDisposable
             headTarget,
             currentBranchName,
             refsByFullName,
-            branchNamesByCommit,
-            tagNamesByCommit,
             refsByCommit,
             remotePrefixes.Order(StringComparer.Ordinal).ToArray());
     }
@@ -196,8 +184,6 @@ internal sealed partial class LovelyGitRepository : IDisposable
         _graphCommitCache.Clear();
         _graphHeaderCache.Clear();
         _refsByFullName.Clear();
-        _branchNamesByCommit.Clear();
-        _tagNamesByCommit.Clear();
         _refsByCommit.Clear();
         _objectStore.Dispose();
         _disposed = true;

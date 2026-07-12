@@ -36,8 +36,8 @@ internal sealed class CommitDetailsBuilder
             Subject = commit.Subject,
             Body = commit.Body,
             Message = commit.Body.Trim('\r', '\n'),
-            Branches = commit.Branches.ToList(),
-            Tags = commit.Tags.ToList(),
+            Branches = BuildRefNames(commit, includeBranches: true),
+            Tags = BuildRefNames(commit, includeBranches: false),
             Stats = new CommitStats
             {
                 Additions = changedFiles.Aggregate(0u, (total, file) => total + file.Additions),
@@ -46,5 +46,22 @@ internal sealed class CommitDetailsBuilder
             ChangedFiles = changedFiles,
             SignatureKind = CommitGraphCommitMapper.MapSignatureKind(commit.SignatureKind),
         };
+    }
+
+    internal static List<string> BuildRefNames(GitCommit commit, bool includeBranches)
+    {
+        List<string>? names = null;
+        foreach (var reference in commit.Refs)
+        {
+            var matches = includeBranches
+                ? reference.Kind is GitRefKind.Head or GitRefKind.Remote
+                : reference.Kind == GitRefKind.Tag;
+            if (matches)
+            {
+                (names ??= new List<string>()).Add(reference.Name);
+            }
+        }
+
+        return names ?? [];
     }
 }

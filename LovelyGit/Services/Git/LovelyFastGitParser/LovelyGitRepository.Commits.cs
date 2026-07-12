@@ -47,16 +47,6 @@ internal sealed partial class LovelyGitRepository
 
     private void AddCommitRefs(GitObjectId id, GitCommit commit)
     {
-        if (_branchNamesByCommit.TryGetValue(id, out var branches))
-        {
-            commit.AddBranches(branches);
-        }
-
-        if (_tagNamesByCommit.TryGetValue(id, out var tags))
-        {
-            commit.AddTags(tags);
-        }
-
         if (_refsByCommit.TryGetValue(id, out var refs))
         {
             commit.AddRefs(refs);
