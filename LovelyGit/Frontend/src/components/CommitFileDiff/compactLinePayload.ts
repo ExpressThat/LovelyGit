@@ -39,7 +39,7 @@ export async function loadCompactLines(diff: CommitFileDiffResponse) {
 	return tuples.map(toDiffLine);
 }
 
-async function decodeGzipBase64(value: string) {
+export async function decodeGzipBase64(value: string) {
 	const bytes = Uint8Array.from(atob(value), (character) =>
 		character.charCodeAt(0),
 	);

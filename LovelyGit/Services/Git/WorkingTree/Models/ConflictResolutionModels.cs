@@ -11,6 +11,8 @@ public record ConflictFileVersion
     public bool IsTooLarge { get; set; }
     public long SizeBytes { get; set; }
     public string? Text { get; set; }
+    public string? TextGzipBase64 { get; set; }
+    public string? TextEncoding { get; set; }
 }
 
 [TypeSharp]

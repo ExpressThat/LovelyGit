@@ -26,6 +26,8 @@ export function version(text: string): ConflictFileVersion {
 		isTooLarge: false,
 		sizeBytes: text.length,
 		text,
+		textGzipBase64: "",
+		textEncoding: "",
 	};
 }
 

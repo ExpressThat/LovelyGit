@@ -44,7 +44,7 @@ internal sealed partial class ConflictResolutionService
             theirs.Text != null &&
             result.Text != null;
 
-        return new ConflictResolutionResponse
+        var response = new ConflictResolutionResponse
         {
             Path = path,
             WorktreeFingerprint = await ConflictFingerprintAsync(resultPath, entries, cancellationToken)
@@ -65,6 +65,8 @@ internal sealed partial class ConflictResolutionService
                 ? BuildBaseComparison(path, ignoreWhitespace, baseVersion.Text!, theirs.Text!)
                 : null,
         };
+        ConflictTextPayloadBuilder.Compact(response);
+        return response;
     }
 
     private static CommitFileDiffResponse BuildBaseComparison(

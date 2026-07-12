@@ -16,6 +16,7 @@ import {
 	hasConflictMarkers,
 	renderConflictResult,
 } from "./conflictDocument";
+import { loadConflictTextPayloads } from "./conflictTextPayload";
 import { verifyExternalConflictResolved } from "./externalConflictVerification";
 
 type LoadState =
@@ -69,8 +70,10 @@ export function useConflictResolution({
 		let active = true;
 		if (loadedFingerprint.current === null) setState({ status: "loading" });
 		fetchConflict()
-			.then((conflict) => {
+			.then(async (conflict) => {
 				if (!active || !conflict) return;
+				conflict = await loadConflictTextPayloads(conflict);
+				if (!active) return;
 				if (loadedFingerprint.current === conflict.worktreeFingerprint) {
 					setState({ status: "loaded", conflict });
 					return;
