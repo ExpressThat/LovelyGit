@@ -107,7 +107,6 @@ const commit: CommitGraphRow = {
 	colorIndex: 0,
 	commit: {
 		author: "Lovely Git",
-		branches: [],
 		date: 0,
 		email: "test@example.invalid",
 		hash: "1111111111111111111111111111111111111111",
@@ -115,7 +114,6 @@ const commit: CommitGraphRow = {
 		refs: [],
 		signatureKind: "None",
 		stats: null,
-		tags: [],
 	},
 	edgesAbove: [],
 	edgesBelow: [],

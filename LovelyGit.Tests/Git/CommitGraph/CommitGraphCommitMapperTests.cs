@@ -11,8 +11,6 @@ public sealed class CommitGraphCommitMapperTests
     {
         var info = CommitGraphCommitMapper.BuildInfo(CreateCommit(), remoteUrl: null);
 
-        Assert.Same(CommitGraphEmptyLists.Strings, info.Branches);
-        Assert.Same(CommitGraphEmptyLists.Strings, info.Tags);
         Assert.Same(CommitGraphEmptyLists.Refs, info.Refs);
     }
 
@@ -20,8 +18,6 @@ public sealed class CommitGraphCommitMapperTests
     public void BuildInfo_CopiesAndMapsPopulatedRefs()
     {
         var commit = CreateCommit();
-        commit.AddBranches(["main"]);
-        commit.AddTags(["v1.0"]);
         commit.AddRefs(
         [
             new GitCommitRef("main", GitRefKind.Head),
@@ -30,13 +26,10 @@ public sealed class CommitGraphCommitMapperTests
 
         var info = CommitGraphCommitMapper.BuildInfo(commit, remoteUrl: null);
 
-        Assert.Equal(["main"], info.Branches);
-        Assert.Equal(["v1.0"], info.Tags);
         Assert.Collection(
             info.Refs,
             reference => Assert.Equal(CommitRefKind.Local, reference.Kind),
             reference => Assert.Equal(CommitRefKind.Remote, reference.Kind));
-        Assert.NotSame(CommitGraphEmptyLists.Strings, info.Branches);
         Assert.NotSame(CommitGraphEmptyLists.Refs, info.Refs);
     }
 

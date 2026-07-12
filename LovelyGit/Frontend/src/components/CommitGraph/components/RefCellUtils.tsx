@@ -4,7 +4,6 @@ import { refLabel } from "../utils/format";
 
 export function normalizeRefs(
 	refs: CommitRefInfo[],
-	_tags: string[],
 	remotePrefixes: string[],
 ): CommitRefInfo[] {
 	const seenLocalLabels = new Set<string>();
@@ -55,24 +54,6 @@ export type RefGroup = {
 	primary: CommitRefInfo;
 	refs: CommitRefInfo[];
 };
-export function buildLegacyRefs(
-	branches: string[],
-	tags: string[],
-	remotePrefixes: string[],
-): CommitRefInfo[] {
-	const localBranchNames = new Set(
-		branches.filter((branch) => !isLikelyRemoteBranch(branch, remotePrefixes)),
-	);
-	return [
-		...branches.map((name) => ({
-			kind: inferLegacyBranchKind(name, localBranchNames, remotePrefixes),
-			name,
-			remoteUrl: null,
-		})),
-		...tags.map((name) => ({ kind: "Tag" as const, name, remoteUrl: null })),
-	];
-}
-
 export function groupRefs(
 	refs: CommitRefInfo[],
 	remotePrefixes: string[],
@@ -190,20 +171,6 @@ function kindRank(kind: CommitRefKind) {
 	}
 
 	return kind === "Tag" ? 2 : 3;
-}
-
-function inferLegacyBranchKind(
-	name: string,
-	localBranchNames: Set<string>,
-	remotePrefixes: string[],
-): CommitRefKind {
-	if (!isLikelyRemoteBranch(name, remotePrefixes)) {
-		return "Local";
-	}
-
-	const slashIndex = name.indexOf("/");
-	const branchName = slashIndex >= 0 ? name.slice(slashIndex + 1) : name;
-	return localBranchNames.has(branchName) ? "Remote" : "Local";
 }
 
 function isLikelyRemoteBranch(name: string, remotePrefixes: string[]) {

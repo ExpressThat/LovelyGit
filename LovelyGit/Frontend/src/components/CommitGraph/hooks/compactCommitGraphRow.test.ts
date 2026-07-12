@@ -9,9 +9,9 @@ describe("compactCommitGraphRow", () => {
 		compactCommitGraphRow(first);
 		compactCommitGraphRow(second);
 
-		expect(first.commit.branches).toBe(second.commit.branches);
+		expect(first.commit.refs).toBe(second.commit.refs);
 		expect(first.edgesAbove).toBe(second.edgesAbove);
-		expect(Object.isFrozen(first.commit.branches)).toBe(true);
+		expect(Object.isFrozen(first.commit.refs)).toBe(true);
 	});
 
 	it("shares equal lane snapshots but preserves transitions", () => {
@@ -40,7 +40,6 @@ function row(): CommitGraphRow {
 		colorIndex: 0,
 		commit: {
 			author: "Author",
-			branches: [],
 			date: 0,
 			email: "",
 			hash: "a".repeat(40),
@@ -48,7 +47,6 @@ function row(): CommitGraphRow {
 			refs: [],
 			signatureKind: "None",
 			stats: null,
-			tags: [],
 		},
 		edgesAbove: [],
 		edgesBelow: [],

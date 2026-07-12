@@ -38,10 +38,10 @@ describe("useCommitGraphData", () => {
 		expect(result.current.remoteRepositoryUrl).toBe(
 			"https://example.test/repo",
 		);
-		expect(result.current.rows[0]?.commit.branches).toBe(
-			result.current.rows[1]?.commit.branches,
+		expect(result.current.rows[0]?.commit.refs).toBe(
+			result.current.rows[1]?.commit.refs,
 		);
-		expect(Object.isFrozen(result.current.rows[0]?.commit.branches)).toBe(true);
+		expect(Object.isFrozen(result.current.rows[0]?.commit.refs)).toBe(true);
 		const initialRows = result.current.rows;
 		expect(mocks.sendRequest).toHaveBeenNthCalledWith(1, {
 			commandType: "CommitGraph",
@@ -96,7 +96,6 @@ function row(rowIndex: number): CommitGraphRow {
 		colorIndex: 0,
 		commit: {
 			author: "Author",
-			branches: [],
 			date: rowIndex,
 			email: "author@example.invalid",
 			hash: rowIndex.toString(16).padStart(40, "0"),
@@ -104,7 +103,6 @@ function row(rowIndex: number): CommitGraphRow {
 			refs: [],
 			signatureKind: "None",
 			stats: null,
-			tags: [],
 		},
 		edgesAbove: [],
 		edgesBelow: [],

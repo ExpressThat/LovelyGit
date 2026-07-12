@@ -5,7 +5,6 @@ import type { CommitGraphRow } from "@/generated/types";
 import { type BranchAction, BranchContextMenu } from "./BranchContextMenu";
 import { buildRefCellGroupView } from "./RefCellGrouping";
 import {
-	buildLegacyRefs,
 	groupRefs,
 	normalizeRefs,
 	type RefGroup,
@@ -42,17 +41,10 @@ export function RefCell({
 	tagRemoteName: string | null;
 }) {
 	const reduceMotion = useReducedMotion();
-	if (
-		row.commit.refs.length === 0 &&
-		row.commit.branches.length === 0 &&
-		row.commit.tags.length === 0
-	) {
+	if (row.commit.refs.length === 0) {
 		return <div className="h-[17px]" />;
 	}
-	const refs =
-		row.commit.refs.length > 0
-			? normalizeRefs(row.commit.refs, row.commit.tags, remotePrefixes)
-			: buildLegacyRefs(row.commit.branches, row.commit.tags, remotePrefixes);
+	const refs = normalizeRefs(row.commit.refs, remotePrefixes);
 	const groups = groupRefs(refs, remotePrefixes, currentBranchName);
 	const groupView = buildRefCellGroupView(groups);
 

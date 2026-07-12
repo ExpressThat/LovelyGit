@@ -10,16 +10,14 @@ import type {
 } from "@/generated/types";
 import { RefCell } from "./RefCell";
 
-const mocks = vi.hoisted(() => ({ buildLegacyRefs: vi.fn() }));
+const mocks = vi.hoisted(() => ({ normalizeRefs: vi.fn() }));
 vi.mock("./RefCellUtils", async (importOriginal) => {
 	const actual = await importOriginal<typeof import("./RefCellUtils")>();
 	return {
 		...actual,
-		buildLegacyRefs: (
-			...arguments_: Parameters<typeof actual.buildLegacyRefs>
-		) => {
-			mocks.buildLegacyRefs();
-			return actual.buildLegacyRefs(...arguments_);
+		normalizeRefs: (...arguments_: Parameters<typeof actual.normalizeRefs>) => {
+			mocks.normalizeRefs();
+			return actual.normalizeRefs(...arguments_);
 		},
 	};
 });
@@ -30,10 +28,9 @@ describe("RefCell", () => {
 	it("skips ref normalization and grouping for ordinary commits", () => {
 		const value = row();
 		value.commit.refs = [];
-		value.commit.tags = [];
 		render(<Cell row={value} />);
 
-		expect(mocks.buildLegacyRefs).not.toHaveBeenCalled();
+		expect(mocks.normalizeRefs).not.toHaveBeenCalled();
 		expect(screen.queryByRole("button")).not.toBeInTheDocument();
 	});
 
@@ -99,7 +96,6 @@ function row(): CommitGraphRow {
 function commit(): CommitInfo {
 	return {
 		author: "Test",
-		branches: [],
 		date: 0,
 		email: "test@example.invalid",
 		hash: "0123456789abcdef0123456789abcdef01234567",
@@ -113,7 +109,6 @@ function commit(): CommitInfo {
 		],
 		signatureKind: "None",
 		stats: null,
-		tags: ["v1"],
 	};
 }
 

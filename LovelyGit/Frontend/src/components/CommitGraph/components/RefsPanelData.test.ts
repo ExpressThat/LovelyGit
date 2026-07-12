@@ -38,20 +38,6 @@ describe("buildRefPanelSections", () => {
 		expect(sections[1].items[0].label).toBe("main");
 	});
 
-	it("falls back to legacy branch and tag fields", () => {
-		const sections = buildRefPanelSections({
-			currentBranchName: null,
-			remotePrefixes: ["origin"],
-			rows: [legacyRow("a", ["origin/main"], ["v1"])],
-		});
-
-		expect(sections.map((section) => section.label)).toEqual([
-			"Branches",
-			"Tags",
-		]);
-		expect(sections[0].items[0].kind).toBe("Local");
-	});
-
 	it("filters refs by name, display label, and hash", () => {
 		const sections = buildRefPanelSections({
 			currentBranchName: "main",
@@ -124,7 +110,7 @@ function row(hash: string, refs: CommitGraphRow["commit"]["refs"]) {
 	return {
 		activeLanesAbove: [],
 		activeLanesBelow: [],
-		commit: commit(hash, refs, [], []),
+		commit: commit(hash, refs),
 		colorIndex: 0,
 		edgesAbove: [],
 		edgesBelow: [],
@@ -154,32 +140,9 @@ function repositoryRef(
 	return { commitHash, kind, name, remoteUrl } satisfies RepositoryRefItem;
 }
 
-function legacyRow(hash: string, branches: string[], tags: string[]) {
-	return {
-		activeLanesAbove: [],
-		activeLanesBelow: [],
-		commit: commit(hash, [], branches, tags),
-		colorIndex: 0,
-		edgesAbove: [],
-		edgesBelow: [],
-		isBranchTip: false,
-		isMergeCommit: false,
-		lane: 0,
-		laneColorsAbove: [],
-		laneColorsBelow: [],
-		rowIndex: 0,
-	} satisfies CommitGraphRow;
-}
-
-function commit(
-	hash: string,
-	refs: CommitInfo["refs"],
-	branches: string[],
-	tags: string[],
-) {
+function commit(hash: string, refs: CommitInfo["refs"]) {
 	return {
 		author: "Test Author",
-		branches,
 		date: 0,
 		email: "test@example.invalid",
 		hash,
@@ -187,6 +150,5 @@ function commit(
 		refs,
 		signatureKind: "None",
 		stats: null,
-		tags,
 	} satisfies CommitInfo;
 }

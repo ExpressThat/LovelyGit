@@ -21,7 +21,26 @@ describe("CommitMessage signature metadata", () => {
 
 function row(signatureKind: "None" | "Ssh") {
 	return {
-		commit: { message: "Signed subject", signatureKind },
+		activeLanesAbove: [],
+		activeLanesBelow: [],
+		colorIndex: 0,
+		commit: {
+			author: "Author",
+			date: 0,
+			email: "author@example.invalid",
+			hash: "a".repeat(40),
+			message: "Signed subject",
+			refs: [],
+			signatureKind,
+			stats: null,
+		},
+		edgesAbove: [],
+		edgesBelow: [],
+		isBranchTip: false,
 		isMergeCommit: false,
-	} as CommitGraphRow;
+		lane: 0,
+		laneColorsAbove: [],
+		laneColorsBelow: [],
+		rowIndex: 0,
+	} satisfies CommitGraphRow;
 }

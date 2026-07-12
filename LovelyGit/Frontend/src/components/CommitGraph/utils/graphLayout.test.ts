@@ -36,7 +36,6 @@ function row(): CommitGraphRow {
 		colorIndex: 0,
 		commit: {
 			author: "A",
-			branches: [],
 			date: 0,
 			email: "",
 			hash: "a",
@@ -44,7 +43,6 @@ function row(): CommitGraphRow {
 			refs: [],
 			signatureKind: "None",
 			stats: null,
-			tags: [],
 		},
 		edgesAbove: [],
 		edgesBelow: [],

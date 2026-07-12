@@ -4,11 +4,7 @@ import type {
 	CommitRefKind,
 	RepositoryRefItem,
 } from "@/generated/types";
-import {
-	buildLegacyRefs,
-	normalizeRefs,
-	refLabelForRemotes,
-} from "./RefCellUtils";
+import { normalizeRefs, refLabelForRemotes } from "./RefCellUtils";
 
 export type RefPanelItem = {
 	commitHash: string;
@@ -180,9 +176,7 @@ function rowRefs(
 	row: CommitGraphRow,
 	remotePrefixes: string[],
 ): CommitRefInfo[] {
-	return row.commit.refs.length > 0
-		? normalizeRefs(row.commit.refs, row.commit.tags, remotePrefixes)
-		: buildLegacyRefs(row.commit.branches, row.commit.tags, remotePrefixes);
+	return normalizeRefs(row.commit.refs, remotePrefixes);
 }
 
 function sortItems(items: RefPanelItem[]) {

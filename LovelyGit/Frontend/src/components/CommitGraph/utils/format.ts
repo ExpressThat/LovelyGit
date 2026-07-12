@@ -13,8 +13,11 @@ export function formatDate(seconds: number) {
 }
 
 export function messagePrefix(row: CommitGraphRow) {
-	if (row.isMergeCommit && row.commit.branches.length > 0) {
-		return `Merge branch '${refLabel(row.commit.branches[0])}' into seen`;
+	const branch = row.commit.refs.find(
+		(reference) => reference.kind === "Local",
+	);
+	if (row.isMergeCommit && branch) {
+		return `Merge branch '${refLabel(branch.name)}' into seen`;
 	}
 
 	if (row.isMergeCommit) {
