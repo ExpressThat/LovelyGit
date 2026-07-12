@@ -32,13 +32,19 @@ describe("commitDetailsCache", () => {
 		expect(send).toHaveBeenCalledTimes(1);
 	});
 
-	it("does not retain unusually large detail responses", async () => {
+	it("retains one oversized response for instant selection", async () => {
 		send.mockResolvedValue(details(101));
 
-		await loadCommitDetails("repo", "large", 0);
-		await loadCommitDetails("repo", "large", 0);
+		await loadCommitDetails("repo", "large-a", 0);
+		await loadCommitDetails("repo", "large-a", 0);
+		expect(send).toHaveBeenCalledTimes(1);
 
+		await loadCommitDetails("repo", "large-b", 0);
+		await loadCommitDetails("repo", "large-b", 0);
 		expect(send).toHaveBeenCalledTimes(2);
+
+		await loadCommitDetails("repo", "large-a", 0);
+		expect(send).toHaveBeenCalledTimes(3);
 	});
 
 	it("clears failures so selection can retry", async () => {

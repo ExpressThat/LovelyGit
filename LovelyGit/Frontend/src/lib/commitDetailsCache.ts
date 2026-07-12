@@ -4,6 +4,7 @@ import { sendRequestWithResponse } from "@/lib/commands";
 const MAX_CACHED_DETAILS = 8;
 const MAX_CACHED_CHANGED_FILES = 100;
 const entries = new Map<string, CacheEntry>();
+let oversizedKey: string | null = null;
 
 export function loadCommitDetails(
 	repositoryId: string,
@@ -22,11 +23,11 @@ export function loadCommitDetails(
 	})
 		.then((response) => {
 			if (entries.get(key) !== entry) return response;
-			if (response.changedFiles.length <= MAX_CACHED_CHANGED_FILES) {
-				setEntry(key, { response });
-			} else {
-				entries.delete(key);
+			if (response.changedFiles.length > MAX_CACHED_CHANGED_FILES) {
+				if (oversizedKey && oversizedKey !== key) deleteEntry(oversizedKey);
+				oversizedKey = key;
 			}
+			setEntry(key, { response });
 			return response;
 		})
 		.catch((error: unknown) => {
@@ -51,6 +52,7 @@ export async function prefetchCommitDetails(
 
 export function clearCommitDetailsCache() {
 	entries.clear();
+	oversizedKey = null;
 }
 
 function setEntry(key: string, entry: CacheEntry) {
@@ -59,8 +61,13 @@ function setEntry(key: string, entry: CacheEntry) {
 	while (entries.size > MAX_CACHED_DETAILS) {
 		const oldest = entries.keys().next().value;
 		if (oldest === undefined) break;
-		entries.delete(oldest);
+		deleteEntry(oldest);
 	}
+}
+
+function deleteEntry(key: string) {
+	entries.delete(key);
+	if (oversizedKey === key) oversizedKey = null;
 }
 
 function cacheKey(
