@@ -92,11 +92,26 @@ internal static partial class GitObjectParsers
             return false;
         }
 
+        var first = FoldAscii(query[0]);
+        var alternate = first is >= (byte)'a' and <= (byte)'z'
+            ? (byte)(first - 32)
+            : first;
         var lastStart = source.Length - query.Length;
-        for (var start = 0; start <= lastStart; start++)
+        var searchStart = 0;
+        while (searchStart <= lastStart)
         {
+            var possibleStarts = source.Slice(searchStart, lastStart - searchStart + 1);
+            var relativeStart = first == alternate
+                ? possibleStarts.IndexOf(first)
+                : possibleStarts.IndexOfAny(first, alternate);
+            if (relativeStart < 0)
+            {
+                return false;
+            }
+
+            var start = searchStart + relativeStart;
             var matched = true;
-            for (var offset = 0; offset < query.Length; offset++)
+            for (var offset = 1; offset < query.Length; offset++)
             {
                 if (FoldAscii(source[start + offset]) != FoldAscii(query[offset]))
                 {
@@ -109,6 +124,8 @@ internal static partial class GitObjectParsers
             {
                 return true;
             }
+
+            searchStart = start + 1;
         }
 
         return false;
