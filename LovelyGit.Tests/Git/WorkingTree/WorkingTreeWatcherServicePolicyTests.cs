@@ -1,5 +1,7 @@
 using ExpressThat.LovelyGit.Services.Git.WorkingTree;
 using ExpressThat.LovelyGit.Services.Git.WorkingTree.Models;
+using ExpressThat.LovelyGit.Services.NativeMessaging;
+using System.Text.Json.Serialization.Metadata;
 
 namespace LovelyGit.Tests.Git.WorkingTree;
 
@@ -105,6 +107,74 @@ public sealed class WorkingTreeWatcherServicePolicyTests
     public void ReleaseLargeBuffer_DoesNotThrowForLargeIndex()
     {
         GitIndexMemory.ReleaseLargeBuffer(32 * 1024 * 1024);
+    }
+
+    [Fact]
+    public async Task SwitchActiveRepository_DoesNotPublishSyntheticInvalidation()
+    {
+        using var repository = TemporaryDirectory.Create("lovelygit-watch-switch-");
+        CreateRepositoryLayout(repository.Path);
+        var messaging = new RecordingNativeMessaging();
+        using var watcher = new WorkingTreeWatcherService(messaging, null!);
+
+        await watcher.SwitchActiveRepositoryAsync(Guid.NewGuid(), repository.Path);
+
+        await Task.Delay(TimeSpan.FromMilliseconds(250));
+        Assert.Equal(0, messaging.WorkingTreeChangedCount);
+    }
+
+    [Fact]
+    public async Task RealFileChange_StillPublishesInvalidationAfterSwitch()
+    {
+        using var repository = TemporaryDirectory.Create("lovelygit-watch-change-");
+        CreateRepositoryLayout(repository.Path);
+        var messaging = new RecordingNativeMessaging();
+        using var watcher = new WorkingTreeWatcherService(messaging, null!);
+        await watcher.SwitchActiveRepositoryAsync(Guid.NewGuid(), repository.Path);
+
+        File.WriteAllText(Path.Combine(repository.Path, "changed.txt"), "changed");
+
+        await messaging.WorkingTreeChanged.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        Assert.Equal(1, messaging.WorkingTreeChangedCount);
+    }
+
+    private static void CreateRepositoryLayout(string path)
+    {
+        var gitDirectory = Directory.CreateDirectory(Path.Combine(path, ".git"));
+        File.WriteAllText(Path.Combine(gitDirectory.FullName, "HEAD"), "ref: refs/heads/main\n");
+    }
+
+    private sealed class RecordingNativeMessaging : INativeMessaging
+    {
+        private int _workingTreeChangedCount;
+
+        public bool HasWindow => true;
+        public int WorkingTreeChangedCount => Volatile.Read(ref _workingTreeChangedCount);
+        public TaskCompletionSource WorkingTreeChanged { get; } =
+            new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public void Send<TBody>(
+            NativeMessageType messageType,
+            NativeMessageResponse<TBody> response,
+            JsonTypeInfo<NativeMessageResponse<TBody>> jsonTypeInfo) =>
+            Record(messageType);
+
+        public void Send<TBody>(
+            NativeMessageType messageType,
+            TBody body,
+            JsonTypeInfo<NativeMessageResponse<TBody>> jsonTypeInfo) =>
+            Record(messageType);
+
+        private void Record(NativeMessageType messageType)
+        {
+            if (messageType != NativeMessageType.WorkingTreeChanged)
+            {
+                return;
+            }
+
+            Interlocked.Increment(ref _workingTreeChangedCount);
+            WorkingTreeChanged.TrySetResult();
+        }
     }
 
     private sealed class TemporaryDirectory : IDisposable

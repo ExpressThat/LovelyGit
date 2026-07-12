@@ -137,7 +137,6 @@ internal sealed partial class WorkingTreeWatcherService : IDisposable
         }
 
         _ = RefreshIgnoreMatcherAsync();
-        QueueInvalidation();
     }
 
     public void Dispose()
