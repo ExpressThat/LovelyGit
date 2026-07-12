@@ -4,6 +4,18 @@ namespace LovelyGit.Tests.Git.WorkingTree;
 
 public sealed class WorkingTreeStatusScanPolicyTests
 {
+    [Theory]
+    [InlineData(25_000, false)]
+    [InlineData(25_001, true)]
+    public void ShouldSkipNativeScanBeforeRootTracking_UsesEntryLimit(
+        uint trackedEntries,
+        bool expected)
+    {
+        Assert.Equal(
+            expected,
+            WorkingTreeStatusScanPolicy.ShouldSkipNativeScanBeforeRootTracking(trackedEntries));
+    }
+
     [Fact]
     public void ShouldUseCompleteFallbackForDeepUntrackedScan_AllowsNormalRepos()
     {

@@ -5,6 +5,11 @@ internal static class WorkingTreeStatusScanPolicy
     public const int MaxTrackedRootDirectoriesForNativeDeepUntrackedScan = 512;
     public const uint MaxTrackedEntriesForNativeDeepUntrackedScan = 25_000;
 
+    public static bool ShouldSkipNativeScanBeforeRootTracking(uint trackedEntryCount)
+    {
+        return trackedEntryCount > MaxTrackedEntriesForNativeDeepUntrackedScan;
+    }
+
     public static bool ShouldUseCompleteFallbackForDeepUntrackedScan(
         int trackedRootDirectoryCount,
         uint trackedEntryCount)

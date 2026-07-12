@@ -31,6 +31,15 @@ internal sealed partial class WorkingTreeStatusListService
     {
         var paths = await GitRepositoryDiscovery.ResolveRepositoryPathsAsync(repositoryPath, cancellationToken)
             .ConfigureAwait(false);
+        var trackedEntryCount = await GitIndexHeaderReader
+            .ReadEntryCountAsync(paths.WorktreeGitDirectory, cancellationToken)
+            .ConfigureAwait(false);
+        if (trackedEntryCount is uint count
+            && WorkingTreeStatusScanPolicy.ShouldSkipNativeScanBeforeRootTracking(count))
+        {
+            return null;
+        }
+
         var objectFormat = await GitRepositoryDiscovery.ReadObjectFormatAsync(paths.GitDirectory, cancellationToken)
             .ConfigureAwait(false);
         var rootTracking = await new GitIndexRootTracker()
