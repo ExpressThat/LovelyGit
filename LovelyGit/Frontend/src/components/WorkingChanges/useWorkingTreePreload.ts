@@ -17,6 +17,7 @@ import {
 import type { WorkingTreeChangesState } from "./WorkingTreeChangesState";
 
 const MAX_PRELOADED_CHANGES = 500;
+export const BACKGROUND_FULL_PRELOAD_DELAY_MS = 1_500;
 
 export function useWorkingTreePreload({
 	enabled,
@@ -33,6 +34,7 @@ export function useWorkingTreePreload({
 		if (!repositoryId || enabled) return;
 
 		let isLoading = false;
+		let fullLoadTimer: number | null = null;
 		let reloadAgain = false;
 		let invalidationGeneration = 0;
 		const loadSummary = async () => {
@@ -56,19 +58,45 @@ export function useWorkingTreePreload({
 				setIsDirty(false);
 				setHasSummaryLoaded(true);
 				if (!summary.isComplete) {
-					const changes = await loadWorkingTreeChanges(repositoryId);
-					if (
-						previousRepositoryIdRef.current !== repositoryId ||
-						loadGeneration !== invalidationGeneration
-					) {
-						reloadAgain = true;
-						return;
-					}
-					setSummaryCount(changes.totalCount);
-					if (changes.totalCount <= MAX_PRELOADED_CHANGES) {
-						setState({ status: "loaded", changes });
-						hasFreshChangesRef.current = true;
-					}
+					fullLoadTimer = window.setTimeout(async () => {
+						fullLoadTimer = null;
+						if (
+							previousRepositoryIdRef.current !== repositoryId ||
+							loadGeneration !== invalidationGeneration
+						) {
+							return;
+						}
+						isLoading = true;
+						try {
+							const changes = await loadWorkingTreeChanges(repositoryId);
+							if (
+								previousRepositoryIdRef.current !== repositoryId ||
+								loadGeneration !== invalidationGeneration
+							) {
+								reloadAgain = true;
+								return;
+							}
+							setSummaryCount(changes.totalCount);
+							if (changes.totalCount <= MAX_PRELOADED_CHANGES) {
+								setState({ status: "loaded", changes });
+								hasFreshChangesRef.current = true;
+							}
+						} catch {
+							if (previousRepositoryIdRef.current === repositoryId) {
+								setIsDirty(true);
+								setHasSummaryLoaded(false);
+							}
+						} finally {
+							isLoading = false;
+							if (
+								previousRepositoryIdRef.current === repositoryId &&
+								reloadAgain
+							) {
+								reloadAgain = false;
+								scheduleLoad();
+							}
+						}
+					}, BACKGROUND_FULL_PRELOAD_DELAY_MS);
 				}
 			} catch {
 				if (previousRepositoryIdRef.current === repositoryId) {
@@ -86,6 +114,10 @@ export function useWorkingTreePreload({
 
 		const scheduleLoad = () => {
 			if (reloadTimerRef.current != null) clearTimeout(reloadTimerRef.current);
+			if (fullLoadTimer != null) {
+				clearTimeout(fullLoadTimer);
+				fullLoadTimer = null;
+			}
 			reloadTimerRef.current = window.setTimeout(() => {
 				reloadTimerRef.current = null;
 				void loadSummary();
@@ -115,6 +147,7 @@ export function useWorkingTreePreload({
 		);
 
 		return () => {
+			if (fullLoadTimer != null) clearTimeout(fullLoadTimer);
 			if (reloadTimerRef.current != null) {
 				clearTimeout(reloadTimerRef.current);
 				reloadTimerRef.current = null;
