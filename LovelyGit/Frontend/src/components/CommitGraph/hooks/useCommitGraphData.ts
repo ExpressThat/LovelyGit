@@ -16,6 +16,7 @@ import {
 	currentSessionRepositoryId,
 	session,
 } from "./commitGraphSession";
+import { compactCommitGraphRow } from "./compactCommitGraphRow";
 
 const PAGE_SIZE = 128;
 const PREFETCH_PAGES = 1;
@@ -184,7 +185,7 @@ function resetSession(
 function applyResponse(response: CommitGraphResponse, requiredLength: number) {
 	const nextRows = session.rows;
 	for (const row of response.rows) {
-		nextRows[row.rowIndex] = row;
+		nextRows[row.rowIndex] = compactCommitGraphRow(row);
 	}
 	if (!response.hasMore) {
 		nextRows.length = response.totalRows;

@@ -35,7 +35,13 @@ describe("useCommitGraphData", () => {
 
 		await waitFor(() => expect(mocks.sendRequest).toHaveBeenCalledTimes(2));
 		expect(result.current.rows).toHaveLength(256);
-		expect(result.current.remoteRepositoryUrl).toBe("https://example.test/repo");
+		expect(result.current.remoteRepositoryUrl).toBe(
+			"https://example.test/repo",
+		);
+		expect(result.current.rows[0]?.commit.branches).toBe(
+			result.current.rows[1]?.commit.branches,
+		);
+		expect(Object.isFrozen(result.current.rows[0]?.commit.branches)).toBe(true);
 		const initialRows = result.current.rows;
 		expect(mocks.sendRequest).toHaveBeenNthCalledWith(1, {
 			commandType: "CommitGraph",
