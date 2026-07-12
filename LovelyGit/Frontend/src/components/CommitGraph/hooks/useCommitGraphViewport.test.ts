@@ -18,7 +18,7 @@ describe("commitGraphContentHeight", () => {
 });
 
 describe("useCommitGraphViewport", () => {
-	it("resets vertical and horizontal scrolling when switching repositories", () => {
+	it("starts every selected repository at the top instead of restoring offsets", () => {
 		const ensureRangeLoaded = vi.fn();
 		const { result, rerender } = renderHook(
 			({ repositoryId }) =>
@@ -41,6 +41,17 @@ describe("useCommitGraphViewport", () => {
 			result.current.setGraphScrollLeft(120);
 		});
 		rerender({ repositoryId: "second" });
+
+		expect(verticalScroller.scrollTop).toBe(0);
+		expect(horizontalScroller.scrollLeft).toBe(0);
+		expect(result.current.graphScrollLeft).toBe(0);
+
+		verticalScroller.scrollTop = 220;
+		horizontalScroller.scrollLeft = 60;
+		act(() => {
+			result.current.setGraphScrollLeft(60);
+		});
+		rerender({ repositoryId: "first" });
 
 		expect(verticalScroller.scrollTop).toBe(0);
 		expect(horizontalScroller.scrollLeft).toBe(0);

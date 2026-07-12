@@ -28,17 +28,8 @@ export function useCommitGraphViewport({
 	const graphScrollerRef = useRef<HTMLDivElement | null>(null);
 	const [containerWidth, setContainerWidth] = useState(0);
 	const [graphScrollLeft, setGraphScrollLeft] = useState(0);
-	const previousRepositoryId = useRef(repositoryId);
 	const [preferredWidths, setPreferredWidths] =
 		useState<Record<ColKey, number>>(COL_DEFAULT);
-
-	useLayoutEffect(() => {
-		if (previousRepositoryId.current === repositoryId) return;
-		previousRepositoryId.current = repositoryId;
-		if (scrollRef.current) scrollRef.current.scrollTop = 0;
-		if (graphScrollerRef.current) graphScrollerRef.current.scrollLeft = 0;
-		setGraphScrollLeft(0);
-	}, [repositoryId]);
 
 	useEffect(() => {
 		const node = viewportRef.current;
@@ -80,6 +71,15 @@ export function useCommitGraphViewport({
 		getScrollElement: () => scrollRef.current,
 		overscan: OVERSCAN,
 	});
+	const previousRepositoryId = useRef(repositoryId);
+	useLayoutEffect(() => {
+		if (previousRepositoryId.current === repositoryId) return;
+		previousRepositoryId.current = repositoryId;
+		virtualizer.scrollToOffset(0);
+		if (scrollRef.current) scrollRef.current.scrollTop = 0;
+		if (graphScrollerRef.current) graphScrollerRef.current.scrollLeft = 0;
+		setGraphScrollLeft(0);
+	}, [repositoryId, virtualizer]);
 	const virtualItems = virtualizer.getVirtualItems();
 	const contentHeight = commitGraphContentHeight(totalRows);
 
