@@ -38,7 +38,14 @@ internal sealed class WorkingTreePreliminarySummaryService
             return candidates.Count;
         }
 
-        using var stream = File.Open(indexPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+        using var stream = new FileStream(indexPath, new FileStreamOptions
+        {
+            Access = FileAccess.Read,
+            BufferSize = 64 * 1024,
+            Mode = FileMode.Open,
+            Options = FileOptions.SequentialScan,
+            Share = FileShare.ReadWrite | FileShare.Delete,
+        });
         Span<byte> header = stackalloc byte[12];
         stream.ReadExactly(header);
         if (!header[..4].SequenceEqual("DIRC"u8))
