@@ -4,6 +4,10 @@ import {
 	sendRequestWithResponse,
 } from "@/lib/commands";
 import { DEFAULT_SETTINGS, type Settings, type SettingsKey } from "./Settings";
+import {
+	cancelPendingRepositorySetting,
+	persistSettingValue,
+} from "./settingPersistence";
 
 type Listener = () => void;
 type KeyedListeners = { [K in SettingsKey]: Set<Listener> };
@@ -112,13 +116,7 @@ export async function setSetting<K extends SettingsKey>(
 	notify([key]);
 
 	try {
-		sendRequestWithoutResponse({
-			commandType: "SetSetting",
-			arguments: {
-				setting: key,
-				value,
-			},
-		});
+		persistSettingValue(key, value);
 	} catch (error) {
 		console.error(`Failed to persist setting "${String(key)}".`, error);
 	}
@@ -145,6 +143,9 @@ export async function setSettings(patch: Partial<Settings>): Promise<void> {
 	notify(changedEntries.map(([key]) => key));
 
 	try {
+		if (updates.CurrentGitRepositoryId !== undefined) {
+			cancelPendingRepositorySetting();
+		}
 		sendRequestWithoutResponse({
 			commandType: "SetMultipleSettings",
 			arguments: {

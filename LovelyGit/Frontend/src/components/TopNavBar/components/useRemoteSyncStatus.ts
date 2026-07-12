@@ -101,7 +101,13 @@ export function useRemoteSyncStatus(
 
 		statusRef.current = null;
 		setStatus(null);
-		void load();
+		if (refreshTimerRef.current != null) {
+			window.clearTimeout(refreshTimerRef.current);
+		}
+		refreshTimerRef.current = window.setTimeout(
+			() => void load(),
+			CACHED_SYNC_REFRESH_DELAY_MS,
+		);
 	}, [currentBranchName, load, repositoryId]);
 
 	useEffect(

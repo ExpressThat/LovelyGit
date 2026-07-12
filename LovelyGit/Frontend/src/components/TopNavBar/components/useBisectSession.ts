@@ -5,14 +5,22 @@ import {
 	sendRequestWithResponse,
 	subscribeToServerEvent,
 } from "@/lib/commands";
+import { getCachedBisectState, setCachedBisectState } from "./bisectStateCache";
+
+export const CACHED_BISECT_REFRESH_DELAY_MS = 500;
 
 export function useBisectSession(repositoryId: string | null) {
 	const [state, setState] = useState<GitBisectState | null>(null);
 	const [isLoading, setIsLoading] = useState(false);
 	const [busyAction, setBusyAction] = useState<GitBisectAction | null>(null);
 	const requestId = useRef(0);
+	const refreshTimerRef = useRef<number | null>(null);
 
 	const load = useCallback(async () => {
+		if (refreshTimerRef.current != null) {
+			window.clearTimeout(refreshTimerRef.current);
+			refreshTimerRef.current = null;
+		}
 		if (!repositoryId) {
 			setState(null);
 			return;
@@ -24,7 +32,10 @@ export function useBisectSession(repositoryId: string | null) {
 				commandType: "GetBisectState",
 				arguments: { repositoryId },
 			});
-			if (currentRequest === requestId.current) setState(response);
+			if (currentRequest === requestId.current) {
+				setCachedBisectState(repositoryId, response);
+				setState(response);
+			}
 		} catch (error) {
 			if (currentRequest === requestId.current) {
 				toast.error(message(error, "Could not read the bisect session"));
@@ -35,9 +46,28 @@ export function useBisectSession(repositoryId: string | null) {
 	}, [repositoryId]);
 
 	useEffect(() => {
-		void load();
-		return subscribeToServerEvent("CommitGraphChanged", () => void load());
-	}, [load]);
+		requestId.current++;
+		const cached = repositoryId ? getCachedBisectState(repositoryId) : null;
+		setState(cached);
+		setIsLoading(false);
+		if (repositoryId) {
+			refreshTimerRef.current = window.setTimeout(
+				() => void load(),
+				CACHED_BISECT_REFRESH_DELAY_MS,
+			);
+		}
+		const unsubscribe = subscribeToServerEvent(
+			"CommitGraphChanged",
+			() => void load(),
+		);
+		return () => {
+			if (refreshTimerRef.current != null) {
+				window.clearTimeout(refreshTimerRef.current);
+				refreshTimerRef.current = null;
+			}
+			unsubscribe();
+		};
+	}, [load, repositoryId]);
 
 	async function run(action: GitBisectAction) {
 		if (!repositoryId || busyAction) return;
@@ -51,6 +81,7 @@ export function useBisectSession(repositoryId: string | null) {
 				},
 				{ timeoutMs: 30_000 },
 			);
+			setCachedBisectState(repositoryId, response);
 			setState(response);
 			toast.success(successLabel(action, response), { id: toastId });
 		} catch (error) {

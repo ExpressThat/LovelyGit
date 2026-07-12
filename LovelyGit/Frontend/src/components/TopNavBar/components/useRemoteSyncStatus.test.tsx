@@ -131,10 +131,14 @@ describe("useRemoteSyncStatus", () => {
 			{ initialProps: { branch: "main" } },
 		);
 		await waitFor(() => expect(result.current.status?.aheadCount).toBe(1));
+		vi.useFakeTimers();
 
 		rerender({ branch: "feature" });
+		expect(send).toHaveBeenCalledOnce();
+		act(() => vi.advanceTimersByTime(CACHED_SYNC_REFRESH_DELAY_MS));
+		await act(async () => Promise.resolve());
 
-		await waitFor(() => expect(result.current.status?.behindCount).toBe(3));
+		expect(result.current.status?.behindCount).toBe(3);
 		expect(send).toHaveBeenCalledTimes(2);
 	});
 
