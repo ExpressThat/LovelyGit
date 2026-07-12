@@ -8,6 +8,10 @@ import {
 import { useWorkingTreePreload } from "./useWorkingTreePreload";
 import { loadWorkingTreeChanges } from "./WorkingTreeChangesRequests";
 import type { WorkingTreeChangesState } from "./WorkingTreeChangesState";
+import {
+	cacheCompleteWorkingTreeSummary,
+	invalidateWorkingTreeSummary,
+} from "./workingTreeSummaryCache";
 
 export function useWorkingTreeChanges(
 	repositoryId: string | null,
@@ -70,6 +74,7 @@ export function useWorkingTreeChanges(
 						changes,
 					});
 					setSummaryCount(changes.totalCount);
+					cacheCompleteWorkingTreeSummary(repositoryId, changes.totalCount);
 					setIsDirty(false);
 					setHasSummaryLoaded(true);
 					hasFreshChangesRef.current = true;
@@ -98,6 +103,7 @@ export function useWorkingTreeChanges(
 		const unsubscribe = subscribeToServerEvent(
 			"WorkingTreeChanged",
 			(event) => {
+				invalidateWorkingTreeSummary(repositoryId);
 				hasFreshChangesRef.current = false;
 				setIsDirty(true);
 				const applyObserved = shouldApplyObservedWorkingTreeChanges(
@@ -168,6 +174,7 @@ export function useWorkingTreeChanges(
 				changes,
 			});
 			setSummaryCount(changes.totalCount);
+			cacheCompleteWorkingTreeSummary(repositoryId, changes.totalCount);
 			setIsDirty(false);
 			setHasSummaryLoaded(true);
 			hasFreshChangesRef.current = true;

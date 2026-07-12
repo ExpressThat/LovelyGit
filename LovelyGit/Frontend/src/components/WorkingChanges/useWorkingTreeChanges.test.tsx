@@ -1,14 +1,21 @@
 // @vitest-environment jsdom
 
 import { act, renderHook, waitFor } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { subscribeToServerEvent } from "@/lib/commands";
 import { useWorkingTreeChanges } from "./useWorkingTreeChanges";
-import { BACKGROUND_FULL_PRELOAD_DELAY_MS } from "./useWorkingTreePreload";
+import {
+	BACKGROUND_FULL_PRELOAD_DELAY_MS,
+	CACHED_SUMMARY_REFRESH_DELAY_MS,
+} from "./useWorkingTreePreload";
 import {
 	loadWorkingTreeChangeSummary,
 	loadWorkingTreeChanges,
 } from "./WorkingTreeChangesRequests";
+import {
+	clearWorkingTreeSummaryCache,
+	setCachedWorkingTreeSummary,
+} from "./workingTreeSummaryCache";
 
 vi.mock("@/lib/commands", () => ({
 	subscribeToServerEvent: vi.fn(() => vi.fn()),
@@ -27,6 +34,7 @@ let notifyWorkingTreeChanged: (event: {
 
 describe("useWorkingTreeChanges preload", () => {
 	beforeEach(() => {
+		clearWorkingTreeSummaryCache();
 		vi.clearAllMocks();
 		vi.mocked(subscribeToServerEvent).mockImplementation((_type, handler) => {
 			notifyWorkingTreeChanged = handler;
@@ -37,6 +45,53 @@ describe("useWorkingTreeChanges preload", () => {
 			isComplete: false,
 			totalCount: 0,
 		});
+	});
+
+	afterEach(() => vi.useRealTimers());
+
+	it("shows a cached summary immediately and defers revalidation", async () => {
+		vi.useFakeTimers();
+		setCachedWorkingTreeSummary("repo", {
+			hasChanges: true,
+			isComplete: true,
+			totalCount: 7,
+		});
+		loadSummary.mockResolvedValue({
+			hasChanges: false,
+			isComplete: true,
+			totalCount: 0,
+		});
+		const { result } = renderHook(() => useWorkingTreeChanges("repo", false));
+
+		expect(result.current.totalCount).toBe(7);
+		expect(result.current.isSummaryLoaded).toBe(true);
+		expect(loadSummary).not.toHaveBeenCalled();
+		act(() => vi.advanceTimersByTime(CACHED_SUMMARY_REFRESH_DELAY_MS));
+		await act(async () => Promise.resolve());
+
+		expect(loadSummary).toHaveBeenCalledOnce();
+		expect(result.current.totalCount).toBe(0);
+	});
+
+	it("cancels an abandoned cached summary refresh", () => {
+		vi.useFakeTimers();
+		for (const repositoryId of ["repo-a", "repo-b"]) {
+			setCachedWorkingTreeSummary(repositoryId, {
+				hasChanges: false,
+				isComplete: true,
+				totalCount: 0,
+			});
+		}
+		const { rerender } = renderHook(
+			({ repositoryId }) => useWorkingTreeChanges(repositoryId, false),
+			{ initialProps: { repositoryId: "repo-a" } },
+		);
+
+		rerender({ repositoryId: "repo-b" });
+		act(() => vi.advanceTimersByTime(CACHED_SUMMARY_REFRESH_DELAY_MS));
+
+		expect(loadSummary).toHaveBeenCalledOnce();
+		expect(loadSummary).toHaveBeenCalledWith("repo-b", true);
 	});
 
 	async function startBackgroundFullScan() {

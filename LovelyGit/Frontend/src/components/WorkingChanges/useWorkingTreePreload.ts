@@ -15,9 +15,16 @@ import {
 	loadWorkingTreeChanges,
 } from "./WorkingTreeChangesRequests";
 import type { WorkingTreeChangesState } from "./WorkingTreeChangesState";
+import {
+	cacheCompleteWorkingTreeSummary,
+	getCachedWorkingTreeSummary,
+	invalidateWorkingTreeSummary,
+	setCachedWorkingTreeSummary,
+} from "./workingTreeSummaryCache";
 
 const MAX_PRELOADED_CHANGES = 500;
 export const BACKGROUND_FULL_PRELOAD_DELAY_MS = 1_500;
+export const CACHED_SUMMARY_REFRESH_DELAY_MS = 500;
 
 export function useWorkingTreePreload({
 	enabled,
@@ -55,6 +62,7 @@ export function useWorkingTreePreload({
 					return;
 				}
 				setSummaryCount(summary.totalCount);
+				setCachedWorkingTreeSummary(repositoryId, summary);
 				setIsDirty(false);
 				setHasSummaryLoaded(true);
 				if (!summary.isComplete) {
@@ -77,6 +85,7 @@ export function useWorkingTreePreload({
 								return;
 							}
 							setSummaryCount(changes.totalCount);
+							cacheCompleteWorkingTreeSummary(repositoryId, changes.totalCount);
 							if (changes.totalCount <= MAX_PRELOADED_CHANGES) {
 								setState({ status: "loaded", changes });
 								hasFreshChangesRef.current = true;
@@ -112,7 +121,7 @@ export function useWorkingTreePreload({
 			}
 		};
 
-		const scheduleLoad = () => {
+		const scheduleLoad = (delay = 150) => {
 			if (reloadTimerRef.current != null) clearTimeout(reloadTimerRef.current);
 			if (fullLoadTimer != null) {
 				clearTimeout(fullLoadTimer);
@@ -121,14 +130,23 @@ export function useWorkingTreePreload({
 			reloadTimerRef.current = window.setTimeout(() => {
 				reloadTimerRef.current = null;
 				void loadSummary();
-			}, 150);
+			}, delay);
 		};
 
-		void loadSummary();
+		const cached = getCachedWorkingTreeSummary(repositoryId);
+		if (cached) {
+			setSummaryCount(cached.totalCount);
+			setIsDirty(false);
+			setHasSummaryLoaded(true);
+			scheduleLoad(CACHED_SUMMARY_REFRESH_DELAY_MS);
+		} else {
+			void loadSummary();
+		}
 		const unsubscribe = subscribeToServerEvent(
 			"WorkingTreeChanged",
 			(event) => {
 				invalidationGeneration++;
+				invalidateWorkingTreeSummary(repositoryId);
 				hasFreshChangesRef.current = false;
 				setIsDirty(true);
 				if (shouldApplyObservedWorkingTreeChanges(event.observedChanges)) {
