@@ -2,7 +2,7 @@
 
 import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import type {
 	CommitGraphRow,
 	CommitInfo,
@@ -10,24 +10,36 @@ import type {
 } from "@/generated/types";
 import { RefCell } from "./RefCell";
 
+const mocks = vi.hoisted(() => ({ buildLegacyRefs: vi.fn() }));
+vi.mock("./RefCellUtils", async (importOriginal) => {
+	const actual = await importOriginal<typeof import("./RefCellUtils")>();
+	return {
+		...actual,
+		buildLegacyRefs: (
+			...arguments_: Parameters<typeof actual.buildLegacyRefs>
+		) => {
+			mocks.buildLegacyRefs();
+			return actual.buildLegacyRefs(...arguments_);
+		},
+	};
+});
+
 describe("RefCell", () => {
+	beforeEach(() => vi.clearAllMocks());
+
+	it("skips ref normalization and grouping for ordinary commits", () => {
+		const value = row();
+		value.commit.refs = [];
+		value.commit.tags = [];
+		render(<Cell row={value} />);
+
+		expect(mocks.buildLegacyRefs).not.toHaveBeenCalled();
+		expect(screen.queryByRole("button")).not.toBeInTheDocument();
+	});
+
 	it("reveals grouped refs on hover and preserves their context menus", async () => {
 		const user = userEvent.setup();
-		render(
-			<RefCell
-				branchMutationBusy={false}
-				branchRemoteName="origin"
-				currentBranchName="main"
-				onBranchAction={vi.fn()}
-				onCreateBranchFromTag={vi.fn()}
-				onIntegrateBranch={vi.fn()}
-				onTagAction={vi.fn()}
-				remotePrefixes={["origin"]}
-				row={row()}
-				tagMutationBusy={false}
-				tagRemoteName="origin"
-			/>,
-		);
+		render(<Cell row={row()} />);
 
 		const visibleRefGroup = screen.getByRole("button", {
 			name: /Show 3 grouped references/,
@@ -48,6 +60,24 @@ describe("RefCell", () => {
 		expect(await screen.findByText("Check out as local branch…")).toBeVisible();
 	});
 });
+
+function Cell({ row: value }: { row: CommitGraphRow }) {
+	return (
+		<RefCell
+			branchMutationBusy={false}
+			branchRemoteName="origin"
+			currentBranchName="main"
+			onBranchAction={vi.fn()}
+			onCreateBranchFromTag={vi.fn()}
+			onIntegrateBranch={vi.fn()}
+			onTagAction={vi.fn()}
+			remotePrefixes={["origin"]}
+			row={value}
+			tagMutationBusy={false}
+			tagRemoteName="origin"
+		/>
+	);
+}
 
 function row(): CommitGraphRow {
 	return {

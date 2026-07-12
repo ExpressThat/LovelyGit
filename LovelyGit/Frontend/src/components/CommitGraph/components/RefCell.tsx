@@ -41,13 +41,20 @@ export function RefCell({
 	tagMutationBusy: boolean;
 	tagRemoteName: string | null;
 }) {
+	const reduceMotion = useReducedMotion();
+	if (
+		row.commit.refs.length === 0 &&
+		row.commit.branches.length === 0 &&
+		row.commit.tags.length === 0
+	) {
+		return <div className="h-[17px]" />;
+	}
 	const refs =
 		row.commit.refs.length > 0
 			? normalizeRefs(row.commit.refs, row.commit.tags, remotePrefixes)
 			: buildLegacyRefs(row.commit.branches, row.commit.tags, remotePrefixes);
 	const groups = groupRefs(refs, remotePrefixes, currentBranchName);
 	const groupView = buildRefCellGroupView(groups);
-	const reduceMotion = useReducedMotion();
 
 	if (groups.length === 0) {
 		return <div className="h-[17px]" />;
