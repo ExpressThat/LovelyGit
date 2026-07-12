@@ -27,22 +27,81 @@ type GraphSession = {
 	totalRows: number;
 };
 
-export const session: GraphSession = {
-	currentBranchName: null,
-	generation: 0,
-	hasMore: true,
-	laneCount: 0,
-	loadedRowCount: 0,
-	loading: false,
-	nextCursor: null,
-	remotePrefixes: [],
-	remoteRepositoryUrl: null,
-	repositoryId: null,
-	requestedEnd: 0,
-	rows: [],
-	totalRows: 0,
-};
+const MAX_CACHED_REPOSITORIES = 4;
+const MAX_CACHED_ROWS = 256;
+const cachedViews = new Map<string, CachedGraphView>();
+let generation = 0;
+
+export let session: GraphSession = createSession(null);
+
+export function activateCommitGraphSession(repositoryId: string | null) {
+	if (session.repositoryId === repositoryId) return;
+	cacheCurrentView();
+	const cached = repositoryId ? takeCachedView(repositoryId) : undefined;
+	session = createSession(repositoryId, cached);
+}
 
 export function currentSessionRepositoryId() {
 	return session.repositoryId;
 }
+
+export function resetCommitGraphSessionCacheForTests() {
+	cachedViews.clear();
+	session = createSession(null);
+}
+
+function cacheCurrentView() {
+	if (!session.repositoryId || session.rows.length === 0) return;
+	cachedViews.delete(session.repositoryId);
+	cachedViews.set(session.repositoryId, {
+		currentBranchName: session.currentBranchName,
+		laneCount: session.laneCount,
+		remotePrefixes: session.remotePrefixes,
+		remoteRepositoryUrl: session.remoteRepositoryUrl,
+		rows: session.rows.slice(0, MAX_CACHED_ROWS),
+		totalRows: session.totalRows,
+	});
+	while (cachedViews.size > MAX_CACHED_REPOSITORIES) {
+		const oldest = cachedViews.keys().next().value;
+		if (oldest === undefined) break;
+		cachedViews.delete(oldest);
+	}
+}
+
+function takeCachedView(repositoryId: string) {
+	const cached = cachedViews.get(repositoryId);
+	if (!cached) return undefined;
+	cachedViews.delete(repositoryId);
+	return cached;
+}
+
+function createSession(
+	repositoryId: string | null,
+	cached?: CachedGraphView,
+): GraphSession {
+	return {
+		currentBranchName: cached?.currentBranchName ?? null,
+		generation: ++generation,
+		hasMore: true,
+		laneCount: cached?.laneCount ?? 0,
+		loadedRowCount: 0,
+		loading: false,
+		nextCursor: null,
+		remotePrefixes: cached?.remotePrefixes ?? [],
+		remoteRepositoryUrl: cached?.remoteRepositoryUrl ?? null,
+		repositoryId,
+		requestedEnd: 0,
+		rows: cached?.rows ?? [],
+		totalRows: cached?.totalRows ?? 0,
+	};
+}
+
+type CachedGraphView = Pick<
+	GraphSession,
+	| "currentBranchName"
+	| "laneCount"
+	| "remotePrefixes"
+	| "remoteRepositoryUrl"
+	| "rows"
+	| "totalRows"
+>;

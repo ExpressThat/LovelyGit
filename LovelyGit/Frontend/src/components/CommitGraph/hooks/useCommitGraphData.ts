@@ -12,6 +12,7 @@ import {
 } from "@/lib/commands";
 import { useSetting } from "@/lib/settings/settingsStore";
 import {
+	activateCommitGraphSession,
 	type CommitGraphState,
 	currentSessionRepositoryId,
 	session,
@@ -123,16 +124,18 @@ export function useCommitGraphData(externalRefreshToken = 0) {
 			repositoryId: currentGitRepositoryId,
 		};
 		if (repositoryChanged) {
-			resetSession(currentGitRepositoryId, { keepRows: false });
+			activateCommitGraphSession(currentGitRepositoryId);
 			setState({
 				error: null,
-				currentBranchName: null,
-				isInitialLoading: Boolean(currentGitRepositoryId),
-				laneCount: 0,
-				remotePrefixes: [],
-				remoteRepositoryUrl: null,
-				rows: [],
-				totalRows: currentGitRepositoryId ? PAGE_SIZE : 0,
+				currentBranchName: session.currentBranchName,
+				isInitialLoading:
+					Boolean(currentGitRepositoryId) && session.rows.length === 0,
+				laneCount: session.laneCount,
+				remotePrefixes: session.remotePrefixes,
+				remoteRepositoryUrl: session.remoteRepositoryUrl,
+				rows: session.rows,
+				totalRows:
+					session.totalRows || (currentGitRepositoryId ? PAGE_SIZE : 0),
 			});
 		} else if (
 			previous.externalRefreshToken !== externalRefreshToken ||
