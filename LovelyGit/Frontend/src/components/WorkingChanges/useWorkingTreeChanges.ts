@@ -5,10 +5,8 @@ import {
 	countObservedNewPaths,
 	shouldApplyObservedWorkingTreeChanges,
 } from "./OptimisticWorkingTreeChanges";
-import {
-	loadWorkingTreeChangeSummary,
-	loadWorkingTreeChanges,
-} from "./WorkingTreeChangesRequests";
+import { useWorkingTreePreload } from "./useWorkingTreePreload";
+import { loadWorkingTreeChanges } from "./WorkingTreeChangesRequests";
 import type { WorkingTreeChangesState } from "./WorkingTreeChangesState";
 
 export function useWorkingTreeChanges(
@@ -22,7 +20,7 @@ export function useWorkingTreeChanges(
 	const [isDirty, setIsDirty] = useState(false);
 	const [summaryCount, setSummaryCount] = useState(0);
 	const [hasSummaryLoaded, setHasSummaryLoaded] = useState(false);
-	const summaryReloadTimerRef = useRef<number | null>(null);
+	const hasFreshChangesRef = useRef(false);
 	const previousRepositoryIdRef = useRef<string | null>(repositoryId);
 
 	useEffect(() => {
@@ -32,6 +30,7 @@ export function useWorkingTreeChanges(
 			setIsDirty(false);
 			setSummaryCount(0);
 			setHasSummaryLoaded(false);
+			hasFreshChangesRef.current = false;
 		}
 
 		if (!repositoryId) {
@@ -39,6 +38,7 @@ export function useWorkingTreeChanges(
 			setIsDirty(false);
 			setSummaryCount(0);
 			setHasSummaryLoaded(false);
+			hasFreshChangesRef.current = false;
 			return;
 		}
 
@@ -72,6 +72,7 @@ export function useWorkingTreeChanges(
 					setSummaryCount(changes.totalCount);
 					setIsDirty(false);
 					setHasSummaryLoaded(true);
+					hasFreshChangesRef.current = true;
 				}
 			} catch (error) {
 				if (isActive) {
@@ -93,10 +94,11 @@ export function useWorkingTreeChanges(
 			}
 		};
 
-		void load();
+		if (!hasFreshChangesRef.current) void load();
 		const unsubscribe = subscribeToServerEvent(
 			"WorkingTreeChanged",
 			(event) => {
+				hasFreshChangesRef.current = false;
 				setIsDirty(true);
 				const applyObserved = shouldApplyObservedWorkingTreeChanges(
 					event.observedChanges,
@@ -139,89 +141,16 @@ export function useWorkingTreeChanges(
 		};
 	}, [repositoryId, enabled]);
 
-	useEffect(() => {
-		if (!repositoryId || enabled) {
-			return;
-		}
-
-		let isLoading = false;
-		let reloadAgain = false;
-		const loadSummary = async (allowIncompleteSummary: boolean) => {
-			if (isLoading) {
-				reloadAgain = true;
-				return;
-			}
-
-			isLoading = true;
-			try {
-				const summary = await loadWorkingTreeChangeSummary(
-					repositoryId,
-					allowIncompleteSummary,
-				);
-				if (previousRepositoryIdRef.current === repositoryId) {
-					setSummaryCount(summary.totalCount);
-					setIsDirty(false);
-					setHasSummaryLoaded(true);
-					if (!summary.isComplete) {
-						window.setTimeout(() => void loadSummary(false), 0);
-					}
-				}
-			} catch {
-				if (previousRepositoryIdRef.current === repositoryId) {
-					setIsDirty(true);
-					setHasSummaryLoaded(false);
-				}
-			} finally {
-				isLoading = false;
-				if (previousRepositoryIdRef.current === repositoryId && reloadAgain) {
-					reloadAgain = false;
-					scheduleChangesLoad();
-				}
-			}
-		};
-
-		const scheduleChangesLoad = () => {
-			if (summaryReloadTimerRef.current != null) {
-				window.clearTimeout(summaryReloadTimerRef.current);
-			}
-
-			summaryReloadTimerRef.current = window.setTimeout(() => {
-				summaryReloadTimerRef.current = null;
-				void loadSummary(true);
-			}, 150);
-		};
-
-		void loadSummary(true);
-		const unsubscribe = subscribeToServerEvent(
-			"WorkingTreeChanged",
-			(event) => {
-				setIsDirty(true);
-				if (shouldApplyObservedWorkingTreeChanges(event.observedChanges)) {
-					setState((current) => {
-						const changes = applyObservedWorkingTreeChanges(
-							current.changes,
-							event.observedChanges,
-						);
-						if (!changes) {
-							return current;
-						}
-
-						setSummaryCount(changes.totalCount);
-						return { status: "loaded", changes };
-					});
-				}
-				scheduleChangesLoad();
-			},
-		);
-
-		return () => {
-			if (summaryReloadTimerRef.current != null) {
-				window.clearTimeout(summaryReloadTimerRef.current);
-				summaryReloadTimerRef.current = null;
-			}
-			unsubscribe();
-		};
-	}, [repositoryId, enabled]);
+	useWorkingTreePreload({
+		enabled,
+		hasFreshChangesRef,
+		previousRepositoryIdRef,
+		repositoryId,
+		setHasSummaryLoaded,
+		setIsDirty,
+		setState,
+		setSummaryCount,
+	});
 
 	return {
 		...state,
@@ -241,6 +170,7 @@ export function useWorkingTreeChanges(
 			setSummaryCount(changes.totalCount);
 			setIsDirty(false);
 			setHasSummaryLoaded(true);
+			hasFreshChangesRef.current = true;
 		},
 	};
 }

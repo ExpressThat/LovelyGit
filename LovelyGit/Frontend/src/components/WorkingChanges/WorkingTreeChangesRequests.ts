@@ -2,16 +2,26 @@ import { sendRequestWithResponse } from "@/lib/commands";
 import { createEmptyWorkingTreeChanges } from "./OptimisticWorkingTreeChanges";
 
 const workingTreeStatusTimeoutMs = 60_000;
+const pendingChanges = new Map<string, Promise<ReturnTypeResult>>();
 
 export async function loadWorkingTreeChanges(repositoryId: string) {
-	const changes = await sendRequestWithResponse(
+	const existing = pendingChanges.get(repositoryId);
+	if (existing) return existing;
+	const pending = sendRequestWithResponse(
 		{
 			commandType: "GetWorkingTreeChanges",
 			arguments: { allowIncompleteSummary: false, repositoryId },
 		},
 		{ timeoutMs: workingTreeStatusTimeoutMs },
-	);
-	return changes ?? createEmptyWorkingTreeChanges();
+	).then((changes) => changes ?? createEmptyWorkingTreeChanges());
+	pendingChanges.set(repositoryId, pending);
+	try {
+		return await pending;
+	} finally {
+		if (pendingChanges.get(repositoryId) === pending) {
+			pendingChanges.delete(repositoryId);
+		}
+	}
 }
 
 export async function loadWorkingTreeChangeSummary(
@@ -27,3 +37,5 @@ export async function loadWorkingTreeChangeSummary(
 	);
 	return summary ?? { hasChanges: false, isComplete: true, totalCount: 0 };
 }
+
+type ReturnTypeResult = ReturnType<typeof createEmptyWorkingTreeChanges>;
