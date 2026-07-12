@@ -8,7 +8,9 @@ internal sealed partial class LovelyGitRepository
         string query,
         CancellationToken cancellationToken)
     {
-        var data = await _objectStore.ReadObjectAsync(id, cancellationToken).ConfigureAwait(false);
+        var data = await _objectStore
+            .ReadObjectWithoutCachingAsync(id, cancellationToken)
+            .ConfigureAwait(false);
         if (data.Kind != GitObjectKind.Commit)
         {
             throw new InvalidDataException($"Object is not a commit: {id}");
