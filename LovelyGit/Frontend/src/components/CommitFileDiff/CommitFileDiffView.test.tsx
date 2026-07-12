@@ -5,16 +5,17 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { sendRequestWithResponse } from "@/lib/commands";
 import { CommitFileDiffView } from "./CommitFileDiffView";
 
+const settings = {
+	CommitDiffContextLines: 3,
+	CommitDiffIgnoreWhitespace: false,
+	CommitDiffLineDisplayMode: "Changes",
+	CommitDiffViewMode: "Combined",
+	CommitDiffWrapLines: false,
+};
+
 vi.mock("@/lib/commands", () => ({ sendRequestWithResponse: vi.fn() }));
 vi.mock("@/lib/settings/settingsStore", () => ({
-	useSetting: (setting: string) =>
-		({
-			CommitDiffContextLines: 3,
-			CommitDiffIgnoreWhitespace: false,
-			CommitDiffLineDisplayMode: "Changes",
-			CommitDiffViewMode: "Combined",
-			CommitDiffWrapLines: false,
-		})[setting],
+	useSetting: (setting: keyof typeof settings) => settings[setting],
 }));
 vi.mock("./CommitFileDiffHeader", () => ({
 	CommitFileDiffHeader: () => <div>Diff header</div>,
@@ -27,6 +28,8 @@ vi.mock("./DiffContent", () => ({
 describe("CommitFileDiffView", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
+		settings.CommitDiffIgnoreWhitespace = false;
+		settings.CommitDiffViewMode = "Combined";
 		vi.mocked(sendRequestWithResponse).mockResolvedValue({
 			commitHash: "merge",
 			hasDifferences: true,
@@ -36,6 +39,35 @@ describe("CommitFileDiffView", () => {
 			status: "A",
 			viewMode: "Combined",
 		});
+	});
+
+	it("reuses a previously loaded display variant", async () => {
+		const props = {
+			commitHash: "merge",
+			file: {
+				additions: 1,
+				deletions: 1,
+				isBinary: false,
+				path: "main.txt",
+				status: "Modified",
+			},
+			onClose: vi.fn(),
+			parentIndex: 0,
+			repositoryId: "repo",
+		};
+		const { rerender } = render(<CommitFileDiffView {...props} />);
+		await screen.findByText("Parent diff loaded");
+
+		settings.CommitDiffViewMode = "SideBySide";
+		rerender(<CommitFileDiffView {...props} />);
+		await waitFor(() =>
+			expect(sendRequestWithResponse).toHaveBeenCalledTimes(2),
+		);
+
+		settings.CommitDiffViewMode = "Combined";
+		rerender(<CommitFileDiffView {...props} />);
+		await screen.findByText("Parent diff loaded");
+		expect(sendRequestWithResponse).toHaveBeenCalledTimes(2);
 	});
 
 	it("requests the file against the selected merge parent", async () => {

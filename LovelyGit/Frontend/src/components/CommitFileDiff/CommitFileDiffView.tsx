@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import type {
 	CommitChangedFile,
 	CommitFileDiffResponse,
@@ -12,6 +12,8 @@ type DiffState =
 	| { status: "loading" }
 	| { status: "error"; message: string }
 	| { status: "loaded"; diff: CommitFileDiffResponse };
+
+const MAX_CACHED_VARIANTS = 4;
 
 export function CommitFileDiffView({
 	commitHash,
@@ -36,9 +38,26 @@ export function CommitFileDiffView({
 	const wrapLines = useSetting("CommitDiffWrapLines");
 	const ignoreWhitespace = useSetting("CommitDiffIgnoreWhitespace");
 	const [state, setState] = useState<DiffState>({ status: "loading" });
+	const responseCache = useRef(new Map<string, CommitFileDiffResponse>());
+	const requestKey = diffRequestKey({
+		commitHash,
+		comparisonCommitHash,
+		filePath: file.path,
+		ignoreWhitespace,
+		parentIndex,
+		repositoryId,
+		viewMode,
+	});
 
-	useEffect(() => {
+	useLayoutEffect(() => {
 		let isActive = true;
+		const cached = responseCache.current.get(requestKey);
+		if (cached) {
+			setState({ status: "loaded", diff: cached });
+			return () => {
+				isActive = false;
+			};
+		}
 		setState({ status: "loading" });
 
 		sendRequestWithResponse({
@@ -63,6 +82,7 @@ export function CommitFileDiffView({
 					return;
 				}
 
+				cacheResponse(responseCache.current, requestKey, diff);
 				setState({ status: "loaded", diff });
 			})
 			.catch((error: unknown) => {
@@ -89,6 +109,7 @@ export function CommitFileDiffView({
 		ignoreWhitespace,
 		parentIndex,
 		repositoryId,
+		requestKey,
 		viewMode,
 	]);
 
@@ -122,4 +143,35 @@ export function CommitFileDiffView({
 			</div>
 		</section>
 	);
+}
+
+function cacheResponse(
+	cache: Map<string, CommitFileDiffResponse>,
+	key: string,
+	diff: CommitFileDiffResponse,
+) {
+	cache.set(key, diff);
+	if (cache.size <= MAX_CACHED_VARIANTS) return;
+	const oldest = cache.keys().next().value;
+	if (oldest) cache.delete(oldest);
+}
+
+function diffRequestKey(input: {
+	commitHash: string;
+	comparisonCommitHash?: string | null;
+	filePath: string;
+	ignoreWhitespace: boolean;
+	parentIndex: number;
+	repositoryId: string;
+	viewMode: string;
+}) {
+	return [
+		input.repositoryId,
+		input.commitHash,
+		input.comparisonCommitHash ?? "",
+		input.parentIndex,
+		input.filePath,
+		input.viewMode,
+		input.ignoreWhitespace ? "ignore" : "exact",
+	].join("\0");
 }
