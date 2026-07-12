@@ -14,6 +14,8 @@ import {
 	type GraphEdgeDirection,
 	graphColor,
 	graphRowLayout,
+	laneColorIndex,
+	laneIsCovered,
 	xForLane,
 } from "../utils/graphLayout";
 
@@ -53,14 +55,16 @@ export function GraphCell({
 				<g mask={hasCurveMask ? `url(#${curveMaskId})` : undefined}>
 					{layout.visibleLanes.map((lane) => (
 						<ActiveLane
-							aboveColorIndex={layout.laneColorsAbove.get(lane)}
-							belowColorIndex={layout.laneColorsBelow.get(lane)}
+							aboveColorIndex={laneColorIndex(layout.laneColorsAbove, lane)}
+							belowColorIndex={laneColorIndex(layout.laneColorsBelow, lane)}
 							contentWidth={graphContentWidth}
 							drawAbove={
-								layout.activeAbove.has(lane) && !layout.coveredAbove.has(lane)
+								layout.activeAbove.includes(lane) &&
+								!laneIsCovered(row.edgesAbove, lane)
 							}
 							drawBelow={
-								layout.activeBelow.has(lane) && !layout.coveredBelow.has(lane)
+								layout.activeBelow.includes(lane) &&
+								!laneIsCovered(row.edgesBelow, lane)
 							}
 							key={`${row.rowIndex}-active-${lane}`}
 							lane={lane}

@@ -42,51 +42,17 @@ export function edgePath(edge: CommitLaneEdge, direction: GraphEdgeDirection) {
 	return `M ${fromX} ${ROW_CENTER_Y} Q ${midX} ${ROW_CENTER_Y} ${toX} ${ROW_HEIGHT / 2}`;
 }
 
-export function lanesCoveredByEdges(row: CommitGraphRow) {
-	const coveredAbove = new Set<number>();
-	const coveredBelow = new Set<number>();
-
-	for (const edge of row.edgesAbove) {
-		coveredAbove.add(edge.fromLane);
-		coveredAbove.add(edge.toLane);
-	}
-
-	for (const edge of row.edgesBelow) {
-		coveredBelow.add(edge.fromLane);
-		coveredBelow.add(edge.toLane);
-	}
-
-	return { coveredAbove, coveredBelow };
-}
-
 export function graphRowLayout(row: CommitGraphRow) {
-	const { coveredAbove, coveredBelow } = lanesCoveredByEdges(row);
-	const activeAbove = new Set(row.activeLanesAbove);
-	const activeBelow = new Set(row.activeLanesBelow);
-	const curvedAbove = row.edgesAbove.filter(isCurvedEdge);
-	const curvedBelow = row.edgesBelow.filter(isCurvedEdge);
-	const laneColorsAbove = colorMap(row.laneColorsAbove);
-	const laneColorsBelow = colorMap(row.laneColorsBelow);
-
 	return {
-		activeAbove,
-		activeBelow,
-		coveredAbove,
-		coveredBelow,
-		curvedAbove,
-		curvedBelow,
+		activeAbove: row.activeLanesAbove,
+		activeBelow: row.activeLanesBelow,
 		dotColor: graphColor(row.colorIndex),
 		dotX: xForLane(row.lane),
 		isStash: row.commit.refs.some((reference) => reference.kind === "Stash"),
-		laneColorsAbove,
-		laneColorsBelow,
-		maskEdges: [
-			...curvedAbove.map((edge) => ({ edge, direction: "above" as const })),
-			...curvedBelow.map((edge) => ({ edge, direction: "below" as const })),
-		],
-		visibleLanes: Array.from(
-			new Set([...row.activeLanesAbove, ...row.activeLanesBelow]),
-		),
+		laneColorsAbove: row.laneColorsAbove,
+		laneColorsBelow: row.laneColorsBelow,
+		maskEdges: buildMaskEdges(row),
+		visibleLanes: mergeVisibleLanes(row.activeLanesAbove, row.activeLanesBelow),
 	};
 }
 
@@ -94,6 +60,47 @@ function isCurvedEdge(edge: CommitLaneEdge) {
 	return edge.fromLane !== edge.toLane;
 }
 
-function colorMap(colors: CommitLaneColor[]) {
-	return new Map(colors.map((color) => [color.lane, color.colorIndex]));
+export function laneColorIndex(colors: CommitLaneColor[], lane: number) {
+	for (const color of colors) if (color.lane === lane) return color.colorIndex;
+}
+
+export function laneIsCovered(edges: CommitLaneEdge[], lane: number) {
+	return edges.some((edge) => edge.fromLane === lane || edge.toLane === lane);
+}
+
+const EMPTY_MASK_EDGES = Object.freeze([]) as unknown as Array<{
+	edge: CommitLaneEdge;
+	direction: GraphEdgeDirection;
+}>;
+
+function buildMaskEdges(row: CommitGraphRow) {
+	let result: typeof EMPTY_MASK_EDGES | null = null;
+	for (const edge of row.edgesAbove) {
+		if (isCurvedEdge(edge)) {
+			result ??= [];
+			result.push({ edge, direction: "above" });
+		}
+	}
+	for (const edge of row.edgesBelow) {
+		if (isCurvedEdge(edge)) {
+			result ??= [];
+			result.push({ edge, direction: "below" });
+		}
+	}
+	return result ?? EMPTY_MASK_EDGES;
+}
+
+function mergeVisibleLanes(above: number[], below: number[]) {
+	if (above.length === 0) return below;
+	if (below.length === 0 || sameValues(above, below)) return above;
+	const result = above.slice();
+	for (const lane of below) if (!result.includes(lane)) result.push(lane);
+	return result;
+}
+
+function sameValues(left: number[], right: number[]) {
+	return (
+		left.length === right.length &&
+		left.every((value, index) => value === right[index])
+	);
 }
