@@ -1,6 +1,15 @@
 import { motion, useReducedMotion } from "motion/react";
-import { type ComponentProps, lazy, Suspense } from "react";
+import {
+	type ComponentProps,
+	type ComponentType,
+	lazy,
+	Suspense,
+	useEffect,
+	useState,
+} from "react";
 import { LoaderCircle } from "@/components/icons/lovelyIcons";
+import { Button } from "@/components/ui/button";
+import { createDeferredLoader } from "@/lib/deferredLoader";
 import { CommitDetails } from "./components/CommitDetails/CommitDetails";
 import type { CommitFileDiffView as CommitFileDiffComponent } from "./components/CommitFileDiff/CommitFileDiffView";
 import type { ConflictResolutionView as ConflictResolutionComponent } from "./components/ConflictResolution/ConflictResolutionView";
@@ -22,9 +31,12 @@ const LazyWorkingTreeDiff = lazy(() =>
 		(module) => ({ default: module.WorkingTreeFileDiffView }),
 	),
 );
-const LazyConflictResolution = lazy(() =>
+type ConflictResolutionProps = ComponentProps<
+	typeof ConflictResolutionComponent
+>;
+const conflictResolutionLoader = createDeferredLoader(() =>
 	import("./components/ConflictResolution/ConflictResolutionView").then(
-		(module) => ({ default: module.ConflictResolutionView }),
+		(module) => module.ConflictResolutionView,
 	),
 );
 
@@ -59,13 +71,7 @@ export function WorkingTreeDiffSurface(
 ) {
 	if (props.file.group === "Unmerged") {
 		return (
-			<Suspense
-				fallback={<SurfaceLoading label="Preparing conflict resolver" fill />}
-			>
-				<LazyConflictResolution
-					{...(props as ComponentProps<typeof ConflictResolutionComponent>)}
-				/>
-			</Suspense>
+			<DeferredConflictResolution {...(props as ConflictResolutionProps)} />
 		);
 	}
 	return (
@@ -73,6 +79,57 @@ export function WorkingTreeDiffSurface(
 			<LazyWorkingTreeDiff {...props} />
 		</Suspense>
 	);
+}
+
+function DeferredConflictResolution(props: ConflictResolutionProps) {
+	const [Component, setComponent] =
+		useState<ComponentType<ConflictResolutionProps> | null>(() =>
+			conflictResolutionLoader.get(),
+		);
+	const [error, setError] = useState<string | null>(null);
+	const [attempt, setAttempt] = useState(0);
+	useEffect(() => {
+		void attempt;
+		let active = true;
+		conflictResolutionLoader.load().then(
+			(loaded) => {
+				if (active) setComponent(() => loaded);
+			},
+			(loadError: unknown) => {
+				if (active) {
+					setError(
+						loadError instanceof Error
+							? loadError.message
+							: "Failed to load conflict resolver.",
+					);
+				}
+			},
+		);
+		return () => {
+			active = false;
+		};
+	}, [attempt]);
+	if (Component) return <Component {...props} />;
+	if (error) {
+		return (
+			<div className="grid h-full place-items-center bg-background p-4 text-sm text-destructive">
+				<div className="space-y-3 text-center">
+					<p>{error}</p>
+					<Button
+						onClick={() => {
+							setError(null);
+							setAttempt((value) => value + 1);
+						}}
+						type="button"
+						variant="outline"
+					>
+						Retry
+					</Button>
+				</div>
+			</div>
+		);
+	}
+	return <SurfaceLoading label="Preparing conflict resolver" fill />;
 }
 
 export function SurfaceLoading({

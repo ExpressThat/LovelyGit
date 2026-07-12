@@ -1,10 +1,16 @@
 // @vitest-environment jsdom
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { CommitDetailsSurface } from "./AppLazySurfaces";
+import {
+	CommitDetailsSurface,
+	WorkingTreeDiffSurface,
+} from "./AppLazySurfaces";
 
 vi.mock("./components/CommitDetails/CommitDetails", () => ({
 	CommitDetails: () => <div>Loaded commit details</div>,
+}));
+vi.mock("./components/ConflictResolution/ConflictResolutionView", () => ({
+	ConflictResolutionView: () => <div>Loaded conflict resolver</div>,
 }));
 
 describe("AppLazySurfaces", () => {
@@ -22,5 +28,26 @@ describe("AppLazySurfaces", () => {
 		);
 
 		expect(screen.getByText("Loaded commit details")).toBeVisible();
+	});
+
+	it("loads the conflict resolver without a suspense throttle", async () => {
+		render(
+			<WorkingTreeDiffSurface
+				file={{
+					additions: 1,
+					deletions: 1,
+					group: "Unmerged",
+					isBinary: false,
+					oldPath: null,
+					path: "conflict.txt",
+					status: "Unmerged",
+				}}
+				onChange={vi.fn()}
+				onClose={vi.fn()}
+				repositoryId="repo"
+			/>,
+		);
+
+		expect(await screen.findByText("Loaded conflict resolver")).toBeVisible();
 	});
 });
