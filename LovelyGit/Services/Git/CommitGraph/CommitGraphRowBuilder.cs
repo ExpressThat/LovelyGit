@@ -102,10 +102,7 @@ internal static partial class CommitGraphRowBuilder
         edgesBelow = CompactLanesBelow(activeLaneTargets, activeLaneColors, edgesBelow);
         maxLaneCount = Math.Max(maxLaneCount, activeLaneTargets.Count);
 
-        var commitInfo = CommitGraphCommitMapper.BuildInfo(
-            commit,
-            BuildParentList(parents),
-            remoteUrl);
+        var commitInfo = CommitGraphCommitMapper.BuildInfo(commit, remoteUrl);
         return new CommitGraphRow
         {
             Commit = commitInfo,
@@ -155,17 +152,6 @@ internal static partial class CommitGraphRowBuilder
         }
 
         return true;
-    }
-
-    private static List<string> BuildParentList(CommitGraphParentSet parents)
-    {
-        var values = new List<string>(parents.Count);
-        for (var index = 0; index < parents.Count; index++)
-        {
-            values.Add(parents[index].Value);
-        }
-
-        return values;
     }
 
     private static bool HasBranchOrStashRef(CommitInfo commitInfo)

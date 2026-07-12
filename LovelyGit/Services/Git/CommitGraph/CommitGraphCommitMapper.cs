@@ -7,7 +7,7 @@ internal static class CommitGraphCommitMapper
 {
     private const int CommitMessagePreviewChars = 160;
 
-    public static CommitInfo BuildInfo(GitCommit commit, List<string> parents, string? remoteUrl)
+    public static CommitInfo BuildInfo(GitCommit commit, string? remoteUrl)
     {
         var message = commit.Subject?.Trim();
         if (string.IsNullOrWhiteSpace(message))
@@ -19,7 +19,7 @@ internal static class CommitGraphCommitMapper
         return new CommitInfo
         {
             Hash = hash,
-            Parents = parents,
+            Parents = CommitGraphEmptyLists.Strings,
             Author = string.IsNullOrWhiteSpace(commit.AuthorName) ? "unknown" : commit.AuthorName,
             Email = commit.AuthorEmail,
             Date = commit.AuthorUnixSeconds,

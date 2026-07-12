@@ -9,8 +9,9 @@ public sealed class CommitGraphCommitMapperTests
     [Fact]
     public void BuildInfo_ReusesEmptyCollectionsForCommitWithoutRefs()
     {
-        var info = CommitGraphCommitMapper.BuildInfo(CreateCommit(), [], remoteUrl: null);
+        var info = CommitGraphCommitMapper.BuildInfo(CreateCommit(), remoteUrl: null);
 
+        Assert.Same(CommitGraphEmptyLists.Strings, info.Parents);
         Assert.Same(CommitGraphEmptyLists.Strings, info.Branches);
         Assert.Same(CommitGraphEmptyLists.Strings, info.Tags);
         Assert.Same(CommitGraphEmptyLists.Refs, info.Refs);
@@ -28,7 +29,7 @@ public sealed class CommitGraphCommitMapperTests
             new GitCommitRef("origin/main", GitRefKind.Remote),
         ]);
 
-        var info = CommitGraphCommitMapper.BuildInfo(commit, [], remoteUrl: null);
+        var info = CommitGraphCommitMapper.BuildInfo(commit, remoteUrl: null);
 
         Assert.Equal(["main"], info.Branches);
         Assert.Equal(["v1.0"], info.Tags);
