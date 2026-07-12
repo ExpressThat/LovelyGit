@@ -5,6 +5,36 @@ namespace ExpressThat.LovelyGit.Services.Data.Repositorys;
 
 internal sealed partial class CommitFileDiffCacheRepository
 {
+    internal static CommitFileDiffCacheEntry CreateCacheEntry(
+        string id,
+        Guid repositoryId,
+        string hash,
+        string path,
+        CommitFileDiffResponse response,
+        bool ignoreWhitespace) => new()
+        {
+            Id = id,
+            RepositoryId = repositoryId,
+            Hash = hash,
+            Path = path,
+            ViewMode = response.ViewMode.ToString(),
+            IgnoreWhitespace = ignoreWhitespace,
+            Status = response.Status,
+            IsBinary = response.IsBinary,
+            HasDifferences = response.HasDifferences,
+            LineCount = response.Lines.Count,
+            IsTruncated = response.IsTruncated,
+            TruncationMessage = response.TruncationMessage,
+            VirtualText = response.VirtualText ?? string.Empty,
+            VirtualTextGzipBase64 = response.VirtualTextGzipBase64 ?? string.Empty,
+            VirtualTextEncoding = response.VirtualTextEncoding ?? string.Empty,
+            VirtualChangeType = response.VirtualChangeType ?? string.Empty,
+            VirtualLineCount = response.VirtualLineCount,
+            CompactLineSchema = response.CompactLineSchema ?? string.Empty,
+            CompactLinesGzipBase64 = response.CompactLinesGzipBase64 ?? string.Empty,
+            CompactLineCount = response.CompactLineCount,
+        };
+
     private static CommitFileDiffLineCache ToCache(CommitFileDiffLine line)
     {
         return new CommitFileDiffLineCache
@@ -24,7 +54,7 @@ internal sealed partial class CommitFileDiffCacheRepository
         };
     }
 
-    private static CommitFileDiffResponse ToResponse(
+    internal static CommitFileDiffResponse ToResponse(
         CommitFileDiffCacheEntry cache,
         List<CommitFileDiffLineCacheEntry> lines)
     {
@@ -38,6 +68,16 @@ internal sealed partial class CommitFileDiffCacheRepository
                 : CommitDiffViewMode.SideBySide,
             IsBinary = cache.IsBinary,
             HasDifferences = cache.HasDifferences,
+            IsTruncated = cache.IsTruncated,
+            TruncationMessage = cache.TruncationMessage,
+            VirtualText = cache.VirtualText,
+            VirtualTextGzipBase64 = cache.VirtualTextGzipBase64,
+            VirtualTextEncoding = cache.VirtualTextEncoding,
+            VirtualChangeType = cache.VirtualChangeType,
+            VirtualLineCount = cache.VirtualLineCount,
+            CompactLineSchema = cache.CompactLineSchema,
+            CompactLinesGzipBase64 = cache.CompactLinesGzipBase64,
+            CompactLineCount = cache.CompactLineCount,
             Lines = ToResponseLines(lines),
         };
     }

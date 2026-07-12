@@ -100,19 +100,8 @@ internal sealed partial class CommitFileDiffCacheRepository
             await gate.Semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
             enteredGate = true;
 
-            var entry = new CommitFileDiffCacheEntry
-            {
-                Id = id,
-                RepositoryId = repositoryId,
-                Hash = hash,
-                Path = path,
-                ViewMode = response.ViewMode.ToString(),
-                IgnoreWhitespace = ignoreWhitespace,
-                Status = response.Status,
-                IsBinary = response.IsBinary,
-                HasDifferences = response.HasDifferences,
-                LineCount = response.Lines.Count,
-            };
+            var entry = CreateCacheEntry(
+                id, repositoryId, hash, path, response, ignoreWhitespace);
 
             var existingEntry = await _gitRepoCache.CommitFileDiffs
                 .FindByIdAsync(id, cancellationToken)

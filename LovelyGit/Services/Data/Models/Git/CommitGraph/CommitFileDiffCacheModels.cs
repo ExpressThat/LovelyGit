@@ -26,6 +26,26 @@ namespace ExpressThat.LovelyGit.Services.Data.Models.Git.CommitGraph
         public bool HasDifferences { get; set; }
         [Column("linecount")]
         public int LineCount { get; set; }
+        [Column("istruncated")]
+        public bool IsTruncated { get; set; }
+        [Column("truncationmessage")]
+        public string TruncationMessage { get; set; } = string.Empty;
+        [Column("virtualtext")]
+        public string VirtualText { get; set; } = string.Empty;
+        [Column("virtualtextgzipbase64")]
+        public string VirtualTextGzipBase64 { get; set; } = string.Empty;
+        [Column("virtualtextencoding")]
+        public string VirtualTextEncoding { get; set; } = string.Empty;
+        [Column("virtualchangetype")]
+        public string VirtualChangeType { get; set; } = string.Empty;
+        [Column("virtuallinecount")]
+        public int VirtualLineCount { get; set; }
+        [Column("compactlineschema")]
+        public string CompactLineSchema { get; set; } = string.Empty;
+        [Column("compactlinesgzipbase64")]
+        public string CompactLinesGzipBase64 { get; set; } = string.Empty;
+        [Column("compactlinecount")]
+        public int CompactLineCount { get; set; }
     }
 
     [Table("commit_file_diff_line_cache")]

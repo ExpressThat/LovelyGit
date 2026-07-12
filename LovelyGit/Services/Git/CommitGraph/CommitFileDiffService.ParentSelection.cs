@@ -15,7 +15,8 @@ internal sealed partial class CommitFileDiffService
         CancellationToken cancellationToken)
     {
         if (parentIndex < 0) throw new ArgumentOutOfRangeException(nameof(parentIndex));
-        if (parentIndex > 0 || ignoreWhitespace)
+        if (_commitGraphRepository is null
+            || !CommitFileDiffCachingPolicy.CanUsePersistentCache(parentIndex, ignoreWhitespace))
         {
             return await BuildCommitFileDiffAsync(
                     repositoryPath,
