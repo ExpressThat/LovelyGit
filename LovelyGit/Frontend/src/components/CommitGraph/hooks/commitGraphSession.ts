@@ -28,7 +28,7 @@ type GraphSession = {
 };
 
 const MAX_CACHED_REPOSITORIES = 4;
-const MAX_CACHED_ROWS = 256;
+const MAX_CACHED_ROWS = 128;
 const CACHED_REFRESH_DELAY_MS = 500;
 const cachedViews = new Map<string, CachedGraphView>();
 let generation = 0;

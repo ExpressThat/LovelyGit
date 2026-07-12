@@ -25,7 +25,7 @@ describe("useCommitGraphData", () => {
 		mocks.repositoryId = "repo-a";
 	});
 
-	it("loads two bounded pages initially and prefetches requested ranges", async () => {
+	it("loads one bounded page initially and prefetches requested ranges", async () => {
 		mocks.sendRequest.mockImplementation(({ arguments: request }) => {
 			const start = request.cursor ? Number(request.cursor) : 0;
 			return Promise.resolve(response(start, 128, true));
@@ -33,8 +33,8 @@ describe("useCommitGraphData", () => {
 		const { useCommitGraphData } = await import("./useCommitGraphData");
 		const { result } = renderHook(() => useCommitGraphData());
 
-		await waitFor(() => expect(mocks.sendRequest).toHaveBeenCalledTimes(2));
-		expect(result.current.rows).toHaveLength(256);
+		await waitFor(() => expect(result.current.rows).toHaveLength(128));
+		expect(mocks.sendRequest).toHaveBeenCalledOnce();
 		expect(result.current.remoteRepositoryUrl).toBe(
 			"https://example.test/repo",
 		);
@@ -56,8 +56,41 @@ describe("useCommitGraphData", () => {
 		await waitFor(() =>
 			expect(result.current.rows.length).toBeGreaterThan(520),
 		);
-		expect(mocks.sendRequest).toHaveBeenCalledTimes(6);
+		expect(mocks.sendRequest).toHaveBeenCalledTimes(5);
 		expect(result.current.rows).toBe(initialRows);
+	});
+
+	it("prefetches before the visible range reaches the loaded boundary", async () => {
+		mocks.sendRequest.mockImplementation(({ arguments: request }) => {
+			const start = request.cursor ? Number(request.cursor) : 0;
+			return Promise.resolve(response(start, 128, true));
+		});
+		const { useCommitGraphData } = await import("./useCommitGraphData");
+		const { result } = renderHook(() => useCommitGraphData());
+		await waitFor(() => expect(mocks.sendRequest).toHaveBeenCalledOnce());
+
+		act(() => result.current.ensureRangeLoaded(40, 80));
+		expect(mocks.sendRequest).toHaveBeenCalledOnce();
+
+		act(() => result.current.ensureRangeLoaded(70, 100));
+		await waitFor(() => expect(mocks.sendRequest).toHaveBeenCalledTimes(2));
+		expect(result.current.rows).toHaveLength(256);
+	});
+
+	it("honors a farther visible range requested while a page is loading", async () => {
+		let finishFirst!: (value: CommitGraphResponse) => void;
+		mocks.sendRequest
+			.mockReturnValueOnce(new Promise((resolve) => (finishFirst = resolve)))
+			.mockResolvedValueOnce(response(128, 128, true));
+		const { useCommitGraphData } = await import("./useCommitGraphData");
+		const { result } = renderHook(() => useCommitGraphData());
+		await waitFor(() => expect(mocks.sendRequest).toHaveBeenCalledOnce());
+
+		act(() => result.current.ensureRangeLoaded(90, 120));
+		act(() => finishFirst(response(0, 128, true)));
+
+		await waitFor(() => expect(mocks.sendRequest).toHaveBeenCalledTimes(2));
+		expect(result.current.rows).toHaveLength(256);
 	});
 
 	it("surfaces a failed initial page without retaining loading state", async () => {
@@ -90,18 +123,18 @@ describe("useCommitGraphData", () => {
 		});
 		const { useCommitGraphData } = await import("./useCommitGraphData");
 		const { rerender } = renderHook(() => useCommitGraphData());
-		await waitFor(() => expect(mocks.sendRequest).toHaveBeenCalledTimes(2));
+		await waitFor(() => expect(mocks.sendRequest).toHaveBeenCalledOnce());
 
 		mocks.repositoryId = "repo-b";
 		rerender();
-		await waitFor(() => expect(mocks.sendRequest).toHaveBeenCalledTimes(4));
+		await waitFor(() => expect(mocks.sendRequest).toHaveBeenCalledTimes(2));
 		mocks.repositoryId = "repo-a";
 		rerender();
 		mocks.repositoryId = "repo-b";
 		rerender();
 
-		expect(mocks.sendRequest).toHaveBeenCalledTimes(4);
-		await waitFor(() => expect(mocks.sendRequest).toHaveBeenCalledTimes(5));
+		expect(mocks.sendRequest).toHaveBeenCalledTimes(2);
+		await waitFor(() => expect(mocks.sendRequest).toHaveBeenCalledTimes(3));
 	});
 });
 

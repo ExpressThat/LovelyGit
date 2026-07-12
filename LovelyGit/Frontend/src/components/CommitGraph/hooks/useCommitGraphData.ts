@@ -21,7 +21,7 @@ import {
 import { compactCommitGraphRow } from "./compactCommitGraphRow";
 
 const PAGE_SIZE = 128;
-const PREFETCH_PAGES = 1;
+const PREFETCH_ROWS = 32;
 export function useCommitGraphData(externalRefreshToken = 0) {
 	const [graphInvalidation, setGraphInvalidation] = useState(0);
 	const lifecycleRef = useRef({
@@ -54,7 +54,8 @@ export function useCommitGraphData(externalRefreshToken = 0) {
 		}
 		const loadingRepositoryId = currentGitRepositoryId;
 		const loadingGeneration = session.generation;
-		const requiredLength = session.requestedEnd + PAGE_SIZE * PREFETCH_PAGES;
+		const requestedEnd = session.requestedEnd;
+		const requiredLength = requestedEnd + PREFETCH_ROWS;
 		if (!session.hasMore || session.loadedRowCount >= requiredLength) {
 			return;
 		}
@@ -104,6 +105,13 @@ export function useCommitGraphData(externalRefreshToken = 0) {
 				session.generation === loadingGeneration
 			) {
 				session.loading = false;
+				if (
+					session.hasMore &&
+					session.requestedEnd > requestedEnd &&
+					session.loadedRowCount < session.requestedEnd + PREFETCH_ROWS
+				) {
+					void runLoader();
+				}
 			}
 		}
 	});
@@ -152,7 +160,7 @@ export function useCommitGraphData(externalRefreshToken = 0) {
 		if (!currentGitRepositoryId) {
 			return;
 		}
-		session.requestedEnd = PAGE_SIZE;
+		session.requestedEnd = 0;
 		if (repositoryChanged && session.rows.length > 0) {
 			return deferCachedCommitGraphRefresh(() => void runLoader());
 		}

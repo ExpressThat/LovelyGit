@@ -22,7 +22,7 @@ describe("commitGraphSession tab cache", () => {
 
 		expect(session.currentBranchName).toBe("main");
 		expect(session.laneCount).toBe(7);
-		expect(session.rows).toHaveLength(256);
+		expect(session.rows).toHaveLength(128);
 		expect(session.totalRows).toBe(50_000);
 		expect(session.loadedRowCount).toBe(0);
 		expect(session.nextCursor).toBeNull();
