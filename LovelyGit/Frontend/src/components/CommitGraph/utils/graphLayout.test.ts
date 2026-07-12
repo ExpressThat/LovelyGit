@@ -41,7 +41,6 @@ function row(): CommitGraphRow {
 			email: "",
 			hash: "a",
 			message: "M",
-			parents: [],
 			refs: [],
 			signatureKind: "None",
 			stats: null,

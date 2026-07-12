@@ -19,7 +19,6 @@ internal static class CommitGraphCommitMapper
         return new CommitInfo
         {
             Hash = hash,
-            Parents = CommitGraphEmptyLists.Strings,
             Author = string.IsNullOrWhiteSpace(commit.AuthorName) ? "unknown" : commit.AuthorName,
             Email = commit.AuthorEmail,
             Date = commit.AuthorUnixSeconds,

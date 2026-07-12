@@ -15,7 +15,6 @@ export function compactCommitGraphRow(row: CommitGraphRow) {
 	}
 	row.edgesAbove = reuseEmpty(row.edgesAbove);
 	row.edgesBelow = reuseEmpty(row.edgesBelow);
-	row.commit.parents = reuseEmpty(row.commit.parents);
 	row.commit.branches = reuseEmpty(row.commit.branches);
 	row.commit.tags = reuseEmpty(row.commit.tags);
 	row.commit.refs = reuseEmpty(row.commit.refs);

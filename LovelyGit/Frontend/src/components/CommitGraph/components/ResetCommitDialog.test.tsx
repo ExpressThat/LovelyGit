@@ -112,7 +112,6 @@ const commit: CommitGraphRow = {
 		email: "test@example.invalid",
 		hash: "1111111111111111111111111111111111111111",
 		message: "Target commit",
-		parents: [],
 		refs: [],
 		signatureKind: "None",
 		stats: null,

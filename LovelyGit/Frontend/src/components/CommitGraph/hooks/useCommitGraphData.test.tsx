@@ -101,7 +101,6 @@ function row(rowIndex: number): CommitGraphRow {
 			email: "author@example.invalid",
 			hash: rowIndex.toString(16).padStart(40, "0"),
 			message: `Commit ${rowIndex}`,
-			parents: [],
 			refs: [],
 			signatureKind: "None",
 			stats: null,

@@ -6,16 +6,12 @@ describe("compactCommitGraphRow", () => {
 	it("shares frozen empty collections without replacing populated data", () => {
 		const first = row();
 		const second = row();
-		const populatedParents = ["parent"];
-		first.commit.parents = populatedParents;
-
 		compactCommitGraphRow(first);
 		compactCommitGraphRow(second);
 
 		expect(first.commit.branches).toBe(second.commit.branches);
 		expect(first.edgesAbove).toBe(second.edgesAbove);
 		expect(Object.isFrozen(first.commit.branches)).toBe(true);
-		expect(first.commit.parents).toBe(populatedParents);
 	});
 
 	it("shares equal lane snapshots but preserves transitions", () => {
@@ -49,7 +45,6 @@ function row(): CommitGraphRow {
 			email: "",
 			hash: "a".repeat(40),
 			message: "Message",
-			parents: [],
 			refs: [],
 			signatureKind: "None",
 			stats: null,

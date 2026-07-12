@@ -11,7 +11,6 @@ public sealed class CommitGraphCommitMapperTests
     {
         var info = CommitGraphCommitMapper.BuildInfo(CreateCommit(), remoteUrl: null);
 
-        Assert.Same(CommitGraphEmptyLists.Strings, info.Parents);
         Assert.Same(CommitGraphEmptyLists.Strings, info.Branches);
         Assert.Same(CommitGraphEmptyLists.Strings, info.Tags);
         Assert.Same(CommitGraphEmptyLists.Refs, info.Refs);

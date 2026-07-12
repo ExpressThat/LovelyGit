@@ -104,7 +104,6 @@ function commit(): CommitInfo {
 		email: "test@example.invalid",
 		hash: "0123456789abcdef0123456789abcdef01234567",
 		message: "Grouped refs",
-		parents: [],
 		refs: [
 			ref("Local", "main"),
 			ref("Remote", "origin/main"),

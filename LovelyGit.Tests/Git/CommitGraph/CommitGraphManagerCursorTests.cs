@@ -68,6 +68,7 @@ public sealed class CommitGraphManagerCursorTests
             });
         Assert.Equal(1, CountOccurrences(json, "RemoteRepositoryUrl"));
         Assert.DoesNotContain("\"RemoteUrl\"", json, StringComparison.Ordinal);
+        Assert.DoesNotContain("\"Parents\"", json, StringComparison.Ordinal);
     }
 
     private static int CountOccurrences(string value, string search)

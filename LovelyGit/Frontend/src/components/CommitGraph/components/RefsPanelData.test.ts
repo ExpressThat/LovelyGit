@@ -184,7 +184,6 @@ function commit(
 		email: "test@example.invalid",
 		hash,
 		message: "Test commit",
-		parents: [],
 		refs,
 		signatureKind: "None",
 		stats: null,
