@@ -6,8 +6,8 @@ namespace ExpressThat.LovelyGit.Services.Git.Diffing;
 
 internal static class CompactDiffPayloadBuilder
 {
-    private const int MinimumRows = 5_000;
-    private const int MinimumCharacters = 256_000;
+    private const int MinimumRows = 750;
+    private const int MinimumCharacters = 64_000;
 
     public static CommitFileDiffResponse CompactIfUseful(CommitFileDiffResponse response)
     {
@@ -21,7 +21,7 @@ internal static class CompactDiffPayloadBuilder
             return response;
         }
 
-        response.CompactLineSchema = "tuple-v1:gzip-base64:utf-8";
+        response.CompactLineSchema = "tuple-v2:gzip-base64:utf-8";
         response.CompactLinesGzipBase64 = CompressLines(response.Lines);
         response.CompactLineCount = response.Lines.Count;
         response.Lines = [];
@@ -70,6 +70,52 @@ internal static class CompactDiffPayloadBuilder
         writer.WriteStringValue(line.NewText);
         writer.WriteStringValue(line.Text);
         writer.WriteStringValue(line.ChangeType);
+        WriteSyntaxSpans(writer, line.OldSyntaxSpans);
+        WriteSyntaxSpans(writer, line.NewSyntaxSpans);
+        WriteSyntaxSpans(writer, line.SyntaxSpans);
+        WriteChangeSpans(writer, line.OldChangeSpans);
+        WriteChangeSpans(writer, line.NewChangeSpans);
+        WriteChangeSpans(writer, line.ChangeSpans);
+        writer.WriteEndArray();
+    }
+
+    private static void WriteSyntaxSpans(
+        Utf8JsonWriter writer,
+        IReadOnlyList<CommitFileDiffSyntaxSpan>? spans)
+    {
+        writer.WriteStartArray();
+        if (spans is not null)
+        {
+            foreach (var span in spans)
+            {
+                writer.WriteStartArray();
+                writer.WriteNumberValue(span.Start);
+                writer.WriteNumberValue(span.Length);
+                writer.WriteStringValue(span.Scope);
+                writer.WriteEndArray();
+            }
+        }
+
+        writer.WriteEndArray();
+    }
+
+    private static void WriteChangeSpans(
+        Utf8JsonWriter writer,
+        IReadOnlyList<CommitFileDiffChangeSpan>? spans)
+    {
+        writer.WriteStartArray();
+        if (spans is not null)
+        {
+            foreach (var span in spans)
+            {
+                writer.WriteStartArray();
+                writer.WriteNumberValue(span.Start);
+                writer.WriteNumberValue(span.Length);
+                writer.WriteStringValue(span.ChangeType);
+                writer.WriteEndArray();
+            }
+        }
+
         writer.WriteEndArray();
     }
 
