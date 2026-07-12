@@ -11,6 +11,7 @@
 		<Description>LovelyGit</Description>
 		<ApplicationIcon>Assets\LovelyGit.ico</ApplicationIcon>
 		<PublishAot>true</PublishAot>
+		<ServerGarbageCollection>false</ServerGarbageCollection>
 		<Company>ExpressThat LTD</Company>
 		<Authors>ExpressThat LTD</Authors>
 		<RootNamespace>ExpressThat.LovelyGit</RootNamespace>
