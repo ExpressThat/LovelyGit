@@ -6,10 +6,12 @@ namespace ExpressThat.LovelyGit.Services.Git.WorkingTree;
 internal sealed partial class GitIgnoreMatcher
 {
     private readonly List<GitIgnoreRule> _rules;
+    private readonly GitIgnoreSourceStamp[] _sourceStamps;
 
-    private GitIgnoreMatcher(List<GitIgnoreRule> rules)
+    private GitIgnoreMatcher(List<GitIgnoreRule> rules, GitIgnoreSourceStamp[] sourceStamps)
     {
         _rules = rules;
+        _sourceStamps = sourceStamps;
     }
 
     public static async Task<GitIgnoreMatcher> LoadAsync(
@@ -18,21 +20,39 @@ internal sealed partial class GitIgnoreMatcher
         CancellationToken cancellationToken)
     {
         var rules = new List<GitIgnoreRule>();
-        await LoadGlobalExcludeRulesAsync(workTreeDirectory, rules, cancellationToken).ConfigureAwait(false);
+        var sources = new List<GitIgnoreSourceStamp>();
+        var repositoryConfig = Path.Combine(workTreeDirectory, ".git", "config");
+        var userConfig = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+            ".gitconfig");
+        sources.Add(GitIgnoreSourceStamp.Read(repositoryConfig));
+        sources.Add(GitIgnoreSourceStamp.Read(userConfig));
+        var globalExcludes = await LoadGlobalExcludeRulesAsync(
+                repositoryConfig,
+                userConfig,
+                rules,
+                cancellationToken)
+            .ConfigureAwait(false);
+        if (globalExcludes != null)
+        {
+            sources.Add(GitIgnoreSourceStamp.Read(globalExcludes));
+        }
 
         var infoExcludePath = Path.Combine(gitDirectory, "info", "exclude");
+        sources.Add(GitIgnoreSourceStamp.Read(infoExcludePath));
         if (File.Exists(infoExcludePath))
         {
             await LoadRulesFromFileAsync(infoExcludePath, string.Empty, rules, cancellationToken).ConfigureAwait(false);
         }
 
         var rootGitIgnorePath = Path.Combine(workTreeDirectory, ".gitignore");
+        sources.Add(GitIgnoreSourceStamp.Read(rootGitIgnorePath));
         if (File.Exists(rootGitIgnorePath))
         {
             await LoadRulesFromFileAsync(rootGitIgnorePath, string.Empty, rules, cancellationToken).ConfigureAwait(false);
         }
 
-        return new GitIgnoreMatcher(rules);
+        return new GitIgnoreMatcher(rules, sources.ToArray());
     }
 
     public async Task LoadRulesForDirectoryAsync(
@@ -115,21 +135,20 @@ internal sealed partial class GitIgnoreMatcher
         }
     }
 
-    private static async Task LoadGlobalExcludeRulesAsync(
-        string workTreeDirectory,
+    private static async Task<string?> LoadGlobalExcludeRulesAsync(
+        string repositoryConfig,
+        string userConfig,
         List<GitIgnoreRule> rules,
         CancellationToken cancellationToken)
     {
         var excludesFile = await TryReadConfigValueAsync(
-                Path.Combine(workTreeDirectory, ".git", "config"),
+                repositoryConfig,
                 "core",
                 "excludesfile",
                 cancellationToken)
             .ConfigureAwait(false);
         excludesFile ??= await TryReadConfigValueAsync(
-                Path.Combine(
-                    Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-                    ".gitconfig"),
+                userConfig,
                 "core",
                 "excludesfile",
                 cancellationToken)
@@ -137,7 +156,7 @@ internal sealed partial class GitIgnoreMatcher
 
         if (string.IsNullOrWhiteSpace(excludesFile))
         {
-            return;
+            return null;
         }
 
         excludesFile = ExpandPath(excludesFile);
@@ -145,6 +164,8 @@ internal sealed partial class GitIgnoreMatcher
         {
             await LoadRulesFromFileAsync(excludesFile, string.Empty, rules, cancellationToken).ConfigureAwait(false);
         }
+
+        return excludesFile;
     }
 
     private static async Task<string?> TryReadConfigValueAsync(

@@ -20,6 +20,7 @@ internal sealed partial class WorkingTreeWatcherService : IDisposable
     private readonly object _lock = new();
     private readonly List<FileSystemWatcher> _watchers = new();
     private readonly HashSet<string> _watchedWorkTreePaths = new(StringComparer.OrdinalIgnoreCase);
+    private readonly GitIgnoreMatcherCache _ignoreMatcherCache = new();
     private CancellationTokenSource? _debounceCancellation;
     private CancellationTokenSource? _graphDebounceCancellation;
     private CancellationTokenSource? _workTreePollCancellation;

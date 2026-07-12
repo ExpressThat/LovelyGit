@@ -109,9 +109,24 @@ internal sealed partial class WorkingTreeWatcherService
             return;
         }
 
+        if (_ignoreMatcherCache.TryGet(workTreeDirectory, gitDirectory, out var cached))
+        {
+            SetIgnoreMatcher(gitDirectory, workTreeDirectory, cached);
+            return;
+        }
+
         var matcher = await GitIgnoreMatcher
             .LoadAsync(workTreeDirectory, gitDirectory, CancellationToken.None)
             .ConfigureAwait(false);
+        _ignoreMatcherCache.Set(workTreeDirectory, gitDirectory, matcher);
+        SetIgnoreMatcher(gitDirectory, workTreeDirectory, matcher);
+    }
+
+    private void SetIgnoreMatcher(
+        string gitDirectory,
+        string workTreeDirectory,
+        GitIgnoreMatcher? matcher)
+    {
         lock (_lock)
         {
             if (string.Equals(_activeGitDirectory, gitDirectory, StringComparison.Ordinal) &&
