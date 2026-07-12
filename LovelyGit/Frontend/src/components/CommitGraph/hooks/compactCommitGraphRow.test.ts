@@ -17,6 +17,24 @@ describe("compactCommitGraphRow", () => {
 		expect(Object.isFrozen(first.commit.branches)).toBe(true);
 		expect(first.commit.parents).toBe(populatedParents);
 	});
+
+	it("shares equal lane snapshots but preserves transitions", () => {
+		const stable = row();
+		stable.activeLanesAbove = [0, 2];
+		stable.activeLanesBelow = [0, 2];
+		stable.laneColorsAbove = [{ colorIndex: 3, lane: 0 }];
+		stable.laneColorsBelow = [{ colorIndex: 3, lane: 0 }];
+		const transition = row();
+		transition.activeLanesAbove = [0];
+		transition.activeLanesBelow = [0, 1];
+
+		compactCommitGraphRow(stable);
+		compactCommitGraphRow(transition);
+
+		expect(stable.activeLanesBelow).toBe(stable.activeLanesAbove);
+		expect(stable.laneColorsBelow).toBe(stable.laneColorsAbove);
+		expect(transition.activeLanesBelow).not.toBe(transition.activeLanesAbove);
+	});
 });
 
 function row(): CommitGraphRow {
