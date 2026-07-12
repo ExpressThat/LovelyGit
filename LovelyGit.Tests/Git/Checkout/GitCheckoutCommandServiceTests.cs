@@ -99,25 +99,33 @@ public sealed class GitCheckoutCommandServiceTests
     [Fact]
     public async Task CheckoutTagAsync_InvalidTagDoesNotRunGitMutation()
     {
-        using var repository = TemporaryGitRepository.Create();
-        var checkoutService = new GitCheckoutCommandService(repository.GitCliService);
-        var originalBranch = (await repository.GitCliService.ExecuteBufferedAsync(
-            ["branch", "--show-current"],
-            repository.Path)).StandardOutput.Trim();
+        var directory = Directory.CreateTempSubdirectory("lovelygit-invalid-tag-");
+        var sentinel = Path.Combine(directory.FullName, "sentinel.txt");
+        await File.WriteAllTextAsync(sentinel, "unchanged");
 
-        await Assert.ThrowsAsync<ArgumentException>(() => checkoutService.CheckoutTagAsync(
-            repository.Path,
-            "not a tag",
-            CancellationToken.None));
+        try
+        {
+            var error = await Assert.ThrowsAsync<ArgumentException>(() =>
+                new GitCheckoutCommandService(new GitCliService()).CheckoutTagAsync(
+                    directory.FullName,
+                    "not a tag",
+                    CancellationToken.None));
 
-        var branch = (await repository.GitCliService.ExecuteBufferedAsync(
-            ["branch", "--show-current"],
-            repository.Path)).StandardOutput.Trim();
-        Assert.Equal(originalBranch, branch);
+            Assert.Contains("tag", error.Message, StringComparison.OrdinalIgnoreCase);
+            Assert.Equal("unchanged", await File.ReadAllTextAsync(sentinel));
+            Assert.False(Directory.Exists(Path.Combine(directory.FullName, ".git")));
+        }
+        finally
+        {
+            directory.Delete(recursive: true);
+        }
     }
 
     private sealed class TemporaryGitRepository : IDisposable
     {
+        private static readonly RepositoryTemplate<string> Template = new(
+            "lovelygit-checkout-template-",
+            InitializeTemplate);
         private readonly DirectoryInfo _directory;
 
         private TemporaryGitRepository(
@@ -139,12 +147,15 @@ public sealed class GitCheckoutCommandServiceTests
 
         public static TemporaryGitRepository Create()
         {
-            var directory = Directory.CreateTempSubdirectory("lovelygit-checkout-");
+            var (directory, firstCommitHash) = Template.CreateCopy("lovelygit-checkout-");
             var gitCliService = new GitCliService();
+            return new TemporaryGitRepository(directory, gitCliService, firstCommitHash);
+        }
 
-            RunGit(gitCliService, directory.FullName, ["init"]);
-            RunGit(gitCliService, directory.FullName, ["config", "user.name", "LovelyGit Test"]);
-            RunGit(gitCliService, directory.FullName, ["config", "user.email", "test@example.invalid"]);
+        private static string InitializeTemplate(DirectoryInfo directory)
+        {
+            var gitCliService = new GitCliService();
+            InitializedRepositoryTemplate.CopyInto(directory, "master");
             File.WriteAllText(System.IO.Path.Combine(directory.FullName, "tracked.txt"), "first\n");
             RunGit(gitCliService, directory.FullName, ["add", "tracked.txt"]);
             RunGit(gitCliService, directory.FullName, ["commit", "-m", "First"]);
@@ -157,7 +168,7 @@ public sealed class GitCheckoutCommandServiceTests
             RunGit(gitCliService, directory.FullName, ["branch", "feature/test-branch", firstCommitHash]);
             RunGit(gitCliService, directory.FullName, ["tag", "v-test", firstCommitHash]);
 
-            return new TemporaryGitRepository(directory, gitCliService, firstCommitHash);
+            return firstCommitHash;
         }
 
         public void Dispose()

@@ -4,7 +4,7 @@ namespace ExpressThat.LovelyGit.Services.Git.WorkingTree;
 
 internal sealed partial class WorkingTreeStatusListService
 {
-    private static async Task<UntrackedFileScanResult> FindUntrackedFilesAsync(
+    private async Task<UntrackedFileScanResult> FindUntrackedFilesAsync(
         string workTreeDirectory,
         string gitDirectory,
         HashSet<string> rootTrackedFiles,
@@ -23,7 +23,7 @@ internal sealed partial class WorkingTreeStatusListService
         while (pending.Count > 0)
         {
             if (files.Count >= MaxNativeUntrackedFiles
-                || visitedDirectories >= MaxNativeUntrackedDirectories)
+                || visitedDirectories >= _maxNativeUntrackedDirectories)
             {
                 return new UntrackedFileScanResult(files, IsComplete: false);
             }

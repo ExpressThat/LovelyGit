@@ -9,8 +9,8 @@ public sealed class GitBisectServicesTests
     [Fact]
     public async Task BisectWorkflow_FindsFirstBadCommitAndRestoresStartingBranch()
     {
-        using var repository = await CreateRepositoryAsync();
-        var commits = await CreateHistoryAsync(repository.Path);
+        using var repository = CreateRepository();
+        var commits = repository.Commits;
         var reader = new NativeGitBisectStateReader();
         var service = CreateService(reader);
 
@@ -50,8 +50,7 @@ public sealed class GitBisectServicesTests
     [Fact]
     public async Task Start_RejectsUnknownGoodCommitWithoutChangingRepository()
     {
-        using var repository = await CreateRepositoryAsync();
-        await CreateHistoryAsync(repository.Path);
+        using var repository = CreateRepository();
         var reader = new NativeGitBisectStateReader();
 
         await Assert.ThrowsAsync<ArgumentException>(() => CreateService(reader).ExecuteAsync(
@@ -66,8 +65,8 @@ public sealed class GitBisectServicesTests
     [Fact]
     public async Task Skip_MovesToAnotherCandidateWithoutEndingSession()
     {
-        using var repository = await CreateRepositoryAsync();
-        var commits = await CreateHistoryAsync(repository.Path);
+        using var repository = CreateRepository();
+        var commits = repository.Commits;
         var reader = new NativeGitBisectStateReader();
         var service = CreateService(reader);
         var started = await service.ExecuteAsync(
@@ -94,21 +93,11 @@ public sealed class GitBisectServicesTests
     private static GitBisectCommandService CreateService(NativeGitBisectStateReader reader) =>
         new(new GitOperationService(new GitCliService()), reader);
 
-    private static async Task<TemporaryDirectory> CreateRepositoryAsync()
-    {
-        var repository = TemporaryDirectory.Create("lovelygit-bisect-");
-        await GitTestProcess.RunAsync(repository.Path, "init", "-b", "main");
-        await GitTestProcess.RunAsync(repository.Path, "config", "user.name", "LovelyGit Test");
-        await GitTestProcess.RunAsync(
-            repository.Path,
-            "config",
-            "user.email",
-            "test@example.invalid");
-        return repository;
-    }
+    private static BisectRepository CreateRepository() => BisectRepository.Create();
 
     private static async Task<List<string>> CreateHistoryAsync(string repositoryPath)
     {
+        InitializedRepositoryTemplate.CopyInto(new DirectoryInfo(repositoryPath));
         var commits = new List<string>();
         for (var index = 0; index < 5; index++)
         {
@@ -121,5 +110,35 @@ public sealed class GitBisectServicesTests
         }
 
         return commits;
+    }
+
+    private sealed class BisectRepository : IDisposable
+    {
+        private static readonly RepositoryTemplate<List<string>> Template = new(
+            "lovelygit-bisect-template-",
+            directory => CreateHistoryAsync(directory.FullName).GetAwaiter().GetResult());
+        private readonly DirectoryInfo _directory;
+
+        private BisectRepository(DirectoryInfo directory, List<string> commits)
+        {
+            _directory = directory;
+            Commits = commits;
+        }
+
+        public List<string> Commits { get; }
+        public string Path => _directory.FullName;
+
+        public static BisectRepository Create()
+        {
+            var (directory, commits) = Template.CreateCopy("lovelygit-bisect-");
+            return new BisectRepository(directory, commits);
+        }
+
+        public void Dispose()
+        {
+            foreach (var file in _directory.EnumerateFiles("*", SearchOption.AllDirectories))
+                file.Attributes = FileAttributes.Normal;
+            _directory.Delete(recursive: true);
+        }
     }
 }

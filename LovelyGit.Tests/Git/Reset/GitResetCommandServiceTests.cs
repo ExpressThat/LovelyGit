@@ -100,6 +100,9 @@ public sealed class GitResetCommandServiceTests
 
     private sealed class TemporaryGitRepository : IDisposable
     {
+        private static readonly RepositoryTemplate<bool> Template = new(
+            "lovelygit-reset-template-",
+            InitializeTemplate);
         private readonly DirectoryInfo _directory;
         private readonly GitCliService _git;
 
@@ -120,17 +123,21 @@ public sealed class GitResetCommandServiceTests
 
         public static TemporaryGitRepository Create()
         {
-            var directory = Directory.CreateTempSubdirectory("lovelygit-reset-");
+            var (directory, _) = Template.CreateCopy("lovelygit-reset-");
             var git = new GitCliService();
-            RunGit(git, directory.FullName, ["init", "--initial-branch=main"]);
-            RunGit(git, directory.FullName, ["config", "user.name", "LovelyGit Test"]);
-            RunGit(git, directory.FullName, ["config", "user.email", "test@example.invalid"]);
+            return new TemporaryGitRepository(directory, git);
+        }
+
+        private static bool InitializeTemplate(DirectoryInfo directory)
+        {
+            var git = new GitCliService();
+            InitializedRepositoryTemplate.CopyInto(directory);
             File.WriteAllText(System.IO.Path.Combine(directory.FullName, "file.txt"), "before");
             RunGit(git, directory.FullName, ["add", "file.txt"]);
             RunGit(git, directory.FullName, ["commit", "-m", "Before"]);
             File.WriteAllText(System.IO.Path.Combine(directory.FullName, "file.txt"), "after");
             RunGit(git, directory.FullName, ["commit", "-am", "After"]);
-            return new TemporaryGitRepository(directory, git);
+            return true;
         }
 
         public void Dispose()

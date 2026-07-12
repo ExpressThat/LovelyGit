@@ -5,11 +5,16 @@ namespace ExpressThat.LovelyGit.Services.Git.WorkingTree;
 
 internal sealed class ConflictExternalMergeToolService
 {
-    private readonly GitCliService _git;
+    private readonly IConflictMergeToolRunner _runner;
 
     public ConflictExternalMergeToolService(GitCliService git)
+        : this(new GitConflictMergeToolRunner(git))
     {
-        _git = git;
+    }
+
+    internal ConflictExternalMergeToolService(IConflictMergeToolRunner runner)
+    {
+        _runner = runner;
     }
 
     public async Task OpenAsync(
@@ -29,10 +34,9 @@ internal sealed class ConflictExternalMergeToolService
             .ConfigureAwait(false);
         try
         {
-            var result = await _git.ExecuteBufferedAsync(
-                ["mergetool", "--no-prompt", "--", path],
+            var result = await _runner.RunAsync(
                 paths.WorkTreeDirectory,
-                validateExitCode: false,
+                path,
                 cancellationToken).ConfigureAwait(false);
             if (result.ExitCode != 0)
             {

@@ -114,33 +114,33 @@ public sealed class GitLfsServicesTests
     [Fact]
     public async Task InvalidTrackPattern_DoesNotCreateAttributesFile()
     {
-        using var repository = TemporaryRepository.Create();
-        var service = new GitLfsCommandService(repository.Git);
+        using var directory = new TemporaryDirectory();
+        var service = new GitLfsCommandService(new GitCliService());
 
         await Assert.ThrowsAsync<ArgumentException>(() => service.ExecuteAsync(
-            repository.Path,
+            directory.Path,
             GitLfsAction.Track,
             "*.asset\n*.secret",
             CancellationToken.None));
 
-        Assert.False(File.Exists(Path.Combine(repository.Path, ".gitattributes")));
+        Assert.False(File.Exists(Path.Combine(directory.Path, ".gitattributes")));
     }
 
     [Fact]
     public async Task PreCancelledTrack_DoesNotCreateAttributesFile()
     {
-        using var repository = TemporaryRepository.Create();
-        var service = new GitLfsCommandService(repository.Git);
+        using var directory = new TemporaryDirectory();
+        var service = new GitLfsCommandService(new GitCliService());
         using var cancellation = new CancellationTokenSource();
         cancellation.Cancel();
 
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => service.ExecuteAsync(
-            repository.Path,
+            directory.Path,
             GitLfsAction.Track,
             "*.asset",
             cancellation.Token));
 
-        Assert.False(File.Exists(Path.Combine(repository.Path, ".gitattributes")));
+        Assert.False(File.Exists(Path.Combine(directory.Path, ".gitattributes")));
     }
 
     private sealed class TemporaryRepository : IDisposable

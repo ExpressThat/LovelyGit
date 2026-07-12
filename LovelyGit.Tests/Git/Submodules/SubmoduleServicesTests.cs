@@ -44,16 +44,26 @@ public sealed class SubmoduleServicesTests
     [Fact]
     public async Task CommandService_RejectsPathsOutsideRepository()
     {
-        using var fixture = SubmoduleFixture.Create();
-        var service = new SubmoduleCommandService(fixture.Git);
+        var directory = Directory.CreateTempSubdirectory("lovelygit-submodule-validation-");
+        var sentinel = Path.Combine(directory.FullName, "sentinel.txt");
+        await File.WriteAllTextAsync(sentinel, "unchanged");
 
-        var exception = await Assert.ThrowsAsync<ArgumentException>(() => service.ExecuteAsync(
-            fixture.ParentPath,
-            "../outside",
-            SubmoduleAction.Update,
-            CancellationToken.None));
+        try
+        {
+            var exception = await Assert.ThrowsAsync<ArgumentException>(() =>
+                new SubmoduleCommandService(new GitCliService()).ExecuteAsync(
+                    directory.FullName,
+                    "../outside",
+                    SubmoduleAction.Update,
+                    CancellationToken.None));
 
-        Assert.Contains("escapes", exception.Message);
+            Assert.Contains("escapes", exception.Message);
+            Assert.Equal("unchanged", await File.ReadAllTextAsync(sentinel));
+        }
+        finally
+        {
+            directory.Delete(recursive: true);
+        }
     }
 
     [Fact]
@@ -95,9 +105,7 @@ public sealed class SubmoduleServicesTests
 
     private static void InitializeRepository(GitCliService git, string path)
     {
-        RunGit(git, path, ["init"]);
-        RunGit(git, path, ["config", "user.name", "LovelyGit Test"]);
-        RunGit(git, path, ["config", "user.email", "test@example.invalid"]);
+        InitializedRepositoryTemplate.CopyInto(new DirectoryInfo(path), "master");
     }
 
     private static CliWrap.Buffered.BufferedCommandResult RunGit(
@@ -108,6 +116,9 @@ public sealed class SubmoduleServicesTests
 
     private sealed class SubmoduleFixture : IDisposable
     {
+        private static readonly RepositoryTemplate<string> Template = new(
+            "lovelygit-submodules-template-",
+            InitializeTemplate);
         private readonly DirectoryInfo _root;
 
         private SubmoduleFixture(DirectoryInfo root)
@@ -122,8 +133,14 @@ public sealed class SubmoduleServicesTests
 
         public static SubmoduleFixture Create()
         {
-            var fixture = new SubmoduleFixture(
-                Directory.CreateTempSubdirectory("lovelygit-submodules-"));
+            var (root, templateRoot) = Template.CreateCopy("lovelygit-submodules-");
+            RewriteCopiedPaths(root, templateRoot);
+            return new SubmoduleFixture(root);
+        }
+
+        private static string InitializeTemplate(DirectoryInfo root)
+        {
+            var fixture = new SubmoduleFixture(root);
             var childPath = Path.Combine(fixture._root.FullName, "child");
             Directory.CreateDirectory(childPath);
             Directory.CreateDirectory(fixture.ParentPath);
@@ -136,7 +153,36 @@ public sealed class SubmoduleServicesTests
                 fixture.ParentPath,
                 ["-c", "protocol.file.allow=always", "submodule", "add", "--name", "library", childPath, "deps/library"]);
             fixture.RunGit(fixture.ParentPath, ["commit", "-am", "Add submodule"]);
-            return fixture;
+            return root.FullName;
+        }
+
+        private static void RewriteCopiedPaths(DirectoryInfo root, string templateRoot)
+        {
+            foreach (var path in new[]
+            {
+                Path.Combine(root.FullName, "parent", ".gitmodules"),
+                Path.Combine(root.FullName, "parent", ".git", "config"),
+                Path.Combine(root.FullName, "parent", ".git", "modules", "deps", "library", "config"),
+                Path.Combine(root.FullName, "parent", "deps", "library", ".git"),
+            })
+            {
+                if (!File.Exists(path)) continue;
+                var content = File.ReadAllText(path);
+                var attributes = File.GetAttributes(path);
+                var rewritten = content
+                    .Replace(templateRoot, root.FullName, StringComparison.OrdinalIgnoreCase)
+                    .Replace(
+                        templateRoot.Replace('\\', '/'),
+                        root.FullName.Replace('\\', '/'),
+                        StringComparison.OrdinalIgnoreCase)
+                    .Replace(
+                        templateRoot.Replace("\\", "\\\\", StringComparison.Ordinal),
+                        root.FullName.Replace("\\", "\\\\", StringComparison.Ordinal),
+                        StringComparison.OrdinalIgnoreCase);
+                File.SetAttributes(path, FileAttributes.Normal);
+                File.WriteAllText(path, rewritten);
+                File.SetAttributes(path, attributes);
+            }
         }
 
         public void Dispose()
@@ -151,9 +197,7 @@ public sealed class SubmoduleServicesTests
 
         private void InitializeRepository(string path)
         {
-            RunGit(path, ["init"]);
-            RunGit(path, ["config", "user.name", "LovelyGit Test"]);
-            RunGit(path, ["config", "user.email", "test@example.invalid"]);
+            InitializedRepositoryTemplate.CopyInto(new DirectoryInfo(path), "master");
             RunGit(path, ["config", "protocol.file.allow", "always"]);
         }
 

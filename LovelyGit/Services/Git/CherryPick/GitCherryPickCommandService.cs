@@ -17,12 +17,13 @@ internal sealed class GitCherryPickCommandService
         string commitHash,
         CancellationToken cancellationToken)
     {
+        var normalizedCommitHash = NormalizeCommitHash(commitHash);
         var paths = await GitRepositoryDiscovery
             .ResolveRepositoryPathsAsync(repositoryPath, cancellationToken)
             .ConfigureAwait(false);
         await _operations.ExecuteRequiredBufferedAsync(
             "Cherry-pick commit",
-            ["cherry-pick", "--no-edit", NormalizeCommitHash(commitHash)],
+            ["cherry-pick", "--no-edit", normalizedCommitHash],
             paths.WorkTreeDirectory,
             "Resolve conflicts in the working tree, then continue or abort the cherry-pick.",
             cancellationToken).ConfigureAwait(false);

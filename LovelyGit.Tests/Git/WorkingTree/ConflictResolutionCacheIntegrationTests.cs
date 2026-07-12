@@ -5,7 +5,8 @@ using LovelyGit.Tests.Git.RepositoryOperations;
 
 namespace LovelyGit.Tests.Git.WorkingTree;
 
-public sealed class ConflictResolutionCacheIntegrationTests
+public sealed class ConflictResolutionCacheIntegrationTests(ConflictRepositoryFixture fixture)
+    : IClassFixture<ConflictRepositoryFixture>
 {
     [Fact]
     public async Task ReadAsync_ReusesEachUnchangedWhitespaceVariant()
@@ -69,17 +70,5 @@ public sealed class ConflictResolutionCacheIntegrationTests
             ignoreWhitespace,
             CancellationToken.None);
 
-    private static async Task<TestRepository> CreateConflictAsync()
-    {
-        var repository = TestRepository.Create();
-        await repository.CreateBranchCommitAsync("conflict", "shared.txt", "feature");
-        await repository.SwitchAsync("main");
-        await repository.CommitFileAsync("shared.txt", "main", "main conflict");
-        var outcome = await repository.Service.MergeAsync(
-            repository.Path,
-            "conflict",
-            CancellationToken.None);
-        Assert.False(outcome.IsCompleted);
-        return repository;
-    }
+    private Task<TestRepository> CreateConflictAsync() => Task.FromResult(fixture.CreateCopy());
 }

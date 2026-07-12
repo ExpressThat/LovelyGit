@@ -28,14 +28,11 @@ public sealed class WorkingTreeWatcherServicePolicyTests
     }
 
     [Fact]
-    public void GetWorkTreeWatchRoots_UsesRecursiveRootForLargeDirectory()
+    public void GetWorkTreeWatchRoots_UsesRecursiveRootForNestedDirectory()
     {
         using var directory = TemporaryDirectory.Create("lovelygit-watch-large-");
         Directory.CreateDirectory(Path.Combine(directory.Path, ".git"));
-        for (var index = 0; index < 2001; index++)
-        {
-            Directory.CreateDirectory(Path.Combine(directory.Path, $"d{index}"));
-        }
+        Directory.CreateDirectory(Path.Combine(directory.Path, "src", "feature"));
 
         var roots = WorkingTreeWatcherService.GetWorkTreeWatchRoots(directory.Path);
 

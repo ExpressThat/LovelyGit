@@ -9,10 +9,19 @@ internal sealed partial class WorkingTreeStatusListService
     private const int MaxNativeUntrackedFiles = 1_000;
     private const int MaxNativeUntrackedDirectories = 4_000;
     private readonly GitCliService _gitCliService;
+    private readonly int _maxNativeUntrackedDirectories;
 
     public WorkingTreeStatusListService(GitCliService gitCliService)
+        : this(gitCliService, MaxNativeUntrackedDirectories)
+    {
+    }
+
+    internal WorkingTreeStatusListService(
+        GitCliService gitCliService,
+        int maxNativeUntrackedDirectories)
     {
         _gitCliService = gitCliService;
+        _maxNativeUntrackedDirectories = maxNativeUntrackedDirectories;
     }
 
     public async Task<WorkingTreeChangesResponse> GetChangesAsync(

@@ -129,6 +129,9 @@ public sealed class MergeParentComparisonTests
 
     private sealed class MergeFixture : IDisposable
     {
+        private static readonly RepositoryTemplate<GitObjectId> Template = new(
+            "lovelygit-merge-parent-template-",
+            InitializeTemplate);
         private readonly DirectoryInfo _directory;
         private readonly GitCliService _git = new();
 
@@ -143,12 +146,14 @@ public sealed class MergeParentComparisonTests
 
         public static MergeFixture Create()
         {
-            var directory = Directory.CreateTempSubdirectory("lovelygit-merge-parent-");
+            var (directory, mergeId) = Template.CreateCopy("lovelygit-merge-parent-");
+            return new MergeFixture(directory, mergeId);
+        }
+
+        private static GitObjectId InitializeTemplate(DirectoryInfo directory)
+        {
             var fixture = new MergeFixture(directory, default);
-            fixture.Run(["init", "-b", "main"]);
-            fixture.Run(["config", "user.name", "LovelyGit Test"]);
-            fixture.Run(["config", "user.email", "test@example.invalid"]);
-            fixture.Run(["commit", "--allow-empty", "-m", "Base"]);
+            InitializedRepositoryTemplate.CopyInto(directory);
             fixture.Run(["switch", "-c", "feature"]);
             File.WriteAllText(System.IO.Path.Combine(fixture.Path, "feature.txt"), "feature\n");
             fixture.Run(["add", "feature.txt"]);
@@ -160,7 +165,7 @@ public sealed class MergeParentComparisonTests
             fixture.Run(["merge", "--no-ff", "feature", "-m", "Merge feature"]);
             var merge = fixture.Run(["rev-parse", "HEAD"]).StandardOutput.Trim();
             GitObjectId.TryParse(merge, out var mergeId);
-            return new MergeFixture(directory, mergeId);
+            return mergeId;
         }
 
         public void Dispose()

@@ -38,6 +38,9 @@ internal sealed class TemporaryBareRepository : IDisposable
 
 internal sealed class TemporaryTagGitRepository : IDisposable
 {
+    private static readonly RepositoryTemplate<string> Template = new(
+        "lovelygit-tag-template-",
+        InitializeTemplate);
     private readonly DirectoryInfo _directory;
 
     private TemporaryTagGitRepository(
@@ -62,15 +65,18 @@ internal sealed class TemporaryTagGitRepository : IDisposable
 
     public static TemporaryTagGitRepository Create()
     {
-        var directory = Directory.CreateTempSubdirectory("lovelygit-tag-");
+        var (directory, head) = Template.CreateCopy("lovelygit-tag-");
         var gitCliService = new GitCliService();
-        RunGit(gitCliService, directory.FullName, ["init"]);
-        RunGit(gitCliService, directory.FullName, ["config", "user.name", "LovelyGit Test"]);
-        RunGit(gitCliService, directory.FullName, ["config", "user.email", "test@example.invalid"]);
-        RunGit(gitCliService, directory.FullName, ["commit", "--allow-empty", "-m", "Initial"]);
+        return new TemporaryTagGitRepository(directory, gitCliService, head);
+    }
+
+    private static string InitializeTemplate(DirectoryInfo directory)
+    {
+        var gitCliService = new GitCliService();
+        InitializedRepositoryTemplate.CopyInto(directory, "master");
         var head = RunGit(gitCliService, directory.FullName, ["rev-parse", "HEAD"])
             .StandardOutput.Trim();
-        return new TemporaryTagGitRepository(directory, gitCliService, head);
+        return head;
     }
 
     public async Task<string> ResolveHeadAsync()

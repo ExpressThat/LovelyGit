@@ -32,6 +32,12 @@ public sealed class GitCherryPickCommandServiceTests
         string commitHash,
         Type expectedException)
     {
+        if (expectedException == typeof(ArgumentException))
+        {
+            await AssertInvalidFormatDoesNotCreateRepositoryAsync(commitHash);
+            return;
+        }
+
         using var repository = TemporaryGitRepository.Create();
         var before = await repository.ReadHeadAsync();
 
@@ -47,8 +53,32 @@ public sealed class GitCherryPickCommandServiceTests
         Assert.False(Directory.Exists(Path.Combine(repository.Path, ".git", "sequencer")));
     }
 
+    private static async Task AssertInvalidFormatDoesNotCreateRepositoryAsync(string commitHash)
+    {
+        var directory = Directory.CreateTempSubdirectory("lovelygit-invalid-cherry-pick-");
+        var sentinel = Path.Combine(directory.FullName, "sentinel.txt");
+        await File.WriteAllTextAsync(sentinel, "unchanged");
+        try
+        {
+            await Assert.ThrowsAsync<ArgumentException>(() =>
+                new GitCherryPickCommandService(new GitCliService()).CherryPickCommitAsync(
+                    directory.FullName,
+                    commitHash,
+                    CancellationToken.None));
+            Assert.Equal("unchanged", await File.ReadAllTextAsync(sentinel));
+            Assert.False(Directory.Exists(Path.Combine(directory.FullName, ".git")));
+        }
+        finally
+        {
+            directory.Delete(recursive: true);
+        }
+    }
+
     private sealed class TemporaryGitRepository : IDisposable
     {
+        private static readonly RepositoryTemplate<string> Template = new(
+            "lovelygit-cherry-pick-template-",
+            InitializeTemplate);
         private readonly DirectoryInfo _directory;
 
         private TemporaryGitRepository(
@@ -77,13 +107,15 @@ public sealed class GitCherryPickCommandServiceTests
 
         public static TemporaryGitRepository Create()
         {
-            var directory = Directory.CreateTempSubdirectory("lovelygit-cherry-pick-");
+            var (directory, featureCommitHash) = Template.CreateCopy("lovelygit-cherry-pick-");
             var gitCliService = new GitCliService();
+            return new TemporaryGitRepository(directory, gitCliService, featureCommitHash);
+        }
 
-            RunGit(gitCliService, directory.FullName, ["init"]);
-            RunGit(gitCliService, directory.FullName, ["config", "user.name", "LovelyGit Test"]);
-            RunGit(gitCliService, directory.FullName, ["config", "user.email", "test@example.invalid"]);
-            RunGit(gitCliService, directory.FullName, ["commit", "--allow-empty", "-m", "Initial"]);
+        private static string InitializeTemplate(DirectoryInfo directory)
+        {
+            var gitCliService = new GitCliService();
+            InitializedRepositoryTemplate.CopyInto(directory, "master");
             var baseBranchName = RunGit(
                 gitCliService,
                 directory.FullName,
@@ -99,7 +131,7 @@ public sealed class GitCherryPickCommandServiceTests
                 ["rev-parse", "HEAD"]).StandardOutput.Trim();
             RunGit(gitCliService, directory.FullName, ["checkout", baseBranchName]);
 
-            return new TemporaryGitRepository(directory, gitCliService, featureCommitHash);
+            return featureCommitHash;
         }
 
         public void Dispose()

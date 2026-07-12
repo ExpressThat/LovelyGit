@@ -4,6 +4,9 @@ namespace LovelyGit.Tests.Git.Stashes;
 
 internal sealed class TemporaryGitRepository : IDisposable
 {
+    private static readonly RepositoryTemplate<bool> Template = new(
+        "lovelygit-stash-template-",
+        InitializeTemplate);
     private readonly DirectoryInfo _directory;
 
     private TemporaryGitRepository(
@@ -26,17 +29,20 @@ internal sealed class TemporaryGitRepository : IDisposable
 
     public static TemporaryGitRepository Create()
     {
-        var directory = Directory.CreateTempSubdirectory("lovelygit-stash-");
+        var (directory, _) = Template.CreateCopy("lovelygit-stash-");
         var gitCliService = new GitCliService();
 
-        RunGit(gitCliService, directory.FullName, ["init"]);
-        RunGit(gitCliService, directory.FullName, ["config", "user.name", "LovelyGit Test"]);
-        RunGit(gitCliService, directory.FullName, ["config", "user.email", "test@example.invalid"]);
+        return new TemporaryGitRepository(directory, gitCliService);
+    }
+
+    private static bool InitializeTemplate(DirectoryInfo directory)
+    {
+        var gitCliService = new GitCliService();
+        InitializedRepositoryTemplate.CopyInto(directory, "master");
         File.WriteAllText(System.IO.Path.Combine(directory.FullName, "tracked.txt"), "tracked");
         RunGit(gitCliService, directory.FullName, ["add", "tracked.txt"]);
         RunGit(gitCliService, directory.FullName, ["commit", "-m", "Initial"]);
-
-        return new TemporaryGitRepository(directory, gitCliService);
+        return true;
     }
 
     public void Dispose()

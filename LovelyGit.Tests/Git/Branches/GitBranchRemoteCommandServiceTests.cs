@@ -110,23 +110,30 @@ public sealed class GitBranchRemoteCommandServiceTests
     public async Task DeleteRemoteBranchAsync_RejectsInvalidNamesWithoutMutation(
         string remoteBranchName)
     {
-        using var repository = TemporaryRemoteGitRepository.Create();
+        using var repository = TemporaryGitRepository.Create();
         var service = new GitBranchCommandService(repository.GitCliService);
+        var head = RunGit(
+            repository.GitCliService,
+            repository.Path,
+            ["rev-parse", "HEAD"]).StandardOutput.Trim();
 
         await Assert.ThrowsAsync<ArgumentException>(() => service.DeleteRemoteBranchAsync(
-            repository.ClonePath,
+            repository.Path,
             remoteBranchName,
             CancellationToken.None));
 
-        var defaultRef = RunGit(
+        var unchangedHead = RunGit(
             repository.GitCliService,
-            repository.ClonePath,
-            ["ls-remote", "--heads", "origin", $"refs/heads/{repository.DefaultBranchName}"]);
-        Assert.NotEmpty(defaultRef.StandardOutput);
+            repository.Path,
+            ["rev-parse", "HEAD"]).StandardOutput.Trim();
+        Assert.Equal(head, unchangedHead);
     }
 
     private sealed class TemporaryRemoteGitRepository : IDisposable
     {
+        private static readonly RepositoryTemplate<string> Template = new(
+            "lovelygit-remote-pull-template-",
+            InitializeTemplate);
         private readonly DirectoryInfo _directory;
 
         private TemporaryRemoteGitRepository(
@@ -169,7 +176,19 @@ public sealed class GitBranchRemoteCommandServiceTests
 
         public static TemporaryRemoteGitRepository Create()
         {
-            var directory = Directory.CreateTempSubdirectory("lovelygit-remote-pull-");
+            var (directory, defaultBranchName) = Template.CreateCopy("lovelygit-remote-pull-");
+            var gitCliService = new GitCliService();
+            var repository = new TemporaryRemoteGitRepository(
+                directory,
+                gitCliService,
+                defaultBranchName);
+            RunGit(gitCliService, repository.ClonePath, ["remote", "set-url", "origin", repository.BarePath]);
+            RunGit(gitCliService, repository.UpdaterPath, ["remote", "set-url", "origin", repository.BarePath]);
+            return repository;
+        }
+
+        private static string InitializeTemplate(DirectoryInfo directory)
+        {
             var gitCliService = new GitCliService();
             var repository = new TemporaryRemoteGitRepository(directory, gitCliService, "");
 
@@ -188,7 +207,7 @@ public sealed class GitBranchRemoteCommandServiceTests
             RunGit(gitCliService, directory.FullName, ["clone", repository.BarePath, repository.ClonePath]);
             ConfigureIdentity(gitCliService, repository.ClonePath);
 
-            return new TemporaryRemoteGitRepository(directory, gitCliService, defaultBranchName);
+            return defaultBranchName;
         }
 
         public void Dispose()

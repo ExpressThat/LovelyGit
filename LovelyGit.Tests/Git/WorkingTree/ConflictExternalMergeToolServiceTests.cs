@@ -29,12 +29,13 @@ public sealed class ConflictExternalMergeToolServiceTests
     public async Task OpenAsync_MissingConfiguredToolLeavesConflictUntouched()
     {
         using var repository = await CreateConflictAsync();
-        await repository.Git.ExecuteBufferedAsync(
-            ["config", "merge.tool", "lovelygit-missing"], repository.Path);
         var state = await CaptureStateAsync(repository);
+        var runner = StubRunner((_, _, _) => Task.FromResult(
+            new ConflictMergeToolResult(1, string.Empty, "merge tool is not configured")));
 
         var error = await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            CreateService(repository).OpenAsync(repository.Path, "shared.txt", CancellationToken.None));
+            new ConflictExternalMergeToolService(runner)
+                .OpenAsync(repository.Path, "shared.txt", CancellationToken.None));
 
         Assert.Contains("merge tool", error.Message, StringComparison.OrdinalIgnoreCase);
         await AssertStateUnchangedAsync(repository, state);
@@ -44,11 +45,16 @@ public sealed class ConflictExternalMergeToolServiceTests
     public async Task OpenAsync_RollsBackFileAndIndexWhenToolFails()
     {
         using var repository = await CreateConflictAsync();
-        await ConfigureToolAsync(repository, "printf 'tool failed\\n' >&2; exit 7");
         var state = await CaptureStateAsync(repository);
+        var runner = StubRunner(async (root, path, _) =>
+        {
+            await File.WriteAllTextAsync(Path.Combine(root, path), "tool mutation");
+            return new ConflictMergeToolResult(7, string.Empty, "tool failed");
+        });
 
         var error = await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            CreateService(repository).OpenAsync(repository.Path, "shared.txt", CancellationToken.None));
+            new ConflictExternalMergeToolService(runner)
+                .OpenAsync(repository.Path, "shared.txt", CancellationToken.None));
 
         Assert.Contains("tool failed", error.Message, StringComparison.OrdinalIgnoreCase);
         await AssertStateUnchangedAsync(repository, state);
@@ -58,11 +64,19 @@ public sealed class ConflictExternalMergeToolServiceTests
     public async Task OpenAsync_RollsBackToolThatStagesUnchangedConflictMarkers()
     {
         using var repository = await CreateConflictAsync();
-        await ConfigureToolAsync(repository, "true");
         var state = await CaptureStateAsync(repository);
+        var runner = StubRunner(async (root, path, cancellationToken) =>
+        {
+            await repository.Git.ExecuteBufferedAsync(
+                ["add", "--", path],
+                root,
+                cancellationToken: cancellationToken);
+            return new ConflictMergeToolResult(0, string.Empty, string.Empty);
+        });
 
         var error = await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            CreateService(repository).OpenAsync(repository.Path, "shared.txt", CancellationToken.None));
+            new ConflictExternalMergeToolService(runner)
+                .OpenAsync(repository.Path, "shared.txt", CancellationToken.None));
 
         Assert.Contains("conflict markers", error.Message, StringComparison.OrdinalIgnoreCase);
         await AssertStateUnchangedAsync(repository, state);
@@ -100,6 +114,10 @@ public sealed class ConflictExternalMergeToolServiceTests
     private static ConflictExternalMergeToolService CreateService(TestRepository repository) =>
         new(repository.Git);
 
+    private static IConflictMergeToolRunner StubRunner(
+        Func<string, string, CancellationToken, Task<ConflictMergeToolResult>> run) =>
+        new StubConflictMergeToolRunner(run);
+
     private Task<TestRepository> CreateConflictAsync() =>
         Task.FromResult(_fixture.CreateCopy());
 
@@ -133,5 +151,15 @@ public sealed class ConflictExternalMergeToolServiceTests
     private static async Task<string> ReadUnmergedAsync(TestRepository repository) =>
         (await repository.Git.ExecuteBufferedAsync(
             ["ls-files", "--unmerged"], repository.Path)).StandardOutput;
+
+    private sealed class StubConflictMergeToolRunner(
+        Func<string, string, CancellationToken, Task<ConflictMergeToolResult>> run)
+        : IConflictMergeToolRunner
+    {
+        public Task<ConflictMergeToolResult> RunAsync(
+            string repositoryPath,
+            string path,
+            CancellationToken cancellationToken) => run(repositoryPath, path, cancellationToken);
+    }
 
 }

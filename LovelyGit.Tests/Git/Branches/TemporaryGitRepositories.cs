@@ -4,6 +4,9 @@ namespace LovelyGit.Tests.Git.Branches;
 
 internal sealed class TemporaryGitRepository : IDisposable
 {
+    private static readonly RepositoryTemplate<(string Branch, string Head)> Template = new(
+        "lovelygit-branch-template-",
+        InitializeTemplate);
     private readonly DirectoryInfo _directory;
     private readonly string _defaultBranchName;
 
@@ -36,20 +39,27 @@ internal sealed class TemporaryGitRepository : IDisposable
 
     public static TemporaryGitRepository Create()
     {
-        var directory = Directory.CreateTempSubdirectory("lovelygit-branch-");
+        var (directory, state) = Template.CreateCopy("lovelygit-branch-");
+        var isolatedGlobalConfig = System.IO.Path.Combine(directory.FullName, "global.gitconfig");
+        var gitCliService = new GitCliService(new Dictionary<string, string?>
+        {
+            ["GIT_CONFIG_GLOBAL"] = isolatedGlobalConfig,
+        });
+        return new TemporaryGitRepository(directory, gitCliService, state.Branch, state.Head);
+    }
+
+    private static (string Branch, string Head) InitializeTemplate(DirectoryInfo directory)
+    {
         var isolatedGlobalConfig = System.IO.Path.Combine(directory.FullName, "global.gitconfig");
         File.WriteAllText(isolatedGlobalConfig, string.Empty);
         var gitCliService = new GitCliService(new Dictionary<string, string?>
         {
             ["GIT_CONFIG_GLOBAL"] = isolatedGlobalConfig,
         });
-        RunGit(gitCliService, directory.FullName, ["init"]);
-        RunGit(gitCliService, directory.FullName, ["config", "user.name", "LovelyGit Test"]);
-        RunGit(gitCliService, directory.FullName, ["config", "user.email", "test@example.invalid"]);
-        RunGit(gitCliService, directory.FullName, ["commit", "--allow-empty", "-m", "Initial"]);
+        InitializedRepositoryTemplate.CopyInto(directory, "master");
         var branch = RunGit(gitCliService, directory.FullName, ["branch", "--show-current"]).StandardOutput.Trim();
         var head = RunGit(gitCliService, directory.FullName, ["rev-parse", "HEAD"]).StandardOutput.Trim();
-        return new TemporaryGitRepository(directory, gitCliService, branch, head);
+        return (branch, head);
     }
 
     public void Dispose() => TemporaryGitDirectory.Delete(_directory);

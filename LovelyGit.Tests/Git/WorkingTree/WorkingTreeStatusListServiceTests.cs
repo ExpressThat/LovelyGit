@@ -6,6 +6,9 @@ namespace LovelyGit.Tests.Git.WorkingTree;
 
 public sealed class WorkingTreeStatusListServiceTests
 {
+    private static readonly RepositoryTemplate<bool> Template = new(
+        "lovelygit-status-template-",
+        InitializeTemplate);
     [Fact]
     public async Task GetChangesAsync_NativePathFindsRootUntrackedFile()
     {
@@ -95,16 +98,18 @@ public sealed class WorkingTreeStatusListServiceTests
         await GitTestProcess.RunAsync(directory.Path, "add", ".");
         await GitTestProcess.RunAsync(directory.Path, "commit", "-m", "tracked root");
 
-        for (var index = 0; index < 4001; index++)
+        for (var index = 0; index < 2; index++)
         {
             Directory.CreateDirectory(Path.Combine(trackedRoot, $"d{index:D4}"));
         }
 
-        var deepFile = Path.Combine(trackedRoot, "d4000", "deep.tmp");
+        var deepFile = Path.Combine(trackedRoot, "d0001", "deep.tmp");
         await File.WriteAllTextAsync(deepFile, "deep");
         await File.WriteAllTextAsync(Path.Combine(directory.Path, "file.txt"), "changed content");
 
-        var response = await new WorkingTreeStatusListService(new GitCliService())
+        var response = await new WorkingTreeStatusListService(
+                new GitCliService(),
+                maxNativeUntrackedDirectories: 1)
             .GetChangesAsync(directory.Path, CancellationToken.None);
 
         var file = Assert.Single(response.Unstaged);
@@ -201,14 +206,20 @@ public sealed class WorkingTreeStatusListServiceTests
         Assert.Equal(group, file.Group);
     }
 
-    private static async Task CreateInitialCommitAsync(string path)
+    private static Task CreateInitialCommitAsync(string path)
     {
-        await GitTestProcess.RunAsync(path, "init");
-        await GitTestProcess.RunAsync(path, "config", "user.email", "test@example.com");
-        await GitTestProcess.RunAsync(path, "config", "user.name", "Test User");
-        await File.WriteAllTextAsync(Path.Combine(path, "file.txt"), "hello");
-        await GitTestProcess.RunAsync(path, "add", ".");
-        await GitTestProcess.RunAsync(path, "commit", "-m", "initial");
+        Template.CopyInto(new DirectoryInfo(path));
+        return Task.CompletedTask;
+    }
+
+    private static bool InitializeTemplate(DirectoryInfo directory)
+    {
+        InitializedRepositoryTemplate.CopyInto(directory, "master");
+        File.WriteAllText(Path.Combine(directory.FullName, "file.txt"), "hello");
+        GitTestProcess.RunAsync(directory.FullName, "add", ".").GetAwaiter().GetResult();
+        GitTestProcess.RunAsync(directory.FullName, "commit", "-m", "initial")
+            .GetAwaiter().GetResult();
+        return true;
     }
 
     private static WorkingTreeSummaryService CreateSummaryService() =>

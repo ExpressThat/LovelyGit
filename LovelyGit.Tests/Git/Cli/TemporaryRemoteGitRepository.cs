@@ -4,6 +4,9 @@ namespace LovelyGit.Tests.Git.Cli;
 
 internal sealed class TemporaryRemoteGitRepository : IDisposable
 {
+    private static readonly RepositoryTemplate<bool> Template = new(
+        "lovelygit-remote-template-",
+        InitializeTemplate);
     private readonly DirectoryInfo _directory;
 
     private TemporaryRemoteGitRepository(DirectoryInfo directory)
@@ -49,7 +52,16 @@ internal sealed class TemporaryRemoteGitRepository : IDisposable
 
     public static TemporaryRemoteGitRepository Create()
     {
-        var directory = Directory.CreateTempSubdirectory("lovelygit-remote-");
+        var (directory, _) = Template.CreateCopy("lovelygit-remote-");
+        var repository = new TemporaryRemoteGitRepository(directory);
+
+        repository.RunGit(repository.ClonePath, ["remote", "set-url", "origin", repository.BarePath]);
+        repository.RunGit(repository.UpdaterPath, ["remote", "set-url", "origin", repository.BarePath]);
+        return repository;
+    }
+
+    private static bool InitializeTemplate(DirectoryInfo directory)
+    {
         var repository = new TemporaryRemoteGitRepository(directory);
 
         repository.RunGit(directory.FullName, ["init", "--bare", repository.BarePath]);
@@ -65,7 +77,7 @@ internal sealed class TemporaryRemoteGitRepository : IDisposable
         repository.RunGit(directory.FullName, ["clone", repository.BarePath, repository.ClonePath]);
         repository.ConfigureIdentity(repository.ClonePath);
 
-        return repository;
+        return true;
     }
 
     public void Dispose()

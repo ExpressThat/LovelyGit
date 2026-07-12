@@ -131,6 +131,9 @@ public sealed class LovelyGitRepositoryRefSummaryTests
 
     private sealed class TemporaryGitRepository : IDisposable
     {
+        private static readonly RepositoryTemplate<bool> Template = new(
+            "lovelygit-ref-summary-template-",
+            InitializeTemplate);
         private readonly DirectoryInfo _directory;
 
         private TemporaryGitRepository(DirectoryInfo directory)
@@ -143,12 +146,15 @@ public sealed class LovelyGitRepositoryRefSummaryTests
 
         public static TemporaryGitRepository Create()
         {
-            var directory = Directory.CreateTempSubdirectory("lovelygit-ref-summary-");
+            var (directory, _) = Template.CreateCopy("lovelygit-ref-summary-");
+            return new TemporaryGitRepository(directory);
+        }
+
+        private static bool InitializeTemplate(DirectoryInfo directory)
+        {
             var gitCliService = new GitCliService();
 
-            RunGit(gitCliService, directory.FullName, ["init", "--initial-branch", "main"]);
-            RunGit(gitCliService, directory.FullName, ["config", "user.name", "LovelyGit Test"]);
-            RunGit(gitCliService, directory.FullName, ["config", "user.email", "test@example.invalid"]);
+            InitializedRepositoryTemplate.CopyInto(directory);
             File.WriteAllText(System.IO.Path.Combine(directory.FullName, "tracked.txt"), "tracked");
             RunGit(gitCliService, directory.FullName, ["add", "tracked.txt"]);
             RunGit(gitCliService, directory.FullName, ["commit", "-m", "Initial"]);
@@ -157,7 +163,7 @@ public sealed class LovelyGitRepositoryRefSummaryTests
             File.AppendAllText(System.IO.Path.Combine(directory.FullName, "tracked.txt"), "changed");
             RunGit(gitCliService, directory.FullName, ["stash", "push", "-m", "Parser stash"]);
 
-            return new TemporaryGitRepository(directory);
+            return true;
         }
 
         public async Task RunGitAsync(IReadOnlyList<string> arguments)

@@ -132,6 +132,9 @@ public sealed class CommitArchiveExportServiceTests
 
 internal sealed class TemporaryArchiveRepository : IDisposable
 {
+    private static readonly RepositoryTemplate<bool> Template = new(
+        "lovelygit-archive-export-template-",
+        InitializeTemplate);
     private readonly DirectoryInfo _directory;
     private readonly GitCliService _git = new();
 
@@ -145,12 +148,15 @@ internal sealed class TemporaryArchiveRepository : IDisposable
 
     public static TemporaryArchiveRepository Create()
     {
-        var repository = new TemporaryArchiveRepository(
-            Directory.CreateTempSubdirectory("lovelygit-archive-export-"));
-        repository.RunGit(["init"]);
-        repository.RunGit(["config", "user.name", "LovelyGit Test"]);
-        repository.RunGit(["config", "user.email", "test@example.invalid"]);
-        return repository;
+        var (directory, _) = Template.CreateCopy("lovelygit-archive-export-");
+        return new TemporaryArchiveRepository(directory);
+    }
+
+    private static bool InitializeTemplate(DirectoryInfo directory)
+    {
+        var repository = new TemporaryArchiveRepository(directory);
+        InitializedRepositoryTemplate.CopyInto(directory, "master");
+        return true;
     }
 
     public void WriteFile(string relativePath, string contents) =>
