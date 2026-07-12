@@ -5,52 +5,20 @@ import {
 	useRef,
 	useState,
 } from "react";
-import type { CommitGraphResponse, CommitGraphRow } from "@/generated/types";
+import type { CommitGraphResponse } from "@/generated/types";
 import {
 	sendRequestWithResponse,
 	subscribeToServerEvent,
 } from "@/lib/commands";
 import { useSetting } from "@/lib/settings/settingsStore";
+import {
+	type CommitGraphState,
+	currentSessionRepositoryId,
+	session,
+} from "./commitGraphSession";
 
 const PAGE_SIZE = 128;
 const PREFETCH_PAGES = 1;
-type CommitGraphState = {
-	currentBranchName: string | null;
-	error: string | null;
-	isInitialLoading: boolean;
-	laneCount: number;
-	remotePrefixes: string[];
-	rows: Array<CommitGraphRow | null>;
-	totalRows: number;
-};
-type GraphSession = {
-	currentBranchName: string | null;
-	generation: number;
-	hasMore: boolean;
-	laneCount: number;
-	loadedRowCount: number;
-	loading: boolean;
-	nextCursor: string | null;
-	remotePrefixes: string[];
-	repositoryId: string | null;
-	requestedEnd: number;
-	rows: Array<CommitGraphRow | null>;
-	totalRows: number;
-};
-const session: GraphSession = {
-	currentBranchName: null,
-	generation: 0,
-	hasMore: true,
-	laneCount: 0,
-	loadedRowCount: 0,
-	loading: false,
-	nextCursor: null,
-	remotePrefixes: [],
-	repositoryId: null,
-	requestedEnd: 0,
-	rows: [],
-	totalRows: 0,
-};
 export function useCommitGraphData(externalRefreshToken = 0) {
 	const [graphInvalidation, setGraphInvalidation] = useState(0);
 	const lifecycleRef = useRef({
@@ -64,6 +32,7 @@ export function useCommitGraphData(externalRefreshToken = 0) {
 		isInitialLoading: session.rows.length === 0,
 		laneCount: session.laneCount,
 		remotePrefixes: session.remotePrefixes,
+		remoteRepositoryUrl: session.remoteRepositoryUrl,
 		rows: session.rows,
 		totalRows: visibleTotal(),
 	}));
@@ -160,6 +129,7 @@ export function useCommitGraphData(externalRefreshToken = 0) {
 				isInitialLoading: Boolean(currentGitRepositoryId),
 				laneCount: 0,
 				remotePrefixes: [],
+				remoteRepositoryUrl: null,
 				rows: [],
 				totalRows: currentGitRepositoryId ? PAGE_SIZE : 0,
 			});
@@ -193,6 +163,9 @@ function resetSession(
 	const previousTotalRows = keepRows ? session.totalRows : 0;
 	const previousLaneCount = keepRows ? session.laneCount : 0;
 	const previousRemotePrefixes = keepRows ? session.remotePrefixes : [];
+	const previousRemoteRepositoryUrl = keepRows
+		? session.remoteRepositoryUrl
+		: null;
 	const previousCurrentBranchName = keepRows ? session.currentBranchName : null;
 	session.generation++;
 	session.currentBranchName = previousCurrentBranchName;
@@ -202,6 +175,7 @@ function resetSession(
 	session.loading = false;
 	session.nextCursor = null;
 	session.remotePrefixes = previousRemotePrefixes;
+	session.remoteRepositoryUrl = previousRemoteRepositoryUrl;
 	session.repositoryId = repositoryId;
 	session.requestedEnd = 0;
 	session.rows = previousRows;
@@ -219,6 +193,7 @@ function applyResponse(response: CommitGraphResponse, requiredLength: number) {
 	session.hasMore = response.hasMore;
 	session.currentBranchName = response.currentBranchName ?? null;
 	session.remotePrefixes = response.remotePrefixes;
+	session.remoteRepositoryUrl = response.remoteRepositoryUrl;
 	session.rows = nextRows;
 	session.loadedRowCount = Math.max(
 		session.loadedRowCount,
@@ -236,6 +211,7 @@ function readSessionState(): CommitGraphState {
 		isInitialLoading: false,
 		laneCount: session.laneCount,
 		remotePrefixes: session.remotePrefixes,
+		remoteRepositoryUrl: session.remoteRepositoryUrl,
 		rows: session.rows,
 		totalRows: visibleTotal(),
 	};
@@ -244,7 +220,4 @@ function visibleTotal() {
 	return session.hasMore
 		? Math.min(session.totalRows, session.rows.length + PAGE_SIZE)
 		: session.totalRows;
-}
-function currentSessionRepositoryId() {
-	return session.repositoryId;
 }

@@ -72,6 +72,7 @@ export function CommitGraphView({
 	const branchCreation = useBranchCreation();
 	useNotifyCurrentBranch(currentBranchName, onCurrentBranchNameChange);
 	const {
+		contentHeight,
 		graphContentWidth,
 		graphScrollerRef,
 		graphScrollLeft,
@@ -80,7 +81,6 @@ export function CommitGraphView({
 		setGraphScrollLeft,
 		templateColumns,
 		virtualItems,
-		virtualizer,
 		viewportRef,
 	} = useCommitGraphViewport({ ensureRangeLoaded, laneCount, totalRows });
 	return (
@@ -124,7 +124,7 @@ export function CommitGraphView({
 						>
 							<div
 								className="relative h-full w-full"
-								style={{ height: `${virtualizer.getTotalSize()}px` }}
+								style={{ height: `${contentHeight}px` }}
 							>
 								{virtualItems.map((item) => (
 									<div

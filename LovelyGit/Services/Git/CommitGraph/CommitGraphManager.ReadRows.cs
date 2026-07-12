@@ -70,6 +70,7 @@ public sealed partial class CommitGraphManager
             LaneCount = maxLaneCount,
             Rows = rows,
             RemotePrefixes = _repository.RemotePrefixes.ToList(),
+            RemoteRepositoryUrl = RemoteCommitUrlBuilder.BuildRepository(_remoteUrl),
             CurrentBranchName = _repository.CurrentBranchName,
             HasMore = hasMore,
         };

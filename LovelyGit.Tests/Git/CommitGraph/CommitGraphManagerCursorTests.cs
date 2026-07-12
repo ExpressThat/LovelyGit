@@ -42,7 +42,7 @@ public sealed class CommitGraphManagerCursorTests
     }
 
     [Fact]
-    public async Task GetCommitGraphPageAsync_IncludesRemoteUrls()
+    public async Task GetCommitGraphPageAsync_IncludesRemoteRepositoryUrlOncePerPage()
     {
         using var temporary = TemporaryGitRepository.Create();
         temporary.AddRemote("origin", "git@github.com:example/repo.git");
@@ -59,11 +59,28 @@ public sealed class CommitGraphManagerCursorTests
             1,
             CancellationToken.None);
 
-        var row = page.Response.Rows.Single();
-        Assert.Equal(
-            $"https://github.com/example/repo/commit/{row.Commit.Hash}",
-            row.Commit.RemoteUrl);
-        Assert.Equal("https://github.com/example/repo", row.Commit.RemoteRepositoryUrl);
+        Assert.Equal("https://github.com/example/repo", page.Response.RemoteRepositoryUrl);
+        var json = System.Text.Json.JsonSerializer.Serialize(
+            page.Response,
+            new System.Text.Json.JsonSerializerOptions
+            {
+                DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull,
+            });
+        Assert.Equal(1, CountOccurrences(json, "RemoteRepositoryUrl"));
+        Assert.DoesNotContain("\"RemoteUrl\"", json, StringComparison.Ordinal);
+    }
+
+    private static int CountOccurrences(string value, string search)
+    {
+        var count = 0;
+        var offset = 0;
+        while ((offset = value.IndexOf(search, offset, StringComparison.Ordinal)) >= 0)
+        {
+            count++;
+            offset += search.Length;
+        }
+
+        return count;
     }
 
     private sealed class TemporaryGitRepository : IDisposable

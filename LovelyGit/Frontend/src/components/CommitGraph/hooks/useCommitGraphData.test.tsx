@@ -35,6 +35,7 @@ describe("useCommitGraphData", () => {
 
 		await waitFor(() => expect(mocks.sendRequest).toHaveBeenCalledTimes(2));
 		expect(result.current.rows).toHaveLength(256);
+		expect(result.current.remoteRepositoryUrl).toBe("https://example.test/repo");
 		const initialRows = result.current.rows;
 		expect(mocks.sendRequest).toHaveBeenNthCalledWith(1, {
 			commandType: "CommitGraph",
@@ -76,6 +77,7 @@ function response(
 		laneCount: 1,
 		nextCursor: hasMore ? String(start + count) : null,
 		remotePrefixes: ["origin"],
+		remoteRepositoryUrl: "https://example.test/repo",
 		rows: Array.from({ length: count }, (_, offset) => row(start + offset)),
 		totalRows: hasMore ? start + count * 2 : start + count,
 	};
@@ -95,8 +97,6 @@ function row(rowIndex: number): CommitGraphRow {
 			message: `Commit ${rowIndex}`,
 			parents: [],
 			refs: [],
-			remoteRepositoryUrl: null,
-			remoteUrl: null,
 			signatureKind: "None",
 			stats: null,
 			tags: [],

@@ -114,8 +114,6 @@ const commit: CommitGraphRow = {
 		message: "Target commit",
 		parents: [],
 		refs: [],
-		remoteRepositoryUrl: null,
-		remoteUrl: null,
 		signatureKind: "None",
 		stats: null,
 		tags: [],

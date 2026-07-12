@@ -186,8 +186,6 @@ function commit(
 		message: "Test commit",
 		parents: [],
 		refs,
-		remoteRepositoryUrl: null,
-		remoteUrl: null,
 		signatureKind: "None",
 		stats: null,
 		tags,

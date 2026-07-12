@@ -82,8 +82,6 @@ function commit(): CommitInfo {
 			ref("Remote", "origin/release"),
 			ref("Tag", "v1"),
 		],
-		remoteRepositoryUrl: null,
-		remoteUrl: null,
 		signatureKind: "None",
 		stats: null,
 		tags: ["v1"],

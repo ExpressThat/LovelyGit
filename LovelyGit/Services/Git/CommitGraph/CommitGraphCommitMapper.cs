@@ -43,8 +43,6 @@ internal static class CommitGraphCommitMapper
                         : null,
                 })
                 .ToList(),
-            RemoteUrl = RemoteCommitUrlBuilder.Build(remoteUrl, hash),
-            RemoteRepositoryUrl = RemoteCommitUrlBuilder.BuildRepository(remoteUrl),
             Stats = null,
             SignatureKind = MapSignatureKind(commit.SignatureKind),
         };

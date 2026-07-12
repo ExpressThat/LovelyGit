@@ -70,6 +70,7 @@ export function useCommitGraphViewport({
 		overscan: OVERSCAN,
 	});
 	const virtualItems = virtualizer.getVirtualItems();
+	const contentHeight = commitGraphContentHeight(totalRows);
 
 	useEffect(() => {
 		const first = virtualItems[0];
@@ -110,6 +111,7 @@ export function useCommitGraphViewport({
 	};
 
 	return {
+		contentHeight,
 		graphContentWidth,
 		graphScrollerRef,
 		graphScrollLeft,
@@ -118,7 +120,10 @@ export function useCommitGraphViewport({
 		setGraphScrollLeft,
 		templateColumns,
 		virtualItems,
-		virtualizer,
 		viewportRef,
 	};
+}
+
+export function commitGraphContentHeight(totalRows: number) {
+	return (totalRows > 0 ? totalRows : 140) * ROW_HEIGHT;
 }

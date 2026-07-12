@@ -23,6 +23,7 @@ export function CommitGraphLayer({
 }) {
 	return (
 		<motion.div
+			key={repositoryId}
 			animate={{
 				opacity: isDimmed ? 0.92 : 1,
 				scale: isDimmed ? 0.998 : 1,
