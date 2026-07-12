@@ -70,6 +70,18 @@ describe("useCommitGraphData", () => {
 		expect(result.current.isInitialLoading).toBe(false);
 		expect(result.current.rows).toEqual([]);
 	});
+
+	it("stops paging when a provider returns an empty page", async () => {
+		mocks.sendRequest.mockResolvedValueOnce(response(0, 0, true));
+		const { useCommitGraphData } = await import("./useCommitGraphData");
+		const { result } = renderHook(() => useCommitGraphData());
+		await waitFor(() => expect(mocks.sendRequest).toHaveBeenCalledTimes(1));
+
+		act(() => result.current.ensureRangeLoaded(500, 520));
+
+		expect(mocks.sendRequest).toHaveBeenCalledTimes(1);
+		expect(result.current.rows).toEqual([]);
+	});
 });
 
 function response(

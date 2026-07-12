@@ -184,8 +184,10 @@ function resetSession(
 }
 function applyResponse(response: CommitGraphResponse, requiredLength: number) {
 	const nextRows = session.rows;
+	let loadedRowCount = session.loadedRowCount;
 	for (const row of response.rows) {
 		nextRows[row.rowIndex] = compactCommitGraphRow(row);
+		loadedRowCount = Math.max(loadedRowCount, row.rowIndex + 1);
 	}
 	if (!response.hasMore) {
 		nextRows.length = response.totalRows;
@@ -196,10 +198,7 @@ function applyResponse(response: CommitGraphResponse, requiredLength: number) {
 	session.remotePrefixes = response.remotePrefixes;
 	session.remoteRepositoryUrl = response.remoteRepositoryUrl;
 	session.rows = nextRows;
-	session.loadedRowCount = Math.max(
-		session.loadedRowCount,
-		...response.rows.map((row) => row.rowIndex + 1),
-	);
+	session.loadedRowCount = loadedRowCount;
 	session.laneCount = Math.max(session.laneCount, response.laneCount);
 	session.totalRows = response.hasMore
 		? Math.max(session.totalRows, nextRows.length + PAGE_SIZE, requiredLength)
