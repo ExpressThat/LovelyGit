@@ -50,7 +50,7 @@ export function useBisectSession(repositoryId: string | null) {
 		const cached = repositoryId ? getCachedBisectState(repositoryId) : null;
 		setState(cached);
 		setIsLoading(false);
-		if (repositoryId) {
+		if (repositoryId && !cached) {
 			refreshTimerRef.current = window.setTimeout(
 				() => void load(),
 				CACHED_BISECT_REFRESH_DELAY_MS,

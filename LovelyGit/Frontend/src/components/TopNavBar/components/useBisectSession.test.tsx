@@ -42,7 +42,7 @@ describe("useBisectSession", () => {
 
 	afterEach(() => vi.useRealTimers());
 
-	it("shows cached state immediately and defers revalidation", async () => {
+	it("uses cached state until an explicit invalidation", () => {
 		vi.useFakeTimers();
 		setCachedBisectState("repo", activeState);
 		vi.mocked(sendRequestWithResponse).mockResolvedValue(activeState);
@@ -52,12 +52,10 @@ describe("useBisectSession", () => {
 		expect(result.current.isLoading).toBe(false);
 		expect(sendRequestWithResponse).not.toHaveBeenCalled();
 		act(() => vi.advanceTimersByTime(CACHED_BISECT_REFRESH_DELAY_MS));
-		await act(async () => Promise.resolve());
-
-		expect(sendRequestWithResponse).toHaveBeenCalledOnce();
+		expect(sendRequestWithResponse).not.toHaveBeenCalled();
 	});
 
-	it("cancels an abandoned cached refresh on a rapid tab switch", () => {
+	it("does not reread cached state while switching tabs", () => {
 		vi.useFakeTimers();
 		setCachedBisectState("repo-a", activeState);
 		setCachedBisectState("repo-b", activeState);
@@ -70,11 +68,19 @@ describe("useBisectSession", () => {
 		rerender({ repositoryId: "repo-b" });
 		act(() => vi.advanceTimersByTime(CACHED_BISECT_REFRESH_DELAY_MS));
 
-		expect(sendRequestWithResponse).toHaveBeenCalledOnce();
-		expect(sendRequestWithResponse).toHaveBeenCalledWith({
-			commandType: "GetBisectState",
-			arguments: { repositoryId: "repo-b" },
-		});
+		expect(sendRequestWithResponse).not.toHaveBeenCalled();
+	});
+
+	it("delays an uncached discovery read", async () => {
+		vi.useFakeTimers();
+		vi.mocked(sendRequestWithResponse).mockResolvedValue(activeState);
+		const { result } = renderHook(() => useBisectSession("repo"));
+
+		expect(sendRequestWithResponse).not.toHaveBeenCalled();
+		act(() => vi.advanceTimersByTime(CACHED_BISECT_REFRESH_DELAY_MS));
+		await act(async () => Promise.resolve());
+
+		expect(result.current.state).toEqual(activeState);
 	});
 
 	it("loads native state and marks the current revision good", async () => {
