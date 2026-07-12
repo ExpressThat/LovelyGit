@@ -82,7 +82,12 @@ export function CommitGraphView({
 		templateColumns,
 		virtualItems,
 		viewportRef,
-	} = useCommitGraphViewport({ ensureRangeLoaded, laneCount, totalRows });
+	} = useCommitGraphViewport({
+		ensureRangeLoaded,
+		laneCount,
+		repositoryId,
+		totalRows,
+	});
 	return (
 		<>
 			<section className="h-full w-full overflow-hidden bg-background">
