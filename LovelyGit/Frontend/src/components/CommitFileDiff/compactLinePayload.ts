@@ -32,11 +32,24 @@ type DeltaReferenceTuple = [
 	CompactChangeSpanTuple[]?,
 ];
 
+const decodedLineCache = new WeakMap<
+	CommitFileDiffResponse,
+	Promise<CommitFileDiffLine[]>
+>();
+
 export function hasCompactLinePayload(diff: CommitFileDiffResponse) {
 	return Boolean(diff.compactLinesGzipBase64);
 }
 
-export async function loadCompactLines(diff: CommitFileDiffResponse) {
+export function loadCompactLines(diff: CommitFileDiffResponse) {
+	const cached = decodedLineCache.get(diff);
+	if (cached) return cached;
+	const loading = decodeCompactLines(diff);
+	decodedLineCache.set(diff, loading);
+	return loading;
+}
+
+async function decodeCompactLines(diff: CommitFileDiffResponse) {
 	if (
 		diff.compactLineSchema !== "tuple-v1:gzip-base64:utf-8" &&
 		diff.compactLineSchema !== "tuple-v2:gzip-base64:utf-8"

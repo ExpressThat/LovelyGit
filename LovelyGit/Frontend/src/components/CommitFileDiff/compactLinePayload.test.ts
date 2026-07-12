@@ -1,7 +1,26 @@
 import { describe, expect, it } from "vitest";
-import { decodeDeltaReferenceLines, toDiffLine } from "./compactLinePayload";
+import type { CommitFileDiffResponse } from "@/generated/types";
+import {
+	decodeDeltaReferenceLines,
+	loadCompactLines,
+	toDiffLine,
+} from "./compactLinePayload";
 
 describe("compactLinePayload", () => {
+	it("reuses decoded lines for the same bounded response", async () => {
+		const compressed = await gzipBase64(
+			JSON.stringify([[1, 1, "old", "new", "", "Modified"]]),
+		);
+		const diff = {
+			compactLineSchema: "tuple-v2:gzip-base64:utf-8",
+			compactLinesGzipBase64: compressed,
+		} as CommitFileDiffResponse;
+
+		const first = loadCompactLines(diff);
+		const second = loadCompactLines(diff);
+		expect(second).toBe(first);
+		expect(await second).toHaveLength(1);
+	});
 	it("restores syntax and intra-line change spans", () => {
 		const line = toDiffLine([
 			4,
@@ -80,3 +99,12 @@ describe("compactLinePayload", () => {
 		expect(lines[1].newChangeSpans[0].changeType).toBe("Inserted");
 	});
 });
+
+async function gzipBase64(value: string) {
+	const bytes = new TextEncoder().encode(value);
+	const stream = new Blob([bytes])
+		.stream()
+		.pipeThrough(new CompressionStream("gzip"));
+	const compressed = new Uint8Array(await new Response(stream).arrayBuffer());
+	return btoa(String.fromCharCode(...compressed));
+}

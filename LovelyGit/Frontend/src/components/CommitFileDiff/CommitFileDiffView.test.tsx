@@ -1,8 +1,9 @@
 // @vitest-environment jsdom
 
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { sendRequestWithResponse } from "@/lib/commands";
+import { clearCommitFileDiffCache } from "@/lib/commitFileDiffCache";
 import { CommitFileDiffView } from "./CommitFileDiffView";
 
 const settings = {
@@ -18,7 +19,11 @@ vi.mock("@/lib/settings/settingsStore", () => ({
 	useSetting: (setting: keyof typeof settings) => settings[setting],
 }));
 vi.mock("./CommitFileDiffHeader", () => ({
-	CommitFileDiffHeader: () => <div>Diff header</div>,
+	CommitFileDiffHeader: ({ onClose }: { onClose: () => void }) => (
+		<button onClick={onClose} type="button">
+			Close diff
+		</button>
+	),
 }));
 vi.mock("./DiffContent", () => ({
 	DiffContent: () => <div>Parent diff loaded</div>,
@@ -28,6 +33,7 @@ vi.mock("./DiffContent", () => ({
 describe("CommitFileDiffView", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
+		clearCommitFileDiffCache();
 		settings.CommitDiffIgnoreWhitespace = false;
 		settings.CommitDiffViewMode = "Combined";
 		vi.mocked(sendRequestWithResponse).mockResolvedValue({
@@ -39,6 +45,89 @@ describe("CommitFileDiffView", () => {
 			status: "A",
 			viewMode: "Combined",
 		});
+	});
+
+	it("reuses a loaded diff after the view is closed and reopened", async () => {
+		const props = {
+			commitHash: "merge",
+			file: {
+				additions: 1,
+				deletions: 1,
+				isBinary: false,
+				path: "main.txt",
+				status: "Modified",
+			},
+			onClose: vi.fn(),
+			parentIndex: 0,
+			repositoryId: "repo",
+		};
+		const first = render(<CommitFileDiffView {...props} />);
+		await screen.findByText("Parent diff loaded");
+		first.unmount();
+
+		render(<CommitFileDiffView {...props} />);
+		expect(await screen.findByText("Parent diff loaded")).toBeVisible();
+		expect(sendRequestWithResponse).toHaveBeenCalledTimes(1);
+	});
+
+	it("does not replace colored diff content with a skeleton while closing", async () => {
+		const onClose = vi.fn();
+		render(
+			<CommitFileDiffView
+				commitHash="merge"
+				file={{
+					additions: 1,
+					deletions: 1,
+					isBinary: false,
+					path: "main.txt",
+					status: "Modified",
+				}}
+				onClose={onClose}
+				parentIndex={0}
+				repositoryId="repo"
+			/>,
+		);
+		await screen.findByText("Parent diff loaded");
+
+		fireEvent.click(screen.getByRole("button", { name: "Close diff" }));
+		expect(onClose).toHaveBeenCalledOnce();
+		expect(screen.getByText("Parent diff loaded")).toBeVisible();
+		expect(screen.queryByText("Loading diff")).not.toBeInTheDocument();
+	});
+
+	it("retries after a failed request instead of caching the failure", async () => {
+		vi.mocked(sendRequestWithResponse).mockRejectedValueOnce(
+			new Error("Diff unavailable"),
+		);
+		const props = {
+			commitHash: "merge",
+			file: {
+				additions: 1,
+				deletions: 1,
+				isBinary: false,
+				path: "main.txt",
+				status: "Modified",
+			},
+			onClose: vi.fn(),
+			parentIndex: 0,
+			repositoryId: "repo",
+		};
+		const first = render(<CommitFileDiffView {...props} />);
+		expect(await screen.findByText("Diff unavailable")).toBeVisible();
+		first.unmount();
+
+		vi.mocked(sendRequestWithResponse).mockResolvedValue({
+			commitHash: "merge",
+			hasDifferences: true,
+			isBinary: false,
+			lines: [],
+			path: "main.txt",
+			status: "A",
+			viewMode: "Combined",
+		});
+		render(<CommitFileDiffView {...props} />);
+		expect(await screen.findByText("Parent diff loaded")).toBeVisible();
+		expect(sendRequestWithResponse).toHaveBeenCalledTimes(2);
 	});
 
 	it("reuses a previously loaded display variant", async () => {

@@ -1,9 +1,14 @@
-import { useLayoutEffect, useRef, useState } from "react";
+import { useLayoutEffect, useState } from "react";
 import type {
 	CommitChangedFile,
 	CommitFileDiffResponse,
 } from "@/generated/types";
 import { sendRequestWithResponse } from "@/lib/commands";
+import {
+	cacheCommitFileDiff,
+	commitFileDiffCacheKey,
+	getCachedCommitFileDiff,
+} from "@/lib/commitFileDiffCache";
 import { useSetting } from "@/lib/settings/settingsStore";
 import { CommitFileDiffHeader } from "./CommitFileDiffHeader";
 import { DiffContent, LoadingDiff } from "./DiffContent";
@@ -12,8 +17,6 @@ type DiffState =
 	| { status: "loading" }
 	| { status: "error"; message: string }
 	| { status: "loaded"; diff: CommitFileDiffResponse };
-
-const MAX_CACHED_VARIANTS = 4;
 
 export function CommitFileDiffView({
 	commitHash,
@@ -38,8 +41,7 @@ export function CommitFileDiffView({
 	const wrapLines = useSetting("CommitDiffWrapLines");
 	const ignoreWhitespace = useSetting("CommitDiffIgnoreWhitespace");
 	const [state, setState] = useState<DiffState>({ status: "loading" });
-	const responseCache = useRef(new Map<string, CommitFileDiffResponse>());
-	const requestKey = diffRequestKey({
+	const requestKey = commitFileDiffCacheKey({
 		commitHash,
 		comparisonCommitHash,
 		filePath: file.path,
@@ -51,7 +53,7 @@ export function CommitFileDiffView({
 
 	useLayoutEffect(() => {
 		let isActive = true;
-		const cached = responseCache.current.get(requestKey);
+		const cached = getCachedCommitFileDiff(requestKey);
 		if (cached) {
 			setState({ status: "loaded", diff: cached });
 			return () => {
@@ -82,7 +84,7 @@ export function CommitFileDiffView({
 					return;
 				}
 
-				cacheResponse(responseCache.current, requestKey, diff);
+				cacheCommitFileDiff(requestKey, diff);
 				setState({ status: "loaded", diff });
 			})
 			.catch((error: unknown) => {
@@ -113,16 +115,11 @@ export function CommitFileDiffView({
 		viewMode,
 	]);
 
-	const handleClose = () => {
-		setState({ status: "loading" });
-		onClose();
-	};
-
 	return (
 		<section className="flex h-full min-w-0 flex-1 flex-col overflow-hidden border-l bg-background text-foreground">
 			<CommitFileDiffHeader
 				file={file}
-				onClose={handleClose}
+				onClose={onClose}
 				showStats={showFileStats}
 			/>
 			<div className="min-h-0 flex-1 overflow-hidden bg-background">
@@ -143,35 +140,4 @@ export function CommitFileDiffView({
 			</div>
 		</section>
 	);
-}
-
-function cacheResponse(
-	cache: Map<string, CommitFileDiffResponse>,
-	key: string,
-	diff: CommitFileDiffResponse,
-) {
-	cache.set(key, diff);
-	if (cache.size <= MAX_CACHED_VARIANTS) return;
-	const oldest = cache.keys().next().value;
-	if (oldest) cache.delete(oldest);
-}
-
-function diffRequestKey(input: {
-	commitHash: string;
-	comparisonCommitHash?: string | null;
-	filePath: string;
-	ignoreWhitespace: boolean;
-	parentIndex: number;
-	repositoryId: string;
-	viewMode: string;
-}) {
-	return [
-		input.repositoryId,
-		input.commitHash,
-		input.comparisonCommitHash ?? "",
-		input.parentIndex,
-		input.filePath,
-		input.viewMode,
-		input.ignoreWhitespace ? "ignore" : "exact",
-	].join("\0");
 }
