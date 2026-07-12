@@ -21,6 +21,7 @@ import { useConflictDiffLines } from "./useConflictDiffLines";
 
 export function ConflictSourcePane({
 	activeConflict,
+	baseText,
 	choices,
 	contextLines,
 	diff,
@@ -36,6 +37,7 @@ export function ConflictSourcePane({
 	wrapLines,
 }: {
 	activeConflict: number;
+	baseText: string;
 	choices: Record<number, ConflictChoice>;
 	contextLines: number;
 	diff: CommitFileDiffResponse | null;
@@ -50,7 +52,7 @@ export function ConflictSourcePane({
 	viewportRef: RefObject<HTMLDivElement | null>;
 	wrapLines: boolean;
 }) {
-	const loaded = useConflictDiffLines(diff, sourceText);
+	const loaded = useConflictDiffLines(diff, baseText, sourceText);
 	const items = useMemo(
 		() =>
 			loaded.status === "ready"

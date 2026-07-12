@@ -1,5 +1,6 @@
 using System.IO.Compression;
 using System.Text;
+using System.Text.Json;
 using ExpressThat.LovelyGit.Services.Git.WorkingTree;
 using ExpressThat.LovelyGit.Services.Git.WorkingTree.Models;
 
@@ -21,16 +22,17 @@ public sealed class ConflictTextPayloadBuilderTests
 
         ConflictTextPayloadBuilder.Compact(response);
 
-        Assert.Equal(text, Decode(response.Base));
-        Assert.Equal(text + " ours", Decode(response.Ours));
-        Assert.Equal(text + " theirs", Decode(response.Theirs));
-        Assert.Equal(text + " result", Decode(response.Result));
+        Assert.Equal(
+            new[] { text, text + " ours", text + " theirs", text + " result" },
+            Decode(response));
+        Assert.Equal("interleaved-lines-v2:gzip-base64:utf-8", response.CompactTextSchema);
         Assert.All(
             new[] { response.Base, response.Ours, response.Theirs, response.Result },
             version =>
             {
                 Assert.Null(version.Text);
-                Assert.Equal("gzip-base64:utf-8", version.TextEncoding);
+                Assert.Null(version.TextEncoding);
+                Assert.Null(version.TextGzipBase64);
             });
     }
 
@@ -44,6 +46,7 @@ public sealed class ConflictTextPayloadBuilderTests
         Assert.Equal("small", response.Base.Text);
         Assert.Null(response.Base.TextGzipBase64);
         Assert.Null(response.Base.TextEncoding);
+        Assert.Null(response.CompactTextBundleGzipBase64);
     }
 
     private static ConflictFileVersion Version(string text) => new()
@@ -53,12 +56,21 @@ public sealed class ConflictTextPayloadBuilderTests
         SizeBytes = Encoding.UTF8.GetByteCount(text),
     };
 
-    private static string Decode(ConflictFileVersion version)
+    private static string[] Decode(ConflictResolutionResponse response)
     {
-        var bytes = Convert.FromBase64String(version.TextGzipBase64!);
+        var bytes = Convert.FromBase64String(response.CompactTextBundleGzipBase64!);
         using var input = new MemoryStream(bytes);
         using var gzip = new GZipStream(input, CompressionMode.Decompress);
-        using var reader = new StreamReader(gzip, Encoding.UTF8);
-        return reader.ReadToEnd();
+        using var document = JsonDocument.Parse(gzip);
+        var texts = new[] { new StringBuilder(), new StringBuilder(), new StringBuilder() };
+        foreach (var row in document.RootElement[0].EnumerateArray())
+        {
+            for (var index = 0; index < texts.Length; index++)
+            {
+                if (row[index].ValueKind is not JsonValueKind.Null)
+                    texts[index].Append(row[index].GetString());
+            }
+        }
+        return [.. texts.Select(text => text.ToString()), document.RootElement[1].GetString()!];
     }
 }

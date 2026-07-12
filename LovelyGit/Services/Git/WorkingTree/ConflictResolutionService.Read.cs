@@ -65,6 +65,8 @@ internal sealed partial class ConflictResolutionService
                 ? BuildBaseComparison(path, ignoreWhitespace, baseVersion.Text!, theirs.Text!)
                 : null,
         };
+        ConflictComparisonPayloadBuilder.Compact(response.CurrentComparison);
+        ConflictComparisonPayloadBuilder.Compact(response.IncomingComparison);
         ConflictTextPayloadBuilder.Compact(response);
         return response;
     }
@@ -82,7 +84,8 @@ internal sealed partial class ConflictResolutionService
             CommitDiffViewMode.SideBySide,
             ignoreWhitespace,
             Encoding.UTF8.GetBytes(baseText),
-            Encoding.UTF8.GetBytes(sourceText));
+            Encoding.UTF8.GetBytes(sourceText),
+            compact: false);
     }
 
     private static async Task<Dictionary<int, GitIndexEntry>> ReadConflictEntriesAsync(

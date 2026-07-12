@@ -129,7 +129,8 @@ internal sealed partial class WorkingTreeChangeService
         CommitDiffViewMode viewMode,
         bool ignoreWhitespace,
         byte[] oldBytes,
-        byte[] newBytes)
+        byte[] newBytes,
+        bool compact = true)
     {
         using var trace = LovelyGitTrace.Time(
             "working-tree.build-diff-response",
@@ -174,14 +175,15 @@ internal sealed partial class WorkingTreeChangeService
         var newText = System.Text.Encoding.UTF8.GetString(newBytes);
         if (DiffInputGuard.ShouldUseFastDiff(oldText, newText))
         {
-            return CompactDiffPayloadBuilder.CompactIfUseful(FastLineDiffBuilder.Build(
+            var fastResponse = FastLineDiffBuilder.Build(
                 commitHash,
                 path,
                 status,
                 viewMode,
                 ignoreWhitespace,
                 oldText,
-                newText));
+                newText);
+            return compact ? CompactDiffPayloadBuilder.CompactIfUseful(fastResponse) : fastResponse;
         }
 
         var language = oldText.Length + newText.Length <= MaxSyntaxHighlightedCharacters
@@ -191,7 +193,7 @@ internal sealed partial class WorkingTreeChangeService
         var response = viewMode == CommitDiffViewMode.SideBySide
             ? BuildSideBySideResponse(commitHash, path, status, oldText, newText, language, ignoreWhitespace)
             : BuildCombinedResponse(commitHash, path, status, oldText, newText, language, ignoreWhitespace);
-        return CompactDiffPayloadBuilder.CompactIfUseful(response);
+        return compact ? CompactDiffPayloadBuilder.CompactIfUseful(response) : response;
     }
 
     private static bool ShouldUseCompressedVirtualBytes(byte[] bytes) => bytes.Length >= 256_000;

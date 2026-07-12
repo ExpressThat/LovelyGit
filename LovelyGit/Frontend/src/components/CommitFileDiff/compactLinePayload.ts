@@ -20,6 +20,17 @@ type CompactLineTuple = [
 
 type CompactSyntaxSpanTuple = [number, number, string];
 type CompactChangeSpanTuple = [number, number, string];
+type DeltaReferenceTuple = [
+	number | null,
+	number | null,
+	number | string,
+	CompactSyntaxSpanTuple[]?,
+	CompactSyntaxSpanTuple[]?,
+	CompactSyntaxSpanTuple[]?,
+	CompactChangeSpanTuple[]?,
+	CompactChangeSpanTuple[]?,
+	CompactChangeSpanTuple[]?,
+];
 
 export function hasCompactLinePayload(diff: CommitFileDiffResponse) {
 	return Boolean(diff.compactLinesGzipBase64);
@@ -36,7 +47,76 @@ export async function loadCompactLines(diff: CommitFileDiffResponse) {
 	}
 	const json = await decodeGzipBase64(diff.compactLinesGzipBase64);
 	const tuples = JSON.parse(json) as CompactLineTuple[];
-	return tuples.map(toDiffLine);
+	return tuples.map((tuple) => toDiffLine(tuple));
+}
+
+export async function loadReferencedCompactLines(
+	diff: CommitFileDiffResponse,
+	oldText: string,
+	newText: string,
+) {
+	if (diff.compactLineSchema === "tuple-v4-delta-refs:gzip-base64:utf-8") {
+		const json = await decodeGzipBase64(diff.compactLinesGzipBase64);
+		return decodeDeltaReferenceLines(
+			JSON.parse(json) as DeltaReferenceTuple[],
+			oldText,
+			newText,
+		);
+	}
+	if (diff.compactLineSchema !== "tuple-v3-refs:gzip-base64:utf-8") {
+		return loadCompactLines(diff);
+	}
+	const json = await decodeGzipBase64(diff.compactLinesGzipBase64);
+	const tuples = JSON.parse(json) as CompactLineTuple[];
+	const sources = {
+		oldLines: textLines(oldText),
+		newLines: textLines(newText),
+	};
+	return tuples.map((tuple) => toDiffLine(tuple, sources));
+}
+
+export function decodeDeltaReferenceLines(
+	tuples: DeltaReferenceTuple[],
+	oldText: string,
+	newText: string,
+) {
+	const oldLines = textLines(oldText);
+	const newLines = textLines(newText);
+	let previousOld = 0;
+	let previousNew = 0;
+	return tuples.map((tuple): CommitFileDiffLine => {
+		const oldLineNumber = applyDelta(tuple[0], previousOld);
+		const newLineNumber = applyDelta(tuple[1], previousNew);
+		if (oldLineNumber != null) previousOld = oldLineNumber;
+		if (newLineNumber != null) previousNew = newLineNumber;
+		return {
+			oldLineNumber,
+			newLineNumber,
+			oldText: lineAt(oldLines, oldLineNumber),
+			newText: lineAt(newLines, newLineNumber),
+			text: "",
+			changeType: changeType(tuple[2]),
+			oldSyntaxSpans: (tuple[3] ?? []).map(toSyntaxSpan),
+			newSyntaxSpans: (tuple[4] ?? []).map(toSyntaxSpan),
+			syntaxSpans: (tuple[5] ?? []).map(toSyntaxSpan),
+			oldChangeSpans: (tuple[6] ?? []).map(toChangeSpan),
+			newChangeSpans: (tuple[7] ?? []).map(toChangeSpan),
+			changeSpans: (tuple[8] ?? []).map(toChangeSpan),
+		};
+	});
+}
+
+function applyDelta(delta: number | null, previous: number) {
+	return delta == null ? null : previous + delta;
+}
+
+function changeType(value: number | string) {
+	if (typeof value === "string") return value;
+	return (
+		["Unchanged", "Modified", "Deleted", "Inserted", "Added", "Imaginary"][
+			value
+		] ?? ""
+	);
 }
 
 export async function decodeGzipBase64(value: string) {
@@ -50,12 +130,15 @@ export async function decodeGzipBase64(value: string) {
 	return new TextDecoder().decode(buffer);
 }
 
-export function toDiffLine(tuple: CompactLineTuple): CommitFileDiffLine {
+export function toDiffLine(
+	tuple: CompactLineTuple,
+	sources?: { oldLines: string[]; newLines: string[] },
+): CommitFileDiffLine {
 	return {
 		oldLineNumber: tuple[0],
 		newLineNumber: tuple[1],
-		oldText: tuple[2] ?? "",
-		newText: tuple[3] ?? "",
+		oldText: tuple[2] ?? lineAt(sources?.oldLines, tuple[0]),
+		newText: tuple[3] ?? lineAt(sources?.newLines, tuple[1]),
 		text: tuple[4] ?? "",
 		changeType: tuple[5] ?? "",
 		oldSyntaxSpans: (tuple[6] ?? []).map(toSyntaxSpan),
@@ -65,6 +148,14 @@ export function toDiffLine(tuple: CompactLineTuple): CommitFileDiffLine {
 		newChangeSpans: (tuple[10] ?? []).map(toChangeSpan),
 		changeSpans: (tuple[11] ?? []).map(toChangeSpan),
 	};
+}
+
+function textLines(text: string) {
+	return text.replaceAll("\r\n", "\n").split("\n");
+}
+
+function lineAt(lines: string[] | undefined, oneBasedIndex: number | null) {
+	return oneBasedIndex == null ? "" : (lines?.[oneBasedIndex - 1] ?? "");
 }
 
 function toSyntaxSpan([start, length, scope]: CompactSyntaxSpanTuple) {

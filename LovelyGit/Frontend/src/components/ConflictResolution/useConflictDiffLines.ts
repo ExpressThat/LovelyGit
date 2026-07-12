@@ -3,11 +3,12 @@ import type {
 	CommitFileDiffLine,
 	CommitFileDiffResponse,
 } from "@/generated/types";
-import { loadCompactLines } from "../CommitFileDiff/compactLinePayload";
+import { loadReferencedCompactLines } from "../CommitFileDiff/compactLinePayload";
 import { splitLines } from "./conflictDocument";
 
 export function useConflictDiffLines(
 	diff: CommitFileDiffResponse | null,
+	baseText: string,
 	sourceText: string,
 ) {
 	const [state, setState] = useState<
@@ -23,7 +24,7 @@ export function useConflictDiffLines(
 		}
 		let active = true;
 		setState({ status: "loading" });
-		loadCompactLines(diff)
+		loadReferencedCompactLines(diff, baseText, sourceText)
 			.then((lines) => {
 				if (active) setState({ status: "ready", lines });
 			})
@@ -41,7 +42,7 @@ export function useConflictDiffLines(
 		return () => {
 			active = false;
 		};
-	}, [diff, sourceText]);
+	}, [baseText, diff, sourceText]);
 
 	return state;
 }

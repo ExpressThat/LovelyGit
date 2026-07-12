@@ -40,6 +40,8 @@ public record ConflictResolutionResponse
 {
     public string Path { get; set; } = string.Empty;
     public string WorktreeFingerprint { get; set; } = string.Empty;
+    public string? CompactTextSchema { get; set; }
+    public string? CompactTextBundleGzipBase64 { get; set; }
     public ConflictFileVersion Base { get; set; } = new();
     public ConflictFileVersion Ours { get; set; } = new();
     public ConflictFileVersion Theirs { get; set; } = new();

@@ -54,6 +54,7 @@ export function ConflictSourcePanes({
 		>
 			<ConflictSourcePane
 				activeConflict={activeConflict}
+				baseText={conflict.base.text ?? ""}
 				choices={choices}
 				contextLines={contextLines}
 				diff={conflict.currentComparison}
@@ -70,6 +71,7 @@ export function ConflictSourcePanes({
 			/>
 			<ConflictSourcePane
 				activeConflict={activeConflict}
+				baseText={conflict.base.text ?? ""}
 				choices={choices}
 				contextLines={contextLines}
 				diff={conflict.incomingComparison}

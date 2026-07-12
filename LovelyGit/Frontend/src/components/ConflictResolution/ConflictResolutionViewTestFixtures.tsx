@@ -48,6 +48,8 @@ export function response(overrides?: {
 	return {
 		path: "src/file.txt",
 		worktreeFingerprint: "ABC123",
+		compactTextSchema: "",
+		compactTextBundleGzipBase64: "",
 		base: version(base),
 		ours: version(current),
 		theirs: version(incoming),
