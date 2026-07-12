@@ -7,9 +7,6 @@ import { sendRequestWithResponse } from "@/lib/commands";
 import { StartBisectDialog } from "./StartBisectDialog";
 
 vi.mock("@/lib/commands", () => ({ sendRequestWithResponse: vi.fn() }));
-vi.mock("@/lib/repositoryContext", () => ({
-	useRepositoryContext: () => ({ currentRepositoryId: "repo" }),
-}));
 vi.mock("sonner", () => ({
 	toast: { error: vi.fn(), loading: vi.fn(() => "toast"), success: vi.fn() },
 }));
@@ -27,7 +24,13 @@ describe("StartBisectDialog", () => {
 			isActive: true,
 			startingReference: "main",
 		});
-		render(<StartBisectDialog commit={row} onOpenChange={onOpenChange} />);
+		render(
+			<StartBisectDialog
+				commit={row}
+				onOpenChange={onOpenChange}
+				repositoryId="repo"
+			/>,
+		);
 
 		await user.click(screen.getByRole("button", { name: "Start bisect" }));
 

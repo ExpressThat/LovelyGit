@@ -23,7 +23,6 @@ import {
 	ContextMenuTrigger,
 } from "@/components/ui/context-menu";
 import type { CommitGraphRow } from "@/generated/types";
-import { useRepositoryContext } from "@/lib/repositoryContext";
 import { copyToClipboard } from "../utils/clipboard";
 import { shortHash } from "../utils/format";
 import { CommitComparisonMenuItem } from "./CommitComparisonMenuItem";
@@ -51,6 +50,7 @@ export function CommitContextMenu({
 	onInteractiveRebase,
 	onRevert,
 	onReset,
+	repositoryId,
 	row,
 }: {
 	children: ReactNode;
@@ -73,12 +73,11 @@ export function CommitContextMenu({
 	onInteractiveRebase: (row: CommitGraphRow) => void;
 	onRevert: (row: CommitGraphRow) => void;
 	onReset: (row: CommitGraphRow) => void;
+	repositoryId: string | null;
 	row: CommitGraphRow;
 }) {
-	const { currentRepositoryId: repositoryId } = useRepositoryContext();
 	const abbreviatedHash = shortHash(row.commit.hash);
-	const subject =
-		row.commit.message.split(/\r?\n/, 1)[0] || "(no commit message)";
+	const subject = row.commit.message || "(no commit message)";
 	const [bisectCommit, setBisectCommit] = useState<CommitGraphRow | null>(null);
 	return (
 		<>
@@ -240,6 +239,7 @@ export function CommitContextMenu({
 				<StartBisectDialog
 					commit={bisectCommit}
 					onOpenChange={(open) => !open && setBisectCommit(null)}
+					repositoryId={repositoryId}
 				/>
 			) : null}
 		</>

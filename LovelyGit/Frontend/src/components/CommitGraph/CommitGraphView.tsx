@@ -177,6 +177,7 @@ export function CommitGraphView({
 											onTagAction={tagController.manageTag}
 											currentBranchName={currentBranchName}
 											remotePrefixes={remotePrefixes}
+											repositoryId={repositoryId}
 											row={rows[item.index] ?? null}
 											rowIndex={item.index}
 											templateColumns={templateColumns}

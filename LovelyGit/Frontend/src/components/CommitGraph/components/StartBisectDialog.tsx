@@ -14,20 +14,20 @@ import {
 } from "@/components/ui/alert-dialog";
 import type { CommitGraphRow } from "@/generated/types";
 import { sendRequestWithResponse } from "@/lib/commands";
-import { useRepositoryContext } from "@/lib/repositoryContext";
 import { shortHash } from "../utils/format";
 
 export function StartBisectDialog({
 	commit,
 	onOpenChange,
+	repositoryId,
 }: {
 	commit: CommitGraphRow | null;
 	onOpenChange: (open: boolean) => void;
+	repositoryId: string | null;
 }) {
-	const { currentRepositoryId } = useRepositoryContext();
 	const [isStarting, setIsStarting] = useState(false);
 	const start = async () => {
-		if (!commit || !currentRepositoryId || isStarting) return;
+		if (!commit || !repositoryId || isStarting) return;
 		setIsStarting(true);
 		const toastId = toast.loading("Starting bisect session…");
 		try {
@@ -37,7 +37,7 @@ export function StartBisectDialog({
 					arguments: {
 						action: "Start",
 						goodCommit: commit.commit.hash,
-						repositoryId: currentRepositoryId,
+						repositoryId,
 					},
 				},
 				{ timeoutMs: 30_000 },
@@ -53,7 +53,7 @@ export function StartBisectDialog({
 			setIsStarting(false);
 		}
 	};
-	const subject = commit?.commit.message.split(/\r?\n/, 1)[0];
+	const subject = commit?.commit.message;
 	return (
 		<AlertDialog
 			onOpenChange={(open) => !isStarting && onOpenChange(open)}
@@ -82,7 +82,7 @@ export function StartBisectDialog({
 				<AlertDialogFooter>
 					<AlertDialogCancel disabled={isStarting}>Cancel</AlertDialogCancel>
 					<AlertDialogAction
-						disabled={isStarting || !currentRepositoryId}
+						disabled={isStarting || !repositoryId}
 						onClick={(event) => {
 							event.preventDefault();
 							void start();

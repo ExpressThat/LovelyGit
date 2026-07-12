@@ -40,6 +40,7 @@ export function CommitRow({
 	onSelect,
 	onTagAction,
 	remotePrefixes,
+	repositoryId,
 	row,
 	rowIndex,
 	tagMutationBusy,
@@ -75,6 +76,7 @@ export function CommitRow({
 	onSelect: (row: CommitGraphRow) => void;
 	onTagAction: (action: TagAction, tagName: string) => void;
 	remotePrefixes: string[];
+	repositoryId: string | null;
 	row: CommitGraphRow | null;
 	rowIndex: number;
 	tagMutationBusy: boolean;
@@ -174,6 +176,7 @@ export function CommitRow({
 			onInteractiveRebase={onInteractiveRebase}
 			onRevert={onRevert}
 			onReset={onReset}
+			repositoryId={repositoryId}
 			row={row}
 		>
 			{commitButton}

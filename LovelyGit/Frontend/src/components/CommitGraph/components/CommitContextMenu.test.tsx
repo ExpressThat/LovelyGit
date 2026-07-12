@@ -12,10 +12,6 @@ vi.mock("@/components/TopNavBar/components/RepositoryCommands", () => ({
 	openRemoteWebResource,
 }));
 
-vi.mock("@/lib/repositoryContext", () => ({
-	useRepositoryContext: () => ({ currentRepositoryId: "repo" }),
-}));
-
 describe("CommitContextMenu", () => {
 	it("offers a branch-aware reset for a historical commit", async () => {
 		const user = userEvent.setup();
@@ -23,6 +19,7 @@ describe("CommitContextMenu", () => {
 		renderMenu({ onReset });
 
 		fireEvent.contextMenu(screen.getByRole("button", { name: "commit row" }));
+		expect(await screen.findByText("Historical commit")).toBeVisible();
 		const action = await screen.findByText("Reset main to 1111111…");
 		expect(action.closest('[role="menuitem"]')).not.toHaveAttribute(
 			"aria-disabled",
@@ -215,6 +212,7 @@ function renderMenu({
 			onInteractiveRebase={onInteractiveRebase}
 			onReset={onReset}
 			onRevert={vi.fn()}
+			repositoryId="repo"
 			row={row}
 		>
 			<button type="button">commit row</button>
