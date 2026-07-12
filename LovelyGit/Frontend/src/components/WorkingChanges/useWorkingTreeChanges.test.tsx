@@ -49,11 +49,27 @@ describe("useWorkingTreeChanges preload", () => {
 
 	afterEach(() => vi.useRealTimers());
 
-	it("shows a cached summary immediately and defers revalidation", async () => {
+	it("keeps a complete cached summary until the watcher invalidates it", () => {
 		vi.useFakeTimers();
 		setCachedWorkingTreeSummary("repo", {
 			hasChanges: true,
 			isComplete: true,
+			totalCount: 7,
+		});
+		const { result } = renderHook(() => useWorkingTreeChanges("repo", false));
+
+		expect(result.current.totalCount).toBe(7);
+		expect(result.current.isSummaryLoaded).toBe(true);
+		expect(loadSummary).not.toHaveBeenCalled();
+		act(() => vi.advanceTimersByTime(CACHED_SUMMARY_REFRESH_DELAY_MS));
+		expect(loadSummary).not.toHaveBeenCalled();
+	});
+
+	it("revalidates an incomplete cached summary", async () => {
+		vi.useFakeTimers();
+		setCachedWorkingTreeSummary("repo", {
+			hasChanges: true,
+			isComplete: false,
 			totalCount: 7,
 		});
 		loadSummary.mockResolvedValue({
@@ -63,9 +79,6 @@ describe("useWorkingTreeChanges preload", () => {
 		});
 		const { result } = renderHook(() => useWorkingTreeChanges("repo", false));
 
-		expect(result.current.totalCount).toBe(7);
-		expect(result.current.isSummaryLoaded).toBe(true);
-		expect(loadSummary).not.toHaveBeenCalled();
 		act(() => vi.advanceTimersByTime(CACHED_SUMMARY_REFRESH_DELAY_MS));
 		await act(async () => Promise.resolve());
 
@@ -73,7 +86,7 @@ describe("useWorkingTreeChanges preload", () => {
 		expect(result.current.totalCount).toBe(0);
 	});
 
-	it("cancels an abandoned cached summary refresh", () => {
+	it("does not reread complete summaries while switching tabs", () => {
 		vi.useFakeTimers();
 		for (const repositoryId of ["repo-a", "repo-b"]) {
 			setCachedWorkingTreeSummary(repositoryId, {
@@ -90,8 +103,7 @@ describe("useWorkingTreeChanges preload", () => {
 		rerender({ repositoryId: "repo-b" });
 		act(() => vi.advanceTimersByTime(CACHED_SUMMARY_REFRESH_DELAY_MS));
 
-		expect(loadSummary).toHaveBeenCalledOnce();
-		expect(loadSummary).toHaveBeenCalledWith("repo-b", true);
+		expect(loadSummary).not.toHaveBeenCalled();
 	});
 
 	async function startBackgroundFullScan() {

@@ -138,7 +138,9 @@ export function useWorkingTreePreload({
 			setSummaryCount(cached.totalCount);
 			setIsDirty(false);
 			setHasSummaryLoaded(true);
-			scheduleLoad(CACHED_SUMMARY_REFRESH_DELAY_MS);
+			if (!cached.isComplete) {
+				scheduleLoad(CACHED_SUMMARY_REFRESH_DELAY_MS);
+			}
 		} else {
 			void loadSummary();
 		}
