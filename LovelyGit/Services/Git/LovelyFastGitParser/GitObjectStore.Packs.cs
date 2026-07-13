@@ -4,7 +4,7 @@ namespace ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser;
 
 internal sealed partial class GitObjectStore
 {
-    private async Task<GitObjectData?> TryReadPackedObjectAsync(
+    private async ValueTask<GitObjectData?> TryReadPackedObjectAsync(
         GitObjectId id,
         bool cacheObject,
         CancellationToken cancellationToken)
@@ -29,7 +29,7 @@ internal sealed partial class GitObjectStore
         return null;
     }
 
-    private async Task<PackedObjectReadResult> TryReadPackedObjectFromCurrentIndexesAsync(
+    private async ValueTask<PackedObjectReadResult> TryReadPackedObjectFromCurrentIndexesAsync(
         GitObjectId id,
         bool cacheObject,
         CancellationToken cancellationToken)
@@ -51,7 +51,9 @@ internal sealed partial class GitObjectStore
                 .ReadObjectAtAsync(
                     index.PackPath,
                     offset.Value,
-                    cacheObject ? ReadObjectAsync : ReadObjectWithoutCachingAsync,
+                    cacheObject
+                        ? (objectId, token) => new ValueTask<GitObjectData>(ReadObjectAsync(objectId, token))
+                        : ReadObjectWithoutCachingAsync,
                     cacheObject,
                     cancellationToken)
                 .ConfigureAwait(false);
@@ -61,7 +63,7 @@ internal sealed partial class GitObjectStore
         return new PackedObjectReadResult(null, PackIndexesStale: false);
     }
 
-    private async Task<IReadOnlyList<GitPackIndex>> GetPackIndexesAsync(
+    private async ValueTask<IReadOnlyList<GitPackIndex>> GetPackIndexesAsync(
         CancellationToken cancellationToken)
     {
         var cachedIndexes = Volatile.Read(ref _packIndexes);

@@ -2,7 +2,7 @@ using ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser;
 
 namespace ExpressThat.LovelyGit.Services.Git.CommitGraph.Details;
 
-internal sealed class BlobLineAnalyzer
+internal sealed partial class BlobLineAnalyzer
 {
     private readonly LovelyGitRepository _repository;
 
@@ -11,7 +11,7 @@ internal sealed class BlobLineAnalyzer
         _repository = repository;
     }
 
-    public async Task<BlobAnalysis> AnalyzeAsync(
+    public async ValueTask<BlobAnalysis> AnalyzeAsync(
         GitTreeFile file,
         CancellationToken cancellationToken)
     {
@@ -29,7 +29,7 @@ internal sealed class BlobLineAnalyzer
         }
     }
 
-    public async Task<BlobLineSummary> SummarizeAsync(
+    public async ValueTask<BlobLineSummary> SummarizeAsync(
         GitTreeFile file,
         CancellationToken cancellationToken)
     {
@@ -44,7 +44,7 @@ internal sealed class BlobLineAnalyzer
         }
     }
 
-    public async Task<BlobText> ReadTextAsync(
+    public async ValueTask<BlobText> ReadTextAsync(
         GitTreeFile file,
         CancellationToken cancellationToken)
     {
@@ -59,55 +59,6 @@ internal sealed class BlobLineAnalyzer
         {
             return new BlobText(IsBinary: true, Text: string.Empty);
         }
-    }
-
-    public static (uint Additions, uint Deletions) CalculateLineStats(
-        BlobAnalysis oldBlob,
-        BlobAnalysis newBlob)
-    {
-        if (oldBlob.IsBinary || newBlob.IsBinary)
-        {
-            return (0, 0);
-        }
-
-        var common = CountCommonLines(oldBlob.Lines, newBlob.Lines);
-        return ((uint)(newBlob.Lines.Length - common), (uint)(oldBlob.Lines.Length - common));
-    }
-
-    private static int CountCommonLines(LineFingerprint[] oldLines, LineFingerprint[] newLines)
-    {
-        if (oldLines.Length == 0 || newLines.Length == 0)
-        {
-            return 0;
-        }
-
-        var counts = new Dictionary<LineFingerprint, int>();
-        foreach (var line in oldLines)
-        {
-            counts.TryGetValue(line, out var count);
-            counts[line] = count + 1;
-        }
-
-        var common = 0;
-        foreach (var line in newLines)
-        {
-            if (!counts.TryGetValue(line, out var count) || count == 0)
-            {
-                continue;
-            }
-
-            common++;
-            if (count == 1)
-            {
-                counts.Remove(line);
-            }
-            else
-            {
-                counts[line] = count - 1;
-            }
-        }
-
-        return common;
     }
 
     private static bool IsBinary(ReadOnlySpan<byte> bytes)
@@ -148,35 +99,7 @@ internal sealed class BlobLineAnalyzer
         return new BlobLineSummary(IsBinary: false, LineCount: lineCount);
     }
 
-    private static LineFingerprint[] BuildLineFingerprints(byte[] bytes)
-    {
-        if (bytes.Length == 0)
-        {
-            return Array.Empty<LineFingerprint>();
-        }
-
-        var lines = new List<LineFingerprint>();
-        var start = 0;
-        for (var index = 0; index < bytes.Length; index++)
-        {
-            if (bytes[index] != (byte)'\n')
-            {
-                continue;
-            }
-
-            AddLineFingerprint(bytes.AsSpan(start, index - start), lines);
-            start = index + 1;
-        }
-
-        if (start < bytes.Length)
-        {
-            AddLineFingerprint(bytes.AsSpan(start), lines);
-        }
-
-        return lines.ToArray();
-    }
-
-    private async Task<byte[]> ReadBlobBytesAsync(
+    private async ValueTask<byte[]> ReadBlobBytesAsync(
         GitTreeFile file,
         CancellationToken cancellationToken)
     {
@@ -190,35 +113,11 @@ internal sealed class BlobLineAnalyzer
         return System.Text.Encoding.UTF8.GetString(bytes);
     }
 
-    private static void AddLineFingerprint(ReadOnlySpan<byte> line, List<LineFingerprint> lines)
-    {
-        if (line.Length > 0 && line[^1] == (byte)'\r')
-        {
-            line = line[..^1];
-        }
-
-        lines.Add(new LineFingerprint(HashLine(line), line.Length));
-    }
-
-    private static ulong HashLine(ReadOnlySpan<byte> line)
-    {
-        const ulong offset = 14695981039346656037UL;
-        const ulong prime = 1099511628211UL;
-
-        var hash = offset;
-        foreach (var value in line)
-        {
-            hash ^= value;
-            hash *= prime;
-        }
-
-        return hash;
-    }
 }
 
 internal readonly record struct LineFingerprint(ulong Hash, int Length);
 
-internal sealed record BlobAnalysis(bool IsBinary, LineFingerprint[] Lines);
+internal readonly record struct BlobAnalysis(bool IsBinary, LineFingerprint[] Lines);
 
 internal readonly record struct BlobLineSummary(bool IsBinary, int LineCount);
 

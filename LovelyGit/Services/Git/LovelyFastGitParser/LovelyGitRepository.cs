@@ -146,7 +146,7 @@ internal sealed partial class LovelyGitRepository : IDisposable
         return data.Data;
     }
 
-    internal async Task<byte[]> ReadBlobWithoutCachingAsync(
+    internal async ValueTask<byte[]> ReadBlobWithoutCachingAsync(
         GitObjectId id,
         CancellationToken cancellationToken)
     {

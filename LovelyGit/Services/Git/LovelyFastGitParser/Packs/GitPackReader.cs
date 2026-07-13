@@ -18,10 +18,10 @@ internal sealed partial class GitPackReader : IDisposable
         _objectFormat = objectFormat;
     }
 
-    public async Task<GitObjectData> ReadObjectAtAsync(
+    public async ValueTask<GitObjectData> ReadObjectAtAsync(
         string packPath,
         long offset,
-        Func<GitObjectId, CancellationToken, Task<GitObjectData>> readObjectAsync,
+        Func<GitObjectId, CancellationToken, ValueTask<GitObjectData>> readObjectAsync,
         bool cacheObject,
         CancellationToken cancellationToken)
     {

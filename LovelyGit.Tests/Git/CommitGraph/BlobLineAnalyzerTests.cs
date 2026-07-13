@@ -27,4 +27,31 @@ public sealed class BlobLineAnalyzerTests
         Assert.True(summary.IsBinary);
         Assert.Equal(0, summary.LineCount);
     }
+
+    [Fact]
+    public void CalculateLineStats_PreservesDuplicateLineMultiplicityOnSmallFiles()
+    {
+        var first = new LineFingerprint(1, 4);
+        var second = new LineFingerprint(2, 5);
+        var oldBlob = new BlobAnalysis(false, [first, first, second]);
+        var newBlob = new BlobAnalysis(false, [first, second, second]);
+
+        var stats = BlobLineAnalyzer.CalculateLineStats(oldBlob, newBlob);
+
+        Assert.Equal((1u, 1u), stats);
+    }
+
+    [Fact]
+    public void CalculateLineStats_PreservesDuplicateLineMultiplicityOnLargeFiles()
+    {
+        var shared = new LineFingerprint(1, 4);
+        var removed = new LineFingerprint(2, 5);
+        var added = new LineFingerprint(3, 5);
+        var oldBlob = new BlobAnalysis(false, [.. Enumerable.Repeat(shared, 16), removed]);
+        var newBlob = new BlobAnalysis(false, [.. Enumerable.Repeat(shared, 16), added]);
+
+        var stats = BlobLineAnalyzer.CalculateLineStats(oldBlob, newBlob);
+
+        Assert.Equal((1u, 1u), stats);
+    }
 }

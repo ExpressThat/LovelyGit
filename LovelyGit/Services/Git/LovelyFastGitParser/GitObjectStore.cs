@@ -68,7 +68,7 @@ internal sealed partial class GitObjectStore : IDisposable
         throw new FileNotFoundException($"Git object was not found: {id}");
     }
 
-    public async Task<GitObjectData> ReadObjectWithoutCachingAsync(
+    public async ValueTask<GitObjectData> ReadObjectWithoutCachingAsync(
         GitObjectId id,
         CancellationToken cancellationToken)
     {

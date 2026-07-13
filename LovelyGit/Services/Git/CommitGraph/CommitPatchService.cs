@@ -143,13 +143,13 @@ internal sealed class CommitPatchService
         }
     }
 
-    private static Task<BlobText> ReadBlobTextAsync(
+    private static ValueTask<BlobText> ReadBlobTextAsync(
         BlobLineAnalyzer analyzer,
         GitTreeFile? file,
         CancellationToken cancellationToken)
     {
         return file == null
-            ? Task.FromResult(new BlobText(false, string.Empty))
+            ? ValueTask.FromResult(new BlobText(false, string.Empty))
             : analyzer.ReadTextAsync(file, cancellationToken);
     }
 
