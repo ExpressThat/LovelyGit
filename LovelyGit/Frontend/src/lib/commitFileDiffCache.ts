@@ -1,10 +1,12 @@
 import type { CommitFileDiffResponse } from "@/generated/types";
+import { getCommitFileDiffPayloadWeight } from "./commitFileDiffCacheWeight";
 import {
 	getCompactDiffPayloadIdentity,
 	shareCompactDiffPayloadIdentity,
 } from "./compactDiffPayloadIdentity";
 
 const MAX_ENTRIES = 8;
+const MAX_CACHE_WEIGHT = 4_000_000;
 const MAX_CACHED_LINE_COUNT = 5_000;
 const MAX_CACHED_PAYLOAD_CHARACTERS = 2_000_000;
 const cache = new Map<string, CommitFileDiffResponse>();
@@ -46,10 +48,19 @@ export function cacheCommitFileDiff(
 	deleteCacheEntry(key);
 	trackOversizedEntry(key, response);
 	cache.set(key, response);
-	while (cache.size > MAX_ENTRIES) {
+	trimCache();
+}
+
+function trimCache() {
+	let stats = cachePayloadStats();
+	while (
+		cache.size > MAX_ENTRIES ||
+		(stats.identityCount > 1 && stats.weight > MAX_CACHE_WEIGHT)
+	) {
 		const oldest = cache.keys().next().value;
 		if (!oldest) break;
 		deleteCacheEntry(oldest);
+		stats = cachePayloadStats();
 	}
 }
 
@@ -110,4 +121,16 @@ function isOversized(response: CommitFileDiffResponse) {
 		lineCount > MAX_CACHED_LINE_COUNT ||
 		payloadCharacters > MAX_CACHED_PAYLOAD_CHARACTERS
 	);
+}
+
+function cachePayloadStats() {
+	const identities = new Set<object>();
+	let weight = 0;
+	for (const response of cache.values()) {
+		const payload = getCommitFileDiffPayloadWeight(response);
+		if (identities.has(payload.identity)) continue;
+		identities.add(payload.identity);
+		weight += payload.weight;
+	}
+	return { identityCount: identities.size, weight };
 }

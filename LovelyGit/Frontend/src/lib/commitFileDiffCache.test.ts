@@ -112,6 +112,53 @@ describe("commitFileDiffCache", () => {
 		expect(getCachedCommitFileDiff("second-side")?.viewMode).toBe("SideBySide");
 	});
 
+	it("evicts medium diffs when their combined decoded weight exceeds the budget", () => {
+		for (let index = 0; index < 5; index += 1) {
+			cacheCommitFileDiff(`medium-${index}`, {
+				...response(`${index}.txt`),
+				compactLineCount: 5_000,
+				compactLinesGzipBase64: "x",
+			});
+		}
+
+		expect(getCachedCommitFileDiff("medium-0")).toBeUndefined();
+		for (let index = 1; index < 5; index += 1) {
+			expect(getCachedCommitFileDiff(`medium-${index}`)).toBeDefined();
+		}
+	});
+
+	it("keeps both layouts when one active payload exceeds the total budget", () => {
+		const huge = {
+			...response("huge.txt"),
+			compactLineCount: 30_000,
+			compactLineSchema: "tuple-v4-delta-refs:gzip-base64:utf-8",
+			compactSourceBundleGzipBase64: "sources",
+		};
+
+		cacheCommitFileDiffViews("huge-combined", "huge-side", huge);
+
+		expect(getCachedCommitFileDiff("huge-combined")).toBe(huge);
+		expect(getCachedCommitFileDiff("huge-side")?.viewMode).toBe("SideBySide");
+	});
+
+	it("releases older normal payloads when a huge diff becomes active", () => {
+		for (let index = 0; index < 4; index += 1) {
+			cacheCommitFileDiff(`normal-${index}`, response(`${index}.txt`));
+		}
+		cacheCommitFileDiffViews("huge-combined", "huge-side", {
+			...response("huge.txt"),
+			compactLineCount: 30_000,
+			compactLineSchema: "tuple-v4-delta-refs:gzip-base64:utf-8",
+			compactSourceBundleGzipBase64: "sources",
+		});
+
+		for (let index = 0; index < 4; index += 1) {
+			expect(getCachedCommitFileDiff(`normal-${index}`)).toBeUndefined();
+		}
+		expect(getCachedCommitFileDiff("huge-combined")).toBeDefined();
+		expect(getCachedCommitFileDiff("huge-side")).toBeDefined();
+	});
+
 	it("evicts the least recently used response after eight variants", () => {
 		for (let index = 0; index < 8; index += 1) {
 			cacheCommitFileDiff(
