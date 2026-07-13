@@ -135,6 +135,26 @@ public sealed class WorkingTreeWatcherServicePolicyTests
         Assert.Equal(1, messaging.WorkingTreeChangedCount);
     }
 
+    [Theory]
+    [InlineData("Added", "Modified", 499, true)]
+    [InlineData("Added", "Modified", 501, false)]
+    [InlineData("Modified", "Modified", 99, true)]
+    [InlineData("Modified", "Modified", 101, false)]
+    [InlineData("Modified", "Deleted", 1, false)]
+    public void DuplicateObservedChangePolicy_OnlyCoalescesOneLogicalWrite(
+        string recentStatus,
+        string currentStatus,
+        int elapsedMilliseconds,
+        bool expected)
+    {
+        Assert.Equal(
+            expected,
+            WorkingTreeWatcherService.IsDuplicateObservedChange(
+                recentStatus,
+                currentStatus,
+                TimeSpan.FromMilliseconds(elapsedMilliseconds)));
+    }
+
     private static void CreateRepositoryLayout(string path)
     {
         var gitDirectory = Directory.CreateDirectory(Path.Combine(path, ".git"));

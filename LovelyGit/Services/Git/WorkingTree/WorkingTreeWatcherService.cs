@@ -11,6 +11,8 @@ namespace ExpressThat.LovelyGit.Services.Git.WorkingTree;
 internal sealed partial class WorkingTreeWatcherService : IDisposable
 {
     private static readonly TimeSpan WorkTreeDebounceDelay = TimeSpan.FromMilliseconds(50);
+    private static readonly TimeSpan AddedChangeSuppressionWindow = TimeSpan.FromMilliseconds(500);
+    private static readonly TimeSpan DuplicateChangeSuppressionWindow = TimeSpan.FromMilliseconds(100);
     private static readonly TimeSpan GraphDebounceDelay = TimeSpan.FromMilliseconds(200);
     private static readonly TimeSpan LargeWorkTreePollInterval = TimeSpan.FromSeconds(5);
     private const ulong FnvOffsetBasis = 14695981039346656037;
@@ -25,6 +27,8 @@ internal sealed partial class WorkingTreeWatcherService : IDisposable
     private CancellationTokenSource? _graphDebounceCancellation;
     private CancellationTokenSource? _workTreePollCancellation;
     private readonly List<WorkingTreeChangedFile> _pendingObservedChanges = new();
+    private readonly Dictionary<string, RecentObservedChange> _recentObservedChanges =
+        new(StringComparer.Ordinal);
     private Guid? _activeRepositoryId;
     private string? _activeRepositoryPath;
     private string? _activeGitDirectory;
@@ -35,6 +39,8 @@ internal sealed partial class WorkingTreeWatcherService : IDisposable
     private int _generation;
     private int _graphGeneration;
     private bool _disposed;
+
+    private readonly record struct RecentObservedChange(string Status, long Timestamp);
 
     public WorkingTreeWatcherService(
         INativeMessaging nativeMessaging,

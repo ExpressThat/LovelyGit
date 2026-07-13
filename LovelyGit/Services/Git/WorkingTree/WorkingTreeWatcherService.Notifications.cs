@@ -22,6 +22,10 @@ internal sealed partial class WorkingTreeWatcherService : IDisposable
 
             if (observedChange != null)
             {
+                if (ShouldSuppressObservedChange(observedChange))
+                {
+                    return;
+                }
                 AddPendingObservedChange(observedChange);
             }
 
@@ -59,6 +63,12 @@ internal sealed partial class WorkingTreeWatcherService : IDisposable
                 Generation = unchecked(++_generation),
                 ObservedChanges = [.. _pendingObservedChanges],
             };
+            var timestamp = Stopwatch.GetTimestamp();
+            foreach (var change in _pendingObservedChanges)
+            {
+                _recentObservedChanges[change.Path] = new RecentObservedChange(
+                    change.Status, timestamp);
+            }
             _pendingObservedChanges.Clear();
         }
 
@@ -214,6 +224,7 @@ internal sealed partial class WorkingTreeWatcherService : IDisposable
         _commitGraphSnapshot = null;
         _workTreeSnapshot = null;
         _pendingObservedChanges.Clear();
+        _recentObservedChanges.Clear();
     }
 
 }
