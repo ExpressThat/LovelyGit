@@ -17,6 +17,7 @@ describe("StashList", () => {
 	it("selects the exact stash for branch recovery", async () => {
 		const user = userEvent.setup();
 		const onBranch = vi.fn();
+		const onInspect = vi.fn();
 		render(
 			<StashList
 				busyAction={null}
@@ -25,6 +26,7 @@ describe("StashList", () => {
 				onApply={vi.fn()}
 				onBranch={onBranch}
 				onDrop={vi.fn()}
+				onInspect={onInspect}
 				onPop={vi.fn()}
 				stashes={[stash]}
 			/>,
@@ -32,5 +34,7 @@ describe("StashList", () => {
 
 		await user.click(screen.getByRole("button", { name: "Branch" }));
 		expect(onBranch).toHaveBeenCalledWith(stash);
+		await user.click(screen.getByRole("button", { name: "Inspect" }));
+		expect(onInspect).toHaveBeenCalledWith(stash);
 	});
 });

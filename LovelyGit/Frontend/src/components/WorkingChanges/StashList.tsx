@@ -1,6 +1,7 @@
 import {
 	Archive,
 	ArchiveRestore,
+	FileSearch,
 	GitBranch,
 	PackageOpen,
 	Trash2,
@@ -15,6 +16,7 @@ export function StashList({
 	onApply,
 	onBranch,
 	onDrop,
+	onInspect,
 	onPop,
 	stashes,
 }: {
@@ -24,6 +26,7 @@ export function StashList({
 	onApply: (stash: RepositoryStashItem) => void;
 	onBranch: (stash: RepositoryStashItem) => void;
 	onDrop: (stash: RepositoryStashItem) => void;
+	onInspect: (stash: RepositoryStashItem) => void;
 	onPop: (stash: RepositoryStashItem) => void;
 	stashes: RepositoryStashItem[];
 }) {
@@ -45,6 +48,7 @@ export function StashList({
 					onApply={() => onApply(stash)}
 					onBranch={() => onBranch(stash)}
 					onDrop={() => onDrop(stash)}
+					onInspect={() => onInspect(stash)}
 					onPop={() => onPop(stash)}
 					stash={stash}
 				/>
@@ -58,6 +62,7 @@ function StashRow({
 	onApply,
 	onBranch,
 	onDrop,
+	onInspect,
 	onPop,
 	stash,
 }: {
@@ -65,6 +70,7 @@ function StashRow({
 	onApply: () => void;
 	onBranch: () => void;
 	onDrop: () => void;
+	onInspect: () => void;
 	onPop: () => void;
 	stash: RepositoryStashItem;
 }) {
@@ -95,6 +101,9 @@ function StashRow({
 				</div>
 			</div>
 			<div className="flex justify-end gap-1">
+				<Button disabled={isBusy} onClick={onInspect} size="sm" variant="ghost">
+					<FileSearch aria-hidden="true" /> Inspect
+				</Button>
 				<Button disabled={isBusy} onClick={onBranch} size="sm" variant="ghost">
 					<GitBranch aria-hidden="true" /> Branch
 				</Button>

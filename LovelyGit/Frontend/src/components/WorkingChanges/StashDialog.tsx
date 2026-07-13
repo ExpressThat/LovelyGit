@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Archive, LoaderCircle, Trash2 } from "@/components/icons/lovelyIcons";
 import {
 	AlertDialog,
@@ -21,8 +22,9 @@ import {
 	DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { StashAction } from "@/generated/types";
+import { type RepositoryStashItem, StashAction } from "@/generated/types";
 import { BranchFromStashDialog } from "./BranchFromStashDialog";
+import { StashInspectionDialog } from "./StashInspectionDialog";
 import { StashList } from "./StashList";
 import { useStashDialog } from "./useStashDialog";
 
@@ -46,6 +48,8 @@ export function StashDialog({
 			? undefined
 			: { onOpenChange, open: controlledOpen };
 	const stash = useStashDialog(repositoryId, onRepositoryChanged, controlled);
+	const [inspectionTarget, setInspectionTarget] =
+		useState<RepositoryStashItem | null>(null);
 	const {
 		branchNames,
 		branchTarget,
@@ -164,6 +168,7 @@ export function StashDialog({
 							onApply={(item) => void runAction(StashAction.Apply, item)}
 							onBranch={setBranchTarget}
 							onDrop={setDropTarget}
+							onInspect={setInspectionTarget}
 							onPop={(item) => void runAction(StashAction.Pop, item)}
 							stashes={stashes}
 						/>
@@ -217,6 +222,11 @@ export function StashDialog({
 					)
 				}
 				stash={branchTarget}
+			/>
+			<StashInspectionDialog
+				onClose={() => setInspectionTarget(null)}
+				repositoryId={repositoryId}
+				stash={inspectionTarget}
 			/>
 		</>
 	);

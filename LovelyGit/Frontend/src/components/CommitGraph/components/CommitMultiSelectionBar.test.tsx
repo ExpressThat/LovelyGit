@@ -34,7 +34,7 @@ describe("CommitMultiSelectionBar", () => {
 		expect(onCopy).toHaveBeenCalledOnce();
 
 		await userEvent.click(screen.getByRole("button", { name: "Patch series" }));
-		await userEvent.click(screen.getByText("Save patch series…"));
+		await userEvent.click(await screen.findByText("Save patch series…"));
 		expect(onSave).toHaveBeenCalledOnce();
 	});
 });
