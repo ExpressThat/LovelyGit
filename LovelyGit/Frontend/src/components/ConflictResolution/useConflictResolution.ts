@@ -16,8 +16,8 @@ import {
 	hasConflictMarkers,
 	renderConflictResult,
 } from "./conflictDocument";
-import { loadConflictTextPayloads } from "./conflictTextPayload";
 import { ConflictResolutionVariantCache } from "./conflictResolutionVariantCache";
+import { loadConflictTextPayloads } from "./conflictTextPayload";
 import { verifyExternalConflictResolved } from "./externalConflictVerification";
 
 type LoadState =
@@ -58,7 +58,7 @@ export function useConflictResolution({
 			variantCache.current.load(
 				`${repositoryId}\0${file.path}`,
 				ignoreWhitespace,
-				async () => {
+				async (sibling) => {
 					const conflict = await sendRequestWithResponse({
 						commandType: "GetConflictResolution",
 						arguments: {
@@ -68,7 +68,7 @@ export function useConflictResolution({
 							ignoreWhitespace,
 						},
 					});
-					return conflict ? loadConflictTextPayloads(conflict) : null;
+					return conflict ? loadConflictTextPayloads(conflict, sibling) : null;
 				},
 			),
 		[file.path, ignoreWhitespace, repositoryId],

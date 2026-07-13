@@ -14,8 +14,11 @@ const LEGACY_BUNDLE_SCHEMA = "interleaved-lines-v2:gzip-base64:utf-8";
 
 export async function loadConflictTextPayloads(
 	conflict: ConflictResolutionResponse,
+	sibling?: ConflictResolutionResponse | null,
 ) {
 	if (conflict.compactTextBundleGzipBase64) {
+		const reusable = reusableBundleTexts(conflict, sibling);
+		if (reusable) return withTexts(conflict, reusable);
 		if (conflict.compactTextSchema === BINARY_BUNDLE_SCHEMA) {
 			const bytes = await decodeGzipBase64Bytes(
 				conflict.compactTextBundleGzipBase64,
@@ -44,6 +47,29 @@ export async function loadConflictTextPayloads(
 		loadVersion(conflict.result),
 	]);
 	return { ...conflict, base, ours, theirs, result };
+}
+
+function reusableBundleTexts(
+	conflict: ConflictResolutionResponse,
+	sibling?: ConflictResolutionResponse | null,
+) {
+	if (
+		!sibling ||
+		conflict.worktreeFingerprint !== sibling.worktreeFingerprint ||
+		conflict.compactTextSchema !== sibling.compactTextSchema ||
+		conflict.compactTextBundleGzipBase64 !== sibling.compactTextBundleGzipBase64
+	) {
+		return null;
+	}
+	const texts = [
+		sibling.base.text,
+		sibling.ours.text,
+		sibling.theirs.text,
+		sibling.result.text,
+	];
+	return texts.every((text) => typeof text === "string")
+		? (texts as string[])
+		: null;
 }
 
 function withTexts(conflict: ConflictResolutionResponse, texts: string[]) {

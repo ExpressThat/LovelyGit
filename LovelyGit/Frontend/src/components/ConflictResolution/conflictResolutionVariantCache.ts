@@ -10,7 +10,9 @@ export class ConflictResolutionVariantCache {
 	load(
 		owner: string,
 		ignoreWhitespace: boolean,
-		loader: () => Promise<ConflictResolutionResponse | null>,
+		loader: (
+			sibling: ConflictResolutionResponse | null,
+		) => Promise<ConflictResolutionResponse | null>,
 	) {
 		if (owner !== this.owner) {
 			this.owner = owner;
@@ -19,7 +21,9 @@ export class ConflictResolutionVariantCache {
 		const cached = this.variants.get(ignoreWhitespace);
 		if (cached) return cached;
 
-		const pending = loader().catch((error: unknown) => {
+		const sibling = this.variants.get(!ignoreWhitespace);
+		const pending = (async () =>
+			loader(sibling ? await sibling : null))().catch((error: unknown) => {
 			this.variants.delete(ignoreWhitespace);
 			throw error;
 		});

@@ -28,6 +28,17 @@ describe("ConflictResolutionVariantCache", () => {
 		expect(loader).toHaveBeenCalledTimes(2);
 	});
 
+	it("passes the prepared opposite variant to a new loader", async () => {
+		const cache = new ConflictResolutionVariantCache();
+		const exact = {} as ConflictResolutionResponse;
+		await cache.load("owner", false, async () => exact);
+		const ignored = vi.fn().mockResolvedValue({} as ConflictResolutionResponse);
+
+		await cache.load("owner", true, ignored);
+
+		expect(ignored).toHaveBeenCalledWith(exact);
+	});
+
 	it("allows retry after a failed request", async () => {
 		const cache = new ConflictResolutionVariantCache();
 		const loader = vi

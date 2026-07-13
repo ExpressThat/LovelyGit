@@ -47,6 +47,29 @@ describe("conflictTextPayload", () => {
 		]).toEqual(["base", "current", "incoming", "result"]);
 	});
 
+	it("reuses decoded text when a whitespace variant has the same bundle", async () => {
+		const sibling = response();
+		const conflict = response();
+		for (const item of [sibling, conflict]) {
+			item.worktreeFingerprint = "same-version";
+			item.compactTextSchema = "interleaved-lines-v3:gzip-base64:varint-utf-8";
+			item.compactTextBundleGzipBase64 = "shared-bundle";
+		}
+		const texts = ["large base", "large current", "large incoming", "result"];
+		[sibling.base, sibling.ours, sibling.theirs, sibling.result].forEach(
+			(version, index) => {
+				version.text = texts[index];
+			},
+		);
+
+		const loaded = await loadConflictTextPayloads(conflict, sibling);
+
+		expect(loaded.base.text).toBe(sibling.base.text);
+		expect(loaded.ours.text).toBe(sibling.ours.text);
+		expect(loaded.theirs.text).toBe(sibling.theirs.text);
+		expect(loaded.result.text).toBe(sibling.result.text);
+	});
+
 	it("restores every compressed conflict version", async () => {
 		const conflict = response();
 		const expected = [
