@@ -1,6 +1,6 @@
-using System.Security.Cryptography;
 using System.Text;
 using ExpressThat.LovelyGit.Services.Git.CommitGraph.Models;
+using ExpressThat.LovelyGit.Services.Git.Diffing;
 using ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser;
 using ExpressThat.LovelyGit.Services.Git.WorkingTree.Models;
 
@@ -18,6 +18,7 @@ internal sealed partial class ConflictResolutionService
         bool ignoreWhitespace,
         CancellationToken cancellationToken)
     {
+        using var readTrace = ConflictReadTrace.Start(path, ignoreWhitespace);
         path = WorkingTreePath.NormalizeRelative(path);
         var repositoryPaths = await GitRepositoryDiscovery
             .ResolveRepositoryPathsAsync(repositoryPath, cancellationToken)
@@ -28,6 +29,7 @@ internal sealed partial class ConflictResolutionService
         var resultPath = WorkingTreePath.Resolve(repository.WorkTreeDirectory, path);
         var fingerprint = await ConflictFingerprintAsync(resultPath, entries, cancellationToken)
             .ConfigureAwait(false);
+        readTrace.Mark("repository-and-fingerprint");
         _responseCache.RemoveStale(repositoryPath, path, fingerprint);
         if (_responseCache.TryGet(
                 repositoryPath,
@@ -47,6 +49,7 @@ internal sealed partial class ConflictResolutionService
                 out var sibling))
         {
             var variant = BuildCachedVariant(sibling, ignoreWhitespace);
+            readTrace.Mark("sibling-variant");
             _responseCache.Set(repositoryPath, path, fingerprint, ignoreWhitespace, variant);
             return variant;
         }
@@ -58,28 +61,31 @@ internal sealed partial class ConflictResolutionService
         var theirs = await ReadVersionAsync(repository, entries.GetValueOrDefault(3), cancellationToken)
             .ConfigureAwait(false);
         var result = await ReadWorktreeVersionAsync(resultPath, cancellationToken).ConfigureAwait(false);
+        readTrace.Mark("read-versions");
         var currentSource = CreateCurrentSource(repository, entries.GetValueOrDefault(2));
         var incomingSource = await CreateIncomingSourceAsync(
             repository,
             repositoryPaths.WorktreeGitDirectory,
             entries.GetValueOrDefault(3),
             cancellationToken).ConfigureAwait(false);
+        readTrace.Mark("source-metadata");
         var canBuildTextMerge = baseVersion.Text != null &&
             ours.Text != null &&
             theirs.Text != null &&
             result.Text != null;
         var currentHunkModel = canBuildTextMerge
-            ? ConflictHunkBuilder.BuildModel(baseVersion.Text!, ours.Text!)
+            ? ConflictHunkBuilder.BuildLineModel(baseVersion.Text!, ours.Text!)
             : null;
         var incomingHunkModel = canBuildTextMerge
-            ? ConflictHunkBuilder.BuildModel(baseVersion.Text!, theirs.Text!)
+            ? ConflictHunkBuilder.BuildLineModel(baseVersion.Text!, theirs.Text!)
             : null;
         var currentComparisonModel = canBuildTextMerge && ignoreWhitespace
-            ? ConflictHunkBuilder.BuildModel(baseVersion.Text!, ours.Text!, ignoreWhitespace: true)
+            ? ConflictHunkBuilder.BuildLineModel(baseVersion.Text!, ours.Text!, ignoreWhitespace: true)
             : currentHunkModel;
         var incomingComparisonModel = canBuildTextMerge && ignoreWhitespace
-            ? ConflictHunkBuilder.BuildModel(baseVersion.Text!, theirs.Text!, ignoreWhitespace: true)
+            ? ConflictHunkBuilder.BuildLineModel(baseVersion.Text!, theirs.Text!, ignoreWhitespace: true)
             : incomingHunkModel;
+        readTrace.Mark("diff-models");
 
         var response = new ConflictResolutionResponse
         {
@@ -106,9 +112,11 @@ internal sealed partial class ConflictResolutionService
                 ? BuildBaseComparison(path, baseVersion.Text!, theirs.Text!, incomingComparisonModel!)
                 : null,
         };
+        readTrace.Mark("hunks-and-rendering");
         ConflictComparisonPayloadBuilder.Compact(response.CurrentComparison);
         ConflictComparisonPayloadBuilder.Compact(response.IncomingComparison);
         ConflictTextPayloadBuilder.Compact(response);
+        readTrace.Mark("payload-compaction");
         _responseCache.Set(repositoryPath, path, fingerprint, ignoreWhitespace, response);
         return response;
     }
@@ -117,15 +125,10 @@ internal sealed partial class ConflictResolutionService
         string path,
         string baseText,
         string sourceText,
-        DiffPlex.DiffBuilder.Model.SideBySideDiffModel model)
+        LineDiffModel model)
     {
-        return WorkingTreeChangeService.BuildPreparedSideBySideResponse(
-            "CONFLICT",
-            path,
-            "Unmerged",
-            baseText,
-            sourceText,
-            model);
+        return WorkingTreeChangeService.BuildPreparedLineDiffResponse(
+            "CONFLICT", path, "Unmerged", baseText, sourceText, model);
     }
 
     private static async Task<Dictionary<int, GitIndexEntry>> ReadConflictEntriesAsync(
@@ -214,27 +217,4 @@ internal sealed partial class ConflictResolutionService
         };
     }
 
-    private static async Task<string> FingerprintAsync(string path, CancellationToken cancellationToken)
-    {
-        if (!File.Exists(path))
-        {
-            return "missing";
-        }
-
-        await using var stream = File.Open(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
-        var hash = await SHA256.HashDataAsync(stream, cancellationToken).ConfigureAwait(false);
-        return Convert.ToHexString(hash);
-    }
-
-    private static async Task<string> ConflictFingerprintAsync(
-        string path,
-        IReadOnlyDictionary<int, GitIndexEntry> entries,
-        CancellationToken cancellationToken)
-    {
-        var worktreeFingerprint = await FingerprintAsync(path, cancellationToken).ConfigureAwait(false);
-        var descriptor = string.Join(
-            ';',
-            entries.OrderBy(entry => entry.Key).Select(entry => $"{entry.Key}:{entry.Value.ObjectId}"));
-        return Convert.ToHexString(SHA256.HashData(Encoding.ASCII.GetBytes($"{worktreeFingerprint}|{descriptor}")));
-    }
 }

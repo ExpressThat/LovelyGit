@@ -3,7 +3,7 @@ using ExpressThat.LovelyGit.Services.Git.Diffing;
 
 namespace LovelyGit.Tests.Git.Diffing;
 
-public sealed class FastLineDiffBuilderTests
+public sealed class LargeDiffPayloadBuilderTests
 {
     [Fact]
     public void Build_ReturnsFullCombinedDiffWithoutTruncatingLargeInput()
@@ -11,7 +11,7 @@ public sealed class FastLineDiffBuilderTests
         var oldText = string.Join('\n', Enumerable.Range(0, DiffInputGuard.FastDiffInputLines + 1).Select(index => $"line {index}"));
         var newText = oldText.Replace("line 10", "changed 10", StringComparison.Ordinal);
 
-        var response = FastLineDiffBuilder.Build("hash", "large.txt", "Modified", CommitDiffViewMode.Combined, false, oldText, newText);
+        var response = LargeDiffPayloadBuilder.Build("hash", "large.txt", "Modified", CommitDiffViewMode.Combined, false, oldText, newText);
 
         Assert.False(response.IsTruncated);
         Assert.True(response.Lines.Count > DiffInputGuard.FastDiffInputLines);
@@ -22,7 +22,7 @@ public sealed class FastLineDiffBuilderTests
     [Fact]
     public void Build_ReturnsSideBySideInsertionsAndDeletes()
     {
-        var response = FastLineDiffBuilder.Build(
+        var response = LargeDiffPayloadBuilder.Build(
             "hash",
             "file.txt",
             "Modified",
@@ -44,7 +44,7 @@ public sealed class FastLineDiffBuilderTests
     {
         var newText = string.Join('\n', Enumerable.Range(1, DiffInputGuard.FastDiffInputLines + 1).Select(index => $"line {index}"));
 
-        var response = FastLineDiffBuilder.Build("hash", "large.txt", "Added", CommitDiffViewMode.SideBySide, false, string.Empty, newText);
+        var response = LargeDiffPayloadBuilder.Build("hash", "large.txt", "Added", CommitDiffViewMode.SideBySide, false, string.Empty, newText);
 
         Assert.Empty(response.Lines);
         Assert.Equal("Inserted", response.VirtualChangeType);

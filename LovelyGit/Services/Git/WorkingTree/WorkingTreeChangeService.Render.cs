@@ -1,15 +1,6 @@
-using System.Security.Cryptography;
 using ColorCode;
-using ColorCode.Common;
-using ColorCode.Compilation;
-using ColorCode.Parsing;
-using DiffPlex;
-using DiffPlex.DiffBuilder;
-using DiffPlex.DiffBuilder.Model;
 using ExpressThat.LovelyGit.Services.Git.CommitGraph.Models;
 using ExpressThat.LovelyGit.Services.Git.Diffing;
-using ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser;
-using ExpressThat.LovelyGit.Services.Git.WorkingTree.Models;
 
 namespace ExpressThat.LovelyGit.Services.Git.WorkingTree;
 
@@ -22,19 +13,23 @@ internal sealed partial class WorkingTreeChangeService
         string oldText,
         string newText,
         ILanguage? language,
-        bool ignoreWhitespace)
-    {
-        var model = new SideBySideDiffBuilder(new Differ()).BuildDiffModel(oldText, newText, ignoreWhitespace);
-        return BuildSideBySideResponse(commitHash, path, status, oldText, newText, language, model);
-    }
+        bool ignoreWhitespace) =>
+        BuildSideBySideResponse(
+            commitHash,
+            path,
+            status,
+            oldText,
+            newText,
+            language,
+            LineDiffEngine.Build(oldText, newText, ignoreWhitespace));
 
-    internal static CommitFileDiffResponse BuildPreparedSideBySideResponse(
+    internal static CommitFileDiffResponse BuildPreparedLineDiffResponse(
         string commitHash,
         string path,
         string status,
         string oldText,
         string newText,
-        SideBySideDiffModel model)
+        LineDiffModel model)
     {
         var language = oldText.Length + newText.Length <= MaxSyntaxHighlightedCharacters
             ? ResolveLanguage(path)
@@ -49,62 +44,33 @@ internal sealed partial class WorkingTreeChangeService
         string oldText,
         string newText,
         ILanguage? language,
-        SideBySideDiffModel model)
+        LineDiffModel model)
     {
-        var syntaxSpanBuilder = SyntaxSpanBuilder.Create(
+        var syntax = SyntaxSpanBuilder.Create(
             language,
             oldText.Length + newText.Length,
             MaxSyntaxHighlightedCharacters,
             MaxSyntaxHighlightedLineLength);
-        var lineCount = Math.Max(model.OldText.Lines.Count, model.NewText.Lines.Count);
-        var lines = new List<CommitFileDiffLine>(lineCount);
-        for (var index = 0; index < lineCount; index++)
+        var lines = new List<CommitFileDiffLine>(model.Rows.Count);
+        foreach (var row in model.Rows)
         {
-            var oldLine = index < model.OldText.Lines.Count ? model.OldText.Lines[index] : null;
-            var newLine = index < model.NewText.Lines.Count ? model.NewText.Lines[index] : null;
-            var oldLineText = oldLine?.Text ?? string.Empty;
-            var newLineText = newLine?.Text ?? string.Empty;
+            var oldLine = row.OldIndex is { } oldIndex ? model.OldLines[oldIndex] : string.Empty;
+            var newLine = row.NewIndex is { } newIndex ? model.NewLines[newIndex] : string.Empty;
+            var spans = LineDiffRendering.ChangeSpans(oldLine, newLine, row);
             lines.Add(new CommitFileDiffLine
             {
-                OldLineNumber = oldLine?.Position,
-                NewLineNumber = newLine?.Position,
-                OldText = oldLineText,
-                NewText = newLineText,
-                ChangeType = GetSideBySideChangeType(oldLine, newLine),
-                OldSyntaxSpans = BuildSyntaxSpans(oldLineText, syntaxSpanBuilder),
-                NewSyntaxSpans = BuildSyntaxSpans(newLineText, syntaxSpanBuilder),
-                OldChangeSpans = BuildChangeSpans(oldLine),
-                NewChangeSpans = BuildChangeSpans(newLine),
+                OldLineNumber = row.OldIndex + 1,
+                NewLineNumber = row.NewIndex + 1,
+                OldText = oldLine,
+                NewText = newLine,
+                ChangeType = LineDiffRendering.ChangeType(row),
+                OldSyntaxSpans = BuildSyntaxSpans(oldLine, syntax),
+                NewSyntaxSpans = BuildSyntaxSpans(newLine, syntax),
+                OldChangeSpans = spans.Old,
+                NewChangeSpans = spans.New,
             });
         }
-
-        return new CommitFileDiffResponse
-        {
-            CommitHash = commitHash,
-            Path = path,
-            Status = status,
-            ViewMode = CommitDiffViewMode.SideBySide,
-            IsBinary = false,
-            HasDifferences = model.OldText.HasDifferences || model.NewText.HasDifferences,
-            Lines = lines,
-        };
-    }
-
-    private static CommitFileDiffResponse BuildUnreadableFileDiff(
-        string commitHash,
-        string path,
-        string status,
-        CommitDiffViewMode viewMode)
-    {
-        return new CommitFileDiffResponse
-        {
-            CommitHash = commitHash,
-            Path = path,
-            Status = status,
-            ViewMode = viewMode,
-            IsBinary = true,
-            HasDifferences = true,
-        };
+        return Response(commitHash, path, status, CommitDiffViewMode.SideBySide, model.HasDifferences, lines);
     }
 
     private static CommitFileDiffResponse BuildCombinedResponse(
@@ -116,54 +82,75 @@ internal sealed partial class WorkingTreeChangeService
         ILanguage? language,
         bool ignoreWhitespace)
     {
-        var model = new InlineDiffBuilder(new Differ()).BuildDiffModel(oldText, newText, ignoreWhitespace);
-        var syntaxSpanBuilder = SyntaxSpanBuilder.Create(
+        var model = LineDiffEngine.Build(oldText, newText, ignoreWhitespace);
+        var syntax = SyntaxSpanBuilder.Create(
             language,
             oldText.Length + newText.Length,
             MaxSyntaxHighlightedCharacters,
             MaxSyntaxHighlightedLineLength);
-        var oldLineNumber = 1;
-        var newLineNumber = 1;
-        var lines = new List<CommitFileDiffLine>(model.Lines.Count);
-        foreach (var line in model.Lines)
+        var lines = new List<CommitFileDiffLine>(model.Rows.Count + model.Blocks.Count);
+        foreach (var row in model.Rows)
         {
-            int? oldLine = null;
-            int? newLine = null;
-            if (line.Type == ChangeType.Inserted)
+            if (!row.IsChanged)
             {
-                newLine = newLineNumber++;
+                var text = model.OldLines[row.OldIndex!.Value];
+                lines.Add(CombinedLine(row.OldIndex + 1, row.NewIndex + 1, text, "Unchanged", syntax, []));
+                continue;
             }
-            else if (line.Type == ChangeType.Deleted)
-            {
-                oldLine = oldLineNumber++;
-            }
-            else
-            {
-                oldLine = oldLineNumber++;
-                newLine = newLineNumber++;
-            }
-
-            lines.Add(new CommitFileDiffLine
-            {
-                OldLineNumber = oldLine,
-                NewLineNumber = newLine,
-                Text = line.Text,
-                ChangeType = line.Type.ToString(),
-                SyntaxSpans = BuildSyntaxSpans(line.Text, syntaxSpanBuilder),
-                ChangeSpans = BuildChangeSpans(line),
-            });
+            var oldLine = row.OldIndex is { } oldIndex ? model.OldLines[oldIndex] : string.Empty;
+            var newLine = row.NewIndex is { } newIndex ? model.NewLines[newIndex] : string.Empty;
+            var spans = LineDiffRendering.ChangeSpans(oldLine, newLine, row);
+            if (row.OldIndex is not null)
+                lines.Add(CombinedLine(row.OldIndex + 1, null, oldLine, "Deleted", syntax, spans.Old));
+            if (row.NewIndex is not null)
+                lines.Add(CombinedLine(null, row.NewIndex + 1, newLine, "Inserted", syntax, spans.New));
         }
-
-        return new CommitFileDiffResponse
-        {
-            CommitHash = commitHash,
-            Path = path,
-            Status = status,
-            ViewMode = CommitDiffViewMode.Combined,
-            IsBinary = false,
-            HasDifferences = model.HasDifferences,
-            Lines = lines,
-        };
+        return Response(commitHash, path, status, CommitDiffViewMode.Combined, model.HasDifferences, lines);
     }
 
+    private static CommitFileDiffLine CombinedLine(
+        int? oldLine,
+        int? newLine,
+        string text,
+        string type,
+        SyntaxSpanBuilder syntax,
+        List<CommitFileDiffChangeSpan> spans) => new()
+    {
+        OldLineNumber = oldLine,
+        NewLineNumber = newLine,
+        Text = text,
+        ChangeType = type,
+        SyntaxSpans = BuildSyntaxSpans(text, syntax),
+        ChangeSpans = spans,
+    };
+
+    private static CommitFileDiffResponse Response(
+        string hash,
+        string path,
+        string status,
+        CommitDiffViewMode mode,
+        bool hasDifferences,
+        List<CommitFileDiffLine> lines) => new()
+    {
+        CommitHash = hash,
+        Path = path,
+        Status = status,
+        ViewMode = mode,
+        HasDifferences = hasDifferences,
+        Lines = lines,
+    };
+
+    private static CommitFileDiffResponse BuildUnreadableFileDiff(
+        string hash,
+        string path,
+        string status,
+        CommitDiffViewMode mode) => new()
+    {
+        CommitHash = hash,
+        Path = path,
+        Status = status,
+        ViewMode = mode,
+        IsBinary = true,
+        HasDifferences = true,
+    };
 }

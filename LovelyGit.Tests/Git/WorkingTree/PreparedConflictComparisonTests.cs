@@ -22,13 +22,13 @@ public sealed class PreparedConflictComparisonTests
             Encoding.UTF8.GetBytes(newText),
             compact: false);
 
-        var actual = WorkingTreeChangeService.BuildPreparedSideBySideResponse(
+        var actual = WorkingTreeChangeService.BuildPreparedLineDiffResponse(
             "CONFLICT",
             "sample.cs",
             "Unmerged",
             oldText,
             newText,
-            ConflictHunkBuilder.BuildModel(oldText, newText));
+            ConflictHunkBuilder.BuildLineModel(oldText, newText));
 
         Assert.Equal(expected.HasDifferences, actual.HasDifferences);
         Assert.Equal(JsonSerializer.Serialize(expected.Lines), JsonSerializer.Serialize(actual.Lines));
@@ -39,9 +39,9 @@ public sealed class PreparedConflictComparisonTests
     {
         const string oldText = "value = 1;\n";
         const string newText = "value  =  1;\n";
-        var model = ConflictHunkBuilder.BuildModel(oldText, newText, ignoreWhitespace: true);
+        var model = ConflictHunkBuilder.BuildLineModel(oldText, newText, ignoreWhitespace: true);
 
-        var actual = WorkingTreeChangeService.BuildPreparedSideBySideResponse(
+        var actual = WorkingTreeChangeService.BuildPreparedLineDiffResponse(
             "CONFLICT",
             "sample.cs",
             "Unmerged",

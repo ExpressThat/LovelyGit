@@ -3,9 +3,6 @@ using ColorCode;
 using ColorCode.Common;
 using ColorCode.Compilation;
 using ColorCode.Parsing;
-using DiffPlex;
-using DiffPlex.DiffBuilder;
-using DiffPlex.DiffBuilder.Model;
 using ExpressThat.LovelyGit.Services.Diagnostics;
 using ExpressThat.LovelyGit.Services.Git.CommitGraph.Models;
 using ExpressThat.LovelyGit.Services.Git.Diffing;
@@ -151,7 +148,7 @@ internal sealed partial class WorkingTreeChangeService
 
         if (oldBytes.Length == 0 && ShouldUseCompressedVirtualBytes(newBytes))
         {
-            return FastLineDiffBuilder.BuildVirtualTextBytes(
+            return LargeDiffPayloadBuilder.BuildVirtualTextBytes(
                 commitHash,
                 path,
                 status,
@@ -162,7 +159,7 @@ internal sealed partial class WorkingTreeChangeService
 
         if (newBytes.Length == 0 && ShouldUseCompressedVirtualBytes(oldBytes))
         {
-            return FastLineDiffBuilder.BuildVirtualTextBytes(
+            return LargeDiffPayloadBuilder.BuildVirtualTextBytes(
                 commitHash,
                 path,
                 status,
@@ -175,7 +172,7 @@ internal sealed partial class WorkingTreeChangeService
         var newText = System.Text.Encoding.UTF8.GetString(newBytes);
         if (DiffInputGuard.ShouldUseFastDiff(oldText, newText))
         {
-            var fastResponse = FastLineDiffBuilder.Build(
+            var fastResponse = LargeDiffPayloadBuilder.Build(
                 commitHash,
                 path,
                 status,

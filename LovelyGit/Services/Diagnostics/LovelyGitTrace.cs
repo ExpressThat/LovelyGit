@@ -15,6 +15,8 @@ internal static class LovelyGitTrace
         Path.GetTempPath(),
         "LovelyGitNativeTrace.log");
 
+    public static bool Enabled => IsEnabled;
+
     public static IDisposable Time(string name, string? detail = null)
     {
         return IsEnabled ? new Scope(name, detail) : NoopScope.Instance;

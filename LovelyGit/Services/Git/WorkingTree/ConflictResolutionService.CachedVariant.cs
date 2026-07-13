@@ -23,8 +23,8 @@ internal sealed partial class ConflictResolutionService
         };
         if (texts.Base is not null && texts.Ours is not null && texts.Theirs is not null)
         {
-            var current = ConflictHunkBuilder.BuildModel(texts.Base, texts.Ours, ignoreWhitespace);
-            var incoming = ConflictHunkBuilder.BuildModel(texts.Base, texts.Theirs, ignoreWhitespace);
+            var current = ConflictHunkBuilder.BuildLineModel(texts.Base, texts.Ours, ignoreWhitespace);
+            var incoming = ConflictHunkBuilder.BuildLineModel(texts.Base, texts.Theirs, ignoreWhitespace);
             response.CurrentComparison = BuildBaseComparison(sibling.Path, texts.Base, texts.Ours, current);
             response.IncomingComparison = BuildBaseComparison(sibling.Path, texts.Base, texts.Theirs, incoming);
         }

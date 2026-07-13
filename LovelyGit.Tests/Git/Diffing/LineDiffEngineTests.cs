@@ -1,0 +1,129 @@
+using ExpressThat.LovelyGit.Services.Git.Diffing;
+
+namespace LovelyGit.Tests.Git.Diffing;
+
+public sealed class LineDiffEngineTests
+{
+    public static TheoryData<string, string> RepresentativeChanges => new()
+    {
+        { string.Empty, "added\n" },
+        { "deleted\n", string.Empty },
+        { "one\ntwo\nthree\n", "one\nchanged\nthree\n" },
+        { "same\nrepeat\nsame\n", "same\ninsert\nrepeat\nsame\n" },
+        { "a\r\nb\r\n", "a\r\nc\r\n" },
+        { "no final newline", "changed without newline" },
+        { "same text\n", "same text" },
+    };
+
+    [Theory]
+    [MemberData(nameof(RepresentativeChanges))]
+    public void Build_EditBlocksReconstructNewLines(string oldText, string newText)
+    {
+        var model = LineDiffEngine.Build(oldText, newText);
+
+        Assert.Equal(model.NewLines, Apply(model));
+        Assert.Equal(!string.Equals(oldText, newText, StringComparison.Ordinal), model.HasDifferences);
+    }
+
+    [Fact]
+    public void Build_IgnoreWhitespaceTreatsSpacesAndTabsAsEquivalent()
+    {
+        var model = LineDiffEngine.Build("value = 1\n", " value\t=   1\n", ignoreWhitespace: true);
+
+        Assert.False(model.HasDifferences);
+        Assert.Single(model.Rows);
+        Assert.False(model.Rows[0].IsChanged);
+    }
+
+    [Fact]
+    public void Build_AlignsReplacementForSideBySideRendering()
+    {
+        var model = LineDiffEngine.Build("before\nold one\nold two\nafter\n", "before\nnew one\nafter\n");
+
+        Assert.Collection(
+            model.Rows,
+            row => Assert.False(row.IsChanged),
+            row => Assert.Equal((1, 1, true), (row.OldIndex, row.NewIndex, row.IsChanged)),
+            row => Assert.Equal((2, (int?)null, true), (row.OldIndex, row.NewIndex, row.IsChanged)),
+            row => Assert.False(row.IsChanged));
+    }
+
+    [Fact]
+    public void Build_ReconstructsDeterministicRandomEdits()
+    {
+        var random = new Random(917_431);
+        for (var iteration = 0; iteration < 100; iteration++)
+        {
+            var oldLines = Enumerable.Range(0, random.Next(0, 80))
+                .Select(index => $"line-{index % 11}").ToList();
+            var newLines = new List<string>(oldLines);
+            for (var edit = 0; edit < 12; edit++)
+            {
+                var index = random.Next(0, newLines.Count + 1);
+                if (newLines.Count > 0 && random.Next(2) == 0)
+                    newLines.RemoveAt(Math.Min(index, newLines.Count - 1));
+                else
+                    newLines.Insert(index, $"new-{iteration}-{edit}");
+            }
+
+            var model = LineDiffEngine.Build(string.Join('\n', oldLines), string.Join('\n', newLines));
+
+            Assert.Equal(newLines, Apply(model));
+        }
+    }
+
+    [Fact]
+    public void ChangeSpans_UseTheSameEngineForCharacterChanges()
+    {
+        var row = new LineDiffRow(0, 0, IsChanged: true);
+
+        var spans = LineDiffRendering.ChangeSpans("hello world", "hello LovelyGit", row);
+
+        Assert.NotEmpty(spans.Old);
+        Assert.NotEmpty(spans.New);
+        Assert.All(spans.Old, span => Assert.Equal("Deleted", span.ChangeType));
+        Assert.All(spans.New, span => Assert.Equal("Inserted", span.ChangeType));
+        Assert.All(spans.Old, span => Assert.InRange(span.Start + span.Length, 1, "hello world".Length));
+        Assert.All(spans.New, span => Assert.InRange(span.Start + span.Length, 1, "hello LovelyGit".Length));
+    }
+
+    [Fact]
+    public void UnifiedRenderer_ProducesApplicableContextHunks()
+    {
+        var patch = UnifiedDiffRenderer.Render(
+            "one\ntwo\nthree\nfour\n",
+            "one\nchanged\nthree\nfour\nadded\n",
+            "a/file.txt",
+            "b/file.txt",
+            context: 1);
+
+        var normalized = patch.ReplaceLineEndings("\n");
+        Assert.Contains("--- a/file.txt\n+++ b/file.txt\n", normalized, StringComparison.Ordinal);
+        Assert.Contains("-two\n+changed\n", normalized, StringComparison.Ordinal);
+        Assert.Contains("+added\n", normalized, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void UnifiedRenderer_RepresentsFinalNewlineOnlyChange()
+    {
+        var patch = UnifiedDiffRenderer.Render("same text\n", "same text", "a/file.txt", "b/file.txt", 3)
+            .ReplaceLineEndings("\n");
+
+        Assert.Contains("-same text\n+same text\n\\ No newline at end of file\n", patch, StringComparison.Ordinal);
+    }
+
+    private static string[] Apply(LineDiffModel model)
+    {
+        var result = new List<string>();
+        var oldIndex = 0;
+        foreach (var block in model.Blocks)
+        {
+            result.AddRange(model.OldLines[oldIndex..block.OldStart]);
+            result.AddRange(model.NewLines[block.NewStart..(block.NewStart + block.NewCount)]);
+            oldIndex = block.OldStart + block.OldCount;
+        }
+        result.AddRange(model.OldLines[oldIndex..]);
+        return result.ToArray();
+    }
+
+}

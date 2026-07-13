@@ -1,7 +1,4 @@
 using ColorCode;
-using DiffPlex;
-using DiffPlex.DiffBuilder;
-using DiffPlex.DiffBuilder.Model;
 using ExpressThat.LovelyGit.Services.Git.CommitGraph.Models;
 using ExpressThat.LovelyGit.Services.Git.Diffing;
 
@@ -18,45 +15,17 @@ internal sealed partial class CommitFileDiffService
         ILanguage? language,
         bool ignoreWhitespace)
     {
-        var model = new InlineDiffBuilder(new Differ()).BuildDiffModel(oldText, newText, ignoreWhitespace);
+        var model = LineDiffEngine.Build(oldText, newText, ignoreWhitespace);
         var syntaxSpanBuilder = SyntaxSpanBuilder.Create(
             language,
             oldText.Length + newText.Length,
             MaxSyntaxHighlightedCharacters,
             MaxSyntaxHighlightedLineLength);
-        var oldLineNumber = 1;
-        var newLineNumber = 1;
-        var lines = new List<CommitFileDiffLine>(model.Lines.Count);
+        var lines = new List<CommitFileDiffLine>(model.Rows.Count * 2);
 
-        foreach (var line in model.Lines)
+        foreach (var row in model.Rows)
         {
-            var changeType = line.Type.ToString();
-            int? oldLine = null;
-            int? newLine = null;
-
-            if (line.Type == ChangeType.Inserted)
-            {
-                newLine = newLineNumber++;
-            }
-            else if (line.Type == ChangeType.Deleted)
-            {
-                oldLine = oldLineNumber++;
-            }
-            else
-            {
-                oldLine = oldLineNumber++;
-                newLine = newLineNumber++;
-            }
-
-            lines.Add(new CommitFileDiffLine
-            {
-                OldLineNumber = oldLine,
-                NewLineNumber = newLine,
-                Text = line.Text,
-                ChangeType = changeType,
-                SyntaxSpans = BuildSyntaxSpans(line.Text, syntaxSpanBuilder),
-                ChangeSpans = BuildChangeSpans(line),
-            });
+            AddCombinedLines(lines, model, row, syntaxSpanBuilder);
         }
 
         return new CommitFileDiffResponse
@@ -70,4 +39,42 @@ internal sealed partial class CommitFileDiffService
             Lines = lines,
         };
     }
+
+    private static void AddCombinedLines(
+        List<CommitFileDiffLine> lines,
+        LineDiffModel model,
+        LineDiffRow row,
+        SyntaxSpanBuilder syntax)
+    {
+        if (!row.IsChanged && row.OldIndex is int oldIndex && row.NewIndex is int newIndex)
+        {
+            AddCombinedLine(lines, oldIndex + 1, newIndex + 1, model.OldLines[oldIndex], "Unchanged", [], syntax);
+            return;
+        }
+
+        var oldText = row.OldIndex is int old ? model.OldLines[old] : string.Empty;
+        var newText = row.NewIndex is int next ? model.NewLines[next] : string.Empty;
+        var spans = LineDiffRendering.ChangeSpans(oldText, newText, row);
+        if (row.OldIndex is int deleted)
+            AddCombinedLine(lines, deleted + 1, null, oldText, "Deleted", spans.Old, syntax);
+        if (row.NewIndex is int inserted)
+            AddCombinedLine(lines, null, inserted + 1, newText, "Inserted", spans.New, syntax);
+    }
+
+    private static void AddCombinedLine(
+        List<CommitFileDiffLine> lines,
+        int? oldLine,
+        int? newLine,
+        string text,
+        string type,
+        List<CommitFileDiffChangeSpan> spans,
+        SyntaxSpanBuilder syntax) => lines.Add(new()
+        {
+            OldLineNumber = oldLine,
+            NewLineNumber = newLine,
+            Text = text,
+            ChangeType = type,
+            SyntaxSpans = BuildSyntaxSpans(text, syntax),
+            ChangeSpans = spans,
+        });
 }

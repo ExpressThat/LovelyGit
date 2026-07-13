@@ -1,6 +1,4 @@
-using DiffPlex;
-using DiffPlex.DiffBuilder;
-using DiffPlex.DiffBuilder.Model;
+using ExpressThat.LovelyGit.Services.Git.Diffing;
 using ExpressThat.LovelyGit.Services.Git.WorkingTree.Models;
 
 namespace ExpressThat.LovelyGit.Services.Git.WorkingTree;
@@ -13,8 +11,8 @@ internal static class ConflictHunkBuilder
         string incomingText,
         string resultText)
     {
-        var currentDiff = BuildModel(baseText, currentText);
-        var incomingDiff = BuildModel(baseText, incomingText);
+        var currentDiff = BuildLineModel(baseText, currentText);
+        var incomingDiff = BuildLineModel(baseText, incomingText);
         return Build(currentText, incomingText, resultText, currentDiff, incomingDiff);
     }
 
@@ -22,8 +20,8 @@ internal static class ConflictHunkBuilder
         string currentText,
         string incomingText,
         string resultText,
-        SideBySideDiffModel currentDiff,
-        SideBySideDiffModel incomingDiff)
+        LineDiffModel currentDiff,
+        LineDiffModel incomingDiff)
     {
         var parsed = Parse(resultText);
         var currentLines = SplitLines(currentText);
@@ -31,39 +29,40 @@ internal static class ConflictHunkBuilder
         var currentCursor = 0;
         var incomingCursor = 0;
         var hunks = new List<ConflictHunk>(parsed.Count);
-
         foreach (var conflict in parsed)
         {
             var currentStart = Locate(currentLines, conflict.Current, conflict.PreviousCommon, currentCursor);
             var incomingStart = Locate(incomingLines, conflict.Incoming, conflict.PreviousCommon, incomingCursor);
-            var currentBase = ConflictHunkRangeMapper.Map(currentDiff, currentStart, conflict.Current.Count);
-            var incomingBase = ConflictHunkRangeMapper.Map(incomingDiff, incomingStart, conflict.Incoming.Count);
-            var baseRange = ConflictHunkRangeMapper.Union(currentBase, incomingBase);
-            hunks.Add(new ConflictHunk
-            {
-                Id = conflict.Id,
-                BaseStartLine = baseRange.Start + 1,
-                BaseLineCount = baseRange.Count,
-                CurrentStartLine = currentStart + 1,
-                CurrentLineCount = conflict.Current.Count,
-                IncomingStartLine = incomingStart + 1,
-                IncomingLineCount = conflict.Incoming.Count,
-            });
+            var baseRange = ConflictHunkRangeMapper.Union(
+                ConflictHunkRangeMapper.Map(currentDiff, currentStart, conflict.Current.Count),
+                ConflictHunkRangeMapper.Map(incomingDiff, incomingStart, conflict.Incoming.Count));
+            hunks.Add(CreateHunk(conflict, currentStart, incomingStart, baseRange));
             currentCursor = currentStart + conflict.Current.Count;
             incomingCursor = incomingStart + conflict.Incoming.Count;
         }
-
         return hunks;
     }
 
-    internal static SideBySideDiffModel BuildModel(
+    internal static LineDiffModel BuildLineModel(
         string baseText,
         string sourceText,
         bool ignoreWhitespace = false) =>
-        new SideBySideDiffBuilder(new Differ()).BuildDiffModel(
-            baseText,
-            sourceText,
-            ignoreWhitespace);
+        LineDiffEngine.Build(baseText, sourceText, ignoreWhitespace);
+
+    private static ConflictHunk CreateHunk(
+        ParsedConflict conflict,
+        int currentStart,
+        int incomingStart,
+        ConflictHunkRangeMapper.LineRange baseRange) => new()
+    {
+        Id = conflict.Id,
+        BaseStartLine = baseRange.Start + 1,
+        BaseLineCount = baseRange.Count,
+        CurrentStartLine = currentStart + 1,
+        CurrentLineCount = conflict.Current.Count,
+        IncomingStartLine = incomingStart + 1,
+        IncomingLineCount = conflict.Incoming.Count,
+    };
 
     internal static IReadOnlyList<string> SplitLines(string text)
     {

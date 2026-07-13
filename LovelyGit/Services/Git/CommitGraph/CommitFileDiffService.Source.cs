@@ -2,9 +2,6 @@ using ColorCode;
 using ColorCode.Common;
 using ColorCode.Compilation;
 using ColorCode.Parsing;
-using DiffPlex;
-using DiffPlex.DiffBuilder;
-using DiffPlex.DiffBuilder.Model;
 using ExpressThat.LovelyGit.Services.Data.Repositorys;
 using ExpressThat.LovelyGit.Services.Git.CommitGraph.Details;
 using ExpressThat.LovelyGit.Services.Git.CommitGraph.Models;
@@ -164,7 +161,7 @@ internal sealed partial class CommitFileDiffService : IDisposable
 
         if (DiffInputGuard.ShouldUseFastDiff(source.OldText, source.NewText))
         {
-            return CompactDiffPayloadBuilder.CompactIfUseful(FastLineDiffBuilder.Build(
+            return CompactDiffPayloadBuilder.CompactIfUseful(LargeDiffPayloadBuilder.Build(
                 commitHash,
                 path,
                 source.Status,
@@ -203,32 +200,30 @@ internal sealed partial class CommitFileDiffService : IDisposable
         ILanguage? language,
         bool ignoreWhitespace)
     {
-        var model = new SideBySideDiffBuilder(new Differ()).BuildDiffModel(oldText, newText, ignoreWhitespace);
+        var model = LineDiffEngine.Build(oldText, newText, ignoreWhitespace);
         var syntaxSpanBuilder = SyntaxSpanBuilder.Create(
             language,
             oldText.Length + newText.Length,
             MaxSyntaxHighlightedCharacters,
             MaxSyntaxHighlightedLineLength);
-        var lineCount = Math.Max(model.OldText.Lines.Count, model.NewText.Lines.Count);
-        var lines = new List<CommitFileDiffLine>(lineCount);
-        for (var index = 0; index < lineCount; index++)
+        var lines = new List<CommitFileDiffLine>(model.Rows.Count);
+        foreach (var row in model.Rows)
         {
-            var oldLine = index < model.OldText.Lines.Count ? model.OldText.Lines[index] : null;
-            var newLine = index < model.NewText.Lines.Count ? model.NewText.Lines[index] : null;
-            var oldLineText = oldLine?.Text ?? string.Empty;
-            var newLineText = newLine?.Text ?? string.Empty;
+            var oldLineText = row.OldIndex is int oldIndex ? model.OldLines[oldIndex] : string.Empty;
+            var newLineText = row.NewIndex is int newIndex ? model.NewLines[newIndex] : string.Empty;
+            var changeSpans = LineDiffRendering.ChangeSpans(oldLineText, newLineText, row);
 
             lines.Add(new CommitFileDiffLine
             {
-                OldLineNumber = oldLine?.Position,
-                NewLineNumber = newLine?.Position,
+                OldLineNumber = row.OldIndex + 1,
+                NewLineNumber = row.NewIndex + 1,
                 OldText = oldLineText,
                 NewText = newLineText,
-                ChangeType = GetSideBySideChangeType(oldLine, newLine),
+                ChangeType = LineDiffRendering.ChangeType(row),
                 OldSyntaxSpans = BuildSyntaxSpans(oldLineText, syntaxSpanBuilder),
                 NewSyntaxSpans = BuildSyntaxSpans(newLineText, syntaxSpanBuilder),
-                OldChangeSpans = BuildChangeSpans(oldLine),
-                NewChangeSpans = BuildChangeSpans(newLine),
+                OldChangeSpans = changeSpans.Old,
+                NewChangeSpans = changeSpans.New,
             });
         }
 
@@ -239,7 +234,7 @@ internal sealed partial class CommitFileDiffService : IDisposable
             Status = status,
             ViewMode = CommitDiffViewMode.SideBySide,
             IsBinary = false,
-            HasDifferences = model.OldText.HasDifferences || model.NewText.HasDifferences,
+            HasDifferences = model.HasDifferences,
             Lines = lines,
         };
     }

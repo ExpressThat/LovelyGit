@@ -1,4 +1,3 @@
-using DiffPlex.DiffBuilder.Model;
 using ExpressThat.LovelyGit.Services.Git.Cli;
 using ExpressThat.LovelyGit.Services.Git.CommitGraph.Models;
 using ExpressThat.LovelyGit.Services.Git.WorkingTree;
@@ -36,7 +35,7 @@ public sealed class WorkingTreeChangeServiceDiffTests
         Assert.True(exactDiff.HasDifferences);
         Assert.Contains(
             exactDiff.Lines,
-            line => line.ChangeType == ChangeType.Inserted.ToString());
+            line => line.ChangeType == "Inserted");
         Assert.False(whitespaceIgnoredDiff.HasDifferences);
     }
 

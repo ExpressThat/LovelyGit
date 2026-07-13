@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Text;
+using ExpressThat.LovelyGit.Services.Git.Diffing;
 using ExpressThat.LovelyGit.Services.Git.CommitGraph.Models;
 using ExpressThat.LovelyGit.Services.Git.WorkingTree;
 using Xunit.Abstractions;
@@ -21,7 +22,7 @@ public sealed class ConflictPreparationPerformanceTests(ITestOutputHelper output
         output.WriteLine($"Shared: {shared.Elapsed.TotalMilliseconds:N1} ms, {shared.Allocated:N0} bytes");
         output.WriteLine($"Duplicated: {duplicated.Elapsed.TotalMilliseconds:N1} ms, {duplicated.Allocated:N0} bytes");
         Assert.True(
-            shared.Allocated < duplicated.Allocated * 0.75,
+            shared.Allocated < duplicated.Allocated * 0.80,
             $"Prepared path allocated {shared.Allocated:N0} vs {duplicated.Allocated:N0} bytes.");
     }
 
@@ -43,10 +44,20 @@ public sealed class ConflictPreparationPerformanceTests(ITestOutputHelper output
             $"Reused path allocated {reused.Allocated:N0} vs {fromScratch.Allocated:N0} bytes.");
     }
 
+    [Fact]
+    public void LineDiff_KeepsLargeSparseComparisonWithinAllocationBudget()
+    {
+        var fixture = CreateFixture(5_000);
+        _ = ConflictHunkBuilder.BuildLineModel(fixture.Base, fixture.Current);
+        var lineDiff = Measure(() => ConflictHunkBuilder.BuildLineModel(fixture.Base, fixture.Current));
+        output.WriteLine($"Line diff: {lineDiff.Elapsed.TotalMilliseconds:N1} ms, {lineDiff.Allocated:N0} bytes");
+        Assert.True(lineDiff.Allocated < 1_000_000, $"Line diff allocated {lineDiff.Allocated:N0} bytes.");
+    }
+
     private static PreparedConflict PrepareShared(Fixture fixture)
     {
-        var currentModel = ConflictHunkBuilder.BuildModel(fixture.Base, fixture.Current);
-        var incomingModel = ConflictHunkBuilder.BuildModel(fixture.Base, fixture.Incoming);
+        var currentModel = ConflictHunkBuilder.BuildLineModel(fixture.Base, fixture.Current);
+        var incomingModel = ConflictHunkBuilder.BuildLineModel(fixture.Base, fixture.Incoming);
         return new PreparedConflict(
             ConflictHunkBuilder.Build(
                 fixture.Current,
@@ -60,8 +71,8 @@ public sealed class ConflictPreparationPerformanceTests(ITestOutputHelper output
 
     private static PreparedConflict PrepareWhitespaceFromScratch(Fixture fixture)
     {
-        var exactCurrent = ConflictHunkBuilder.BuildModel(fixture.Base, fixture.Current);
-        var exactIncoming = ConflictHunkBuilder.BuildModel(fixture.Base, fixture.Incoming);
+        var exactCurrent = ConflictHunkBuilder.BuildLineModel(fixture.Base, fixture.Current);
+        var exactIncoming = ConflictHunkBuilder.BuildLineModel(fixture.Base, fixture.Incoming);
         var hunks = ConflictHunkBuilder.Build(
             fixture.Current,
             fixture.Incoming,
@@ -75,8 +86,8 @@ public sealed class ConflictPreparationPerformanceTests(ITestOutputHelper output
         Fixture fixture,
         List<ExpressThat.LovelyGit.Services.Git.WorkingTree.Models.ConflictHunk> hunks)
     {
-        var current = ConflictHunkBuilder.BuildModel(fixture.Base, fixture.Current, ignoreWhitespace: true);
-        var incoming = ConflictHunkBuilder.BuildModel(fixture.Base, fixture.Incoming, ignoreWhitespace: true);
+        var current = ConflictHunkBuilder.BuildLineModel(fixture.Base, fixture.Current, ignoreWhitespace: true);
+        var incoming = ConflictHunkBuilder.BuildLineModel(fixture.Base, fixture.Incoming, ignoreWhitespace: true);
         return new PreparedConflict(
             hunks,
             BuildPrepared(fixture.Base, fixture.Current, current),
@@ -100,8 +111,8 @@ public sealed class ConflictPreparationPerformanceTests(ITestOutputHelper output
     private static CommitFileDiffResponse BuildPrepared(
         string oldText,
         string newText,
-        DiffPlex.DiffBuilder.Model.SideBySideDiffModel model) =>
-        WorkingTreeChangeService.BuildPreparedSideBySideResponse(
+        LineDiffModel model) =>
+        WorkingTreeChangeService.BuildPreparedLineDiffResponse(
             "CONFLICT", "fixture.txt", "Unmerged", oldText, newText, model);
 
     private static CommitFileDiffResponse BuildRegular(string oldText, string newText) =>

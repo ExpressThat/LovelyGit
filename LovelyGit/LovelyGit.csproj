@@ -45,7 +45,7 @@
 	  <PackageReference Include="AdysTech.CredentialManager" Version="3.1.0" />
 	  <PackageReference Include="CliWrap" Version="3.10.1" />
 	  <PackageReference Include="ColorCode.Core" Version="2.0.15" />
-	  <PackageReference Include="DiffPlex" Version="1.9.0" />
+	  <PackageReference Include="spkl.Diffs" Version="2.1.0" />
 	  <PackageReference Include="InfiniLore.InfiniFrame.WebServer" Version="0.13.1" />
 	  <PackageReference Include="KeySharp" Version="1.0.5" Condition="!$([System.String]::Copy('$(RuntimeIdentifier)').StartsWith('win'))" />
 	  <PackageReference Include="KeySharp" Version="1.0.5" ExcludeAssets="native" Condition="$([System.String]::Copy('$(RuntimeIdentifier)').StartsWith('win'))" />

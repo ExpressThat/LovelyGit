@@ -106,8 +106,8 @@ public sealed class ConflictHunkBuilderTests
             current,
             incoming,
             result,
-            ConflictHunkBuilder.BuildModel(baseText, current),
-            ConflictHunkBuilder.BuildModel(baseText, incoming));
+            ConflictHunkBuilder.BuildLineModel(baseText, current),
+            ConflictHunkBuilder.BuildLineModel(baseText, incoming));
 
         Assert.Equal(expected, actual);
     }

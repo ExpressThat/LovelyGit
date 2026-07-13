@@ -27,6 +27,23 @@ public sealed class CommitPatchServiceTests
         Assert.Contains("+++ b/sample.txt", response.Patch);
         Assert.Contains("-old line", response.Patch);
         Assert.Contains("+new line", response.Patch);
+        repository.AssertPatchAppliesToParent(response.Patch);
+    }
+
+    [Fact]
+    public async Task GetCommitPatchAsync_PreservesMissingFinalNewline()
+    {
+        using var repository = TemporaryGitRepository.Create();
+        repository.WriteFile("sample.txt", "old with newline\n");
+        repository.Commit("Add sample");
+        repository.WriteFile("sample.txt", "new without newline");
+        var commitHash = repository.Commit("Update sample");
+
+        var response = await new CommitPatchService().GetCommitPatchAsync(
+            repository.Path, GitObjectId.Parse(commitHash), CancellationToken.None);
+
+        Assert.Contains("\\ No newline at end of file", response.Patch, StringComparison.Ordinal);
+        repository.AssertPatchAppliesToParent(response.Patch);
     }
 
     [Fact]
@@ -72,6 +89,7 @@ public sealed class CommitPatchServiceTests
             repository.RunGit(["init"]);
             repository.RunGit(["config", "user.name", "LovelyGit Test"]);
             repository.RunGit(["config", "user.email", "test@example.invalid"]);
+            repository.RunGit(["config", "core.autocrlf", "false"]);
             return repository;
         }
 
@@ -97,6 +115,21 @@ public sealed class CommitPatchServiceTests
             var path = System.IO.Path.Combine(Path, relativePath);
             Directory.CreateDirectory(System.IO.Path.GetDirectoryName(path)!);
             File.WriteAllBytes(path, contents);
+        }
+
+        public void AssertPatchAppliesToParent(string patch)
+        {
+            var patchPath = System.IO.Path.GetTempFileName();
+            try
+            {
+                File.WriteAllText(patchPath, patch);
+                RunGit(["checkout", "--detach", "HEAD^"]);
+                RunGit(["apply", "--check", patchPath]);
+            }
+            finally
+            {
+                File.Delete(patchPath);
+            }
         }
 
         private CliWrap.Buffered.BufferedCommandResult RunGit(IReadOnlyList<string> arguments)

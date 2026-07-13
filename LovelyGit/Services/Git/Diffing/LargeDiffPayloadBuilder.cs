@@ -4,7 +4,7 @@ using System.Text;
 
 namespace ExpressThat.LovelyGit.Services.Git.Diffing;
 
-internal static class FastLineDiffBuilder
+internal static class LargeDiffPayloadBuilder
 {
     private const int CompressVirtualTextCharacters = 256_000;
 
@@ -48,18 +48,17 @@ internal static class FastLineDiffBuilder
             return BuildVirtualTextResponse(commitHash, path, status, viewMode, "Deleted", oldText);
         }
 
-        var oldLines = SplitLines(oldText);
-        var newLines = SplitLines(newText);
+        var model = LineDiffEngine.Build(oldText, newText, ignoreWhitespace);
         var lines = viewMode == CommitDiffViewMode.SideBySide
-            ? BuildSideBySide(oldLines, newLines, ignoreWhitespace)
-            : BuildCombined(oldLines, newLines, ignoreWhitespace);
+            ? BuildSideBySide(model)
+            : BuildCombined(model);
         return new CommitFileDiffResponse
         {
             CommitHash = commitHash,
             Path = path,
             Status = status,
             ViewMode = viewMode,
-            HasDifferences = !string.Equals(oldText, newText, StringComparison.Ordinal),
+            HasDifferences = model.HasDifferences,
             Lines = lines,
         };
     }
@@ -106,70 +105,32 @@ internal static class FastLineDiffBuilder
         return Convert.ToBase64String(output.GetBuffer(), 0, (int)output.Length);
     }
 
-    private static List<CommitFileDiffLine> BuildSideBySide(string[] oldLines, string[] newLines, bool ignoreWhitespace)
+    private static List<CommitFileDiffLine> BuildSideBySide(LineDiffModel model)
     {
-        var lines = new List<CommitFileDiffLine>(Math.Max(oldLines.Length, newLines.Length));
-        Walk(oldLines, newLines, ignoreWhitespace, new SideBySideSink(lines));
+        var lines = new List<CommitFileDiffLine>(model.Rows.Count);
+        Walk(model, new SideBySideSink(lines));
         return lines;
     }
 
-    private static List<CommitFileDiffLine> BuildCombined(string[] oldLines, string[] newLines, bool ignoreWhitespace)
+    private static List<CommitFileDiffLine> BuildCombined(LineDiffModel model)
     {
-        var lines = new List<CommitFileDiffLine>(oldLines.Length + newLines.Length);
-        Walk(oldLines, newLines, ignoreWhitespace, new CombinedSink(lines));
+        var lines = new List<CommitFileDiffLine>(model.Rows.Count * 2);
+        Walk(model, new CombinedSink(lines));
         return lines;
     }
 
-    private static void Walk<TSink>(string[] oldLines, string[] newLines, bool ignoreWhitespace, TSink sink)
+    private static void Walk<TSink>(LineDiffModel model, TSink sink)
         where TSink : struct, IFastDiffSink
     {
-        var oldIndex = 0;
-        var newIndex = 0;
-        while (oldIndex < oldLines.Length && newIndex < newLines.Length)
+        foreach (var row in model.Rows)
         {
-            if (LineEquals(oldLines[oldIndex], newLines[newIndex], ignoreWhitespace))
-            {
-                sink.Unchanged(oldIndex + 1, newIndex + 1, oldLines[oldIndex]);
-                oldIndex++;
-                newIndex++;
-            }
-            else if (oldIndex + 1 < oldLines.Length && LineEquals(oldLines[oldIndex + 1], newLines[newIndex], ignoreWhitespace))
-            {
-                sink.Deleted(oldIndex + 1, oldLines[oldIndex]);
-                oldIndex++;
-            }
-            else if (newIndex + 1 < newLines.Length && LineEquals(oldLines[oldIndex], newLines[newIndex + 1], ignoreWhitespace))
-            {
-                sink.Inserted(newIndex + 1, newLines[newIndex]);
-                newIndex++;
-            }
-            else
-            {
-                sink.Modified(oldIndex + 1, newIndex + 1, oldLines[oldIndex], newLines[newIndex]);
-                oldIndex++;
-                newIndex++;
-            }
+            var oldText = row.OldIndex is int oldIndex ? model.OldLines[oldIndex] : string.Empty;
+            var newText = row.NewIndex is int newIndex ? model.NewLines[newIndex] : string.Empty;
+            if (!row.IsChanged) sink.Unchanged(row.OldIndex!.Value + 1, row.NewIndex!.Value + 1, oldText);
+            else if (row.OldIndex is null) sink.Inserted(row.NewIndex!.Value + 1, newText);
+            else if (row.NewIndex is null) sink.Deleted(row.OldIndex.Value + 1, oldText);
+            else sink.Modified(row.OldIndex.Value + 1, row.NewIndex.Value + 1, oldText, newText);
         }
-
-        while (oldIndex < oldLines.Length)
-        {
-            sink.Deleted(oldIndex + 1, oldLines[oldIndex++]);
-        }
-
-        while (newIndex < newLines.Length)
-        {
-            sink.Inserted(newIndex + 1, newLines[newIndex++]);
-        }
-    }
-
-    private static string[] SplitLines(string text)
-    {
-        if (text.Length == 0)
-        {
-            return [];
-        }
-
-        return text.ReplaceLineEndings("\n").Split('\n');
     }
 
     private static int CountLines(string text)
@@ -210,30 +171,4 @@ internal static class FastLineDiffBuilder
         return count;
     }
 
-    private static bool LineEquals(string left, string right, bool ignoreWhitespace)
-    {
-        return ignoreWhitespace
-            ? WhitespaceInsensitiveEquals(left, right)
-            : string.Equals(left, right, StringComparison.Ordinal);
-    }
-
-    private static bool WhitespaceInsensitiveEquals(string left, string right)
-    {
-        var leftIndex = 0;
-        var rightIndex = 0;
-        while (true)
-        {
-            while (leftIndex < left.Length && char.IsWhiteSpace(left[leftIndex])) leftIndex++;
-            while (rightIndex < right.Length && char.IsWhiteSpace(right[rightIndex])) rightIndex++;
-            if (leftIndex == left.Length || rightIndex == right.Length)
-            {
-                return leftIndex == left.Length && rightIndex == right.Length;
-            }
-
-            if (left[leftIndex++] != right[rightIndex++])
-            {
-                return false;
-            }
-        }
-    }
 }

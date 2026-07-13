@@ -1,4 +1,4 @@
-using DiffPlex;
+using ExpressThat.LovelyGit.Services.Git.Diffing;
 
 namespace ExpressThat.LovelyGit.Services.Git.FileBlame;
 
@@ -13,31 +13,27 @@ internal static class BlameLineMapper
             return mapping;
         }
 
-        var result = new Differ().CreateLineDiffs(
-            oldText,
-            newText,
-            ignoreWhitespace: false,
-            ignoreCase: false);
+        var result = LineDiffEngine.Build(oldText, newText);
         var oldIndex = 0;
         var newIndex = 0;
-        foreach (var block in result.DiffBlocks)
+        foreach (var block in result.Blocks)
         {
             MapUnchanged(
                 mapping,
                 ref oldIndex,
                 ref newIndex,
-                block.DeleteStartA,
-                block.InsertStartB);
-            oldIndex += block.DeleteCountA;
-            newIndex += block.InsertCountB;
+                block.OldStart,
+                block.NewStart);
+            oldIndex += block.OldCount;
+            newIndex += block.NewCount;
         }
 
         MapUnchanged(
             mapping,
             ref oldIndex,
             ref newIndex,
-            result.PiecesOld.Count,
-            Math.Min(result.PiecesNew.Count, newLineCount));
+            result.OldLines.Length,
+            Math.Min(result.NewLines.Length, newLineCount));
         return mapping;
     }
 

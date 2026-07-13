@@ -1,8 +1,7 @@
 using System.Text;
-using DiffPlex;
-using DiffPlex.Renderer;
 using ExpressThat.LovelyGit.Services.Git.CommitGraph.Details;
 using ExpressThat.LovelyGit.Services.Git.CommitGraph.Models;
+using ExpressThat.LovelyGit.Services.Git.Diffing;
 using ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser;
 
 namespace ExpressThat.LovelyGit.Services.Git.CommitGraph;
@@ -69,7 +68,7 @@ internal sealed class CommitPatchService
         return new CommitPatchResponse
         {
             CommitHash = commit.Hash.ToString(),
-            Patch = patch.ToString(),
+            Patch = NormalizeNewLines(patch.ToString()),
             IsTruncated = truncated,
             HasUnsupportedBinaryChanges = hasUnsupportedBinaryChanges,
         };
@@ -102,14 +101,8 @@ internal sealed class CommitPatchService
             return true;
         }
 
-        var unified = UnidiffRenderer.GenerateUnidiff(
-            oldBlob.Text,
-            newBlob.Text,
-            "a/" + path,
-            "b/" + path,
-            ignoreWhitespace: false,
-            ignoreCase: false,
-            ContextLines);
+        var unified = UnifiedDiffRenderer.Render(
+            oldBlob.Text, newBlob.Text, "a/" + path, "b/" + path, ContextLines);
         patch.Append(NormalizeNewLines(unified).TrimEnd()).AppendLine();
         return false;
     }

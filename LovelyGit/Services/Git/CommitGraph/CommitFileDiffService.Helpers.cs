@@ -1,7 +1,4 @@
 using ColorCode;
-using DiffPlex;
-using DiffPlex.DiffBuilder;
-using DiffPlex.DiffBuilder.Model;
 using ExpressThat.LovelyGit.Services.Data.Repositorys;
 using ExpressThat.LovelyGit.Services.Git.CommitGraph.Details;
 using ExpressThat.LovelyGit.Services.Git.CommitGraph.Models;
@@ -24,31 +21,6 @@ internal sealed partial class CommitFileDiffService : IDisposable
         }
 
         return oldFile.Mode == newFile.Mode ? "Modified" : "TypeChanged";
-    }
-
-    private static string GetSideBySideChangeType(DiffPiece? oldLine, DiffPiece? newLine)
-    {
-        if (oldLine?.Type == ChangeType.Deleted || newLine?.Type == ChangeType.Deleted)
-        {
-            return ChangeType.Deleted.ToString();
-        }
-
-        if (oldLine?.Type == ChangeType.Inserted || newLine?.Type == ChangeType.Inserted)
-        {
-            return ChangeType.Inserted.ToString();
-        }
-
-        if (oldLine?.Type == ChangeType.Modified || newLine?.Type == ChangeType.Modified)
-        {
-            return ChangeType.Modified.ToString();
-        }
-
-        if (oldLine?.Type == ChangeType.Imaginary || newLine?.Type == ChangeType.Imaginary)
-        {
-            return ChangeType.Imaginary.ToString();
-        }
-
-        return ChangeType.Unchanged.ToString();
     }
 
     private static ILanguage? ResolveLanguage(string path)
@@ -122,56 +94,6 @@ internal sealed partial class CommitFileDiffService : IDisposable
                 gate.Semaphore.Dispose();
             }
         }
-    }
-
-    private static List<CommitFileDiffChangeSpan> BuildChangeSpans(DiffPiece? line)
-    {
-        if (line?.SubPieces == null || line.SubPieces.Count == 0)
-        {
-            if (line?.Type is ChangeType.Inserted or ChangeType.Deleted)
-            {
-                var lineText = line.Text ?? string.Empty;
-                if (lineText.Length == 0)
-                {
-                    return new List<CommitFileDiffChangeSpan>();
-                }
-
-                return new List<CommitFileDiffChangeSpan>
-                {
-                    new()
-                    {
-                        Start = 0,
-                        Length = lineText.Length,
-                        ChangeType = line.Type.ToString(),
-                    },
-                };
-            }
-
-            return new List<CommitFileDiffChangeSpan>();
-        }
-
-        var spans = new List<CommitFileDiffChangeSpan>();
-        var offset = 0;
-        foreach (var piece in line.SubPieces)
-        {
-            var pieceText = piece.Text ?? string.Empty;
-            if (piece.Type is ChangeType.Inserted or ChangeType.Deleted or ChangeType.Modified)
-            {
-                if (pieceText.Length > 0)
-                {
-                    spans.Add(new CommitFileDiffChangeSpan
-                    {
-                        Start = offset,
-                        Length = pieceText.Length,
-                        ChangeType = piece.Type.ToString(),
-                    });
-                }
-            }
-
-            offset += pieceText.Length;
-        }
-
-        return spans;
     }
 
     private void ThrowIfDisposed()
