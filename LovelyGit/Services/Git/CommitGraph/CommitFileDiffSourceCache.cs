@@ -18,11 +18,11 @@ internal sealed class CommitFileDiffSourceCache
 
     public void Set(string key, CommitFileDiffService.CommitFileDiffSource source)
     {
-        if (source.OldText.Length + source.NewText.Length > MaximumCharacters) return;
+        var retain = source.OldText.Length + source.NewText.Length <= MaximumCharacters;
         lock (_gate)
         {
-            _key = key;
-            _source = source;
+            _key = retain ? key : null;
+            _source = retain ? source : null;
         }
     }
 

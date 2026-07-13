@@ -20,12 +20,14 @@ public sealed class CommitFileDiffSourceCacheTests
     }
 
     [Fact]
-    public void Set_DoesNotRetainOversizedText()
+    public void Set_OversizedTextReleasesThePreviousSource()
     {
         var cache = new CommitFileDiffSourceCache();
+        cache.Set("previous", Source("old", "new"));
 
         cache.Set("large", Source(new string('a', 2_000_001), string.Empty));
 
+        Assert.False(cache.TryGet("previous", out _));
         Assert.False(cache.TryGet("large", out _));
     }
 
