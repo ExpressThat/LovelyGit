@@ -62,6 +62,38 @@ public sealed class ConflictTextPayloadBuilderTests
         Assert.Contains("future", error.Message, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void RetainSources_KeepsLargeComparisonTextsButNotTheResult()
+    {
+        var text = new string('x', 64_000);
+        var response = new ConflictResolutionResponse
+        {
+            Base = Version(text),
+            Ours = Version(text),
+            Theirs = Version(text),
+            Result = Version(text),
+        };
+
+        var retained = ConflictTextPayloadBuilder.RetainSources(response);
+
+        Assert.NotNull(retained);
+        Assert.Same(text, retained.Value.Base);
+        Assert.Same(text, retained.Value.Ours);
+        Assert.Same(text, retained.Value.Theirs);
+        Assert.Null(retained.Value.Result);
+    }
+
+    [Fact]
+    public void RetainSources_DoesNotPinOversizedConflicts()
+    {
+        var response = new ConflictResolutionResponse
+        {
+            Base = Version(new string('x', (2 * 1024 * 1024) + 1)),
+        };
+
+        Assert.Null(ConflictTextPayloadBuilder.RetainSources(response));
+    }
+
     private static ConflictFileVersion Version(string text) => new()
     {
         Exists = true,

@@ -4,19 +4,23 @@ namespace ExpressThat.LovelyGit.Services.Git.WorkingTree;
 
 internal sealed partial class ConflictResolutionService
 {
-    private static ConflictResolutionResponse BuildCachedVariant(
+    internal static ConflictResolutionResponse BuildCachedVariant(
         ConflictResolutionResponse sibling,
+        ConflictTexts? retainedTexts,
         bool ignoreWhitespace)
     {
-        var texts = ConflictTextPayloadBuilder.Expand(sibling);
+        var texts = retainedTexts ?? ConflictTextPayloadBuilder.Expand(sibling);
+        var hasCompactBundle = sibling.CompactTextBundleGzipBase64 is not null;
         var response = new ConflictResolutionResponse
         {
             Path = sibling.Path,
             WorktreeFingerprint = sibling.WorktreeFingerprint,
-            Base = CopyVersion(sibling.Base, texts.Base),
-            Ours = CopyVersion(sibling.Ours, texts.Ours),
-            Theirs = CopyVersion(sibling.Theirs, texts.Theirs),
-            Result = CopyVersion(sibling.Result, texts.Result),
+            CompactTextSchema = sibling.CompactTextSchema,
+            CompactTextBundleGzipBase64 = sibling.CompactTextBundleGzipBase64,
+            Base = CopyVersion(sibling.Base, hasCompactBundle ? null : texts.Base),
+            Ours = CopyVersion(sibling.Ours, hasCompactBundle ? null : texts.Ours),
+            Theirs = CopyVersion(sibling.Theirs, hasCompactBundle ? null : texts.Theirs),
+            Result = CopyVersion(sibling.Result, hasCompactBundle ? null : texts.Result),
             CurrentSource = sibling.CurrentSource,
             IncomingSource = sibling.IncomingSource,
             Hunks = sibling.Hunks,
@@ -31,7 +35,6 @@ internal sealed partial class ConflictResolutionService
 
         ConflictComparisonPayloadBuilder.Compact(response.CurrentComparison);
         ConflictComparisonPayloadBuilder.Compact(response.IncomingComparison);
-        ConflictTextPayloadBuilder.Compact(response);
         return response;
     }
 

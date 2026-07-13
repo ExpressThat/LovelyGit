@@ -1,6 +1,7 @@
 using System.IO.Compression;
 using System.Text.Json;
 using ExpressThat.LovelyGit.Services.Git.CommitGraph.Models;
+using ExpressThat.LovelyGit.Services.Git.Diffing;
 
 namespace ExpressThat.LovelyGit.Services.Git.WorkingTree;
 
@@ -19,6 +20,27 @@ internal static class ConflictComparisonPayloadBuilder
         response.CompactLinesGzipBase64 = Compress(response.Lines);
         response.CompactLineCount = response.Lines.Count;
         response.Lines = [];
+    }
+
+    public static CommitFileDiffResponse? BuildDirectIfUseful(
+        string commitHash,
+        string path,
+        string status,
+        LineDiffModel model,
+        bool hasSyntaxHighlighting)
+    {
+        if (model.Rows.Count < MinimumRows || hasSyntaxHighlighting) return null;
+        return new CommitFileDiffResponse
+        {
+            CommitHash = commitHash,
+            Path = path,
+            Status = status,
+            ViewMode = CommitDiffViewMode.SideBySide,
+            HasDifferences = model.HasDifferences,
+            CompactLineSchema = "tuple-v4-delta-refs:gzip-base64:utf-8",
+            CompactLinesGzipBase64 = Compress(model),
+            CompactLineCount = model.Rows.Count,
+        };
     }
 
     private static string Compress(IReadOnlyList<CommitFileDiffLine> lines)
@@ -40,6 +62,25 @@ internal static class ConflictComparisonPayloadBuilder
         return Convert.ToBase64String(output.GetBuffer(), 0, checked((int)output.Length));
     }
 
+    private static string Compress(LineDiffModel model)
+    {
+        using var output = new MemoryStream();
+        using (var gzip = new GZipStream(output, CompressionLevel.Fastest, leaveOpen: true))
+        using (var writer = new Utf8JsonWriter(gzip))
+        {
+            writer.WriteStartArray();
+            var previousOld = 0;
+            var previousNew = 0;
+            foreach (var row in model.Rows)
+            {
+                WriteLine(writer, model, row, ref previousOld, ref previousNew);
+            }
+            writer.WriteEndArray();
+        }
+
+        return Convert.ToBase64String(output.GetBuffer(), 0, checked((int)output.Length));
+    }
+
     private static void WriteLine(
         Utf8JsonWriter writer,
         CommitFileDiffLine line,
@@ -51,6 +92,43 @@ internal static class ConflictComparisonPayloadBuilder
         WriteDelta(writer, line.NewLineNumber, ref previousNew);
         WriteChangeType(writer, line.ChangeType);
         if (HasSpans(line)) WriteRenderingSpans(writer, line);
+        writer.WriteEndArray();
+    }
+
+    private static void WriteLine(
+        Utf8JsonWriter writer,
+        LineDiffModel model,
+        LineDiffRow row,
+        ref int previousOld,
+        ref int previousNew)
+    {
+        writer.WriteStartArray();
+        WriteDelta(writer, row.OldIndex + 1, ref previousOld);
+        WriteDelta(writer, row.NewIndex + 1, ref previousNew);
+        WriteChangeType(writer, LineDiffRendering.ChangeType(row));
+        if (row.IsChanged)
+        {
+            var oldLine = row.OldIndex is { } oldIndex ? model.OldLines[oldIndex] : string.Empty;
+            var newLine = row.NewIndex is { } newIndex ? model.NewLines[newIndex] : string.Empty;
+            var spans = LineDiffRendering.ChangeSpans(oldLine, newLine, row);
+            if (spans.Old.Count > 0 || spans.New.Count > 0)
+            {
+                WriteEmptyArray(writer);
+                WriteEmptyArray(writer);
+                WriteEmptyArray(writer);
+                WriteSpans(writer, spans.Old, static (json, span) =>
+                    WriteSpan(json, span.Start, span.Length, span.ChangeType));
+                WriteSpans(writer, spans.New, static (json, span) =>
+                    WriteSpan(json, span.Start, span.Length, span.ChangeType));
+                WriteEmptyArray(writer);
+            }
+        }
+        writer.WriteEndArray();
+    }
+
+    private static void WriteEmptyArray(Utf8JsonWriter writer)
+    {
+        writer.WriteStartArray();
         writer.WriteEndArray();
     }
 

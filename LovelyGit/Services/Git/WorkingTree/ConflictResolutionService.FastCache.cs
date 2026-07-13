@@ -27,20 +27,22 @@ internal sealed partial class ConflictResolutionService
                 path,
                 ignoreWhitespace,
                 out var sibling,
-                out var siblingStamp))
+                out var siblingStamp,
+                out var retainedTexts))
         {
             response = null!;
             return false;
         }
 
-        response = BuildCachedVariant(sibling, ignoreWhitespace);
+        response = BuildCachedVariant(sibling, retainedTexts, ignoreWhitespace);
         _responseCache.Set(
             repositoryPath,
             path,
             response.WorktreeFingerprint,
             ignoreWhitespace,
             response,
-            siblingStamp);
+            siblingStamp,
+            retainedTexts);
         readTrace.Mark("metadata-sibling");
         return true;
     }

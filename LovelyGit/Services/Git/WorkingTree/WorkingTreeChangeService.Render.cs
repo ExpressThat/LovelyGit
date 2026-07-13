@@ -34,6 +34,13 @@ internal sealed partial class WorkingTreeChangeService
         var language = oldText.Length + newText.Length <= MaxSyntaxHighlightedCharacters
             ? ResolveLanguage(path)
             : null;
+        var direct = ConflictComparisonPayloadBuilder.BuildDirectIfUseful(
+            commitHash,
+            path,
+            status,
+            model,
+            hasSyntaxHighlighting: language is not null);
+        if (direct is not null) return direct;
         return BuildSideBySideResponse(commitHash, path, status, oldText, newText, language, model);
     }
 

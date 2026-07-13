@@ -21,7 +21,22 @@ internal sealed class ConflictResolutionResponseCache(int capacity = 8)
         string path,
         string fingerprint,
         bool ignoreWhitespace,
-        out ConflictResolutionResponse response)
+        out ConflictResolutionResponse response) =>
+        TryGetEntry(
+            repositoryPath,
+            path,
+            fingerprint,
+            ignoreWhitespace,
+            out response,
+            out _);
+
+    private bool TryGetEntry(
+        string repositoryPath,
+        string path,
+        string fingerprint,
+        bool ignoreWhitespace,
+        out ConflictResolutionResponse response,
+        out ConflictTexts? retainedTexts)
     {
         var key = Key(repositoryPath, path, fingerprint, ignoreWhitespace);
         lock (_gate)
@@ -29,12 +44,14 @@ internal sealed class ConflictResolutionResponseCache(int capacity = 8)
             if (!_entries.TryGetValue(key, out var node))
             {
                 response = null!;
+                retainedTexts = null;
                 return false;
             }
 
             _lru.Remove(node);
             _lru.AddLast(node);
             response = node.Value.Response;
+            retainedTexts = node.Value.RetainedTexts;
             return true;
         }
     }
@@ -44,15 +61,37 @@ internal sealed class ConflictResolutionResponseCache(int capacity = 8)
         string path,
         string fingerprint,
         bool ignoreWhitespace,
-        out ConflictResolutionResponse response) =>
-        TryGet(repositoryPath, path, fingerprint, !ignoreWhitespace, out response);
+        out ConflictResolutionResponse response,
+        out ConflictTexts? retainedTexts) =>
+        TryGetEntry(
+            repositoryPath,
+            path,
+            fingerprint,
+            !ignoreWhitespace,
+            out response,
+            out retainedTexts);
 
     public bool TryGetCurrent(
         string repositoryPath,
         string path,
         bool ignoreWhitespace,
         out ConflictResolutionResponse response,
-        out ConflictResolutionCacheStamp stamp)
+        out ConflictResolutionCacheStamp stamp) =>
+        TryGetCurrent(
+            repositoryPath,
+            path,
+            ignoreWhitespace,
+            out response,
+            out stamp,
+            out _);
+
+    private bool TryGetCurrent(
+        string repositoryPath,
+        string path,
+        bool ignoreWhitespace,
+        out ConflictResolutionResponse response,
+        out ConflictResolutionCacheStamp stamp,
+        out ConflictTexts? retainedTexts)
     {
         var normalizedRepository = NormalizeRepositoryPath(repositoryPath);
         lock (_gate)
@@ -76,12 +115,14 @@ internal sealed class ConflictResolutionResponseCache(int capacity = 8)
                 _lru.AddLast(node);
                 response = entry.Response;
                 stamp = candidate;
+                retainedTexts = entry.RetainedTexts;
                 return true;
             }
         }
 
         response = null!;
         stamp = default;
+        retainedTexts = null;
         return false;
     }
 
@@ -90,8 +131,15 @@ internal sealed class ConflictResolutionResponseCache(int capacity = 8)
         string path,
         bool ignoreWhitespace,
         out ConflictResolutionResponse response,
-        out ConflictResolutionCacheStamp stamp) =>
-        TryGetCurrent(repositoryPath, path, !ignoreWhitespace, out response, out stamp);
+        out ConflictResolutionCacheStamp stamp,
+        out ConflictTexts? retainedTexts) =>
+        TryGetCurrent(
+            repositoryPath,
+            path,
+            !ignoreWhitespace,
+            out response,
+            out stamp,
+            out retainedTexts);
 
     public void Set(
         string repositoryPath,
@@ -99,7 +147,8 @@ internal sealed class ConflictResolutionResponseCache(int capacity = 8)
         string fingerprint,
         bool ignoreWhitespace,
         ConflictResolutionResponse response,
-        ConflictResolutionCacheStamp? stamp = null)
+        ConflictResolutionCacheStamp? stamp = null,
+        ConflictTexts? retainedTexts = null)
     {
         var key = Key(repositoryPath, path, fingerprint, ignoreWhitespace);
         var normalizedRepository = NormalizeRepositoryPath(repositoryPath);
@@ -112,6 +161,7 @@ internal sealed class ConflictResolutionResponseCache(int capacity = 8)
                 path,
                 ignoreWhitespace,
                 stamp,
+                retainedTexts,
                 response));
             _entries[key] = node;
             while (_entries.Count > capacity && _lru.First is { } oldest)
@@ -185,5 +235,6 @@ internal sealed class ConflictResolutionResponseCache(int capacity = 8)
         string Path,
         bool IgnoreWhitespace,
         ConflictResolutionCacheStamp? Stamp,
+        ConflictTexts? RetainedTexts,
         ConflictResolutionResponse Response);
 }

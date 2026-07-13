@@ -8,6 +8,7 @@ namespace ExpressThat.LovelyGit.Services.Git.WorkingTree;
 internal static class ConflictTextPayloadBuilder
 {
     private const int MinimumCharacters = 64_000;
+    private const int MaximumRetainedSourceCharacters = 2 * 1024 * 1024;
     private const string BundleSchema = "interleaved-lines-v2:gzip-base64:utf-8";
 
     public static void Compact(ConflictResolutionResponse response)
@@ -39,6 +40,19 @@ internal static class ConflictTextPayloadBuilder
             version.TextGzipBase64 = null;
             version.TextEncoding = null;
         }
+    }
+
+    public static ConflictTexts? RetainSources(ConflictResolutionResponse response)
+    {
+        var characterCount = response.Base.Text?.Length ?? 0;
+        characterCount += response.Ours.Text?.Length ?? 0;
+        characterCount += response.Theirs.Text?.Length ?? 0;
+        if (characterCount < MinimumCharacters || characterCount > MaximumRetainedSourceCharacters)
+        {
+            return null;
+        }
+
+        return new(response.Base.Text, response.Ours.Text, response.Theirs.Text, null);
     }
 
     public static ConflictTexts Expand(ConflictResolutionResponse response)

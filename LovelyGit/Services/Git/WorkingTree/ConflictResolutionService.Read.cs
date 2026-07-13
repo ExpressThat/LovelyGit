@@ -60,11 +60,19 @@ internal sealed partial class ConflictResolutionService
                 path,
                 fingerprint,
                 ignoreWhitespace,
-                out var sibling))
+                out var sibling,
+                out var retainedTexts))
         {
-            var variant = BuildCachedVariant(sibling, ignoreWhitespace);
+            var variant = BuildCachedVariant(sibling, retainedTexts, ignoreWhitespace);
             readTrace.Mark("sibling-variant");
-            _responseCache.Set(repositoryPath, path, fingerprint, ignoreWhitespace, variant, cacheStamp);
+            _responseCache.Set(
+                repositoryPath,
+                path,
+                fingerprint,
+                ignoreWhitespace,
+                variant,
+                cacheStamp,
+                retainedTexts);
             return variant;
         }
 
@@ -127,11 +135,19 @@ internal sealed partial class ConflictResolutionService
                 : null,
         };
         readTrace.Mark("hunks-and-rendering");
+        var retainedSources = ConflictTextPayloadBuilder.RetainSources(response);
         ConflictComparisonPayloadBuilder.Compact(response.CurrentComparison);
         ConflictComparisonPayloadBuilder.Compact(response.IncomingComparison);
         ConflictTextPayloadBuilder.Compact(response);
         readTrace.Mark("payload-compaction");
-        _responseCache.Set(repositoryPath, path, fingerprint, ignoreWhitespace, response, cacheStamp);
+        _responseCache.Set(
+            repositoryPath,
+            path,
+            fingerprint,
+            ignoreWhitespace,
+            response,
+            cacheStamp,
+            retainedSources);
         return response;
     }
 

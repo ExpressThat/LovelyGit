@@ -17,7 +17,8 @@ public sealed class ConflictResolutionResponseCacheTests
         Assert.False(cache.TryGet("repo-b", "file.txt", "fingerprint", false, out _));
         Assert.False(cache.TryGet("repo-a", "other.txt", "fingerprint", false, out _));
         Assert.False(cache.TryGet("repo-a", "file.txt", "fingerprint", true, out _));
-        Assert.True(cache.TryGetSibling("repo-a", "file.txt", "fingerprint", true, out var sibling));
+        Assert.True(cache.TryGetSibling(
+            "repo-a", "file.txt", "fingerprint", true, out var sibling, out _));
         Assert.Same(exact, sibling);
     }
 
@@ -99,9 +100,22 @@ public sealed class ConflictResolutionResponseCacheTests
         cache.Set(directory.Path, "file.txt", "fingerprint", false, expected, stamp);
 
         Assert.True(cache.TryGetCurrentSibling(
-            directory.Path, "file.txt", true, out var sibling, out var siblingStamp));
+            directory.Path, "file.txt", true, out var sibling, out var siblingStamp, out _));
         Assert.Same(expected, sibling);
         Assert.Equal(stamp, siblingStamp);
+    }
+
+    [Fact]
+    public void SiblingCache_ReturnsRetainedComparisonSources()
+    {
+        var cache = new ConflictResolutionResponseCache();
+        var retained = new ConflictTexts("base", "ours", "theirs", null);
+        cache.Set(
+            "repo", "file.txt", "fingerprint", false, Response("exact"), retainedTexts: retained);
+
+        Assert.True(cache.TryGetSibling(
+            "repo", "file.txt", "fingerprint", true, out _, out var found));
+        Assert.Equal(retained, found);
     }
 
     [Theory]
