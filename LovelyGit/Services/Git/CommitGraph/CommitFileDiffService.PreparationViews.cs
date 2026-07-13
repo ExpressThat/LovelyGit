@@ -20,6 +20,11 @@ internal sealed partial class CommitFileDiffService
         var source = await BuildCommitFileDiffSourceAsync(
                 repositoryPath, commitHash, null, 0, path, cancellationToken)
             .ConfigureAwait(false);
+        if (!source.IsBinary
+            && !CommitFileDiffPreparationPolicy.CanPersistPreparedText(source.OldText, source.NewText))
+        {
+            return;
+        }
         if (!hasSideBySide)
         {
             await BuildAndCacheMissingDiffAsync(

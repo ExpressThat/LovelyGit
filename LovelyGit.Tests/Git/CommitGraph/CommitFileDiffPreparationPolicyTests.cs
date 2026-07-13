@@ -1,5 +1,6 @@
 using ExpressThat.LovelyGit.Services.Git.CommitGraph;
 using ExpressThat.LovelyGit.Services.Git.CommitGraph.Models;
+using ExpressThat.LovelyGit.Services.Git.Diffing;
 
 namespace LovelyGit.Tests.Git.CommitGraph;
 
@@ -25,6 +26,30 @@ public sealed class CommitFileDiffPreparationPolicyTests
         Assert.Equal(CommitFileDiffPreparationPolicy.MaxPreparedFileCount, selected.Count);
         Assert.Equal("file-0.txt", selected[0].Path);
         Assert.Equal("file-5.txt", selected[^1].Path);
+    }
+
+    [Fact]
+    public void CanPersistPreparedText_RejectsLargeModifiedPayloads()
+    {
+        var oldText = new string('a', DiffInputGuard.FastDiffInputCharacters / 2 + 1);
+        var newText = new string('b', DiffInputGuard.FastDiffInputCharacters / 2 + 1);
+
+        Assert.False(CommitFileDiffPreparationPolicy.CanPersistPreparedText(oldText, newText));
+    }
+
+    [Fact]
+    public void CanPersistPreparedText_KeepsLargeAdditionsAndDeletionsEligible()
+    {
+        var text = new string('a', DiffInputGuard.FastDiffInputCharacters + 1);
+
+        Assert.True(CommitFileDiffPreparationPolicy.CanPersistPreparedText(string.Empty, text));
+        Assert.True(CommitFileDiffPreparationPolicy.CanPersistPreparedText(text, string.Empty));
+    }
+
+    [Fact]
+    public void CanPersistPreparedText_KeepsNormalModifiedFilesEligible()
+    {
+        Assert.True(CommitFileDiffPreparationPolicy.CanPersistPreparedText("before", "after"));
     }
 
     private static List<CommitChangedFile> BuildChangedFiles(int count)
