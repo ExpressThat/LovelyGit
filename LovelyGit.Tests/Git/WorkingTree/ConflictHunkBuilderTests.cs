@@ -103,8 +103,6 @@ public sealed class ConflictHunkBuilderTests
         var expected = ConflictHunkBuilder.Build(baseText, current, incoming, result);
 
         var actual = ConflictHunkBuilder.Build(
-            current,
-            incoming,
             result,
             ConflictHunkBuilder.BuildLineModel(baseText, current),
             ConflictHunkBuilder.BuildLineModel(baseText, incoming));

@@ -13,19 +13,17 @@ internal static class ConflictHunkBuilder
     {
         var currentDiff = BuildLineModel(baseText, currentText);
         var incomingDiff = BuildLineModel(baseText, incomingText);
-        return Build(currentText, incomingText, resultText, currentDiff, incomingDiff);
+        return Build(resultText, currentDiff, incomingDiff);
     }
 
     public static List<ConflictHunk> Build(
-        string currentText,
-        string incomingText,
         string resultText,
         LineDiffModel currentDiff,
         LineDiffModel incomingDiff)
     {
         var parsed = Parse(resultText);
-        var currentLines = SplitLines(currentText);
-        var incomingLines = SplitLines(incomingText);
+        var currentLines = currentDiff.NewLines;
+        var incomingLines = incomingDiff.NewLines;
         var currentCursor = 0;
         var incomingCursor = 0;
         var hunks = new List<ConflictHunk>(parsed.Count);
@@ -72,17 +70,7 @@ internal static class ConflictHunkBuilder
         IncomingLineCount = conflict.Incoming.Count,
     };
 
-    internal static IReadOnlyList<string> SplitLines(string text)
-    {
-        if (text.Length == 0)
-        {
-            return Array.Empty<string>();
-        }
-
-        var normalized = text.Replace("\r\n", "\n", StringComparison.Ordinal);
-        var lines = normalized.Split('\n');
-        return normalized.EndsWith('\n') ? lines[..^1] : lines;
-    }
+    internal static IReadOnlyList<string> SplitLines(string text) => LineDiffEngine.SplitLines(text);
 
     private static List<ParsedConflict> Parse(string text)
     {

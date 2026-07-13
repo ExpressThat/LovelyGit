@@ -24,6 +24,9 @@ public sealed class ConflictPreparationPerformanceTests(ITestOutputHelper output
         Assert.True(
             shared.Allocated < duplicated.Allocated * 0.80,
             $"Prepared path allocated {shared.Allocated:N0} vs {duplicated.Allocated:N0} bytes.");
+        Assert.True(
+            shared.Allocated < 1_050_000,
+            $"Prepared conflict rendering allocated {shared.Allocated:N0} bytes.");
     }
 
     [Fact]
@@ -119,8 +122,6 @@ public sealed class ConflictPreparationPerformanceTests(ITestOutputHelper output
         var incomingModel = ConflictHunkBuilder.BuildLineModel(fixture.Base, fixture.Incoming);
         return new PreparedConflict(
             ConflictHunkBuilder.Build(
-                fixture.Current,
-                fixture.Incoming,
                 fixture.Result,
                 currentModel,
                 incomingModel),
@@ -133,8 +134,6 @@ public sealed class ConflictPreparationPerformanceTests(ITestOutputHelper output
         var exactCurrent = ConflictHunkBuilder.BuildLineModel(fixture.Base, fixture.Current);
         var exactIncoming = ConflictHunkBuilder.BuildLineModel(fixture.Base, fixture.Incoming);
         var hunks = ConflictHunkBuilder.Build(
-            fixture.Current,
-            fixture.Incoming,
             fixture.Result,
             exactCurrent,
             exactIncoming);

@@ -112,8 +112,6 @@ internal sealed partial class ConflictResolutionService
             IncomingSource = incomingSource,
             Hunks = canBuildTextMerge
                 ? ConflictHunkBuilder.Build(
-                    ours.Text!,
-                    theirs.Text!,
                     result.Text!,
                     diffModels!.CurrentHunk,
                     diffModels.IncomingHunk)
