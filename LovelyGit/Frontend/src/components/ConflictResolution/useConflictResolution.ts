@@ -17,6 +17,7 @@ import {
 	renderConflictResult,
 } from "./conflictDocument";
 import { loadConflictTextPayloads } from "./conflictTextPayload";
+import { ConflictResolutionVariantCache } from "./conflictResolutionVariantCache";
 import { verifyExternalConflictResolved } from "./externalConflictVerification";
 
 type LoadState =
@@ -36,7 +37,6 @@ export function useConflictResolution({
 	onClose: () => void;
 	repositoryId: string;
 }) {
-	const viewMode = useSetting("CommitDiffViewMode");
 	const ignoreWhitespace = useSetting("CommitDiffIgnoreWhitespace");
 	const wrapLines = useSetting("CommitDiffWrapLines");
 	const contextLines = useSetting("CommitDiffContextLines");
@@ -52,28 +52,34 @@ export function useConflictResolution({
 	const [actionError, setActionError] = useState<string | null>(null);
 	const [activeConflict, setActiveConflict] = useState(0);
 	const loadedFingerprint = useRef<string | null>(null);
+	const variantCache = useRef(new ConflictResolutionVariantCache());
 	const fetchConflict = useCallback(
 		() =>
-			sendRequestWithResponse({
-				commandType: "GetConflictResolution",
-				arguments: {
-					repositoryId,
-					path: file.path,
-					viewMode,
-					ignoreWhitespace,
+			variantCache.current.load(
+				`${repositoryId}\0${file.path}`,
+				ignoreWhitespace,
+				async () => {
+					const conflict = await sendRequestWithResponse({
+						commandType: "GetConflictResolution",
+						arguments: {
+							repositoryId,
+							path: file.path,
+							viewMode: "SideBySide",
+							ignoreWhitespace,
+						},
+					});
+					return conflict ? loadConflictTextPayloads(conflict) : null;
 				},
-			}),
-		[file.path, ignoreWhitespace, repositoryId, viewMode],
+			),
+		[file.path, ignoreWhitespace, repositoryId],
 	);
 
 	useEffect(() => {
 		let active = true;
 		if (loadedFingerprint.current === null) setState({ status: "loading" });
 		fetchConflict()
-			.then(async (conflict) => {
+			.then((conflict) => {
 				if (!active || !conflict) return;
-				conflict = await loadConflictTextPayloads(conflict);
-				if (!active) return;
 				if (loadedFingerprint.current === conflict.worktreeFingerprint) {
 					setState({ status: "loaded", conflict });
 					return;
