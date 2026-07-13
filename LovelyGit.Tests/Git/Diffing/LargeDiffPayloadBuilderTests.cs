@@ -22,8 +22,7 @@ public sealed class LargeDiffPayloadBuilderTests
         Assert.True(response.CompactLineCount > DiffInputGuard.FastDiffInputLines);
         Assert.NotEmpty(response.CompactLinesGzipBase64);
         using var compactLines = ExpandLines(response.CompactLinesGzipBase64);
-        Assert.Contains(compactLines.RootElement.EnumerateArray(), row => row[2].GetInt32() == 2);
-        Assert.Contains(compactLines.RootElement.EnumerateArray(), row => row[2].GetInt32() == 3);
+        Assert.Contains(compactLines.RootElement.EnumerateArray(), row => row[2].GetInt32() == 1);
         var sources = ConflictTextBundleCodec.Expand(response.CompactSourceBundleGzipBase64);
         Assert.Equal(oldText, sources.Base);
         Assert.Equal(newText, sources.Ours);

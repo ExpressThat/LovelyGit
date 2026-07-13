@@ -44,6 +44,24 @@ export function cacheCommitFileDiff(
 	}
 }
 
+export function cacheCommitFileDiffViews(
+	key: string,
+	alternateViewKey: string,
+	response: CommitFileDiffResponse,
+) {
+	cacheCommitFileDiff(key, response);
+	if (
+		response.compactLineSchema !== "tuple-v4-delta-refs:gzip-base64:utf-8" ||
+		!response.compactSourceBundleGzipBase64
+	) {
+		return;
+	}
+	cacheCommitFileDiff(alternateViewKey, {
+		...response,
+		viewMode: response.viewMode === "Combined" ? "SideBySide" : "Combined",
+	});
+}
+
 export function clearCommitFileDiffCache() {
 	cache.clear();
 }

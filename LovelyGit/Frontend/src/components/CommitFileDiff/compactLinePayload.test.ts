@@ -116,6 +116,22 @@ describe("compactLinePayload", () => {
 		]);
 	});
 
+	it("projects canonical modified rows into combined delete and insert rows", () => {
+		const lines = decodeDeltaReferenceLines(
+			[[1, 1, 1, [], [], [], [[0, 6, "Deleted"]], [[0, 5, "Inserted"]]]],
+			"before",
+			"after",
+			true,
+		);
+
+		expect(lines.map((line) => [line.changeType, line.text])).toEqual([
+			["Deleted", "before"],
+			["Inserted", "after"],
+		]);
+		expect(lines[0].changeSpans[0].changeType).toBe("Deleted");
+		expect(lines[1].changeSpans[0].changeType).toBe("Inserted");
+	});
+
 	it("hydrates delta references from the bundled old and new sources", async () => {
 		const diff = {
 			compactLineSchema: "tuple-v4-delta-refs:gzip-base64:utf-8",
@@ -125,8 +141,7 @@ describe("compactLinePayload", () => {
 					[1, 1, 1],
 				]),
 			),
-			compactSourceSchema:
-				"interleaved-lines-v3:gzip-base64:varint-utf-8",
+			compactSourceSchema: "interleaved-lines-v3:gzip-base64:varint-utf-8",
 			compactSourceBundleGzipBase64: await gzipBytesBase64(
 				encodeSourceBundle("old one\nold two", "new one\nnew two"),
 			),
@@ -144,8 +159,7 @@ describe("compactLinePayload", () => {
 		const diff = {
 			compactLineSchema: "tuple-v4-delta-refs:gzip-base64:utf-8",
 			compactLinesGzipBase64: await gzipBase64("[]"),
-			compactSourceSchema:
-				"interleaved-lines-v3:gzip-base64:varint-utf-8",
+			compactSourceSchema: "interleaved-lines-v3:gzip-base64:varint-utf-8",
 		} as CommitFileDiffResponse;
 
 		await expect(loadCompactLines(diff)).rejects.toThrow(
@@ -174,7 +188,11 @@ function encodeSourceBundle(oldText: string, newText: string) {
 	const sources = [linesWithEndings(oldText), linesWithEndings(newText), []];
 	const output: number[] = [];
 	writeVarUInt(output, Math.max(...sources.map((source) => source.length)));
-	for (let row = 0; row < Math.max(...sources.map((source) => source.length)); row++) {
+	for (
+		let row = 0;
+		row < Math.max(...sources.map((source) => source.length));
+		row++
+	) {
 		for (const source of sources) writeText(output, source[row]);
 	}
 	writeText(output, undefined);

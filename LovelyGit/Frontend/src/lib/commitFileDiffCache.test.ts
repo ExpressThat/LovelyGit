@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import type { CommitFileDiffResponse } from "@/generated/types";
 import {
 	cacheCommitFileDiff,
+	cacheCommitFileDiffViews,
 	clearCommitFileDiffCache,
 	commitFileDiffCacheKey,
 	getCachedCommitFileDiff,
@@ -62,6 +63,30 @@ describe("commitFileDiffCache", () => {
 		const cached = response("colored.txt");
 		cacheCommitFileDiff(key(), cached);
 		expect(getCachedCommitFileDiff(key())).toBe(cached);
+	});
+
+	it("shares canonical reference payloads with the alternate view mode", () => {
+		const cached = {
+			...response("large.txt"),
+			compactLineSchema: "tuple-v4-delta-refs:gzip-base64:utf-8",
+			compactSourceBundleGzipBase64: "sources",
+		};
+		const combinedKey = key({ viewMode: "Combined" });
+		const sideBySideKey = key({ viewMode: "SideBySide" });
+
+		cacheCommitFileDiffViews(combinedKey, sideBySideKey, cached);
+
+		expect(getCachedCommitFileDiff(combinedKey)).toBe(cached);
+		expect(getCachedCommitFileDiff(sideBySideKey)?.viewMode).toBe("SideBySide");
+	});
+
+	it("does not share view-specific rendered payloads", () => {
+		const combinedKey = key({ viewMode: "Combined" });
+		const sideBySideKey = key({ viewMode: "SideBySide" });
+
+		cacheCommitFileDiffViews(combinedKey, sideBySideKey, response("small.txt"));
+
+		expect(getCachedCommitFileDiff(sideBySideKey)).toBeUndefined();
 	});
 
 	it("evicts the least recently used response after eight variants", () => {

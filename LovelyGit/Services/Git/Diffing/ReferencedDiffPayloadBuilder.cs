@@ -19,7 +19,7 @@ internal static class ReferencedDiffPayloadBuilder
         string? oldText = null,
         string? newText = null)
     {
-        var compact = Compress(model, viewMode);
+        var compact = Compress(model);
         var response = new CommitFileDiffResponse
         {
             CommitHash = commitHash,
@@ -44,7 +44,7 @@ internal static class ReferencedDiffPayloadBuilder
         return response;
     }
 
-    private static CompactPayload Compress(LineDiffModel model, CommitDiffViewMode viewMode)
+    private static CompactPayload Compress(LineDiffModel model)
     {
         using var output = new MemoryStream();
         var lineCount = 0;
@@ -56,39 +56,12 @@ internal static class ReferencedDiffPayloadBuilder
             var previousNew = 0;
             foreach (var row in model.Rows)
             {
-                if (viewMode == CommitDiffViewMode.Combined
-                    && row.IsChanged
-                    && row.OldIndex is { } oldIndex
-                    && row.NewIndex is { } newIndex)
-                {
-                    WriteReferenceLine(writer, oldIndex, null, "Deleted", ref previousOld, ref previousNew);
-                    WriteReferenceLine(writer, null, newIndex, "Inserted", ref previousOld, ref previousNew);
-                    lineCount += 2;
-                }
-                else
-                {
-                    WriteLine(writer, model, row, ref previousOld, ref previousNew);
-                    lineCount++;
-                }
+                WriteLine(writer, model, row, ref previousOld, ref previousNew);
+                lineCount++;
             }
             writer.WriteEndArray();
         }
         return new(Convert.ToBase64String(output.GetBuffer(), 0, checked((int)output.Length)), lineCount);
-    }
-
-    private static void WriteReferenceLine(
-        Utf8JsonWriter writer,
-        int? oldIndex,
-        int? newIndex,
-        string changeType,
-        ref int previousOld,
-        ref int previousNew)
-    {
-        writer.WriteStartArray();
-        WriteDelta(writer, oldIndex + 1, ref previousOld);
-        WriteDelta(writer, newIndex + 1, ref previousNew);
-        WriteChangeType(writer, changeType);
-        writer.WriteEndArray();
     }
 
     private static void WriteLine(

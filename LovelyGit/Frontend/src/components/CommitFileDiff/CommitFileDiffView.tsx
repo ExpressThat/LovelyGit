@@ -5,7 +5,7 @@ import type {
 } from "@/generated/types";
 import { sendRequestWithResponse } from "@/lib/commands";
 import {
-	cacheCommitFileDiff,
+	cacheCommitFileDiffViews,
 	commitFileDiffCacheKey,
 	getCachedCommitFileDiff,
 } from "@/lib/commitFileDiffCache";
@@ -50,6 +50,15 @@ export function CommitFileDiffView({
 		repositoryId,
 		viewMode,
 	});
+	const alternateViewKey = commitFileDiffCacheKey({
+		commitHash,
+		comparisonCommitHash,
+		filePath: file.path,
+		ignoreWhitespace,
+		parentIndex,
+		repositoryId,
+		viewMode: viewMode === "Combined" ? "SideBySide" : "Combined",
+	});
 
 	useLayoutEffect(() => {
 		let isActive = true;
@@ -84,7 +93,7 @@ export function CommitFileDiffView({
 					return;
 				}
 
-				cacheCommitFileDiff(requestKey, diff);
+				cacheCommitFileDiffViews(requestKey, alternateViewKey, diff);
 				setState({ status: "loaded", diff });
 			})
 			.catch((error: unknown) => {
@@ -106,6 +115,7 @@ export function CommitFileDiffView({
 		};
 	}, [
 		commitHash,
+		alternateViewKey,
 		comparisonCommitHash,
 		file.path,
 		ignoreWhitespace,

@@ -130,7 +130,18 @@ describe("CommitFileDiffView", () => {
 		expect(sendRequestWithResponse).toHaveBeenCalledTimes(2);
 	});
 
-	it("reuses a previously loaded display variant", async () => {
+	it("projects both large-diff display variants from one request", async () => {
+		vi.mocked(sendRequestWithResponse).mockResolvedValue({
+			commitHash: "merge",
+			compactLineSchema: "tuple-v4-delta-refs:gzip-base64:utf-8",
+			compactSourceBundleGzipBase64: "source-bundle",
+			hasDifferences: true,
+			isBinary: false,
+			lines: [],
+			path: "main.txt",
+			status: "M",
+			viewMode: "Combined",
+		});
 		const props = {
 			commitHash: "merge",
 			file: {
@@ -149,14 +160,13 @@ describe("CommitFileDiffView", () => {
 
 		settings.CommitDiffViewMode = "SideBySide";
 		rerender(<CommitFileDiffView {...props} />);
-		await waitFor(() =>
-			expect(sendRequestWithResponse).toHaveBeenCalledTimes(2),
-		);
+		await screen.findByText("Parent diff loaded");
+		expect(sendRequestWithResponse).toHaveBeenCalledTimes(1);
 
 		settings.CommitDiffViewMode = "Combined";
 		rerender(<CommitFileDiffView {...props} />);
 		await screen.findByText("Parent diff loaded");
-		expect(sendRequestWithResponse).toHaveBeenCalledTimes(2);
+		expect(sendRequestWithResponse).toHaveBeenCalledTimes(1);
 	});
 
 	it("requests the file against the selected merge parent", async () => {

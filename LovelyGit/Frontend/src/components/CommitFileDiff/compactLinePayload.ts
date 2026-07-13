@@ -122,7 +122,8 @@ export function decodeDeltaReferenceLines(
 	const newLines = textLines(newText);
 	let previousOld = 0;
 	let previousNew = 0;
-	return tuples.map((tuple): CommitFileDiffLine => {
+	const lines: CommitFileDiffLine[] = [];
+	for (const tuple of tuples) {
 		const oldLineNumber = applyDelta(tuple[0], previousOld);
 		const newLineNumber = applyDelta(tuple[1], previousNew);
 		if (oldLineNumber != null) previousOld = oldLineNumber;
@@ -130,16 +131,12 @@ export function decodeDeltaReferenceLines(
 		const oldLineText = lineAt(oldLines, oldLineNumber);
 		const newLineText = lineAt(newLines, newLineNumber);
 		const resolvedChangeType = changeType(tuple[2]);
-		return {
+		const line: CommitFileDiffLine = {
 			oldLineNumber,
 			newLineNumber,
 			oldText: oldLineText,
 			newText: newLineText,
-			text: combined
-				? resolvedChangeType === "Inserted" || resolvedChangeType === "Added"
-					? newLineText
-					: oldLineText
-				: "",
+			text: "",
 			changeType: resolvedChangeType,
 			oldSyntaxSpans: (tuple[3] ?? []).map(toSyntaxSpan),
 			newSyntaxSpans: (tuple[4] ?? []).map(toSyntaxSpan),
@@ -148,7 +145,42 @@ export function decodeDeltaReferenceLines(
 			newChangeSpans: (tuple[7] ?? []).map(toChangeSpan),
 			changeSpans: (tuple[8] ?? []).map(toChangeSpan),
 		};
-	});
+		if (
+			combined &&
+			resolvedChangeType === "Modified" &&
+			oldLineNumber != null &&
+			newLineNumber != null
+		) {
+			lines.push(
+				{
+					...line,
+					newLineNumber: null,
+					newText: "",
+					text: oldLineText,
+					changeType: "Deleted",
+					syntaxSpans: line.oldSyntaxSpans,
+					changeSpans: line.oldChangeSpans,
+				},
+				{
+					...line,
+					oldLineNumber: null,
+					oldText: "",
+					text: newLineText,
+					changeType: "Inserted",
+					syntaxSpans: line.newSyntaxSpans,
+					changeSpans: line.newChangeSpans,
+				},
+			);
+		} else {
+			line.text = combined
+				? resolvedChangeType === "Inserted" || resolvedChangeType === "Added"
+					? newLineText
+					: oldLineText
+				: "";
+			lines.push(line);
+		}
+	}
+	return lines;
 }
 
 function applyDelta(delta: number | null, previous: number) {
