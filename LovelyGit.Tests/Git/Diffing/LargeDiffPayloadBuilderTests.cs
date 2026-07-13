@@ -52,15 +52,23 @@ public sealed class LargeDiffPayloadBuilderTests
     [Fact]
     public void Build_KeepsLargeMostlyUnchangedPayloadBelowWebViewMessageBudget()
     {
-        var oldText = string.Join('\n', Enumerable.Range(1, 80_000).Select(index => $"line {index:D5} repeated content"));
-        var newText = oldText.Replace("line 40000", "changed 40000", StringComparison.Ordinal);
+        var oldLines = Enumerable.Range(1, 80_000)
+            .Select(index => $"value {index} baseline content for a representative large file")
+            .ToArray();
+        var newLines = (string[])oldLines.Clone();
+        for (var index = 499; index < newLines.Length; index += 500)
+            newLines[index] = $"value {index + 1} changed content with a meaningful replacement";
+        for (var index = 776; index < newLines.Length; index += 777)
+            newLines[index] += "   ";
+        var oldText = string.Join('\n', oldLines);
+        var newText = string.Join('\n', newLines);
 
         var response = LargeDiffPayloadBuilder.Build(
             "hash", "large.txt", "Modified", CommitDiffViewMode.SideBySide, false, oldText, newText);
 
         var encodedCharacters = response.CompactLinesGzipBase64.Length
             + response.CompactSourceBundleGzipBase64.Length;
-        Assert.True(encodedCharacters < 1_000_000, $"Compact payload was {encodedCharacters:N0} characters.");
+        Assert.True(encodedCharacters < 700_000, $"Compact payload was {encodedCharacters:N0} characters.");
     }
 
     [Fact]

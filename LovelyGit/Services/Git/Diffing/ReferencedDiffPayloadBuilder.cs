@@ -39,7 +39,7 @@ internal static class ReferencedDiffPayloadBuilder
                 newText,
                 null,
                 null,
-                CompressionLevel.SmallestSize);
+                CompressionLevel.Optimal);
         }
         return response;
     }
