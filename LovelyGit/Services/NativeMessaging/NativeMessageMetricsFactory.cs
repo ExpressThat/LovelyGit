@@ -6,11 +6,10 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging;
 internal static class NativeMessageMetricsFactory
 {
     private static readonly TimeSpan MemorySampleInterval = TimeSpan.FromSeconds(1);
-    private static readonly object MemorySampleSync = new();
     private static readonly Process CurrentProcess = Process.GetCurrentProcess();
-    private static long sampledAt;
-    private static long sampledWorkingSet;
-    private static long sampledPrivateMemory;
+    private static readonly NativeMessageMemorySampler MemorySampler = new(
+        ReadProcessMemory,
+        MemorySampleInterval);
 
     public static NativeMessageMetrics Create(
         long startedAt,
@@ -40,33 +39,17 @@ internal static class NativeMessageMetricsFactory
 
     private static ProcessMemorySample GetProcessMemorySample()
     {
-        var now = Stopwatch.GetTimestamp();
-        var lastSample = Volatile.Read(ref sampledAt);
-        if (lastSample != 0 && Stopwatch.GetElapsedTime(lastSample, now) < MemorySampleInterval)
-        {
-            return ReadCachedSample();
-        }
-
-        lock (MemorySampleSync)
-        {
-            lastSample = Volatile.Read(ref sampledAt);
-            if (lastSample != 0 && Stopwatch.GetElapsedTime(lastSample, now) < MemorySampleInterval)
-            {
-                return ReadCachedSample();
-            }
-
-            CurrentProcess.Refresh();
-            Volatile.Write(ref sampledWorkingSet, Math.Max(0, CurrentProcess.WorkingSet64));
-            Volatile.Write(ref sampledPrivateMemory, Math.Max(0, CurrentProcess.PrivateMemorySize64));
-            Volatile.Write(ref sampledAt, now);
-            return ReadCachedSample();
-        }
+        var sample = MemorySampler.GetSample();
+        return new ProcessMemorySample(sample.WorkingSet, sample.PrivateMemory);
     }
 
-    private static ProcessMemorySample ReadCachedSample() =>
-        new(
-            Volatile.Read(ref sampledWorkingSet),
-            Volatile.Read(ref sampledPrivateMemory));
+    private static NativeMessageMemorySample ReadProcessMemory()
+    {
+        CurrentProcess.Refresh();
+        return new NativeMessageMemorySample(
+            CurrentProcess.WorkingSet64,
+            CurrentProcess.PrivateMemorySize64);
+    }
 
     private readonly record struct ProcessMemorySample(long WorkingSet, long PrivateMemory);
 }
