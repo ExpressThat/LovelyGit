@@ -3,24 +3,35 @@ namespace ExpressThat.LovelyGit.Services.Git.Diffing;
 internal static class LineDiffEngine
 {
     public static LineDiffModel Build(string oldText, string newText, bool ignoreWhitespace = false)
+        => Build(Prepare(oldText), Prepare(newText), ignoreWhitespace);
+
+    public static PreparedLineText Prepare(string text) =>
+        new(SplitLines(text), EndsWithNewLine(text));
+
+    public static LineDiffModel Build(
+        PreparedLineText oldText,
+        PreparedLineText newText,
+        bool ignoreWhitespace = false)
     {
-        var oldLines = SplitLines(oldText);
-        var newLines = SplitLines(newText);
-        var endingsDiffer = EndsWithNewLine(oldText) != EndsWithNewLine(newText);
-        var comparisonOldLines = ComparisonLines(oldLines, oldText, endingsDiffer);
-        var comparisonNewLines = ComparisonLines(newLines, newText, endingsDiffer);
+        var endingsDiffer = oldText.EndsWithNewLine != newText.EndsWithNewLine;
+        var comparisonOldLines = ComparisonLines(oldText, endingsDiffer);
+        var comparisonNewLines = ComparisonLines(newText, endingsDiffer);
         var comparer = ignoreWhitespace ? WhitespaceIgnoringLineComparer.Instance : null;
         var edits = new spkl.Diffs.MyersDiff<string>(comparisonOldLines, comparisonNewLines, comparer)
             .GetEditScript()
             .Select(edit => new LineDiffBlock(edit.Item1, edit.Item2, edit.Item3, edit.Item4))
             .ToArray();
-        return new LineDiffModel(oldLines, newLines, edits, Align(oldLines.Length, newLines.Length, edits));
+        return new LineDiffModel(
+            oldText.Lines,
+            newText.Lines,
+            edits,
+            Align(oldText.Lines.Length, newText.Lines.Length, edits));
     }
 
-    private static string[] ComparisonLines(string[] lines, string text, bool endingsDiffer)
+    private static string[] ComparisonLines(PreparedLineText text, bool endingsDiffer)
     {
-        if (!endingsDiffer || lines.Length == 0 || !EndsWithNewLine(text)) return lines;
-        var comparison = (string[])lines.Clone();
+        if (!endingsDiffer || text.Lines.Length == 0 || !text.EndsWithNewLine) return text.Lines;
+        var comparison = (string[])text.Lines.Clone();
         comparison[^1] += "\n";
         return comparison;
     }
@@ -69,6 +80,8 @@ internal static class LineDiffEngine
             rows.Add(new(oldIndex++, newIndex++, IsChanged: false));
     }
 }
+
+internal readonly record struct PreparedLineText(string[] Lines, bool EndsWithNewLine);
 
 internal sealed record LineDiffModel(
     string[] OldLines,

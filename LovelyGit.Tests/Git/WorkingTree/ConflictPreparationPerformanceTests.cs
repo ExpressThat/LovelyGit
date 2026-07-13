@@ -54,6 +54,41 @@ public sealed class ConflictPreparationPerformanceTests(ITestOutputHelper output
         Assert.True(lineDiff.Allocated < 1_000_000, $"Line diff allocated {lineDiff.Allocated:N0} bytes.");
     }
 
+    [Fact]
+    public void SharedPreparedBase_ReducesTwoSidedComparisonAllocations()
+    {
+        var fixture = CreateFixture(5_000);
+        _ = BuildTwoDiffsDuplicated(fixture);
+        _ = BuildTwoDiffsPrepared(fixture);
+
+        var duplicated = Measure(() => BuildTwoDiffsDuplicated(fixture));
+        var prepared = Measure(() => BuildTwoDiffsPrepared(fixture));
+
+        output.WriteLine($"Duplicated lines: {duplicated.Allocated:N0} bytes");
+        output.WriteLine($"Prepared lines: {prepared.Allocated:N0} bytes");
+        Assert.True(
+            prepared.Allocated < duplicated.Allocated * 0.90,
+            $"Prepared path allocated {prepared.Allocated:N0} vs {duplicated.Allocated:N0} bytes.");
+    }
+
+    private static object BuildTwoDiffsDuplicated(Fixture fixture) => new[]
+    {
+        ConflictHunkBuilder.BuildLineModel(fixture.Base, fixture.Current, ignoreWhitespace: true),
+        ConflictHunkBuilder.BuildLineModel(fixture.Base, fixture.Incoming, ignoreWhitespace: true),
+    };
+
+    private static object BuildTwoDiffsPrepared(Fixture fixture)
+    {
+        var baseLines = ConflictHunkBuilder.PrepareLineText(fixture.Base);
+        var currentLines = ConflictHunkBuilder.PrepareLineText(fixture.Current);
+        var incomingLines = ConflictHunkBuilder.PrepareLineText(fixture.Incoming);
+        return new[]
+        {
+            ConflictHunkBuilder.BuildLineModel(baseLines, currentLines, ignoreWhitespace: true),
+            ConflictHunkBuilder.BuildLineModel(baseLines, incomingLines, ignoreWhitespace: true),
+        };
+    }
+
     private static PreparedConflict PrepareShared(Fixture fixture)
     {
         var currentModel = ConflictHunkBuilder.BuildLineModel(fixture.Base, fixture.Current);

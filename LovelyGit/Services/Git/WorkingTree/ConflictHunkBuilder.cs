@@ -49,6 +49,14 @@ internal static class ConflictHunkBuilder
         bool ignoreWhitespace = false) =>
         LineDiffEngine.Build(baseText, sourceText, ignoreWhitespace);
 
+    internal static PreparedLineText PrepareLineText(string text) => LineDiffEngine.Prepare(text);
+
+    internal static LineDiffModel BuildLineModel(
+        PreparedLineText baseText,
+        PreparedLineText sourceText,
+        bool ignoreWhitespace = false) =>
+        LineDiffEngine.Build(baseText, sourceText, ignoreWhitespace);
+
     private static ConflictHunk CreateHunk(
         ParsedConflict conflict,
         int currentStart,

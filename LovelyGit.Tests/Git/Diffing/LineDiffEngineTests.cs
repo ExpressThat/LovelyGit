@@ -35,6 +35,37 @@ public sealed class LineDiffEngineTests
         Assert.False(model.Rows[0].IsChanged);
     }
 
+    [Theory]
+    [MemberData(nameof(RepresentativeChanges))]
+    public void PreparedText_PreservesStringBuildSemantics(string oldText, string newText)
+    {
+        var oldPrepared = LineDiffEngine.Prepare(oldText);
+        var newPrepared = LineDiffEngine.Prepare(newText);
+
+        var prepared = LineDiffEngine.Build(oldPrepared, newPrepared);
+        var direct = LineDiffEngine.Build(oldText, newText);
+
+        Assert.Equal(direct.OldLines, prepared.OldLines);
+        Assert.Equal(direct.NewLines, prepared.NewLines);
+        Assert.Equal(direct.Blocks, prepared.Blocks);
+        Assert.Equal(direct.Rows, prepared.Rows);
+    }
+
+    [Fact]
+    public void PreparedText_CanBeReusedAcrossComparisonModesWithoutMutation()
+    {
+        var oldPrepared = LineDiffEngine.Prepare("same\r\nvalue = 1\r\n");
+        var newPrepared = LineDiffEngine.Prepare("same\n value\t=  1\n");
+
+        var exact = LineDiffEngine.Build(oldPrepared, newPrepared);
+        var ignored = LineDiffEngine.Build(oldPrepared, newPrepared, ignoreWhitespace: true);
+
+        Assert.True(exact.HasDifferences);
+        Assert.False(ignored.HasDifferences);
+        Assert.Equal(new[] { "same", "value = 1" }, oldPrepared.Lines);
+        Assert.Equal(new[] { "same", " value\t=  1" }, newPrepared.Lines);
+    }
+
     [Fact]
     public void Build_AlignsReplacementForSideBySideRendering()
     {

@@ -95,18 +95,9 @@ internal sealed partial class ConflictResolutionService
             ours.Text != null &&
             theirs.Text != null &&
             result.Text != null;
-        var currentHunkModel = canBuildTextMerge
-            ? ConflictHunkBuilder.BuildLineModel(baseVersion.Text!, ours.Text!)
+        var diffModels = canBuildTextMerge
+            ? PrepareDiffModels(baseVersion.Text!, ours.Text!, theirs.Text!, ignoreWhitespace)
             : null;
-        var incomingHunkModel = canBuildTextMerge
-            ? ConflictHunkBuilder.BuildLineModel(baseVersion.Text!, theirs.Text!)
-            : null;
-        var currentComparisonModel = canBuildTextMerge && ignoreWhitespace
-            ? ConflictHunkBuilder.BuildLineModel(baseVersion.Text!, ours.Text!, ignoreWhitespace: true)
-            : currentHunkModel;
-        var incomingComparisonModel = canBuildTextMerge && ignoreWhitespace
-            ? ConflictHunkBuilder.BuildLineModel(baseVersion.Text!, theirs.Text!, ignoreWhitespace: true)
-            : incomingHunkModel;
         readTrace.Mark("diff-models");
 
         var response = new ConflictResolutionResponse
@@ -124,14 +115,14 @@ internal sealed partial class ConflictResolutionService
                     ours.Text!,
                     theirs.Text!,
                     result.Text!,
-                    currentHunkModel!,
-                    incomingHunkModel!)
+                    diffModels!.CurrentHunk,
+                    diffModels.IncomingHunk)
                 : new List<ConflictHunk>(),
             CurrentComparison = canBuildTextMerge
-                ? BuildBaseComparison(path, baseVersion.Text!, ours.Text!, currentComparisonModel!)
+                ? BuildBaseComparison(path, baseVersion.Text!, ours.Text!, diffModels!.CurrentComparison)
                 : null,
             IncomingComparison = canBuildTextMerge
-                ? BuildBaseComparison(path, baseVersion.Text!, theirs.Text!, incomingComparisonModel!)
+                ? BuildBaseComparison(path, baseVersion.Text!, theirs.Text!, diffModels!.IncomingComparison)
                 : null,
         };
         readTrace.Mark("hunks-and-rendering");
