@@ -5,7 +5,7 @@ import type {
 import {
 	decodeGzipBase64,
 	decodeGzipBase64Bytes,
-} from "../CommitFileDiff/compactLinePayload";
+} from "../CommitFileDiff/compactPayloadCompression";
 import { decodeConflictTextBundle } from "./conflictTextBinary";
 
 const GZIP_TEXT_ENCODING = "gzip-base64:utf-8";

@@ -2,7 +2,19 @@ import type {
 	CommitFileDiffLine,
 	CommitFileDiffResponse,
 } from "@/generated/types";
+import { getCompactDiffPayloadIdentity } from "@/lib/compactDiffPayloadIdentity";
 import { decodeConflictTextBundle } from "../ConflictResolution/conflictTextBinary";
+import {
+	decodeGzipBase64,
+	decodeGzipBase64Bytes,
+} from "./compactPayloadCompression";
+import {
+	type DeltaReferenceTuple,
+	decodeDeltaReferenceLineArrays,
+	decodeDeltaReferenceLines,
+} from "./deltaReferenceLines";
+
+export { decodeDeltaReferenceLines } from "./deltaReferenceLines";
 
 type CompactLineTuple = [
 	number | null,
@@ -21,21 +33,17 @@ type CompactLineTuple = [
 
 type CompactSyntaxSpanTuple = [number, number, string];
 type CompactChangeSpanTuple = [number, number, string];
-type DeltaReferenceTuple = [
-	number | null,
-	number | null,
-	number | string,
-	CompactSyntaxSpanTuple[]?,
-	CompactSyntaxSpanTuple[]?,
-	CompactSyntaxSpanTuple[]?,
-	CompactChangeSpanTuple[]?,
-	CompactChangeSpanTuple[]?,
-	CompactChangeSpanTuple[]?,
-];
-
 const decodedLineCache = new WeakMap<
 	CommitFileDiffResponse,
 	Promise<CommitFileDiffLine[]>
+>();
+const decodedDeltaTupleCache = new WeakMap<
+	object,
+	Promise<DeltaReferenceTuple[]>
+>();
+const decodedSourceCache = new WeakMap<
+	object,
+	Promise<{ oldLines: string[]; newLines: string[] }>
 >();
 
 export function hasCompactLinePayload(diff: CommitFileDiffResponse) {
@@ -67,11 +75,16 @@ async function decodeCompactLines(
 		if (!diff.compactSourceBundleGzipBase64) {
 			throw new Error("The compact diff source bundle is missing.");
 		}
-		const sourceBytes = await decodeGzipBase64Bytes(
-			diff.compactSourceBundleGzipBase64,
+		const [sources, tuples] = await Promise.all([
+			loadDeltaSources(diff),
+			loadDeltaTuples(diff),
+		]);
+		return decodeDeltaReferenceLineArrays(
+			tuples,
+			sources.oldLines,
+			sources.newLines,
+			diff.viewMode === "Combined",
 		);
-		const [oldText, newText] = decodeConflictTextBundle(sourceBytes);
-		return loadReferencedCompactLines(diff, oldText, newText);
 	}
 	if (
 		diff.compactLineSchema !== "tuple-v1:gzip-base64:utf-8" &&
@@ -92,9 +105,9 @@ export async function loadReferencedCompactLines(
 	newText: string,
 ): Promise<CommitFileDiffLine[]> {
 	if (diff.compactLineSchema === "tuple-v4-delta-refs:gzip-base64:utf-8") {
-		const json = await decodeGzipBase64(diff.compactLinesGzipBase64);
+		const tuples = await loadDeltaTuples(diff);
 		return decodeDeltaReferenceLines(
-			JSON.parse(json) as DeltaReferenceTuple[],
+			tuples,
 			oldText,
 			newText,
 			diff.viewMode === "Combined",
@@ -112,103 +125,31 @@ export async function loadReferencedCompactLines(
 	return tuples.map((tuple) => toDiffLine(tuple, sources));
 }
 
-export function decodeDeltaReferenceLines(
-	tuples: DeltaReferenceTuple[],
-	oldText: string,
-	newText: string,
-	combined = false,
-) {
-	const oldLines = textLines(oldText);
-	const newLines = textLines(newText);
-	let previousOld = 0;
-	let previousNew = 0;
-	const lines: CommitFileDiffLine[] = [];
-	for (const tuple of tuples) {
-		const oldLineNumber = applyDelta(tuple[0], previousOld);
-		const newLineNumber = applyDelta(tuple[1], previousNew);
-		if (oldLineNumber != null) previousOld = oldLineNumber;
-		if (newLineNumber != null) previousNew = newLineNumber;
-		const oldLineText = lineAt(oldLines, oldLineNumber);
-		const newLineText = lineAt(newLines, newLineNumber);
-		const resolvedChangeType = changeType(tuple[2]);
-		const line: CommitFileDiffLine = {
-			oldLineNumber,
-			newLineNumber,
-			oldText: oldLineText,
-			newText: newLineText,
-			text: "",
-			changeType: resolvedChangeType,
-			oldSyntaxSpans: (tuple[3] ?? []).map(toSyntaxSpan),
-			newSyntaxSpans: (tuple[4] ?? []).map(toSyntaxSpan),
-			syntaxSpans: (tuple[5] ?? []).map(toSyntaxSpan),
-			oldChangeSpans: (tuple[6] ?? []).map(toChangeSpan),
-			newChangeSpans: (tuple[7] ?? []).map(toChangeSpan),
-			changeSpans: (tuple[8] ?? []).map(toChangeSpan),
-		};
-		if (
-			combined &&
-			resolvedChangeType === "Modified" &&
-			oldLineNumber != null &&
-			newLineNumber != null
-		) {
-			lines.push(
-				{
-					...line,
-					newLineNumber: null,
-					newText: "",
-					text: oldLineText,
-					changeType: "Deleted",
-					syntaxSpans: line.oldSyntaxSpans,
-					changeSpans: line.oldChangeSpans,
-				},
-				{
-					...line,
-					oldLineNumber: null,
-					oldText: "",
-					text: newLineText,
-					changeType: "Inserted",
-					syntaxSpans: line.newSyntaxSpans,
-					changeSpans: line.newChangeSpans,
-				},
-			);
-		} else {
-			line.text = combined
-				? resolvedChangeType === "Inserted" || resolvedChangeType === "Added"
-					? newLineText
-					: oldLineText
-				: "";
-			lines.push(line);
-		}
+function loadDeltaTuples(diff: CommitFileDiffResponse) {
+	const identity = getCompactDiffPayloadIdentity(diff);
+	let loading = decodedDeltaTupleCache.get(identity);
+	if (!loading) {
+		loading = decodeGzipBase64(diff.compactLinesGzipBase64).then(
+			(json) => JSON.parse(json) as DeltaReferenceTuple[],
+		);
+		decodedDeltaTupleCache.set(identity, loading);
 	}
-	return lines;
+	return loading;
 }
 
-function applyDelta(delta: number | null, previous: number) {
-	return delta == null ? null : previous + delta;
-}
-
-function changeType(value: number | string) {
-	if (typeof value === "string") return value;
-	return (
-		["Unchanged", "Modified", "Deleted", "Inserted", "Added", "Imaginary"][
-			value
-		] ?? ""
-	);
-}
-
-export async function decodeGzipBase64(value: string) {
-	return new TextDecoder().decode(await decodeGzipBase64Bytes(value));
-}
-
-export async function decodeGzipBase64Bytes(value: string) {
-	const bytes = Uint8Array.from(atob(value), (character) =>
-		character.charCodeAt(0),
-	);
-	const stream = new Blob([bytes])
-		.stream()
-		.pipeThrough(new DecompressionStream("gzip"));
-	const buffer = await new Response(stream).arrayBuffer();
-	return new Uint8Array(buffer);
+function loadDeltaSources(diff: CommitFileDiffResponse) {
+	const identity = getCompactDiffPayloadIdentity(diff);
+	let loading = decodedSourceCache.get(identity);
+	if (!loading) {
+		loading = decodeGzipBase64Bytes(diff.compactSourceBundleGzipBase64).then(
+			(sourceBytes) => {
+				const [oldText, newText] = decodeConflictTextBundle(sourceBytes);
+				return { oldLines: textLines(oldText), newLines: textLines(newText) };
+			},
+		);
+		decodedSourceCache.set(identity, loading);
+	}
+	return loading;
 }
 
 export function toDiffLine(

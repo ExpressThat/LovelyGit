@@ -1,4 +1,5 @@
 import type { CommitFileDiffResponse } from "@/generated/types";
+import { shareCompactDiffPayloadIdentity } from "./compactDiffPayloadIdentity";
 
 const MAX_ENTRIES = 8;
 const cache = new Map<string, CommitFileDiffResponse>();
@@ -56,10 +57,12 @@ export function cacheCommitFileDiffViews(
 	) {
 		return;
 	}
-	cacheCommitFileDiff(alternateViewKey, {
+	const alternateView: CommitFileDiffResponse = {
 		...response,
 		viewMode: response.viewMode === "Combined" ? "SideBySide" : "Combined",
-	});
+	};
+	shareCompactDiffPayloadIdentity(response, alternateView);
+	cacheCommitFileDiff(alternateViewKey, alternateView);
 }
 
 export function clearCommitFileDiffCache() {
