@@ -17,14 +17,7 @@ export function ConflictResultPanel({
 }) {
 	const reduceMotion = useReducedMotion();
 	const [scrollTop, setScrollTop] = useState(0);
-	const lineNumbers = useMemo(
-		() =>
-			Array.from(
-				{ length: Math.max(1, value.split(/\r?\n/).length) },
-				(_, index) => index + 1,
-			),
-		[value],
-	);
+	const lineNumbers = useMemo(() => buildLineNumbers(value), [value]);
 	return (
 		<motion.section
 			animate={{ opacity: 1, y: 0 }}
@@ -60,12 +53,12 @@ export function ConflictResultPanel({
 					aria-hidden="true"
 					className="w-14 shrink-0 overflow-hidden border-r bg-card/45 py-2 text-right text-muted-foreground"
 				>
-					<div style={{ transform: `translateY(-${scrollTop}px)` }}>
-						{lineNumbers.map((line) => (
-							<div className="h-[18px] px-2 tabular-nums" key={line}>
-								{line}
-							</div>
-						))}
+					<div
+						className="whitespace-pre px-2 tabular-nums"
+						data-testid="conflict-result-line-numbers"
+						style={{ transform: `translateY(-${scrollTop}px)` }}
+					>
+						{lineNumbers}
 					</div>
 				</div>
 				<textarea
@@ -84,4 +77,12 @@ export function ConflictResultPanel({
 			</div>
 		</motion.section>
 	);
+}
+
+function buildLineNumbers(value: string) {
+	let lineCount = 1;
+	for (let index = 0; index < value.length; index++) {
+		if (value.charCodeAt(index) === 10) lineCount++;
+	}
+	return Array.from({ length: lineCount }, (_, index) => index + 1).join("\n");
 }

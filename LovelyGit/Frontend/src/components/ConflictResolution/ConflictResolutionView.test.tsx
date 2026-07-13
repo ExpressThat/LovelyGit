@@ -42,6 +42,16 @@ describe("ConflictResolutionView", () => {
 		expect(screen.queryByText("<<<<<<< HEAD")).not.toBeInTheDocument();
 	});
 
+	it("renders every result line number in one lightweight text node", async () => {
+		send.mockResolvedValueOnce(response());
+		renderConflictView(vi.fn(), vi.fn());
+
+		await screen.findByLabelText("Editable result preview");
+		const gutter = screen.getByTestId("conflict-result-line-numbers");
+		expect(gutter).toHaveTextContent("1 2 3 4");
+		expect(gutter.childElementCount).toBe(0);
+	});
+
 	it("selects a current chunk and saves the exact result", async () => {
 		const user = userEvent.setup();
 		const onChange = vi.fn();
