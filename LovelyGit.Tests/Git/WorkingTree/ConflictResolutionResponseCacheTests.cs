@@ -52,6 +52,52 @@ public sealed class ConflictResolutionResponseCacheTests
     }
 
     [Fact]
+    public void Cache_EvictsLeastRecentlyUsedResponseWhenPayloadWeightIsExceeded()
+    {
+        var cache = new ConflictResolutionResponseCache(capacity: 8, maximumCharacterWeight: 500);
+        cache.Set("repo", "a.txt", "a", false, WeightedResponse("a", 300));
+        cache.Set("repo", "b.txt", "b", false, WeightedResponse("b", 300));
+
+        Assert.False(cache.TryGet("repo", "a.txt", "a", false, out _));
+        Assert.True(cache.TryGet("repo", "b.txt", "b", false, out _));
+        Assert.InRange(cache.CurrentCharacterWeight, 300, 500);
+    }
+
+    [Fact]
+    public void Cache_DoesNotRetainOneResponseLargerThanItsWeightLimit()
+    {
+        var cache = new ConflictResolutionResponseCache(capacity: 8, maximumCharacterWeight: 100);
+
+        cache.Set("repo", "large.txt", "large", false, WeightedResponse("large", 200));
+
+        Assert.Equal(0, cache.Count);
+        Assert.Equal(0, cache.CurrentCharacterWeight);
+    }
+
+    [Fact]
+    public void Cache_CountsSharedPayloadStringsOnlyOncePerResponse()
+    {
+        var payload = new string('x', 300);
+        var response = Response("shared") with
+        {
+            CompactTextBundleGzipBase64 = payload,
+            Base = new ConflictFileVersion { Text = payload },
+        };
+        var cache = new ConflictResolutionResponseCache(maximumCharacterWeight: 400);
+
+        cache.Set(
+            "repo",
+            "file.txt",
+            "shared",
+            false,
+            response,
+            retainedTexts: new ConflictTexts(payload, payload, payload, null));
+
+        Assert.Equal(1, cache.Count);
+        Assert.InRange(cache.CurrentCharacterWeight, 300, 400);
+    }
+
+    [Fact]
     public void Invalidate_RemovesOnlyMatchingRepositoryAndPath()
     {
         var cache = new ConflictResolutionResponseCache();
@@ -148,5 +194,12 @@ public sealed class ConflictResolutionResponseCacheTests
     {
         Path = "file.txt",
         WorktreeFingerprint = fingerprint,
+    };
+
+    private static ConflictResolutionResponse WeightedResponse(string fingerprint, int characters) => new()
+    {
+        Path = "file.txt",
+        WorktreeFingerprint = fingerprint,
+        CompactTextBundleGzipBase64 = new string('x', characters),
     };
 }

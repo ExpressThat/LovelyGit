@@ -2,17 +2,28 @@ using ExpressThat.LovelyGit.Services.Git.WorkingTree.Models;
 
 namespace ExpressThat.LovelyGit.Services.Git.WorkingTree;
 
-internal sealed class ConflictResolutionResponseCache(int capacity = 8)
+internal sealed partial class ConflictResolutionResponseCache(
+    int capacity = 8,
+    long maximumCharacterWeight = 8 * 1024 * 1024)
 {
     private readonly object _gate = new();
     private readonly Dictionary<string, LinkedListNode<Entry>> _entries = new(StringComparer.Ordinal);
     private readonly LinkedList<Entry> _lru = new();
+    private long _currentCharacterWeight;
 
     internal int Count
     {
         get
         {
             lock (_gate) return _entries.Count;
+        }
+    }
+
+    internal long CurrentCharacterWeight
+    {
+        get
+        {
+            lock (_gate) return _currentCharacterWeight;
         }
     }
 
@@ -152,6 +163,7 @@ internal sealed class ConflictResolutionResponseCache(int capacity = 8)
     {
         var key = Key(repositoryPath, path, fingerprint, ignoreWhitespace);
         var normalizedRepository = NormalizeRepositoryPath(repositoryPath);
+        var characterWeight = ConflictResolutionResponseWeight.Estimate(response, retainedTexts);
         lock (_gate)
         {
             Remove(key);
@@ -162,9 +174,12 @@ internal sealed class ConflictResolutionResponseCache(int capacity = 8)
                 ignoreWhitespace,
                 stamp,
                 retainedTexts,
+                characterWeight,
                 response));
             _entries[key] = node;
-            while (_entries.Count > capacity && _lru.First is { } oldest)
+            _currentCharacterWeight += characterWeight;
+            while ((_entries.Count > capacity || _currentCharacterWeight > maximumCharacterWeight)
+                && _lru.First is { } oldest)
             {
                 Remove(oldest.Value.Key);
             }
@@ -200,6 +215,7 @@ internal sealed class ConflictResolutionResponseCache(int capacity = 8)
     private void Remove(string key)
     {
         if (!_entries.Remove(key, out var node)) return;
+        _currentCharacterWeight -= node.Value.CharacterWeight;
         _lru.Remove(node);
     }
 
@@ -212,23 +228,6 @@ internal sealed class ConflictResolutionResponseCache(int capacity = 8)
         foreach (var key in matches) Remove(key);
     }
 
-    private static string Key(
-        string repositoryPath,
-        string path,
-        string fingerprint,
-        bool ignoreWhitespace) =>
-        $"{Prefix(repositoryPath, path)}{fingerprint}\0{ignoreWhitespace}";
-
-    private static string Prefix(string repositoryPath, string path) =>
-        $"{NormalizeRepositoryPath(repositoryPath)}\0{path}\0";
-
-    private static string NormalizeRepositoryPath(string path)
-    {
-        var normalized = Path.GetFullPath(path)
-            .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-        return OperatingSystem.IsWindows() ? normalized.ToUpperInvariant() : normalized;
-    }
-
     private sealed record Entry(
         string Key,
         string RepositoryPath,
@@ -236,5 +235,6 @@ internal sealed class ConflictResolutionResponseCache(int capacity = 8)
         bool IgnoreWhitespace,
         ConflictResolutionCacheStamp? Stamp,
         ConflictTexts? RetainedTexts,
+        long CharacterWeight,
         ConflictResolutionResponse Response);
 }
