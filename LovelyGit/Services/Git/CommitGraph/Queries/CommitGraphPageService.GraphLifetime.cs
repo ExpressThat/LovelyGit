@@ -9,9 +9,10 @@ internal sealed partial class CommitGraphPageService
         {
             CancelScheduledGraphCloseCore(repositoryId);
             _activeGraphCloseWork[repositoryId] = work;
-            work.Task = Task.Run(
-                () => CloseGraphAfterIdleAsync(repositoryId, work, work.CancellationTokenSource.Token),
-                CancellationToken.None);
+            work.Task = CloseGraphAfterIdleAsync(
+                repositoryId,
+                work,
+                work.CancellationTokenSource.Token);
         }
     }
 
