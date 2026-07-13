@@ -42,7 +42,7 @@ describe("ConflictResolutionView", () => {
 		expect(screen.queryByText("<<<<<<< HEAD")).not.toBeInTheDocument();
 	});
 
-	it("renders every result line number in one lightweight text node", async () => {
+	it("renders visible result line numbers in one lightweight text node", async () => {
 		send.mockResolvedValueOnce(response());
 		renderConflictView(vi.fn(), vi.fn());
 

@@ -1,6 +1,9 @@
 import { motion, useReducedMotion } from "motion/react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
+
+const LINE_HEIGHT = 18;
+const GUTTER_OVERSCAN = 4;
 
 export function ConflictResultPanel({
 	isManualResult,
@@ -17,7 +20,24 @@ export function ConflictResultPanel({
 }) {
 	const reduceMotion = useReducedMotion();
 	const [scrollTop, setScrollTop] = useState(0);
-	const lineNumbers = useMemo(() => buildLineNumbers(value), [value]);
+	const [viewportHeight, setViewportHeight] = useState(400);
+	const textareaRef = useRef<HTMLTextAreaElement>(null);
+	const lineCount = useMemo(() => countLines(value), [value]);
+	const lineNumbers = useMemo(
+		() => visibleLineNumbers(lineCount, scrollTop, viewportHeight),
+		[lineCount, scrollTop, viewportHeight],
+	);
+	useEffect(() => {
+		const textarea = textareaRef.current;
+		if (!textarea) return;
+		const updateHeight = () => {
+			if (textarea.clientHeight > 0) setViewportHeight(textarea.clientHeight);
+		};
+		updateHeight();
+		const observer = new ResizeObserver(updateHeight);
+		observer.observe(textarea);
+		return () => observer.disconnect();
+	}, []);
 	return (
 		<motion.section
 			animate={{ opacity: 1, y: 0 }}
@@ -56,9 +76,9 @@ export function ConflictResultPanel({
 					<div
 						className="whitespace-pre px-2 tabular-nums"
 						data-testid="conflict-result-line-numbers"
-						style={{ transform: `translateY(-${scrollTop}px)` }}
+						style={{ transform: `translateY(${lineNumbers.offset}px)` }}
 					>
-						{lineNumbers}
+						{lineNumbers.text}
 					</div>
 				</div>
 				<textarea
@@ -70,6 +90,7 @@ export function ConflictResultPanel({
 					)}
 					onChange={(event) => onEdit(event.target.value)}
 					onScroll={(event) => setScrollTop(event.currentTarget.scrollTop)}
+					ref={textareaRef}
 					spellCheck={false}
 					value={value}
 					wrap={wrapLines ? "soft" : "off"}
@@ -79,10 +100,32 @@ export function ConflictResultPanel({
 	);
 }
 
-function buildLineNumbers(value: string) {
+function countLines(value: string) {
 	let lineCount = 1;
 	for (let index = 0; index < value.length; index++) {
 		if (value.charCodeAt(index) === 10) lineCount++;
 	}
-	return Array.from({ length: lineCount }, (_, index) => index + 1).join("\n");
+	return lineCount;
+}
+
+function visibleLineNumbers(
+	lineCount: number,
+	scrollTop: number,
+	viewportHeight: number,
+) {
+	const first = Math.max(
+		0,
+		Math.floor(scrollTop / LINE_HEIGHT) - GUTTER_OVERSCAN,
+	);
+	const last = Math.min(
+		lineCount,
+		Math.ceil((scrollTop + viewportHeight) / LINE_HEIGHT) + GUTTER_OVERSCAN,
+	);
+	return {
+		offset: first * LINE_HEIGHT - scrollTop,
+		text: Array.from(
+			{ length: last - first },
+			(_, index) => first + index + 1,
+		).join("\n"),
+	};
 }
