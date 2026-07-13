@@ -98,34 +98,21 @@ internal sealed partial class CommitDetailsCacheRepository
 
             using var transaction = _gitRepoCache.BeginTransaction();
 
-            foreach (var fileEntry in existingFileEntries)
+            if (existingFileEntries.Count > 0)
             {
                 await _gitRepoCache.CommitDetailsChangedFiles
-                    .DeleteAsync(fileEntry.Id, transaction, cancellationToken)
+                    .DeleteBulkAsync(
+                        existingFileEntries.Select(static file => file.Id),
+                        transaction,
+                        cancellationToken)
                     .ConfigureAwait(false);
             }
 
-            for (var index = 0; index < response.ChangedFiles.Count; index++)
+            var fileEntries = BuildChangedFileEntries(repositoryId, hash, response.ChangedFiles);
+            if (fileEntries.Count > 0)
             {
-                var file = response.ChangedFiles[index];
-                var fileEntry = new CommitChangedFileCacheEntry
-                {
-                    Id = CommitGraphCacheKeys.MakeRepositoryCommitFileId(repositoryId, hash, index),
-                    RepositoryId = repositoryId,
-                    Hash = hash,
-                    FileIndex = index,
-                    File = new CommitChangedFileCache
-                    {
-                        Path = file.Path,
-                        Status = file.Status,
-                        Additions = file.Additions,
-                        Deletions = file.Deletions,
-                        IsBinary = file.IsBinary,
-                    },
-                };
-
                 await _gitRepoCache.CommitDetailsChangedFiles
-                    .InsertAsync(fileEntry, transaction, cancellationToken)
+                    .InsertBulkAsync(fileEntries, transaction, cancellationToken)
                     .ConfigureAwait(false);
             }
 
