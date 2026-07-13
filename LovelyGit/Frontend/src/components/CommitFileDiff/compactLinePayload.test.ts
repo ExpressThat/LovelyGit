@@ -98,13 +98,109 @@ describe("compactLinePayload", () => {
 		expect(lines[1].oldSyntaxSpans[0].scope).toBe("keyword");
 		expect(lines[1].newChangeSpans[0].changeType).toBe("Inserted");
 	});
+
+	it("hydrates the single text column used by combined rows", () => {
+		const lines = decodeDeltaReferenceLines(
+			[
+				[1, null, 2],
+				[null, 1, 3],
+			],
+			"before",
+			"after",
+			true,
+		);
+
+		expect(lines.map((line) => [line.changeType, line.text])).toEqual([
+			["Deleted", "before"],
+			["Inserted", "after"],
+		]);
+	});
+
+	it("hydrates delta references from the bundled old and new sources", async () => {
+		const diff = {
+			compactLineSchema: "tuple-v4-delta-refs:gzip-base64:utf-8",
+			compactLinesGzipBase64: await gzipBase64(
+				JSON.stringify([
+					[1, 1, 0],
+					[1, 1, 1],
+				]),
+			),
+			compactSourceSchema:
+				"interleaved-lines-v3:gzip-base64:varint-utf-8",
+			compactSourceBundleGzipBase64: await gzipBytesBase64(
+				encodeSourceBundle("old one\nold two", "new one\nnew two"),
+			),
+		} as CommitFileDiffResponse;
+
+		const lines = await loadCompactLines(diff);
+
+		expect(lines.map((line) => [line.oldText, line.newText])).toEqual([
+			["old one", "new one"],
+			["old two", "new two"],
+		]);
+	});
+
+	it("rejects reference tuples without their source bundle", async () => {
+		const diff = {
+			compactLineSchema: "tuple-v4-delta-refs:gzip-base64:utf-8",
+			compactLinesGzipBase64: await gzipBase64("[]"),
+			compactSourceSchema:
+				"interleaved-lines-v3:gzip-base64:varint-utf-8",
+		} as CommitFileDiffResponse;
+
+		await expect(loadCompactLines(diff)).rejects.toThrow(
+			"source bundle is missing",
+		);
+	});
 });
 
 async function gzipBase64(value: string) {
-	const bytes = new TextEncoder().encode(value);
-	const stream = new Blob([bytes])
+	return gzipBytesBase64(new TextEncoder().encode(value));
+}
+
+async function gzipBytesBase64(bytes: Uint8Array) {
+	const buffer = bytes.buffer.slice(
+		bytes.byteOffset,
+		bytes.byteOffset + bytes.byteLength,
+	) as ArrayBuffer;
+	const stream = new Blob([buffer])
 		.stream()
 		.pipeThrough(new CompressionStream("gzip"));
 	const compressed = new Uint8Array(await new Response(stream).arrayBuffer());
 	return btoa(String.fromCharCode(...compressed));
+}
+
+function encodeSourceBundle(oldText: string, newText: string) {
+	const sources = [linesWithEndings(oldText), linesWithEndings(newText), []];
+	const output: number[] = [];
+	writeVarUInt(output, Math.max(...sources.map((source) => source.length)));
+	for (let row = 0; row < Math.max(...sources.map((source) => source.length)); row++) {
+		for (const source of sources) writeText(output, source[row]);
+	}
+	writeText(output, undefined);
+	return Uint8Array.from(output);
+}
+
+function linesWithEndings(text: string) {
+	return text.match(/.*(?:\n|$)/g)?.filter(Boolean) ?? [];
+}
+
+function writeText(output: number[], value: string | undefined) {
+	if (value === undefined) {
+		writeVarUInt(output, 0);
+		return;
+	}
+	const bytes = new TextEncoder().encode(value);
+	writeVarUInt(output, bytes.length + 1);
+	output.push(...bytes);
+}
+
+function writeVarUInt(output: number[], initialValue: number) {
+	let value = initialValue;
+	do {
+		let next = value & 0x7f;
+		value >>>= 7;
+		if (value !== 0) next |= 0x80;
+		output.push(next);
+	} while (value !== 0);
 }

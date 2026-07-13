@@ -12,6 +12,8 @@ const response = (path: string): CommitFileDiffResponse => ({
 	compactLineCount: 0,
 	compactLineSchema: "",
 	compactLinesGzipBase64: "",
+	compactSourceSchema: "",
+	compactSourceBundleGzipBase64: "",
 	hasDifferences: true,
 	isBinary: false,
 	isTruncated: false,

@@ -31,6 +31,8 @@ public record CommitFileDiffResponse
     public string CompactLineSchema { get; set; } = null!;
     public string CompactLinesGzipBase64 { get; set; } = null!;
     public int CompactLineCount { get; set; }
+    public string CompactSourceSchema { get; set; } = null!;
+    public string CompactSourceBundleGzipBase64 { get; set; } = null!;
     public List<CommitFileDiffLine> Lines { get; set; } = new();
 }
 

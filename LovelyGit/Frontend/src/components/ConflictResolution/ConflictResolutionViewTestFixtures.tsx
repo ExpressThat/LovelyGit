@@ -122,6 +122,8 @@ function comparison(base: string, source: string): CommitFileDiffResponse {
 		compactLineSchema: "",
 		compactLinesGzipBase64: "",
 		compactLineCount: 0,
+		compactSourceSchema: "",
+		compactSourceBundleGzipBase64: "",
 		lines,
 	};
 }

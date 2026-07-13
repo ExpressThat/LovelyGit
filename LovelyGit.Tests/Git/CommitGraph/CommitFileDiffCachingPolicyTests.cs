@@ -53,4 +53,16 @@ public sealed class CommitFileDiffCachingPolicyTests
 
         Assert.False(CommitFileDiffCachingPolicy.ShouldPersist(response));
     }
+
+    [Fact]
+    public void ShouldPersist_RejectsReferencePayloadsThatNeedTransientSources()
+    {
+        var response = new CommitFileDiffResponse
+        {
+            CompactLinesGzipBase64 = "lines",
+            CompactSourceBundleGzipBase64 = "sources",
+        };
+
+        Assert.False(CommitFileDiffCachingPolicy.ShouldPersist(response));
+    }
 }

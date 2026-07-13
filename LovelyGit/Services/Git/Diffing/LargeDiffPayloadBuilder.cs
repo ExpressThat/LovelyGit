@@ -49,18 +49,14 @@ internal static class LargeDiffPayloadBuilder
         }
 
         var model = LineDiffEngine.Build(oldText, newText, ignoreWhitespace);
-        var lines = viewMode == CommitDiffViewMode.SideBySide
-            ? BuildSideBySide(model)
-            : BuildCombined(model);
-        return new CommitFileDiffResponse
-        {
-            CommitHash = commitHash,
-            Path = path,
-            Status = status,
-            ViewMode = viewMode,
-            HasDifferences = model.HasDifferences,
-            Lines = lines,
-        };
+        return ReferencedDiffPayloadBuilder.Build(
+            commitHash,
+            path,
+            status,
+            viewMode,
+            model,
+            oldText,
+            newText);
     }
 
     private static CommitFileDiffResponse BuildVirtualTextResponse(
@@ -103,34 +99,6 @@ internal static class LargeDiffPayloadBuilder
         }
 
         return Convert.ToBase64String(output.GetBuffer(), 0, (int)output.Length);
-    }
-
-    private static List<CommitFileDiffLine> BuildSideBySide(LineDiffModel model)
-    {
-        var lines = new List<CommitFileDiffLine>(model.Rows.Count);
-        Walk(model, new SideBySideSink(lines));
-        return lines;
-    }
-
-    private static List<CommitFileDiffLine> BuildCombined(LineDiffModel model)
-    {
-        var lines = new List<CommitFileDiffLine>(model.Rows.Count * 2);
-        Walk(model, new CombinedSink(lines));
-        return lines;
-    }
-
-    private static void Walk<TSink>(LineDiffModel model, TSink sink)
-        where TSink : struct, IFastDiffSink
-    {
-        foreach (var row in model.Rows)
-        {
-            var oldText = row.OldIndex is int oldIndex ? model.OldLines[oldIndex] : string.Empty;
-            var newText = row.NewIndex is int newIndex ? model.NewLines[newIndex] : string.Empty;
-            if (!row.IsChanged) sink.Unchanged(row.OldIndex!.Value + 1, row.NewIndex!.Value + 1, oldText);
-            else if (row.OldIndex is null) sink.Inserted(row.NewIndex!.Value + 1, newText);
-            else if (row.NewIndex is null) sink.Deleted(row.OldIndex.Value + 1, oldText);
-            else sink.Modified(row.OldIndex.Value + 1, row.NewIndex.Value + 1, oldText, newText);
-        }
     }
 
     private static int CountLines(string text)

@@ -14,6 +14,7 @@ internal static class CommitFileDiffCachingPolicy
 
     public static bool ShouldPersist(CommitFileDiffResponse response)
     {
+        if (!string.IsNullOrEmpty(response.CompactSourceBundleGzipBase64)) return false;
         var remaining = MaximumPersistentPayloadCharacters;
         if (!Consume(response.CompactLinesGzipBase64, ref remaining)
             || !Consume(response.VirtualTextGzipBase64, ref remaining)

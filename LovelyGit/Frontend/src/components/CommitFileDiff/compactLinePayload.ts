@@ -2,6 +2,7 @@ import type {
 	CommitFileDiffLine,
 	CommitFileDiffResponse,
 } from "@/generated/types";
+import { decodeConflictTextBundle } from "../ConflictResolution/conflictTextBinary";
 
 type CompactLineTuple = [
 	number | null,
@@ -41,7 +42,9 @@ export function hasCompactLinePayload(diff: CommitFileDiffResponse) {
 	return Boolean(diff.compactLinesGzipBase64);
 }
 
-export function loadCompactLines(diff: CommitFileDiffResponse) {
+export function loadCompactLines(
+	diff: CommitFileDiffResponse,
+): Promise<CommitFileDiffLine[]> {
 	const cached = decodedLineCache.get(diff);
 	if (cached) return cached;
 	const loading = decodeCompactLines(diff);
@@ -49,7 +52,27 @@ export function loadCompactLines(diff: CommitFileDiffResponse) {
 	return loading;
 }
 
-async function decodeCompactLines(diff: CommitFileDiffResponse) {
+async function decodeCompactLines(
+	diff: CommitFileDiffResponse,
+): Promise<CommitFileDiffLine[]> {
+	if (diff.compactLineSchema === "tuple-v4-delta-refs:gzip-base64:utf-8") {
+		if (
+			diff.compactSourceSchema !==
+			"interleaved-lines-v3:gzip-base64:varint-utf-8"
+		) {
+			throw new Error(
+				`Unsupported compact diff source schema: ${diff.compactSourceSchema}`,
+			);
+		}
+		if (!diff.compactSourceBundleGzipBase64) {
+			throw new Error("The compact diff source bundle is missing.");
+		}
+		const sourceBytes = await decodeGzipBase64Bytes(
+			diff.compactSourceBundleGzipBase64,
+		);
+		const [oldText, newText] = decodeConflictTextBundle(sourceBytes);
+		return loadReferencedCompactLines(diff, oldText, newText);
+	}
 	if (
 		diff.compactLineSchema !== "tuple-v1:gzip-base64:utf-8" &&
 		diff.compactLineSchema !== "tuple-v2:gzip-base64:utf-8"
@@ -67,13 +90,14 @@ export async function loadReferencedCompactLines(
 	diff: CommitFileDiffResponse,
 	oldText: string,
 	newText: string,
-) {
+): Promise<CommitFileDiffLine[]> {
 	if (diff.compactLineSchema === "tuple-v4-delta-refs:gzip-base64:utf-8") {
 		const json = await decodeGzipBase64(diff.compactLinesGzipBase64);
 		return decodeDeltaReferenceLines(
 			JSON.parse(json) as DeltaReferenceTuple[],
 			oldText,
 			newText,
+			diff.viewMode === "Combined",
 		);
 	}
 	if (diff.compactLineSchema !== "tuple-v3-refs:gzip-base64:utf-8") {
@@ -92,6 +116,7 @@ export function decodeDeltaReferenceLines(
 	tuples: DeltaReferenceTuple[],
 	oldText: string,
 	newText: string,
+	combined = false,
 ) {
 	const oldLines = textLines(oldText);
 	const newLines = textLines(newText);
@@ -102,13 +127,20 @@ export function decodeDeltaReferenceLines(
 		const newLineNumber = applyDelta(tuple[1], previousNew);
 		if (oldLineNumber != null) previousOld = oldLineNumber;
 		if (newLineNumber != null) previousNew = newLineNumber;
+		const oldLineText = lineAt(oldLines, oldLineNumber);
+		const newLineText = lineAt(newLines, newLineNumber);
+		const resolvedChangeType = changeType(tuple[2]);
 		return {
 			oldLineNumber,
 			newLineNumber,
-			oldText: lineAt(oldLines, oldLineNumber),
-			newText: lineAt(newLines, newLineNumber),
-			text: "",
-			changeType: changeType(tuple[2]),
+			oldText: oldLineText,
+			newText: newLineText,
+			text: combined
+				? resolvedChangeType === "Inserted" || resolvedChangeType === "Added"
+					? newLineText
+					: oldLineText
+				: "",
+			changeType: resolvedChangeType,
 			oldSyntaxSpans: (tuple[3] ?? []).map(toSyntaxSpan),
 			newSyntaxSpans: (tuple[4] ?? []).map(toSyntaxSpan),
 			syntaxSpans: (tuple[5] ?? []).map(toSyntaxSpan),

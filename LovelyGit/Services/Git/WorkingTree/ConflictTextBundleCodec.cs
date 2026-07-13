@@ -11,7 +11,12 @@ internal static class ConflictTextBundleCodec
     private const int MaximumEncodedTextBytes = 256 * 1024 * 1024;
     private static readonly UTF8Encoding StrictUtf8 = new(false, true);
 
-    public static string Compress(string? baseText, string? oursText, string? theirsText, string? resultText)
+    public static string Compress(
+        string? baseText,
+        string? oursText,
+        string? theirsText,
+        string? resultText,
+        CompressionLevel compressionLevel = CompressionLevel.Fastest)
     {
         var sources = new[] { baseText, oursText, theirsText };
         Span<int> positions = stackalloc int[SourceCount];
@@ -31,7 +36,7 @@ internal static class ConflictTextBundleCodec
         using var output = new MemoryStream();
         try
         {
-            using var gzip = new GZipStream(output, CompressionLevel.Fastest, leaveOpen: true);
+            using var gzip = new GZipStream(output, compressionLevel, leaveOpen: true);
             using var buffered = new BufferedStream(gzip, 64 * 1024);
             WriteVarUInt(buffered, checked((uint)rowCount));
             while (HasRemainingText(sources, positions))
