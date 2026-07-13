@@ -71,6 +71,30 @@ public sealed class ConflictPreparationPerformanceTests(ITestOutputHelper output
             $"Prepared path allocated {prepared.Allocated:N0} vs {duplicated.Allocated:N0} bytes.");
     }
 
+    [Fact]
+    public void ExactSizedLineSplit_AvoidsNormalizationAndTrailingArrayCopy()
+    {
+        var text = string.Join("\r\n", Enumerable.Range(0, 5_000).Select(index => $"line {index}")) + "\r\n";
+        _ = LegacySplitLines(text);
+        _ = LineDiffEngine.SplitLines(text);
+
+        var legacy = Measure(() => LegacySplitLines(text));
+        var exact = Measure(() => LineDiffEngine.SplitLines(text));
+
+        output.WriteLine($"Legacy split: {legacy.Allocated:N0} bytes");
+        output.WriteLine($"Exact split: {exact.Allocated:N0} bytes");
+        Assert.True(
+            exact.Allocated < legacy.Allocated * 0.75,
+            $"Exact split allocated {exact.Allocated:N0} vs {legacy.Allocated:N0} bytes.");
+    }
+
+    private static string[] LegacySplitLines(string text)
+    {
+        var normalized = text.Replace("\r\n", "\n", StringComparison.Ordinal).Replace('\r', '\n');
+        var lines = normalized.Split('\n');
+        return normalized.EndsWith('\n') ? lines[..^1] : lines;
+    }
+
     private static object BuildTwoDiffsDuplicated(Fixture fixture) => new[]
     {
         ConflictHunkBuilder.BuildLineModel(fixture.Base, fixture.Current, ignoreWhitespace: true),

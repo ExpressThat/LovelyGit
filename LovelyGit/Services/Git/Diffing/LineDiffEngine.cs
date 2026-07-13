@@ -41,9 +41,27 @@ internal static class LineDiffEngine
     public static string[] SplitLines(string text)
     {
         if (text.Length == 0) return [];
-        var normalized = text.Replace("\r\n", "\n", StringComparison.Ordinal).Replace('\r', '\n');
-        var lines = normalized.Split('\n');
-        return normalized.EndsWith('\n') ? lines[..^1] : lines;
+        var separatorCount = 0;
+        for (var index = 0; index < text.Length; index++)
+        {
+            if (text[index] is not ('\r' or '\n')) continue;
+            separatorCount++;
+            if (text[index] == '\r' && index + 1 < text.Length && text[index + 1] == '\n') index++;
+        }
+
+        var endsWithNewLine = EndsWithNewLine(text);
+        var lines = new string[separatorCount + (endsWithNewLine ? 0 : 1)];
+        var lineStart = 0;
+        var lineIndex = 0;
+        for (var index = 0; index < text.Length && lineIndex < lines.Length; index++)
+        {
+            if (text[index] is not ('\r' or '\n')) continue;
+            lines[lineIndex++] = text.Substring(lineStart, index - lineStart);
+            if (text[index] == '\r' && index + 1 < text.Length && text[index + 1] == '\n') index++;
+            lineStart = index + 1;
+        }
+        if (!endsWithNewLine) lines[^1] = text[lineStart..];
+        return lines;
     }
 
     private static List<LineDiffRow> Align(int oldCount, int newCount, IReadOnlyList<LineDiffBlock> edits)

@@ -66,6 +66,25 @@ public sealed class LineDiffEngineTests
         Assert.Equal(new[] { "same", " value\t=  1" }, newPrepared.Lines);
     }
 
+    public static TheoryData<string, string[]> SplitLineCases => new()
+    {
+        { string.Empty, [] },
+        { "one", ["one"] },
+        { "one\n", ["one"] },
+        { "one\r\n", ["one"] },
+        { "one\rtwo", ["one", "two"] },
+        { "\n", [string.Empty] },
+        { "one\n\n", ["one", string.Empty] },
+        { "one\r\ntwo\rthree\n", ["one", "two", "three"] },
+    };
+
+    [Theory]
+    [MemberData(nameof(SplitLineCases))]
+    public void SplitLines_NormalizesLineEndingsWithoutLosingEmptyLines(string text, string[] expected)
+    {
+        Assert.Equal(expected, LineDiffEngine.SplitLines(text));
+    }
+
     [Fact]
     public void Build_AlignsReplacementForSideBySideRendering()
     {
