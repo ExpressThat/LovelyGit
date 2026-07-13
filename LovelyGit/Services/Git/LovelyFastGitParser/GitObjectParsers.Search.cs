@@ -8,7 +8,9 @@ internal static partial class GitObjectParsers
         GitObjectId id,
         ReadOnlySpan<byte> data,
         ReadOnlySpan<byte> queryUtf8,
-        string query)
+        string query,
+        ReadOnlySpan<byte> authorQueryUtf8,
+        string authorQuery)
     {
         var bodyStart = FindBodyStart(data);
         var header = bodyStart >= 0 ? data[..(bodyStart - 2)] : data;
@@ -18,6 +20,7 @@ internal static partial class GitObjectParsers
         var parentCount = 0;
         var authorUnixSeconds = 0L;
         var identityMatches = false;
+        var authorMatches = authorQueryUtf8.IsEmpty;
         foreach (var rawLine in EnumerateByteLines(header))
         {
             var line = TrimTrailingCarriageReturn(rawLine);
@@ -37,7 +40,17 @@ internal static partial class GitObjectParsers
             {
                 var author = TrimAscii(line["author "u8.Length..]);
                 authorUnixSeconds = ParseAuthorTimestamp(author);
-                identityMatches = ContainsUtf8IgnoreCase(GetAuthorIdentity(author), queryUtf8);
+                var identity = GetAuthorIdentity(author);
+                identityMatches = ContainsUtf8IgnoreCase(identity, queryUtf8);
+                if (!authorQueryUtf8.IsEmpty)
+                {
+                    authorMatches = ContainsUtf8IgnoreCase(identity, authorQueryUtf8);
+                    if (!authorMatches && ContainsNonAscii(authorQueryUtf8))
+                    {
+                        authorMatches = Encoding.UTF8.GetString(identity)
+                            .Contains(authorQuery, StringComparison.OrdinalIgnoreCase);
+                    }
+                }
             }
         }
 
@@ -53,7 +66,8 @@ internal static partial class GitObjectParsers
             additionalParents?.ToArray(),
             parentCount,
             authorUnixSeconds,
-            identityMatches || messageMatches);
+            queryUtf8.IsEmpty || identityMatches || messageMatches,
+            authorMatches);
     }
 
     private static ReadOnlySpan<byte> GetAuthorIdentity(ReadOnlySpan<byte> author)

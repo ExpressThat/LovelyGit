@@ -6,6 +6,8 @@ internal sealed partial class LovelyGitRepository
         GitObjectId id,
         ReadOnlyMemory<byte> queryUtf8,
         string query,
+        ReadOnlyMemory<byte> authorUtf8,
+        string author,
         CancellationToken cancellationToken)
     {
         var data = await _objectStore
@@ -16,6 +18,7 @@ internal sealed partial class LovelyGitRepository
             throw new InvalidDataException($"Object is not a commit: {id}");
         }
 
-        return GitObjectParsers.ParseCommitSearchHeader(id, data.Data, queryUtf8.Span, query);
+        return GitObjectParsers.ParseCommitSearchHeader(
+            id, data.Data, queryUtf8.Span, query, authorUtf8.Span, author);
     }
 }

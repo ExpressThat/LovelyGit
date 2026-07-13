@@ -23,6 +23,9 @@ describe("useCommitSearch", () => {
 		expect(sendRequestWithResponse).toHaveBeenCalledWith(
 			{
 				arguments: {
+					afterUnixSeconds: null,
+					author: "",
+					beforeUnixSeconds: null,
 					deep: false,
 					knownRepositoryId: "repo",
 					limit: 50,
@@ -41,6 +44,19 @@ describe("useCommitSearch", () => {
 		expect(result.current.minimumQueryLength).toBe(2);
 		expect(result.current.isLoading).toBe(false);
 		expect(result.current.response).toBeNull();
+		expect(sendRequestWithResponse).not.toHaveBeenCalled();
+	});
+
+	it("does not send a reversed date range", () => {
+		const { result } = renderHook(() =>
+			useCommitSearch("repo", "", true, false, {
+				afterDate: "2025-02-02",
+				author: "",
+				beforeDate: "2025-02-01",
+			}),
+		);
+
+		expect(result.current.isLoading).toBe(false);
 		expect(sendRequestWithResponse).not.toHaveBeenCalled();
 	});
 

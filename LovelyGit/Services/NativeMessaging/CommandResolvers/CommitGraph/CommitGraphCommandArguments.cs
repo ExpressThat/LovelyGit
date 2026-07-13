@@ -29,6 +29,9 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Commit
     {
         public Guid KnownRepositoryId { get; set; }
         public string Query { get; set; } = string.Empty;
+        public string Author { get; set; } = string.Empty;
+        public long? AfterUnixSeconds { get; set; }
+        public long? BeforeUnixSeconds { get; set; }
         public int Limit { get; set; } = 50;
         public bool Deep { get; set; }
     }

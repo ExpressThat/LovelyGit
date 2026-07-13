@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { sendRequestWithResponse } from "@/lib/commands";
@@ -99,6 +99,42 @@ describe("CommitSearchDialog", () => {
 				arguments: expect.objectContaining({ deep: true }),
 			}),
 			{ timeoutMs: 12_000 },
+		);
+	});
+
+	it("searches by author and inclusive date range without message text", async () => {
+		const user = userEvent.setup();
+		vi.mocked(sendRequestWithResponse).mockResolvedValue(searchResponse());
+		render(
+			<CommitSearchDialog
+				onOpenChange={vi.fn()}
+				onSelectCommit={vi.fn()}
+				open
+				repositoryId="repo"
+			/>,
+		);
+
+		await user.click(
+			screen.getByRole("button", { name: "Advanced commit filters" }),
+		);
+		fireEvent.input(screen.getByLabelText("Filter by author"), {
+			target: { value: "Alice" },
+		});
+		await user.type(screen.getByLabelText("From commit date"), "2024-06-01");
+		await user.type(screen.getByLabelText("Until commit date"), "2024-06-30");
+
+		await waitFor(() =>
+			expect(sendRequestWithResponse).toHaveBeenLastCalledWith(
+				expect.objectContaining({
+					arguments: expect.objectContaining({
+						afterUnixSeconds: 1717200000,
+						author: "Alice",
+						beforeUnixSeconds: 1719792000,
+						query: "",
+					}),
+				}),
+				undefined,
+			),
 		);
 	});
 });

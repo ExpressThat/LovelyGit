@@ -103,7 +103,8 @@ internal readonly record struct GitCommitSearchHeader(
     GitObjectId[]? AdditionalParentHashes,
     int ParentHashCount,
     long AuthorUnixSeconds,
-    bool IsMatch)
+    bool TextMatches,
+    bool AuthorMatches)
 {
     public GitObjectId GetParentHash(int index)
     {

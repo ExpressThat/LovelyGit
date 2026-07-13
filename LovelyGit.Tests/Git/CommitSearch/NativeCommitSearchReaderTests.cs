@@ -4,7 +4,7 @@ using LovelyGit.Tests.Git.Branches;
 
 namespace LovelyGit.Tests.Git.CommitSearch;
 
-public sealed class NativeCommitSearchReaderTests
+public sealed partial class NativeCommitSearchReaderTests
 {
     [Fact]
     public async Task SearchAsync_FindsSubjectAndBodyAndReturnsNewestFirst()
@@ -64,6 +64,9 @@ public sealed class NativeCommitSearchReaderTests
         var response = await NativeCommitSearchReader.SearchAsync(
             repository.Path,
             hash[..7],
+            string.Empty,
+            null,
+            null,
             limit: 10,
             maximumCommits: 1,
             maximumDuration: TimeSpan.Zero,
@@ -86,6 +89,9 @@ public sealed class NativeCommitSearchReaderTests
         var partial = await NativeCommitSearchReader.SearchAsync(
             repository.Path,
             "bounded match",
+            string.Empty,
+            null,
+            null,
             limit: 10,
             maximumCommits: 1,
             maximumDuration: Timeout.InfiniteTimeSpan,
@@ -132,6 +138,9 @@ public sealed class NativeCommitSearchReaderTests
         var response = await NativeCommitSearchReader.SearchAsync(
             repository.Path,
             "head-history needle",
+            string.Empty,
+            null,
+            null,
             limit: 10,
             maximumCommits: 2,
             maximumDuration: Timeout.InfiniteTimeSpan,
@@ -149,6 +158,9 @@ public sealed class NativeCommitSearchReaderTests
         var response = await NativeCommitSearchReader.SearchAsync(
             repository.Path,
             "initial",
+            string.Empty,
+            null,
+            null,
             limit: 10,
             maximumCommits: 100,
             maximumDuration: TimeSpan.Zero,
@@ -166,6 +178,9 @@ public sealed class NativeCommitSearchReaderTests
         NativeCommitSearchReader.SearchAsync(
             repository.Path,
             query,
+            string.Empty,
+            null,
+            null,
             limit,
             maximumCommits: 100,
             maximumDuration: Timeout.InfiniteTimeSpan,
@@ -193,6 +208,17 @@ public sealed class NativeCommitSearchReaderTests
 
         return RunGitAsync(repository, arguments.ToArray());
     }
+
+    private static Task<string> CommitAsAsync(
+        TemporaryGitRepository repository,
+        string author,
+        string date,
+        string subject) =>
+        RunGitAsync(
+            repository,
+            "-c", $"user.name={author}",
+            "-c", $"user.email={author.ToLowerInvariant()}@example.invalid",
+            "commit", "--allow-empty", $"--date={date}", "-m", subject);
 
     private static async Task<string> RunGitAsync(
         TemporaryGitRepository repository,

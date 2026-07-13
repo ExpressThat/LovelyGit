@@ -22,6 +22,9 @@ export function searchResponse(
 	results: CommitSearchResult[] = [searchResult()],
 ): CommitSearchResponse {
 	return {
+		afterUnixSeconds: null,
+		author: "",
+		beforeUnixSeconds: null,
 		isPartial: false,
 		matchingCommitCount: results.length,
 		query: "needle",

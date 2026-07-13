@@ -4,7 +4,9 @@ import {
 	CornerDownLeft,
 	LoaderCircle,
 	Search,
+	Settings,
 } from "@/components/icons/lovelyIcons";
+import { Button } from "@/components/ui/button";
 import {
 	Dialog,
 	DialogContent,
@@ -13,7 +15,12 @@ import {
 	DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { AdvancedCommitSearchFilters } from "./AdvancedCommitSearchFilters";
 import { CommitSearchContent, CommitSearchStatus } from "./CommitSearchContent";
+import {
+	emptyCommitSearchFilters,
+	hasCommitSearchFilter,
+} from "./commitSearchFilters";
 import { useCommitSearch } from "./useCommitSearch";
 
 export function CommitSearchDialog({
@@ -29,12 +36,15 @@ export function CommitSearchDialog({
 }) {
 	const [query, setQuery] = useState("");
 	const [deep, setDeep] = useState(false);
+	const [filters, setFilters] = useState(emptyCommitSearchFilters);
+	const [filtersOpen, setFiltersOpen] = useState(false);
 	const [selectedIndex, setSelectedIndex] = useState(0);
 	const { error, isLoading, minimumQueryLength, response } = useCommitSearch(
 		repositoryId,
 		query,
 		open,
 		deep,
+		filters,
 	);
 	const reduceMotion = useReducedMotion();
 	const results = response?.results ?? [];
@@ -44,6 +54,8 @@ export function CommitSearchDialog({
 		if (!open) {
 			setQuery("");
 			setDeep(false);
+			setFilters(emptyCommitSearchFilters);
+			setFiltersOpen(false);
 		}
 	}, [open]);
 	useEffect(() => {
@@ -73,7 +85,7 @@ export function CommitSearchDialog({
 						Search reachable history by message, author, email, or hash.
 					</DialogDescription>
 				</DialogHeader>
-				<div className="relative border-b p-3">
+				<div className="relative p-3">
 					<Search
 						aria-hidden="true"
 						className="absolute left-5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
@@ -81,7 +93,7 @@ export function CommitSearchDialog({
 					<Input
 						aria-label="Search commit history"
 						autoFocus
-						className="h-10 pl-9 pr-10 text-sm"
+						className="h-10 pl-9 pr-24 text-sm"
 						onChange={(event) => {
 							setQuery(event.currentTarget.value);
 							setSelectedIndex(0);
@@ -117,7 +129,27 @@ export function CommitSearchDialog({
 							className="absolute right-5 top-1/2 size-4 -translate-y-1/2 animate-spin text-primary"
 						/>
 					) : null}
+					<Button
+						aria-expanded={filtersOpen}
+						aria-label="Advanced commit filters"
+						className="absolute right-12 top-1/2 -translate-y-1/2"
+						onClick={() => setFiltersOpen((value) => !value)}
+						size="icon-sm"
+						variant={hasCommitSearchFilter(filters) ? "secondary" : "ghost"}
+					>
+						<Settings aria-hidden="true" />
+					</Button>
 				</div>
+				<AdvancedCommitSearchFilters
+					filters={filters}
+					onChange={(next) => {
+						setFilters(next);
+						setDeep(false);
+						setSelectedIndex(0);
+					}}
+					onClear={() => setFilters(emptyCommitSearchFilters)}
+					open={filtersOpen}
+				/>
 				<div className="custom-scrollbar h-[min(58vh,520px)] overflow-y-auto p-2">
 					<CommitSearchContent
 						error={error}

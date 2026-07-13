@@ -8,7 +8,6 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Commit
 
 internal sealed class SearchCommitsCommandResolver : CommandResponder<SearchCommitsCommandArguments>
 {
-    private const int MinimumQueryLength = 2;
     private readonly KnownGitRepositorysRepository _repositories;
     private readonly CommitSearchService _searchService;
 
@@ -31,17 +30,20 @@ internal sealed class SearchCommitsCommandResolver : CommandResponder<SearchComm
     {
         var arguments = command.Arguments;
         var query = arguments?.Query.Trim() ?? string.Empty;
-        if (arguments == null || arguments.KnownRepositoryId == Guid.Empty)
+        if (arguments is not { KnownRepositoryId: var repositoryId }
+            || repositoryId == Guid.Empty)
         {
             return Failure(command, "KnownRepositoryId is required.");
         }
 
-        if (query.Length < MinimumQueryLength)
+        var author = arguments.Author.Trim();
+        var validationError = CommitSearchRequestValidator.Validate(arguments);
+        if (validationError != null)
         {
-            return Failure(command, "Enter at least two characters to search commits.");
+            return Failure(command, validationError);
         }
 
-        var repository = await _repositories.FindByIdAsync(arguments.KnownRepositoryId)
+        var repository = await _repositories.FindByIdAsync(repositoryId)
             .ConfigureAwait(false);
         if (repository == null || string.IsNullOrWhiteSpace(repository.Path))
         {
@@ -54,6 +56,9 @@ internal sealed class SearchCommitsCommandResolver : CommandResponder<SearchComm
                 repository.Id,
                 repository.Path,
                 query,
+                author,
+                arguments.AfterUnixSeconds,
+                arguments.BeforeUnixSeconds,
                 arguments.Limit,
                 arguments.Deep).ConfigureAwait(false);
             return new CommandResponse<CommitSearchResponse>

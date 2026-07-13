@@ -9,6 +9,9 @@ internal sealed class CommitSearchService : IDisposable
         Guid repositoryId,
         string repositoryPath,
         string query,
+        string author,
+        long? afterUnixSeconds,
+        long? beforeUnixSeconds,
         int limit,
         bool deep)
     {
@@ -26,6 +29,9 @@ internal sealed class CommitSearchService : IDisposable
             return await NativeCommitSearchReader.SearchAsync(
                 repositoryPath,
                 query,
+                author,
+                afterUnixSeconds,
+                beforeUnixSeconds,
                 limit,
                 deep
                     ? NativeCommitSearchReader.DeepMaximumCommits

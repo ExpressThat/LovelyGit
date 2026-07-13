@@ -6,6 +6,9 @@ namespace ExpressThat.LovelyGit.Services.Git.CommitSearch;
 public sealed record CommitSearchResponse
 {
     public string Query { get; init; } = string.Empty;
+    public string Author { get; init; } = string.Empty;
+    public long? AfterUnixSeconds { get; init; }
+    public long? BeforeUnixSeconds { get; init; }
     public List<CommitSearchResult> Results { get; init; } = new();
     public int ScannedCommitCount { get; init; }
     public int MatchingCommitCount { get; init; }

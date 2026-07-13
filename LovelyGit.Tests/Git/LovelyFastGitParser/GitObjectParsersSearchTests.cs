@@ -27,9 +27,11 @@ public sealed class GitObjectParsersSearchTests
             id,
             data,
             queryBytes,
-            query);
+            query,
+            [],
+            string.Empty);
 
-        Assert.Equal(expected, result.IsMatch);
+        Assert.Equal(expected, result.TextMatches);
     }
 
     [Fact]
@@ -41,8 +43,9 @@ public sealed class GitObjectParsersSearchTests
         var query = Encoding.UTF8.GetBytes("xyz");
         var id = GitObjectId.Parse("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
 
-        var result = GitObjectParsers.ParseCommitSearchHeader(id, data, query, "xyz");
+        var result = GitObjectParsers.ParseCommitSearchHeader(
+            id, data, query, "xyz", [], string.Empty);
 
-        Assert.False(result.IsMatch);
+        Assert.False(result.TextMatches);
     }
 }

@@ -1,6 +1,13 @@
 import { useEffect, useState } from "react";
 import type { CommitSearchResponse } from "@/generated/types";
 import { sendRequestWithResponse } from "@/lib/commands";
+import {
+	type CommitSearchFilters,
+	emptyCommitSearchFilters,
+	hasCommitSearchFilter,
+	isCommitSearchDateRangeValid,
+	toSearchBoundaries,
+} from "./commitSearchFilters";
 
 const SEARCH_DEBOUNCE_MS = 140;
 const MINIMUM_QUERY_LENGTH = 2;
@@ -10,18 +17,23 @@ export function useCommitSearch(
 	query: string,
 	enabled: boolean,
 	deep = false,
+	filters: CommitSearchFilters = emptyCommitSearchFilters,
 ) {
 	const [response, setResponse] = useState<CommitSearchResponse | null>(null);
 	const [error, setError] = useState<string | null>(null);
 	const [isLoading, setIsLoading] = useState(false);
 	const normalizedQuery = query.trim();
+	const normalizedAuthor = filters.author.trim();
+	const boundaries = toSearchBoundaries(filters);
+	const canSearch =
+		(normalizedQuery.length >= MINIMUM_QUERY_LENGTH ||
+			hasCommitSearchFilter(filters)) &&
+		(normalizedAuthor.length === 0 ||
+			normalizedAuthor.length >= MINIMUM_QUERY_LENGTH) &&
+		isCommitSearchDateRangeValid(filters);
 
 	useEffect(() => {
-		if (
-			!enabled ||
-			!repositoryId ||
-			normalizedQuery.length < MINIMUM_QUERY_LENGTH
-		) {
+		if (!enabled || !repositoryId || !canSearch) {
 			setResponse(null);
 			setError(null);
 			setIsLoading(false);
@@ -35,6 +47,9 @@ export function useCommitSearch(
 			void sendRequestWithResponse(
 				{
 					arguments: {
+						afterUnixSeconds: boundaries.afterUnixSeconds,
+						author: normalizedAuthor,
+						beforeUnixSeconds: boundaries.beforeUnixSeconds,
 						deep,
 						knownRepositoryId: repositoryId,
 						limit: 50,
@@ -66,7 +81,16 @@ export function useCommitSearch(
 			active = false;
 			window.clearTimeout(timer);
 		};
-	}, [deep, enabled, normalizedQuery, repositoryId]);
+	}, [
+		boundaries.afterUnixSeconds,
+		boundaries.beforeUnixSeconds,
+		canSearch,
+		deep,
+		enabled,
+		normalizedAuthor,
+		normalizedQuery,
+		repositoryId,
+	]);
 
 	return {
 		error,
