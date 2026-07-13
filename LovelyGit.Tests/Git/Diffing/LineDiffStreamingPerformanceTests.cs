@@ -47,6 +47,28 @@ public sealed class LineDiffStreamingPerformanceTests(ITestOutputHelper output)
             $"Localized diff allocated {localized.Allocated:N0} bytes.");
     }
 
+    [Fact]
+    public void DistributedEdits_UseStableAnchorsToBoundMyersWork()
+    {
+        var lines = Enumerable.Range(0, 40_000).Select(index => $"line {index} stable").ToArray();
+        var changed = (string[])lines.Clone();
+        for (var index = 0; index < changed.Length; index += 10)
+            changed[index] = $"line {index} changed";
+        var oldText = LineDiffEngine.Prepare(string.Join('\n', lines));
+        var newText = LineDiffEngine.Prepare(string.Join('\n', changed));
+
+        var distributed = Measure(() => LineDiffEngine.BuildUnaligned(oldText, newText));
+
+        output.WriteLine(
+            $"Distributed 40k-line diff: {distributed.Elapsed.TotalMilliseconds:N1} ms, {distributed.Allocated:N0} bytes");
+        Assert.True(
+            distributed.Elapsed < TimeSpan.FromMilliseconds(100),
+            $"Distributed diff took {distributed.Elapsed.TotalMilliseconds:N1} ms.");
+        Assert.True(
+            distributed.Allocated < 2_700_000,
+            $"Distributed diff allocated {distributed.Allocated:N0} bytes.");
+    }
+
     private static Measurement Measure(Func<LineDiffModel> action)
     {
         GC.Collect();

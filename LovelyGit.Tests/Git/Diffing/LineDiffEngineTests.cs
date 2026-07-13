@@ -150,6 +150,27 @@ public sealed class LineDiffEngineTests
     }
 
     [Fact]
+    public void Build_AnchoredLargeEditsPreserveInsertionsDeletionsAndRepeatedLines()
+    {
+        var oldLines = Enumerable.Range(0, 6_000)
+            .Select(index => index % 97 == 0 ? "repeated context" : $"unique-{index}")
+            .ToList();
+        var newLines = new List<string>(oldLines);
+        for (var index = 10; index < newLines.Count; index += 10)
+            newLines[index] = $"changed-{index}";
+        newLines.RemoveRange(2_900, 40);
+        newLines.InsertRange(3_500, Enumerable.Range(0, 60).Select(index => $"inserted-{index}"));
+
+        var model = LineDiffEngine.Build(string.Join('\n', oldLines), string.Join('\n', newLines));
+        var unaligned = LineDiffEngine.BuildUnaligned(
+            string.Join('\n', oldLines), string.Join('\n', newLines));
+
+        Assert.Equal(newLines, Apply(model));
+        Assert.Equal(model.Blocks, unaligned.Blocks);
+        Assert.Equal(model.Rows, LineDiffEngine.EnumerateRows(unaligned));
+    }
+
+    [Fact]
     public void ChangeSpans_UseTheSameEngineForCharacterChanges()
     {
         var row = new LineDiffRow(0, 0, isChanged: true);

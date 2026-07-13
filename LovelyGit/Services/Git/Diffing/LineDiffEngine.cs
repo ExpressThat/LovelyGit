@@ -63,6 +63,9 @@ internal static class LineDiffEngine
 
         var oldMiddle = Slice(oldLines, prefix, oldMiddleLength);
         var newMiddle = Slice(newLines, prefix, newMiddleLength);
+        if (LineDiffAnchorPartition.TryBuild(
+                oldMiddle, newMiddle, comparer, prefix, out var anchoredBlocks))
+            return anchoredBlocks;
         var blocks = new List<LineDiffBlock>();
         foreach (var edit in new spkl.Diffs.MyersDiff<string>(oldMiddle, newMiddle, comparer).GetEditScript())
         {
