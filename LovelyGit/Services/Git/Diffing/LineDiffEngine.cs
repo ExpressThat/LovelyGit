@@ -8,6 +8,12 @@ internal static class LineDiffEngine
     public static LineDiffModel BuildUnaligned(string oldText, string newText, bool ignoreWhitespace = false)
         => BuildCore(Prepare(oldText), Prepare(newText), ignoreWhitespace, alignRows: false);
 
+    public static LineDiffModel BuildUnaligned(
+        PreparedLineText oldText,
+        PreparedLineText newText,
+        bool ignoreWhitespace = false)
+        => BuildCore(oldText, newText, ignoreWhitespace, alignRows: false);
+
     public static PreparedLineText Prepare(string text) =>
         new(SplitLines(text), EndsWithNewLine(text));
 
@@ -27,16 +33,77 @@ internal static class LineDiffEngine
         var comparisonOldLines = ComparisonLines(oldText, endingsDiffer);
         var comparisonNewLines = ComparisonLines(newText, endingsDiffer);
         var comparer = ignoreWhitespace ? WhitespaceIgnoringLineComparer.Instance : null;
-        var edits = new spkl.Diffs.MyersDiff<string>(comparisonOldLines, comparisonNewLines, comparer)
-            .GetEditScript()
-            .Select(edit => new LineDiffBlock(edit.Item1, edit.Item2, edit.Item3, edit.Item4))
-            .ToArray();
+        var edits = BuildBlocks(comparisonOldLines, comparisonNewLines, comparer);
         return new LineDiffModel(
             oldText.Lines,
             newText.Lines,
             edits,
             alignRows ? Align(oldText.Lines.Length, newText.Lines.Length, edits) : []);
     }
+
+    private static IReadOnlyList<LineDiffBlock> BuildBlocks(
+        string[] oldLines,
+        string[] newLines,
+        IEqualityComparer<string>? comparer)
+    {
+        var prefix = CommonPrefix(oldLines, newLines, comparer);
+        var suffix = CommonSuffix(oldLines, newLines, prefix, comparer);
+        if (prefix == oldLines.Length && prefix == newLines.Length) return [];
+
+        var oldMiddleLength = oldLines.Length - prefix - suffix;
+        var newMiddleLength = newLines.Length - prefix - suffix;
+        var middleLength = oldMiddleLength + newMiddleLength;
+        var totalLength = oldLines.Length + newLines.Length;
+        if ((long)middleLength * 4 > (long)totalLength * 3)
+        {
+            prefix = 0;
+            oldMiddleLength = oldLines.Length;
+            newMiddleLength = newLines.Length;
+        }
+
+        var oldMiddle = Slice(oldLines, prefix, oldMiddleLength);
+        var newMiddle = Slice(newLines, prefix, newMiddleLength);
+        var blocks = new List<LineDiffBlock>();
+        foreach (var edit in new spkl.Diffs.MyersDiff<string>(oldMiddle, newMiddle, comparer).GetEditScript())
+        {
+            blocks.Add(new(
+                edit.LineA + prefix,
+                edit.LineB + prefix,
+                edit.CountA,
+                edit.CountB));
+        }
+        return blocks;
+    }
+
+    private static int CommonPrefix(
+        string[] oldLines,
+        string[] newLines,
+        IEqualityComparer<string>? comparer)
+    {
+        var length = Math.Min(oldLines.Length, newLines.Length);
+        var index = 0;
+        while (index < length && Equal(oldLines[index], newLines[index], comparer)) index++;
+        return index;
+    }
+
+    private static int CommonSuffix(
+        string[] oldLines,
+        string[] newLines,
+        int prefix,
+        IEqualityComparer<string>? comparer)
+    {
+        var length = Math.Min(oldLines.Length, newLines.Length) - prefix;
+        var count = 0;
+        while (count < length &&
+               Equal(oldLines[^(count + 1)], newLines[^(count + 1)], comparer)) count++;
+        return count;
+    }
+
+    private static bool Equal(string oldLine, string newLine, IEqualityComparer<string>? comparer) =>
+        comparer?.Equals(oldLine, newLine) ?? string.Equals(oldLine, newLine, StringComparison.Ordinal);
+
+    private static string[] Slice(string[] lines, int start, int length) =>
+        start == 0 && length == lines.Length ? lines : lines.AsSpan(start, length).ToArray();
 
     private static string[] ComparisonLines(PreparedLineText text, bool endingsDiffer)
     {

@@ -28,6 +28,25 @@ public sealed class LineDiffStreamingPerformanceTests(ITestOutputHelper output)
             $"Streaming allocated {streamed.Allocated:N0} vs {aligned.Allocated:N0} bytes.");
     }
 
+    [Fact]
+    public void LocalizedEdit_TrimsUnchangedEdgesBeforeRunningMyers()
+    {
+        var lines = Enumerable.Range(0, 100_000).Select(index => $"line {index} stable").ToArray();
+        var changed = (string[])lines.Clone();
+        changed[50_000] = "line 50000 changed";
+        var oldText = LineDiffEngine.Prepare(string.Join('\n', lines));
+        var newText = LineDiffEngine.Prepare(string.Join('\n', changed));
+        _ = LineDiffEngine.BuildUnaligned(oldText, newText);
+
+        var localized = Measure(() => LineDiffEngine.BuildUnaligned(oldText, newText));
+
+        output.WriteLine(
+            $"Localized 100k-line diff: {localized.Elapsed.TotalMilliseconds:N1} ms, {localized.Allocated:N0} bytes");
+        Assert.True(
+            localized.Allocated < 100_000,
+            $"Localized diff allocated {localized.Allocated:N0} bytes.");
+    }
+
     private static Measurement Measure(Func<LineDiffModel> action)
     {
         GC.Collect();
