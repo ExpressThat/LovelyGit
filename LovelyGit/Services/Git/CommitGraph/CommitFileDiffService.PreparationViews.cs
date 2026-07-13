@@ -25,6 +25,19 @@ internal sealed partial class CommitFileDiffService
         {
             return;
         }
+
+        if (!hasSideBySide && !hasCombined)
+        {
+            await BuildAndCacheMissingDiffPairAsync(
+                    repositoryId,
+                    commitHash,
+                    path,
+                    source,
+                    cancellationToken)
+                .ConfigureAwait(false);
+            return;
+        }
+
         if (!hasSideBySide)
         {
             await BuildAndCacheMissingDiffAsync(

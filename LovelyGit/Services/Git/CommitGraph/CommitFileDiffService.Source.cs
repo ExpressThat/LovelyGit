@@ -105,7 +105,7 @@ internal sealed partial class CommitFileDiffService : IDisposable
         };
     }
 
-    private static CommitFileDiffResponse BuildResponseFromSource(
+    internal static CommitFileDiffResponse BuildResponseFromSource(
         string commitHash,
         string path,
         CommitDiffViewMode viewMode,
