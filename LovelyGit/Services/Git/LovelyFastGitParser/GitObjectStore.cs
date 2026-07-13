@@ -54,7 +54,7 @@ internal sealed partial class GitObjectStore : IDisposable
             return loose;
         }
 
-        var packed = await TryReadPackedObjectAsync(id, cancellationToken).ConfigureAwait(false);
+        var packed = await TryReadPackedObjectAsync(id, cacheObject, cancellationToken).ConfigureAwait(false);
         if (packed != null)
         {
             if (ShouldCache(cacheObject, packed))
@@ -83,7 +83,7 @@ internal sealed partial class GitObjectStore : IDisposable
             return loose;
         }
 
-        var packed = await TryReadPackedObjectAsync(id, cancellationToken).ConfigureAwait(false);
+        var packed = await TryReadPackedObjectAsync(id, cacheObject: false, cancellationToken).ConfigureAwait(false);
         return packed
             ?? throw new FileNotFoundException($"Git object was not found: {id}");
     }
@@ -97,6 +97,8 @@ internal sealed partial class GitObjectStore : IDisposable
     {
         return SharedObjectCache.TryGet(id, out _);
     }
+
+    internal long PackObjectCacheBytes => _packReader.CachedObjectBytes;
 
     private async Task<GitObjectData?> TryReadLooseObjectAsync(GitObjectId id, CancellationToken cancellationToken)
     {

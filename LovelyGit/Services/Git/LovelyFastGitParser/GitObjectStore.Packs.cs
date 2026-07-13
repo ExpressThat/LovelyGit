@@ -6,11 +6,12 @@ internal sealed partial class GitObjectStore
 {
     private async Task<GitObjectData?> TryReadPackedObjectAsync(
         GitObjectId id,
+        bool cacheObject,
         CancellationToken cancellationToken)
     {
         for (var attempt = 0; attempt < 2; attempt++)
         {
-            var result = await TryReadPackedObjectFromCurrentIndexesAsync(id, cancellationToken)
+            var result = await TryReadPackedObjectFromCurrentIndexesAsync(id, cacheObject, cancellationToken)
                 .ConfigureAwait(false);
             if (result.ObjectData != null)
             {
@@ -30,6 +31,7 @@ internal sealed partial class GitObjectStore
 
     private async Task<PackedObjectReadResult> TryReadPackedObjectFromCurrentIndexesAsync(
         GitObjectId id,
+        bool cacheObject,
         CancellationToken cancellationToken)
     {
         foreach (var index in await GetPackIndexesAsync(cancellationToken).ConfigureAwait(false))
@@ -49,7 +51,8 @@ internal sealed partial class GitObjectStore
                 .ReadObjectAtAsync(
                     index.PackPath,
                     offset.Value,
-                    ReadObjectAsync,
+                    cacheObject ? ReadObjectAsync : ReadObjectWithoutCachingAsync,
+                    cacheObject,
                     cancellationToken)
                 .ConfigureAwait(false);
             return new PackedObjectReadResult(objectData, PackIndexesStale: false);

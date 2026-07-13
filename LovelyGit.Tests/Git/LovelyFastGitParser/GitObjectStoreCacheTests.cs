@@ -45,4 +45,28 @@ public sealed class GitObjectStoreCacheTests
         Assert.NotEmpty(blob);
         Assert.False(GitObjectStore.IsSharedObjectCached(blobId));
     }
+
+    [Fact]
+    public async Task ReadObjectWithoutCachingAsync_DoesNotRetainPackedBlobBytes()
+    {
+        using var directory = TemporaryDirectory.Create("lovelygit-packed-cache-");
+        await GitTestProcess.RunAsync(directory.Path, "init");
+        await GitTestProcess.RunAsync(directory.Path, "config", "user.email", "test@example.com");
+        await GitTestProcess.RunAsync(directory.Path, "config", "user.name", "Test User");
+        var path = Path.Combine(directory.Path, "packed.txt");
+        await File.WriteAllTextAsync(path, string.Concat(Enumerable.Repeat(Guid.NewGuid().ToString("N"), 8_192)));
+        await GitTestProcess.RunAsync(directory.Path, "add", ".");
+        await GitTestProcess.RunAsync(directory.Path, "commit", "-m", "packed cache fixture");
+        var blobHash = (await GitTestProcess.RunAsync(directory.Path, "rev-parse", "HEAD:packed.txt")).Trim();
+        await GitTestProcess.RunAsync(directory.Path, "gc", "--prune=now");
+        using var store = new GitObjectStore(Path.Combine(directory.Path, ".git"), GitObjectFormat.Sha1);
+        var id = GitObjectId.Parse(blobHash);
+
+        var uncached = await store.ReadObjectWithoutCachingAsync(id, CancellationToken.None);
+
+        Assert.NotEmpty(uncached.Data);
+        Assert.Equal(0, store.PackObjectCacheBytes);
+        await store.ReadObjectAsync(id, CancellationToken.None);
+        Assert.True(store.PackObjectCacheBytes >= uncached.Data.Length);
+    }
 }

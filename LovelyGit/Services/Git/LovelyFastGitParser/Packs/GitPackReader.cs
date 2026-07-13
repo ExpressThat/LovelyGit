@@ -22,6 +22,7 @@ internal sealed partial class GitPackReader : IDisposable
         string packPath,
         long offset,
         Func<GitObjectId, CancellationToken, Task<GitObjectData>> readObjectAsync,
+        bool cacheObject,
         CancellationToken cancellationToken)
     {
         var key = new PackObjectKey(packPath, offset);
@@ -49,11 +50,12 @@ internal sealed partial class GitPackReader : IDisposable
                     packPath,
                     baseOffset,
                     readObjectAsync,
+                    cacheObject,
                     cancellationToken)
                 .ConfigureAwait(false);
-            return CacheAndReturn(key, new GitObjectData(
+            return Return(key, new GitObjectData(
                 baseObject.Kind,
-                GitDeltaResolver.ApplyDelta(baseObject.Data, delta)));
+                GitDeltaResolver.ApplyDelta(baseObject.Data, delta)), cacheObject);
         }
 
         if (rawKind == 7)
@@ -65,9 +67,9 @@ internal sealed partial class GitPackReader : IDisposable
                     cancellationToken)
                 .ConfigureAwait(false);
             var delta = InflateRemaining(file, objectSize, cancellationToken);
-            return CacheAndReturn(key, new GitObjectData(
+            return Return(key, new GitObjectData(
                 baseObject.Kind,
-                GitDeltaResolver.ApplyDelta(baseObject.Data, delta)));
+                GitDeltaResolver.ApplyDelta(baseObject.Data, delta)), cacheObject);
         }
 
         var kind = rawKind switch
@@ -79,16 +81,19 @@ internal sealed partial class GitPackReader : IDisposable
             _ => throw new InvalidDataException($"Unsupported packed object kind: {rawKind}"),
         };
 
-        return CacheAndReturn(
+        return Return(
             key,
-            new GitObjectData(kind, InflateRemaining(file, objectSize, cancellationToken)));
+            new GitObjectData(kind, InflateRemaining(file, objectSize, cancellationToken)),
+            cacheObject);
     }
 
-    private GitObjectData CacheAndReturn(PackObjectKey key, GitObjectData objectData)
+    private GitObjectData Return(PackObjectKey key, GitObjectData objectData, bool cacheObject)
     {
-        _packOffsetCache.Set(key, objectData);
+        if (cacheObject) _packOffsetCache.Set(key, objectData);
         return objectData;
     }
+
+    internal long CachedObjectBytes => _packOffsetCache.CurrentWeight;
 
     public void ClearObjectCache()
     {

@@ -40,6 +40,14 @@ internal sealed class LruCache<TKey, TValue>
         return false;
     }
 
+    public long CurrentWeight
+    {
+        get
+        {
+            lock (_gate) return _currentWeight;
+        }
+    }
+
     public void Set(TKey key, TValue value)
     {
         lock (_gate)
