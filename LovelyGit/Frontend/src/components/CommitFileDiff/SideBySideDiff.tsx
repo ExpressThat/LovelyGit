@@ -71,144 +71,79 @@ export function SideBySideDiff({
 					className="relative w-full"
 					style={{ height: `${virtualizer.getTotalSize()}px` }}
 				>
-					<div aria-hidden="true" className="pointer-events-none invisible">
-						{virtualItems.map((item) => {
-							const line = lines[item.index];
-							if (line.kind === "separator") {
-								return (
-									<div
-										className="absolute left-0 top-0 w-full"
-										data-index={item.index}
-										key={`measure:${item.key}`}
-										ref={virtualizer.measureElement}
-										style={{ transform: `translateY(${item.start}px)` }}
-									>
-										<DiffChunkSeparator />
-									</div>
-								);
-							}
+					{virtualItems.map((item) => {
+						const row = lines[item.index];
+						if (row.kind === "separator") {
 							return (
 								<div
-									className="absolute left-0 top-0 grid w-full grid-cols-2"
+									className="absolute left-0 top-0 w-full"
 									data-index={item.index}
-									key={`measure:${item.key}`}
+									key={item.key}
 									ref={virtualizer.measureElement}
 									style={{ transform: `translateY(${item.start}px)` }}
 								>
+									<DiffChunkSeparator />
+								</div>
+							);
+						}
+
+						return (
+							<div
+								className="absolute left-0 top-0 grid w-full grid-cols-2"
+								data-index={item.index}
+								key={item.key}
+								ref={virtualizer.measureElement}
+								style={{ transform: `translateY(${item.start}px)` }}
+							>
+								<div className="min-w-0 border-r">
 									<SideBySideRow
-										line={line.line}
-										lineAction={undefined}
-										scrollLeft={0}
+										hunkAction={getSideDiffHunkAction(
+											row.line,
+											"old",
+											hunkLookup,
+											onStageHunk,
+											onUnstageHunk,
+										)}
+										isLineActionBusy={isLineActionBusy}
+										line={row.line}
+										lineAction={getSideBySideLineAction(
+											row.line,
+											"old",
+											onStageLine,
+											onUnstageLine,
+										)}
+										rowHeight={item.size}
+										scrollLeft={scroll.oldScrollLeft}
 										side="old"
 										width={contentWidth}
 										wrapLines={wrapLines}
 									/>
-									<SideBySideRow
-										line={line.line}
-										lineAction={undefined}
-										scrollLeft={0}
-										side="new"
-										width={contentWidth}
-										wrapLines={wrapLines}
-									/>
 								</div>
-							);
-						})}
-					</div>
-					<div className="absolute inset-0 grid grid-cols-2">
-						<div className="relative min-w-0 border-r">
-							{virtualItems.map((item) => {
-								const line = lines[item.index];
-								if (line.kind === "separator") {
-									return (
-										<div
-											className="absolute left-0 top-0 w-full"
-											key={`old-separator:${item.key}`}
-											style={{ transform: `translateY(${item.start}px)` }}
-										>
-											<DiffChunkSeparator />
-										</div>
-									);
-								}
-								return (
-									<div
-										className="absolute left-0 top-0 w-full"
-										key={`old:${item.key}`}
-										style={{ transform: `translateY(${item.start}px)` }}
-									>
-										<SideBySideRow
-											hunkAction={getSideDiffHunkAction(
-												line.line,
-												"old",
-												hunkLookup,
-												onStageHunk,
-												onUnstageHunk,
-											)}
-											line={line.line}
-											isLineActionBusy={isLineActionBusy}
-											lineAction={getSideBySideLineAction(
-												line.line,
-												"old",
-												onStageLine,
-												onUnstageLine,
-											)}
-											rowHeight={item.size}
-											scrollLeft={scroll.oldScrollLeft}
-											side="old"
-											width={contentWidth}
-											wrapLines={wrapLines}
-										/>
-									</div>
-								);
-							})}
-						</div>
-						<div className="relative min-w-0">
-							{virtualItems.map((item) => {
-								const line = lines[item.index];
-								if (line.kind === "separator") {
-									return (
-										<div
-											className="absolute left-0 top-0 w-full"
-											key={`new-separator:${item.key}`}
-											style={{ transform: `translateY(${item.start}px)` }}
-										>
-											<DiffChunkSeparator />
-										</div>
-									);
-								}
-								return (
-									<div
-										className="absolute left-0 top-0 w-full"
-										key={`new:${item.key}`}
-										style={{ transform: `translateY(${item.start}px)` }}
-									>
-										<SideBySideRow
-											hunkAction={getSideDiffHunkAction(
-												line.line,
-												"new",
-												hunkLookup,
-												onStageHunk,
-												onUnstageHunk,
-											)}
-											line={line.line}
-											isLineActionBusy={isLineActionBusy}
-											lineAction={getSideBySideLineAction(
-												line.line,
-												"new",
-												onStageLine,
-												onUnstageLine,
-											)}
-											rowHeight={item.size}
-											scrollLeft={scroll.newScrollLeft}
-											side="new"
-											width={contentWidth}
-											wrapLines={wrapLines}
-										/>
-									</div>
-								);
-							})}
-						</div>
-					</div>
+								<SideBySideRow
+									hunkAction={getSideDiffHunkAction(
+										row.line,
+										"new",
+										hunkLookup,
+										onStageHunk,
+										onUnstageHunk,
+									)}
+									isLineActionBusy={isLineActionBusy}
+									line={row.line}
+									lineAction={getSideBySideLineAction(
+										row.line,
+										"new",
+										onStageLine,
+										onUnstageLine,
+									)}
+									rowHeight={item.size}
+									scrollLeft={scroll.newScrollLeft}
+									side="new"
+									width={contentWidth}
+									wrapLines={wrapLines}
+								/>
+							</div>
+						);
+					})}
 				</div>
 			</div>
 			{wrapLines ? null : (
