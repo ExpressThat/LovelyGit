@@ -12,13 +12,16 @@ export function useCommitGraphDialogs() {
 		branchName: string;
 		mode: BranchIntegrationMode;
 	} | null>(null);
-	const [cherryPickCommit, setCherryPickCommit] =
-		useState<CommitGraphRow | null>(null);
+	const [cherryPickCommits, setCherryPickCommits] = useState<
+		CommitGraphRow[] | null
+	>(null);
 	const [checkoutCommit, setCheckoutCommit] = useState<CommitGraphRow | null>(
 		null,
 	);
 	const [bisectCommit, setBisectCommit] = useState<CommitGraphRow | null>(null);
-	const [revertCommit, setRevertCommit] = useState<CommitGraphRow | null>(null);
+	const [revertCommits, setRevertCommits] = useState<CommitGraphRow[] | null>(
+		null,
+	);
 	const [resetCommit, setResetCommit] = useState<CommitGraphRow | null>(null);
 	const [tagCommit, setTagCommit] = useState<CommitGraphRow | null>(null);
 	const [interactiveRebaseBase, setInteractiveRebaseBase] =
@@ -28,7 +31,7 @@ export function useCommitGraphDialogs() {
 
 	return {
 		bisectCommit,
-		cherryPickCommit,
+		cherryPickCommits,
 		checkoutCommit,
 		comparison: {
 			base: comparisonBase,
@@ -41,14 +44,17 @@ export function useCommitGraphDialogs() {
 		interactiveRebaseBase,
 		integrateBranch,
 		resetCommit,
-		revertCommit,
-		setCherryPickCommit,
+		revertCommits,
+		setCherryPickCommit: (commit: CommitGraphRow) =>
+			setCherryPickCommits([commit]),
+		setCherryPickCommits,
 		setBisectCommit,
 		setCheckoutCommit,
 		setIntegrationTarget,
 		setInteractiveRebaseBase,
 		setResetCommit,
-		setRevertCommit,
+		setRevertCommit: (commit: CommitGraphRow) => setRevertCommits([commit]),
+		setRevertCommits,
 		setTagCommit,
 		tagCommit,
 	};

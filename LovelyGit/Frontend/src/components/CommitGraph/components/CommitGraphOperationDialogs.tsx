@@ -47,20 +47,20 @@ export function CommitGraphOperationDialogs({
 }) {
 	const {
 		bisectCommit,
-		cherryPickCommit,
+		cherryPickCommits,
 		checkoutCommit,
 		comparison: commitComparison,
 		integrationTarget,
 		interactiveRebaseBase,
 		resetCommit,
-		revertCommit,
+		revertCommits,
 		setBisectCommit,
-		setCherryPickCommit,
+		setCherryPickCommits,
 		setCheckoutCommit,
 		setIntegrationTarget,
 		setInteractiveRebaseBase,
 		setResetCommit,
-		setRevertCommit,
+		setRevertCommits,
 	} = dialogs;
 	return (
 		<>
@@ -115,17 +115,17 @@ export function CommitGraphOperationDialogs({
 				targetBranchName={integrationTarget?.branchName}
 			/>
 			<LazyCherryPickDialog
-				commit={cherryPickCommit}
+				commits={cherryPickCommits}
 				currentBranchName={currentBranchName}
-				onOpenChange={setCherryPickCommit}
+				onOpenChange={setCherryPickCommits}
 				onOpenWorkingChanges={onOpenWorkingChanges}
 				onRepositoryChanged={onRepositoryChanged}
 				repositoryId={repositoryId}
 			/>
 			<LazyRevertDialog
-				commit={revertCommit}
+				commits={revertCommits}
 				currentBranchName={currentBranchName}
-				onOpenChange={setRevertCommit}
+				onOpenChange={setRevertCommits}
 				onOpenWorkingChanges={onOpenWorkingChanges}
 				onRepositoryChanged={onRepositoryChanged}
 				repositoryId={repositoryId}

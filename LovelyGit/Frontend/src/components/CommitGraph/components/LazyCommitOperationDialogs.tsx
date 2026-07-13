@@ -36,7 +36,9 @@ const Revert = lazy(() =>
 export function LazyCherryPickDialog(
 	props: ComponentProps<typeof CherryPickDialog>,
 ) {
-	return props.commit ? <Boundary>{<CherryPick {...props} />}</Boundary> : null;
+	return props.commits?.length ? (
+		<Boundary>{<CherryPick {...props} />}</Boundary>
+	) : null;
 }
 export function LazyCheckoutCommitDialog(
 	props: ComponentProps<typeof CheckoutCommitDialog>,
@@ -66,7 +68,9 @@ export function LazyResetCommitDialog(
 	) : null;
 }
 export function LazyRevertDialog(props: ComponentProps<typeof RevertDialog>) {
-	return props.commit ? <Boundary>{<Revert {...props} />}</Boundary> : null;
+	return props.commits?.length ? (
+		<Boundary>{<Revert {...props} />}</Boundary>
+	) : null;
 }
 
 function Boundary({ children }: { children: ReactNode }) {

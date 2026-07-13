@@ -31,6 +31,8 @@ export type CommitContextMenuPopupProps = {
 	savePatchBusy: boolean;
 	currentBranchName: string | null;
 	isHead: boolean;
+	operationIncludesHead: boolean;
+	operationSelectionCount: number;
 	onCherryPick: (row: CommitGraphRow) => void;
 	onCheckoutCommit: (row: CommitGraphRow) => void;
 	onCompare: (row: CommitGraphRow) => void;
@@ -163,7 +165,18 @@ function PrimaryItems(props: ItemProps) {
 }
 
 function MutationItems(props: ItemProps) {
-	const { abbreviatedHash, currentBranchName, isHead, row } = props;
+	const {
+		abbreviatedHash,
+		currentBranchName,
+		isHead,
+		operationIncludesHead,
+		operationSelectionCount,
+		row,
+	} = props;
+	const target =
+		operationSelectionCount > 1
+			? `${operationSelectionCount} selected commits`
+			: abbreviatedHash;
 	return (
 		<>
 			<ContextMenuItem onClick={() => props.onCreateTag(row)}>
@@ -178,28 +191,28 @@ function MutationItems(props: ItemProps) {
 				title={
 					currentBranchName === null
 						? "Check out a branch before reverting"
-						: `Revert ${abbreviatedHash} on ${currentBranchName}`
+						: `Revert ${target} on ${currentBranchName}`
 				}
 			>
 				<Undo2 aria-hidden="true" />
 				<span className="min-w-0 truncate">
-					Revert {abbreviatedHash} on {currentBranchName ?? "a branch"}
+					Revert {target} on {currentBranchName ?? "a branch"}
 				</span>
 			</ContextMenuItem>
 			<ContextMenuItem
-				disabled={currentBranchName === null || isHead}
+				disabled={currentBranchName === null || operationIncludesHead}
 				onClick={() => props.onCherryPick(row)}
 				title={
-					isHead
-						? "This commit is already checked out"
+					operationIncludesHead
+						? "The selection includes the checked-out commit"
 						: currentBranchName === null
 							? "Check out a branch before cherry-picking"
-							: `Cherry-pick ${abbreviatedHash} onto ${currentBranchName}`
+							: `Cherry-pick ${target} onto ${currentBranchName}`
 				}
 			>
 				<GitCommitHorizontal aria-hidden="true" />
 				<span className="min-w-0 truncate">
-					Cherry-pick {abbreviatedHash} onto {currentBranchName ?? "a branch"}
+					Cherry-pick {target} onto {currentBranchName ?? "a branch"}
 				</span>
 			</ContextMenuItem>
 			<ContextMenuItem

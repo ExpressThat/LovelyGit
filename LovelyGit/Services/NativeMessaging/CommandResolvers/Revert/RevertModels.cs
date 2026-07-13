@@ -6,5 +6,5 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Revert
 public sealed record RevertCommitCommandArguments
 {
     public Guid RepositoryId { get; init; }
-    public string CommitHash { get; init; } = string.Empty;
+    public List<string> CommitHashes { get; init; } = new();
 }

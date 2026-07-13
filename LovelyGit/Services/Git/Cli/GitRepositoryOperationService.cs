@@ -4,7 +4,7 @@ using ExpressThat.LovelyGit.Services.Git.Rebase;
 
 namespace ExpressThat.LovelyGit.Services.Git.Cli;
 
-internal sealed class GitRepositoryOperationService
+internal sealed partial class GitRepositoryOperationService
 {
     private readonly GitOperationService _gitOperationService;
 
@@ -29,11 +29,17 @@ internal sealed class GitRepositoryOperationService
         string repositoryPath,
         string commitHash,
         CancellationToken cancellationToken) =>
+        CherryPickAsync(repositoryPath, [commitHash], cancellationToken);
+
+    public Task<GitRepositoryOperationOutcome> CherryPickAsync(
+        string repositoryPath,
+        IReadOnlyList<string> commitHashes,
+        CancellationToken cancellationToken) =>
         RunAsync(
             repositoryPath,
             GitRepositoryOperationKind.CherryPick,
-            "Cherry-pick commit",
-            ["cherry-pick", "--no-edit", "--", NormalizeCommitHash(commitHash)],
+            "Cherry-pick commits",
+            BuildCommitOperationArguments("cherry-pick", commitHashes),
             "Resolve and stage cherry-pick conflicts, then continue or abort the cherry-pick.",
             cancellationToken);
 
@@ -53,11 +59,17 @@ internal sealed class GitRepositoryOperationService
         string repositoryPath,
         string commitHash,
         CancellationToken cancellationToken) =>
+        RevertAsync(repositoryPath, [commitHash], cancellationToken);
+
+    public Task<GitRepositoryOperationOutcome> RevertAsync(
+        string repositoryPath,
+        IReadOnlyList<string> commitHashes,
+        CancellationToken cancellationToken) =>
         RunAsync(
             repositoryPath,
             GitRepositoryOperationKind.Revert,
-            "Revert commit",
-            ["revert", "--no-edit", "--", NormalizeCommitHash(commitHash)],
+            "Revert commits",
+            BuildCommitOperationArguments("revert", commitHashes),
             "Resolve and stage revert conflicts, then continue or abort the revert.",
             cancellationToken);
 
@@ -219,18 +231,6 @@ internal sealed class GitRepositoryOperationService
         if (normalized.Length > 255 || normalized.Any(char.IsControl) || normalized.StartsWith('-'))
         {
             throw new ArgumentException("Branch name is not valid.", nameof(branchName));
-        }
-
-        return normalized;
-    }
-
-    private static string NormalizeCommitHash(string commitHash)
-    {
-        var normalized = commitHash.Trim();
-        if ((normalized.Length is not 40 and not 64) ||
-            normalized.Any(character => !Uri.IsHexDigit(character)))
-        {
-            throw new ArgumentException("Commit hash is not valid.", nameof(commitHash));
         }
 
         return normalized;

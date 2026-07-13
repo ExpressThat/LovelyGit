@@ -6,5 +6,5 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Cherry
 public sealed record CherryPickCommitCommandArguments
 {
     public Guid RepositoryId { get; init; }
-    public string CommitHash { get; init; } = string.Empty;
+    public List<string> CommitHashes { get; init; } = new();
 }

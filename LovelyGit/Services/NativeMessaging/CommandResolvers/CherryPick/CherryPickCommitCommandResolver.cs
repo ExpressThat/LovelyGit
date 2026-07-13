@@ -47,7 +47,7 @@ internal sealed class CherryPickCommitCommandResolver
         {
             var result = await _repositoryOperations.CherryPickAsync(
                     repository.Path,
-                    arguments.CommitHash,
+                    arguments.CommitHashes,
                     CancellationToken.None)
                 .ConfigureAwait(false);
             return Success(command, result);

@@ -14,7 +14,7 @@ using ExpressThat.LovelyGit.Services.Git.WorkingTree.Models;
 
 namespace LovelyGit.Tests.NativeMessaging;
 
-public sealed class CommandArgumentJsonContextTests
+public sealed partial class CommandArgumentJsonContextTests
 {
     private static readonly Guid RepositoryId = Guid.Parse("bd3d4c1a-5061-453c-abef-70a2aafa6050");
 
@@ -100,12 +100,12 @@ public sealed class CommandArgumentJsonContextTests
                 value => AssertBranch(value as RebaseCurrentBranchOntoBranchCommandArguments)
             },
             {
-                CreateJson("commitHash", "abc123"),
+                CreateCommitListJson(),
                 CherryPickJsonSerializerContext.Default.CherryPickCommitCommandArguments,
                 value => AssertCommit(value as CherryPickCommitCommandArguments)
             },
             {
-                CreateJson("commitHash", "abc123"),
+                CreateCommitListJson(),
                 RevertJsonSerializerContext.Default.RevertCommitCommandArguments,
                 value => AssertCommit(value as RevertCommitCommandArguments)
             },
@@ -233,17 +233,4 @@ public sealed class CommandArgumentJsonContextTests
         Assert.Equal("main", arguments.BranchName);
     }
 
-    private static void AssertCommit(CherryPickCommitCommandArguments? arguments)
-    {
-        Assert.NotNull(arguments);
-        Assert.Equal(RepositoryId, arguments.RepositoryId);
-        Assert.Equal("abc123", arguments.CommitHash);
-    }
-
-    private static void AssertCommit(RevertCommitCommandArguments? arguments)
-    {
-        Assert.NotNull(arguments);
-        Assert.Equal(RepositoryId, arguments.RepositoryId);
-        Assert.Equal("abc123", arguments.CommitHash);
-    }
 }

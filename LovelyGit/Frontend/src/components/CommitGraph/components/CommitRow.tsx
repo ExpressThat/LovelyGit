@@ -4,6 +4,7 @@ import type { BranchIntegrationMode } from "@/components/TopNavBar/components/Br
 import type { CommitGraphRow } from "@/generated/types";
 import { useCommitDetailsPrefetch } from "../hooks/useCommitDetailsPrefetch";
 import type { CommitComparisonController } from "../hooks/useCommitGraphDialogs";
+import type { SelectionGesture } from "../hooks/useCommitMultiSelection";
 import { AuthorCell } from "./AuthorCell";
 import type { BranchAction } from "./BranchContextMenu";
 import { CommitContextMenu } from "./CommitContextMenu";
@@ -25,6 +26,9 @@ export function CommitRow({
 	graph,
 	isSelected,
 	isHead,
+	isOperationSelected,
+	operationSelectionCount,
+	operationIncludesHead,
 	onCherryPick,
 	onCheckoutCommit,
 	onBranchAction,
@@ -62,6 +66,9 @@ export function CommitRow({
 	};
 	isSelected: boolean;
 	isHead: boolean;
+	isOperationSelected: boolean;
+	operationSelectionCount: number;
+	operationIncludesHead: boolean;
 	onIntegrateBranch: (mode: BranchIntegrationMode, branchName: string) => void;
 	onInteractiveRebase: (row: CommitGraphRow) => void;
 	onRevert: (row: CommitGraphRow) => void;
@@ -76,7 +83,7 @@ export function CommitRow({
 	onSavePatch: (row: CommitGraphRow) => void;
 	onStartBisect: (row: CommitGraphRow) => void;
 	onCreateBranchFromTag: (tagName: string, commitHash: string) => void;
-	onSelect: (row: CommitGraphRow) => void;
+	onSelect: (row: CommitGraphRow, gesture: SelectionGesture) => void;
 	onTagAction: (action: TagAction, tagName: string) => void;
 	remotePrefixes: string[];
 	repositoryId: string | null;
@@ -90,7 +97,7 @@ export function CommitRow({
 		repositoryId,
 		row?.commit.hash ?? null,
 	);
-	const rowClassName = `grid h-[22px] leading-[22px] ${isSelected ? "bg-primary/12 ring-1 ring-inset ring-primary/35 dark:bg-primary/20" : rowIndex % 2 === 0 ? "bg-background dark:bg-background" : "bg-card/70 dark:bg-card/45"} hover:bg-accent/75 dark:hover:bg-accent/60`;
+	const rowClassName = `grid h-[22px] leading-[22px] ${isOperationSelected ? "bg-primary/20 ring-1 ring-inset ring-primary/60 dark:bg-primary/30" : isSelected ? "bg-primary/12 ring-1 ring-inset ring-primary/35 dark:bg-primary/20" : rowIndex % 2 === 0 ? "bg-background dark:bg-background" : "bg-card/70 dark:bg-card/45"} hover:bg-accent/75 dark:hover:bg-accent/60`;
 
 	if (!row) {
 		return (
@@ -124,7 +131,7 @@ export function CommitRow({
 	const commitButton = (
 		<button
 			className={`${rowClassName} w-full cursor-pointer border-0 p-0 text-left text-inherit focus-visible:bg-accent focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-ring`}
-			onClick={() => onSelect(row)}
+			onClick={(event) => onSelect(row, event)}
 			onPointerEnter={detailsPrefetch.start}
 			onPointerLeave={detailsPrefetch.cancel}
 			style={{ gridTemplateColumns: templateColumns }}
@@ -172,6 +179,8 @@ export function CommitRow({
 			savePatchBusy={savePatchBusy}
 			currentBranchName={currentBranchName}
 			isHead={isHead}
+			operationSelectionCount={operationSelectionCount}
+			operationIncludesHead={operationIncludesHead}
 			onCherryPick={onCherryPick}
 			onCheckoutCommit={onCheckoutCommit}
 			onCompare={comparison.compare}
@@ -180,7 +189,9 @@ export function CommitRow({
 			onCopyPatch={onCopyPatch}
 			onSaveArchive={onSaveArchive}
 			onSavePatch={onSavePatch}
-			onOpenDetails={onSelect}
+			onOpenDetails={(selected) =>
+				onSelect(selected, { ctrlKey: false, metaKey: false, shiftKey: false })
+			}
 			onSetComparisonBase={comparison.setBase}
 			onStartBisect={onStartBisect}
 			onInteractiveRebase={onInteractiveRebase}

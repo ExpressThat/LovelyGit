@@ -1,13 +1,13 @@
+import { CommitGraphRows } from "./CommitGraphRows";
 import type { CommitGraphViewProps } from "./CommitGraphViewProps";
 import { BranchManagementDialogs } from "./components/BranchManagementDialogs";
 import { CommitGraphHeader } from "./components/CommitGraphHeader";
 import { CommitGraphHorizontalScrollbar } from "./components/CommitGraphHorizontalScrollbar";
 import { CommitGraphOperationDialogs } from "./components/CommitGraphOperationDialogs";
-import { CommitRow } from "./components/CommitRow";
+import { CommitMultiSelectionBar } from "./components/CommitMultiSelectionBar";
 import { RefsPanel } from "./components/RefsPanel";
 import { TagManagementDialogs } from "./components/TagManagementDialogs";
 import { WorktreeManagementDialogs } from "./components/WorktreeManagementDialogs";
-import { ROW_HEIGHT } from "./constants";
 import { useBranchCreation } from "./hooks/useBranchCreation";
 import { useBranchWorktreeControllers } from "./hooks/useBranchWorktreeControllers";
 import { useCommitGraphData } from "./hooks/useCommitGraphData";
@@ -16,6 +16,7 @@ import {
 	useNotifyCurrentBranch,
 } from "./hooks/useCommitGraphDialogs";
 import { useCommitGraphViewport } from "./hooks/useCommitGraphViewport";
+import { useCommitMultiSelection } from "./hooks/useCommitMultiSelection";
 import { useCommitPatchActions } from "./hooks/useCommitPatchActions";
 import { useRepositoryRefs } from "./hooks/useRepositoryRefs";
 import { buildCommitGraphRefView } from "./utils/commitGraphRefView";
@@ -30,7 +31,6 @@ export function CommitGraphView({
 }: CommitGraphViewProps) {
 	const dialogs = useCommitGraphDialogs();
 	const patchActions = useCommitPatchActions(repositoryId);
-	const { busyAction, busyCommitHash } = patchActions;
 	const {
 		currentBranchName,
 		ensureRangeLoaded,
@@ -42,6 +42,14 @@ export function CommitGraphView({
 		totalRows,
 	} = useCommitGraphData(refreshToken);
 	const repositoryRefs = useRepositoryRefs(repositoryId, refreshToken);
+	const commitSelection = useCommitMultiSelection(repositoryId, rows);
+	const openSelectedOperation = (mode: "cherry-pick" | "revert") => {
+		const commits = commitSelection.ordered(mode);
+		if (commits.length === 0) return;
+		if (mode === "cherry-pick") dialogs.setCherryPickCommits(commits);
+		else dialogs.setRevertCommits(commits);
+		commitSelection.clear();
+	};
 	const {
 		branchNames,
 		branchUpstreams,
@@ -117,6 +125,20 @@ export function CommitGraphView({
 							onResizeStart={handleResizeStart}
 							templateColumns={templateColumns}
 						/>
+						<CommitMultiSelectionBar
+							cherryPickDisabled={
+								currentBranchName === null ||
+								Boolean(
+									currentHeadHash &&
+										commitSelection.hashes.has(currentHeadHash),
+								)
+							}
+							count={commitSelection.count}
+							onCherryPick={() => openSelectedOperation("cherry-pick")}
+							onClear={commitSelection.clear}
+							onRevert={() => openSelectedOperation("revert")}
+							revertDisabled={currentBranchName === null}
+						/>
 						{error ? (
 							<div className="h-7 border-b border-destructive/40 bg-destructive/10 px-[10px] leading-[27px] text-destructive">
 								{error}
@@ -131,67 +153,31 @@ export function CommitGraphView({
 								className="relative h-full w-full"
 								style={{ height: `${contentHeight}px` }}
 							>
-								{virtualItems.map((item) => (
-									<div
-										className="absolute left-0 top-0 w-full"
-										key={item.key}
-										style={{
-											height: `${ROW_HEIGHT}px`,
-											transform: `translateY(${Math.round(item.start)}px)`,
-										}}
-									>
-										<CommitRow
-											archiveBusy={
-												busyAction === "archive" &&
-												busyCommitHash === rows[item.index]?.commit.hash
-											}
-											branchMutationBusy={branchController.busyBranch !== null}
-											branchRemoteName={tagRemoteName}
-											comparison={dialogs.comparison}
-											copyPatchBusy={
-												busyAction === "copy" &&
-												busyCommitHash === rows[item.index]?.commit.hash
-											}
-											savePatchBusy={
-												busyAction === "save" &&
-												busyCommitHash === rows[item.index]?.commit.hash
-											}
-											graph={{
-												contentWidth: graphContentWidth,
-												scrollLeft: graphScrollLeft,
-											}}
-											isSelected={
-												Boolean(rows[item.index]) &&
-												rows[item.index]?.commit.hash === selectedCommitHash
-											}
-											isHead={rows[item.index]?.commit.hash === currentHeadHash}
-											onCherryPick={dialogs.setCherryPickCommit}
-											onCheckoutCommit={dialogs.setCheckoutCommit}
-											onBranchAction={manageBranch}
-											onCreateBranch={branchCreation.createAtCommit}
-											onCopyPatch={patchActions.copyPatch}
-											onSaveArchive={patchActions.saveArchive}
-											onSavePatch={patchActions.savePatch}
-											onStartBisect={dialogs.setBisectCommit}
-											onCreateBranchFromTag={branchCreation.createFromTag}
-											onCreateTag={dialogs.setTagCommit}
-											onIntegrateBranch={dialogs.integrateBranch}
-											onInteractiveRebase={dialogs.setInteractiveRebaseBase}
-											onRevert={dialogs.setRevertCommit}
-											onReset={dialogs.setResetCommit}
-											onSelect={onSelectCommit}
-											onTagAction={tagController.manageTag}
-											currentBranchName={currentBranchName}
-											remotePrefixes={remotePrefixes}
-											repositoryId={repositoryId}
-											row={rows[item.index] ?? null}
-											rowIndex={item.index}
-											templateColumns={templateColumns}
-											tagMutationBusy={tagController.busyTag !== null}
-											tagRemoteName={tagRemoteName}
-										/>
-									</div>
-								))}
+								<CommitGraphRows
+									actions={{
+										branchController,
+										branchCreation,
+										dialogs,
+										manageBranch,
+										onSelectCommit,
+										patchActions,
+										tagController,
+										virtualItems,
+									}}
+									rows={rows}
+									selection={commitSelection}
+									view={{
+										currentBranchName,
+										currentHeadHash,
+										graphContentWidth,
+										graphScrollLeft,
+										remotePrefixes,
+										repositoryId,
+										selectedCommitHash,
+										tagRemoteName,
+										templateColumns,
+									}}
+								/>
 							</div>
 						</div>
 						<CommitGraphHorizontalScrollbar

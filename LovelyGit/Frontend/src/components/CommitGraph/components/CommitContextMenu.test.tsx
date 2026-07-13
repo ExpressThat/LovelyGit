@@ -137,6 +137,20 @@ describe("CommitContextMenu", () => {
 		expect(onCheckoutCommit).toHaveBeenCalledWith(row);
 	});
 
+	it("describes bulk operations and blocks cherry-pick when HEAD is selected", async () => {
+		renderMenu({ operationIncludesHead: true, operationSelectionCount: 3 });
+		fireEvent.contextMenu(screen.getByRole("button", { name: "commit row" }));
+
+		expect(
+			await screen.findByText("Revert 3 selected commits on main"),
+		).toBeVisible();
+		expect(
+			screen
+				.getByText("Cherry-pick 3 selected commits onto main")
+				.closest('[role="menuitem"]'),
+		).toHaveAttribute("aria-disabled", "true");
+	});
+
 	it("marks a comparison base then compares another commit against it", async () => {
 		const user = userEvent.setup();
 		const onSetComparisonBase = vi.fn();
@@ -168,6 +182,8 @@ describe("CommitContextMenu", () => {
 function renderMenu({
 	comparisonBase = null,
 	isHead = false,
+	operationIncludesHead = isHead,
+	operationSelectionCount = 1,
 	onCreateBranch = vi.fn(),
 	onInteractiveRebase = vi.fn(),
 	onCopyPatch = vi.fn(),
@@ -181,6 +197,8 @@ function renderMenu({
 }: {
 	comparisonBase?: CommitGraphRow | null;
 	isHead?: boolean;
+	operationIncludesHead?: boolean;
+	operationSelectionCount?: number;
 	onCreateBranch?: (selected: CommitGraphRow) => void;
 	onInteractiveRebase?: (selected: CommitGraphRow) => void;
 	onCopyPatch?: (selected: CommitGraphRow) => void;
@@ -200,6 +218,8 @@ function renderMenu({
 			savePatchBusy={false}
 			currentBranchName="main"
 			isHead={isHead}
+			operationIncludesHead={operationIncludesHead}
+			operationSelectionCount={operationSelectionCount}
 			onCherryPick={vi.fn()}
 			onCheckoutCommit={onCheckoutCommit}
 			onCompare={onCompare}

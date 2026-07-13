@@ -6,14 +6,14 @@ import type { CommitGraphRow } from "@/generated/types";
 import { LazyRevertDialog } from "./LazyCommitOperationDialogs";
 
 vi.mock("./RevertDialog", () => ({
-	RevertDialog: ({ commit }: { commit: CommitGraphRow | null }) =>
-		commit ? <div>Revert dialog loaded</div> : null,
+	RevertDialog: ({ commits }: { commits: CommitGraphRow[] | null }) =>
+		commits?.length ? <div>Revert dialog loaded</div> : null,
 }));
 
 describe("LazyCommitOperationDialogs", () => {
 	it("does not load a closed operation and renders it when activated", async () => {
 		const props = {
-			commit: null,
+			commits: null,
 			currentBranchName: "main",
 			onOpenChange: vi.fn(),
 			onOpenWorkingChanges: vi.fn(),
@@ -23,7 +23,7 @@ describe("LazyCommitOperationDialogs", () => {
 		const view = render(<LazyRevertDialog {...props} />);
 		expect(screen.queryByText("Revert dialog loaded")).not.toBeInTheDocument();
 		view.rerender(
-			<LazyRevertDialog {...props} commit={{} as CommitGraphRow} />,
+			<LazyRevertDialog {...props} commits={[{} as CommitGraphRow]} />,
 		);
 		expect(await screen.findByText("Revert dialog loaded")).toBeVisible();
 	});

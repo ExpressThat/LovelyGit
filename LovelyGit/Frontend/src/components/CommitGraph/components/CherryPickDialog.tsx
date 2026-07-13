@@ -2,23 +2,23 @@ import type { CommitGraphRow } from "@/generated/types";
 import { CommitOperationDialog } from "./CommitOperationDialog";
 
 export function CherryPickDialog({
-	commit,
+	commits,
 	currentBranchName,
 	onOpenChange,
 	onOpenWorkingChanges,
 	onRepositoryChanged,
 	repositoryId,
 }: {
-	commit: CommitGraphRow | null;
+	commits: CommitGraphRow[] | null;
 	currentBranchName: string | null;
-	onOpenChange: (commit: CommitGraphRow | null) => void;
+	onOpenChange: (commits: CommitGraphRow[] | null) => void;
 	onOpenWorkingChanges: () => void;
 	onRepositoryChanged: () => void;
 	repositoryId: string | null;
 }) {
 	return (
 		<CommitOperationDialog
-			commit={commit}
+			commits={commits}
 			currentBranchName={currentBranchName}
 			mode="cherry-pick"
 			onOpenChange={onOpenChange}

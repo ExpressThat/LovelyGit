@@ -23,7 +23,7 @@ import { shortHash } from "../utils/format";
 type CommitOperationMode = "cherry-pick" | "revert";
 
 export function CommitOperationDialog({
-	commit,
+	commits,
 	currentBranchName,
 	mode,
 	onOpenChange,
@@ -31,19 +31,19 @@ export function CommitOperationDialog({
 	onRepositoryChanged,
 	repositoryId,
 }: {
-	commit: CommitGraphRow | null;
+	commits: CommitGraphRow[] | null;
 	currentBranchName: string | null;
 	mode: CommitOperationMode;
-	onOpenChange: (commit: CommitGraphRow | null) => void;
+	onOpenChange: (commits: CommitGraphRow[] | null) => void;
 	onOpenWorkingChanges: () => void;
 	onRepositoryChanged: () => void;
 	repositoryId: string | null;
 }) {
 	const [isRunning, setIsRunning] = useState(false);
-	if (!commit) return null;
-	const hash = shortHash(commit.commit.hash);
-	const subject =
-		commit.commit.message.split(/\r?\n/, 1)[0] || "(no commit message)";
+	if (!commits?.length) return null;
+	const count = commits.length;
+	const targetLabel =
+		count === 1 ? shortHash(commits[0].commit.hash) : `${count} commits`;
 	const isRevert = mode === "revert";
 	const action = isRevert ? "Revert" : "Cherry-pick";
 	const runningAction = isRevert ? "Reverting" : "Cherry-picking";
@@ -52,12 +52,15 @@ export function CommitOperationDialog({
 		if (!repositoryId || !currentBranchName || isRunning) return;
 		setIsRunning(true);
 		const toastId = toast.loading(
-			`${runningAction} ${hash} on ${currentBranchName}`,
+			`${runningAction} ${targetLabel} on ${currentBranchName}`,
 		);
 		try {
 			const response = await sendRequestWithResponse(
 				{
-					arguments: { commitHash: commit.commit.hash, repositoryId },
+					arguments: {
+						commitHashes: commits.map((commit) => commit.commit.hash),
+						repositoryId,
+					},
 					commandType: isRevert
 						? NativeMessageType.RevertCommit
 						: NativeMessageType.CherryPickCommit,
@@ -103,20 +106,33 @@ export function CommitOperationDialog({
 				>
 					<DialogHeader>
 						<DialogTitle>
-							{action} {hash} on {currentBranchName}?
+							{action} {targetLabel} on {currentBranchName}?
 						</DialogTitle>
 						<DialogDescription>
 							{isRevert
-								? `Create a new commit on ${currentBranchName} that reverses this commit.`
-								: `Apply this commit as a new commit on ${currentBranchName}.`}
+								? `Create ${count === 1 ? "a new commit" : `${count} new commits`} on ${currentBranchName} in newest-to-oldest order.`
+								: `Apply ${count === 1 ? "this commit" : `these ${count} commits`} on ${currentBranchName} in oldest-to-newest order.`}
 						</DialogDescription>
 					</DialogHeader>
 					<div className="grid gap-3 py-4">
-						<div className="grid gap-1 rounded-lg border bg-card px-3 py-2">
-							<span className="truncate font-medium text-sm">{subject}</span>
-							<span className="font-mono text-muted-foreground text-xs">
-								{commit.commit.hash}
-							</span>
+						<div className="custom-scrollbar max-h-52 overflow-y-auto rounded-lg border bg-card">
+							{commits.map((commit, index) => (
+								<div
+									className="grid grid-cols-[2rem_1fr_auto] items-center gap-2 border-b px-3 py-2 last:border-b-0"
+									key={commit.commit.hash}
+								>
+									<span className="text-center text-muted-foreground text-xs">
+										{index + 1}
+									</span>
+									<span className="truncate font-medium text-sm">
+										{commit.commit.message.split(/\r?\n/, 1)[0] ||
+											"(no commit message)"}
+									</span>
+									<span className="font-mono text-muted-foreground text-xs">
+										{shortHash(commit.commit.hash)}
+									</span>
+								</div>
+							))}
 						</div>
 						<p className="rounded-lg border bg-muted/40 p-3 text-muted-foreground text-xs">
 							Git keeps the existing history unchanged. If changes overlap, the

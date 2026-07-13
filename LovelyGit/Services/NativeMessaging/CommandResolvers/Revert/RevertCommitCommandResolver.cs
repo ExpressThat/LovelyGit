@@ -47,7 +47,7 @@ internal sealed class RevertCommitCommandResolver
         {
             var result = await _repositoryOperations.RevertAsync(
                     repository.Path,
-                    arguments.CommitHash,
+                    arguments.CommitHashes,
                     CancellationToken.None)
                 .ConfigureAwait(false);
             return Success(command, result);
