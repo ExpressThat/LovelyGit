@@ -18,6 +18,7 @@ internal sealed partial class CommitFileDiffService : IDisposable
     private readonly object _diffBuildGateLock = new();
     private readonly Dictionary<Guid, ActivePreparation> _activePreparations = new();
     private readonly Dictionary<string, BuildGate> _diffBuildGates = new(StringComparer.Ordinal);
+    private readonly CommitFileDiffSourceCache _sourceCache = new();
     private bool _disposed;
 
     public CommitFileDiffService(CommitGraphRepository commitGraphRepository)
@@ -209,6 +210,7 @@ internal sealed partial class CommitFileDiffService : IDisposable
         {
             preparation.Dispose();
         }
+        _sourceCache.Clear();
     }
 
 }

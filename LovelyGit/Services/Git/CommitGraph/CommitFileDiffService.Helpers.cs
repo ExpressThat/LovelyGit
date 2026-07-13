@@ -122,7 +122,7 @@ internal sealed partial class CommitFileDiffService : IDisposable
         public int ReferenceCount { get; set; }
     }
 
-    private sealed record CommitFileDiffSource
+    internal sealed record CommitFileDiffSource
     {
         public string Status { get; init; } = string.Empty;
         public bool IsBinary { get; init; }

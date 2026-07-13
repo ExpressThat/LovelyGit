@@ -12,7 +12,7 @@ namespace ExpressThat.LovelyGit.Services.Git.CommitGraph;
 
 internal sealed partial class CommitFileDiffService : IDisposable
 {
-    private static async Task<CommitFileDiffResponse> BuildCommitFileDiffAsync(
+    private async Task<CommitFileDiffResponse> BuildCommitFileDiffAsync(
         string repositoryPath,
         string commitHash,
         string? comparisonCommitHash,
@@ -22,14 +22,20 @@ internal sealed partial class CommitFileDiffService : IDisposable
         bool ignoreWhitespace,
         CancellationToken cancellationToken)
     {
-        var source = await BuildCommitFileDiffSourceAsync(
-                repositoryPath,
-                commitHash,
-                comparisonCommitHash,
-                parentIndex,
-                path,
-                cancellationToken)
-            .ConfigureAwait(false);
+        var key = string.Concat(repositoryPath, '\0', commitHash, '\0', comparisonCommitHash, '\0',
+            parentIndex, '\0', path);
+        if (!_sourceCache.TryGet(key, out var source))
+        {
+            source = await BuildCommitFileDiffSourceAsync(
+                    repositoryPath,
+                    commitHash,
+                    comparisonCommitHash,
+                    parentIndex,
+                    path,
+                    cancellationToken)
+                .ConfigureAwait(false);
+            _sourceCache.Set(key, source);
+        }
         return BuildResponseFromSource(commitHash, path, viewMode, ignoreWhitespace, source);
     }
 
