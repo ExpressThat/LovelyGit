@@ -110,6 +110,74 @@ internal sealed class GitPackIndex : IDisposable
         return null;
     }
 
+    public void AddIdsWithPrefix(
+        string prefix,
+        GitObjectFormat objectFormat,
+        ISet<GitObjectId> results,
+        int maximumResults,
+        CancellationToken cancellationToken)
+    {
+        if (prefix.Length < 2 || maximumResults <= 0) return;
+        Span<byte> target = stackalloc byte[_hashBytes];
+        WritePrefix(prefix, target);
+        var bucket = target[0];
+        var start = bucket == 0 ? 0 : _fanout[bucket - 1];
+        var end = _fanout[bucket];
+        Span<byte> hash = stackalloc byte[_hashBytes];
+        var first = FindLowerBound(target, start, end, hash, cancellationToken);
+        for (var index = first; index < end && results.Count < maximumResults; index++)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            ReadExactlyAt(hash, HashTableOffset + index * _hashBytes);
+            if (!MatchesPrefix(hash, prefix)) break;
+            results.Add(GitObjectId.FromBytes(hash, objectFormat));
+        }
+    }
+
+    private uint FindLowerBound(
+        ReadOnlySpan<byte> target,
+        uint low,
+        uint high,
+        Span<byte> current,
+        CancellationToken cancellationToken)
+    {
+        while (low < high)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var middle = low + ((high - low) / 2);
+            ReadExactlyAt(current, HashTableOffset + middle * _hashBytes);
+            if (current.SequenceCompareTo(target) < 0) low = middle + 1;
+            else high = middle;
+        }
+        return low;
+    }
+
+    private static void WritePrefix(ReadOnlySpan<char> prefix, Span<byte> destination)
+    {
+        destination.Clear();
+        for (var index = 0; index < prefix.Length; index++)
+        {
+            var nibble = prefix[index] <= '9'
+                ? prefix[index] - '0'
+                : (prefix[index] | 0x20) - 'a' + 10;
+            if ((index & 1) == 0) destination[index / 2] = (byte)(nibble << 4);
+            else destination[index / 2] |= (byte)nibble;
+        }
+    }
+
+    private static bool MatchesPrefix(ReadOnlySpan<byte> hash, ReadOnlySpan<char> prefix)
+    {
+        for (var index = 0; index < prefix.Length; index++)
+        {
+            var nibble = (index & 1) == 0 ? hash[index / 2] >> 4 : hash[index / 2] & 0x0f;
+            var expected = prefix[index] <= '9'
+                ? prefix[index] - '0'
+                : (prefix[index] | 0x20) - 'a' + 10;
+            if (nibble != expected) return false;
+        }
+        return true;
+    }
+
     private long ReadObjectOffset(uint objectIndex)
     {
         Span<byte> small = stackalloc byte[4];

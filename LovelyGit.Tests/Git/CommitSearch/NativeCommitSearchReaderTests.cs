@@ -54,6 +54,27 @@ public sealed class NativeCommitSearchReaderTests
     }
 
     [Fact]
+    public async Task SearchAsync_ResolvesPackedSevenCharacterHashWithoutWalkingHistory()
+    {
+        using var repository = TemporaryGitRepository.Create();
+        await CommitAsync(repository, "2025-01-01T00:00:00Z", "packed hash result");
+        var hash = (await RunGitAsync(repository, "rev-parse", "HEAD")).Trim();
+        await RunGitAsync(repository, "gc", "--prune=now");
+
+        var response = await NativeCommitSearchReader.SearchAsync(
+            repository.Path,
+            hash[..7],
+            limit: 10,
+            maximumCommits: 1,
+            maximumDuration: TimeSpan.Zero,
+            CancellationToken.None);
+
+        Assert.Equal(hash, Assert.Single(response.Results).Hash);
+        Assert.Equal(1, response.ScannedCommitCount);
+        Assert.False(response.IsPartial);
+    }
+
+    [Fact]
     public async Task SearchAsync_BoundsResultsAndReportsPartialTraversal()
     {
         using var repository = TemporaryGitRepository.Create();
@@ -92,6 +113,32 @@ public sealed class NativeCommitSearchReaderTests
 
         Assert.Equal(taggedHash, Assert.Single(response.Results).Hash);
         Assert.Contains("search-tag-only", response.Results[0].Refs);
+    }
+
+    [Fact]
+    public async Task SearchAsync_PrioritizesHeadHistoryAheadOfManyTagTips()
+    {
+        using var repository = TemporaryGitRepository.Create();
+        await CommitAsync(repository, "2024-01-01T00:00:00Z", "head-history needle");
+        var main = (await RunGitAsync(repository, "branch", "--show-current")).Trim();
+        for (var index = 0; index < 12; index++)
+        {
+            await RunGitAsync(repository, "switch", "--orphan", $"tag-source-{index}");
+            await RunGitAsync(repository, "commit", "--allow-empty", "-m", $"tag history {index}");
+            await RunGitAsync(repository, "tag", $"history-tag-{index}");
+        }
+        await RunGitAsync(repository, "switch", main);
+
+        var response = await NativeCommitSearchReader.SearchAsync(
+            repository.Path,
+            "head-history needle",
+            limit: 10,
+            maximumCommits: 2,
+            maximumDuration: Timeout.InfiniteTimeSpan,
+            CancellationToken.None);
+
+        Assert.Equal("head-history needle", Assert.Single(response.Results).Subject);
+        Assert.True(response.ScannedCommitCount <= 2);
     }
 
     [Fact]

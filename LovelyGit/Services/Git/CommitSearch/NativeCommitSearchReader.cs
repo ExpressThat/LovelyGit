@@ -30,16 +30,31 @@ internal static class NativeCommitSearchReader
         using var repository = await LovelyGitRepository
             .OpenAsync(repositoryPath, cancellationToken)
             .ConfigureAwait(false);
+        var directHashResult = await TryResolveHashAsync(
+            repository, normalizedQuery, cancellationToken).ConfigureAwait(false);
+        if (directHashResult != null)
+        {
+            return new CommitSearchResponse
+            {
+                Query = normalizedQuery,
+                Results = [directHashResult],
+                ScannedCommitCount = 1,
+                MatchingCommitCount = 1,
+                IsPartial = false,
+            };
+        }
         var startingCommits = await repository
             .GetStartingCommitsAsync(cancellationToken, includeTags: true)
             .ConfigureAwait(false);
-        var pending = new Queue<GitObjectId>(startingCommits.Count);
+        var primaryHistory = new Stack<GitObjectId>();
+        var otherHistory = new Queue<GitObjectId>(startingCommits.Count);
         var seen = new HashSet<GitObjectId>();
         foreach (var commit in startingCommits)
         {
             if (seen.Add(commit.Hash))
             {
-                pending.Enqueue(commit.Hash);
+                if (commit.Hash == repository.HeadTarget) primaryHistory.Push(commit.Hash);
+                else otherHistory.Enqueue(commit.Hash);
             }
         }
 
@@ -47,7 +62,7 @@ internal static class NativeCommitSearchReader
             SearchResultPriorityComparer.Instance);
         var scannedCount = 0;
         var matchingCount = 0;
-        while (pending.Count > 0 && scannedCount < scanLimit)
+        while ((primaryHistory.Count > 0 || otherHistory.Count > 0) && scannedCount < scanLimit)
         {
             cancellationToken.ThrowIfCancellationRequested();
             if ((scannedCount & 63) == 0
@@ -57,7 +72,8 @@ internal static class NativeCommitSearchReader
                 break;
             }
 
-            var hash = pending.Dequeue();
+            var followsHead = primaryHistory.Count > 0;
+            var hash = followsHead ? primaryHistory.Pop() : otherHistory.Dequeue();
             var header = await repository
                 .GetCommitSearchHeaderAsync(hash, queryUtf8, normalizedQuery, cancellationToken)
                 .ConfigureAwait(false);
@@ -80,12 +96,20 @@ internal static class NativeCommitSearchReader
                 }
             }
 
-            for (var index = 0; index < header.ParentHashCount; index++)
+            if (followsHead)
             {
-                var parent = header.GetParentHash(index);
-                if (seen.Add(parent))
+                for (var index = header.ParentHashCount - 1; index >= 0; index--)
                 {
-                    pending.Enqueue(parent);
+                    var parent = header.GetParentHash(index);
+                    if (seen.Add(parent)) primaryHistory.Push(parent);
+                }
+            }
+            else
+            {
+                for (var index = 0; index < header.ParentHashCount; index++)
+                {
+                    var parent = header.GetParentHash(index);
+                    if (seen.Add(parent)) otherHistory.Enqueue(parent);
                 }
             }
         }
@@ -100,8 +124,29 @@ internal static class NativeCommitSearchReader
                 .ToList(),
             ScannedCommitCount = scannedCount,
             MatchingCommitCount = matchingCount,
-            IsPartial = pending.Count > 0,
+            IsPartial = primaryHistory.Count > 0 || otherHistory.Count > 0,
         };
+    }
+
+    private static async Task<CommitSearchResult?> TryResolveHashAsync(
+        LovelyGitRepository repository,
+        string query,
+        CancellationToken cancellationToken)
+    {
+        if (query.Length < 7 || query.Any(character => !Uri.IsHexDigit(character))) return null;
+        var id = await repository.ResolveUniqueObjectPrefixAsync(query, cancellationToken)
+            .ConfigureAwait(false);
+        if (id == null) return null;
+        try
+        {
+            return ToResult(
+                await repository.GetCommitAsync(id.Value, cancellationToken).ConfigureAwait(false),
+                query);
+        }
+        catch (InvalidDataException)
+        {
+            return null;
+        }
     }
 
     private static bool ShouldMaterialize(
