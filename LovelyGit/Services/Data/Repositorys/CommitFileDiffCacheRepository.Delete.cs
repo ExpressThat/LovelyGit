@@ -50,6 +50,43 @@ internal sealed partial class CommitFileDiffCacheRepository
         }
     }
 
+    public async Task RemoveCommitFileDiffAsync(
+        Guid repositoryId,
+        string hash,
+        string path,
+        CommitDiffViewMode viewMode,
+        bool ignoreWhitespace,
+        CancellationToken cancellationToken)
+    {
+        var id = MakeDiffId(repositoryId, hash, path, viewMode, ignoreWhitespace);
+        var gate = GetSaveGate(id);
+        var enteredGate = false;
+        try
+        {
+            await gate.Semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
+            enteredGate = true;
+            var entry = await _gitRepoCache.CommitFileDiffs
+                .FindByIdAsync(id, cancellationToken)
+                .ConfigureAwait(false);
+            if (entry == null) return;
+
+            using (var transaction = _gitRepoCache.BeginTransaction())
+            {
+                await _gitRepoCache.CommitFileDiffs
+                    .DeleteAsync(id, transaction, cancellationToken)
+                    .ConfigureAwait(false);
+                await _gitRepoCache.SaveChangesAsync(transaction, cancellationToken).ConfigureAwait(false);
+            }
+
+            await DeleteLineEntriesInBatchesAsync(entry, cancellationToken).ConfigureAwait(false);
+        }
+        finally
+        {
+            if (enteredGate) gate.Semaphore.Release();
+            ReleaseSaveGate(id, gate);
+        }
+    }
+
     private async Task DeleteLineEntriesInBatchesAsync(
         CommitFileDiffCacheEntry entry,
         CancellationToken cancellationToken)

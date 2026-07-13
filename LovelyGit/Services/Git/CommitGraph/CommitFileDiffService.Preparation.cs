@@ -103,15 +103,18 @@ internal sealed partial class CommitFileDiffService : IDisposable
                     cancellationToken)
                 .ConfigureAwait(false);
 
-            await _commitGraphRepository
-                .SaveCommitFileDiffAsync(
-                    repositoryId,
-                    commitHash,
-                    path,
-                    response,
-                    ignoreWhitespace,
-                    cancellationToken)
-                .ConfigureAwait(false);
+            if (CommitFileDiffCachingPolicy.ShouldPersist(response))
+            {
+                await _commitGraphRepository
+                    .SaveCommitFileDiffAsync(
+                        repositoryId,
+                        commitHash,
+                        path,
+                        response,
+                        ignoreWhitespace,
+                        cancellationToken)
+                    .ConfigureAwait(false);
+            }
 
             return response;
         }
@@ -158,15 +161,18 @@ internal sealed partial class CommitFileDiffService : IDisposable
             }
 
             var response = BuildResponseFromSource(commitHash, path, viewMode, ignoreWhitespace, source);
-            await _commitGraphRepository
-                .SaveCommitFileDiffAsync(
-                    repositoryId,
-                    commitHash,
-                    path,
-                    response,
-                    ignoreWhitespace,
-                    cancellationToken)
-                .ConfigureAwait(false);
+            if (CommitFileDiffCachingPolicy.ShouldPersist(response))
+            {
+                await _commitGraphRepository
+                    .SaveCommitFileDiffAsync(
+                        repositoryId,
+                        commitHash,
+                        path,
+                        response,
+                        ignoreWhitespace,
+                        cancellationToken)
+                    .ConfigureAwait(false);
+            }
 
             return response;
         }

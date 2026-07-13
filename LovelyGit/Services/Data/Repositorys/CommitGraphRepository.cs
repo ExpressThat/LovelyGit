@@ -162,6 +162,18 @@ namespace ExpressThat.LovelyGit.Services.Data.Repositorys
             return _fileDiffCache.ClearCommitFileDiffsAsync(repositoryId, hash, cancellationToken);
         }
 
+        public Task RemoveCommitFileDiffAsync(
+            Guid repositoryId,
+            string hash,
+            string path,
+            CommitDiffViewMode viewMode,
+            bool ignoreWhitespace,
+            CancellationToken cancellationToken)
+        {
+            return _fileDiffCache.RemoveCommitFileDiffAsync(
+                repositoryId, hash, path, viewMode, ignoreWhitespace, cancellationToken);
+        }
+
         public Task AddSeenAsync(
             Guid repositoryId,
             string hash,

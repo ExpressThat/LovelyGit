@@ -30,6 +30,18 @@ internal sealed partial class CommitFileDiffService
             {
                 var expandedLineCount = cached.Lines.Count;
                 CompactDiffPayloadBuilder.CompactIfUseful(cached);
+                if (!CommitFileDiffCachingPolicy.ShouldPersist(cached))
+                {
+                    await _commitGraphRepository.RemoveCommitFileDiffAsync(
+                            repositoryId,
+                            commitHash,
+                            path,
+                            viewMode,
+                            ignoreWhitespace,
+                            CancellationToken.None)
+                        .ConfigureAwait(false);
+                    return null;
+                }
                 if (expandedLineCount > 0 && cached.Lines.Count == 0)
                 {
                     _ = PersistCompactedCachedDiffAsync(
@@ -65,6 +77,7 @@ internal sealed partial class CommitFileDiffService
         bool ignoreWhitespace,
         CommitFileDiffResponse response)
     {
+        if (!CommitFileDiffCachingPolicy.ShouldPersist(response)) return;
         try
         {
             await _commitGraphRepository.SaveCommitFileDiffAsync(
