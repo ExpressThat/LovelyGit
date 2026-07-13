@@ -8,6 +8,7 @@ internal sealed class WhitespaceIgnoringLineComparer : IEqualityComparer<string>
     {
         if (ReferenceEquals(left, right)) return true;
         if (left is null || right is null) return false;
+        if (string.Equals(left, right, StringComparison.Ordinal)) return true;
         var leftIndex = 0;
         var rightIndex = 0;
         while (true)

@@ -36,6 +36,19 @@ public sealed class LineDiffEngineTests
     }
 
     [Theory]
+    [InlineData("same text", "same text", true)]
+    [InlineData(" value\t= 1 ", "value =\t1", true)]
+    [InlineData("value\u00A0one", "value one", true)]
+    [InlineData("value one", "value two", false)]
+    public void WhitespaceComparer_PreservesEqualityAndHashContract(string left, string right, bool equal)
+    {
+        var comparer = WhitespaceIgnoringLineComparer.Instance;
+
+        Assert.Equal(equal, comparer.Equals(left, right));
+        if (equal) Assert.Equal(comparer.GetHashCode(left), comparer.GetHashCode(right));
+    }
+
+    [Theory]
     [MemberData(nameof(RepresentativeChanges))]
     public void PreparedText_PreservesStringBuildSemantics(string oldText, string newText)
     {

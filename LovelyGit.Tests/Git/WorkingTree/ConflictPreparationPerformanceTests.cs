@@ -91,6 +91,27 @@ public sealed class ConflictPreparationPerformanceTests(ITestOutputHelper output
             $"Exact split allocated {exact.Allocated:N0} vs {legacy.Allocated:N0} bytes.");
     }
 
+    [Fact]
+    public void WhitespaceMode_StaysCloseToExactForMostlyUnchangedLargeFiles()
+    {
+        var oldLines = Enumerable.Range(0, 20_000).Select(index => $"line {index} stable content").ToArray();
+        var newLines = (string[])oldLines.Clone();
+        for (var index = 499; index < newLines.Length; index += 500) newLines[index] = $"line {index} changed";
+        for (var index = 996; index < newLines.Length; index += 997) newLines[index] += " \t";
+        var oldText = LineDiffEngine.Prepare(string.Join('\n', oldLines));
+        var newText = LineDiffEngine.Prepare(string.Join('\n', newLines));
+        _ = LineDiffEngine.Build(oldText, newText);
+        _ = LineDiffEngine.Build(oldText, newText, ignoreWhitespace: true);
+
+        var exact = Measure(() => LineDiffEngine.Build(oldText, newText));
+        var whitespace = Measure(() => LineDiffEngine.Build(oldText, newText, ignoreWhitespace: true));
+
+        output.WriteLine($"Exact: {exact.Elapsed.TotalMilliseconds:N1} ms; whitespace: {whitespace.Elapsed.TotalMilliseconds:N1} ms");
+        Assert.True(
+            whitespace.Elapsed < exact.Elapsed * 4,
+            $"Whitespace comparison took {whitespace.Elapsed.TotalMilliseconds:N1} vs {exact.Elapsed.TotalMilliseconds:N1} ms.");
+    }
+
     private static string[] LegacySplitLines(string text)
     {
         var normalized = text.Replace("\r\n", "\n", StringComparison.Ordinal).Replace('\r', '\n');
