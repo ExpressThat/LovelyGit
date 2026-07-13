@@ -157,36 +157,41 @@ export function getContextualDiffRows(
 		return [];
 	}
 
-	const includedIndexes = new Set<number>();
+	const ranges: Array<{ end: number; start: number }> = [];
+	const context = Math.max(0, contextLines);
 	for (let index = 0; index < lines.length; index++) {
 		if (!isDiffChangedLine(lines[index])) {
 			continue;
 		}
 
-		const start = Math.max(0, index - contextLines);
-		const end = Math.min(lines.length - 1, index + contextLines);
-		for (let contextIndex = start; contextIndex <= end; contextIndex++) {
-			includedIndexes.add(contextIndex);
+		const start = Math.max(0, index - context);
+		const end = Math.min(lines.length - 1, index + context);
+		const previous = ranges.at(-1);
+		if (previous && start <= previous.end + 1) {
+			previous.end = Math.max(previous.end, end);
+		} else {
+			ranges.push({ end, start });
 		}
 	}
 
-	if (includedIndexes.size === 0 || includedIndexes.size === lines.length) {
+	if (
+		ranges.length === 0 ||
+		(ranges.length === 1 &&
+			ranges[0].start === 0 &&
+			ranges[0].end === lines.length - 1)
+	) {
 		return lines.map((line) => ({ kind: "line", line }));
 	}
 
 	const rows: DiffDisplayRow[] = [];
-	let previousIncludedIndex: number | null = null;
-	for (let index = 0; index < lines.length; index++) {
-		if (!includedIndexes.has(index)) {
-			continue;
-		}
-
-		if (previousIncludedIndex !== null && index > previousIncludedIndex + 1) {
+	for (let rangeIndex = 0; rangeIndex < ranges.length; rangeIndex++) {
+		if (rangeIndex > 0) {
 			rows.push({ kind: "separator" });
 		}
-
-		rows.push({ kind: "line", line: lines[index] });
-		previousIncludedIndex = index;
+		const range = ranges[rangeIndex];
+		for (let index = range.start; index <= range.end; index++) {
+			rows.push({ kind: "line", line: lines[index] });
+		}
 	}
 
 	return rows;

@@ -1,6 +1,38 @@
 import { describe, expect, it } from "vitest";
 import type { CommitFileDiffLine } from "@/generated/types";
-import { type DiffDisplayRow, getCombinedLineActionPayload } from "./DiffRows";
+import {
+	type DiffDisplayRow,
+	getCombinedLineActionPayload,
+	getContextualDiffRows,
+} from "./DiffRows";
+
+describe("getContextualDiffRows", () => {
+	it("materializes only sparse changed ranges and their context", () => {
+		const lines = Array.from({ length: 10_000 }, () => line());
+		lines[100] = line({ changeType: "Modified" });
+		lines[9_000] = line({ changeType: "Inserted" });
+
+		const rows = getContextualDiffRows(lines, 1);
+
+		expect(rows).toHaveLength(7);
+		expect(rows[3]).toEqual({ kind: "separator" });
+		expect(rows[0]).toEqual({ kind: "line", line: lines[99] });
+		expect(rows[6]).toEqual({ kind: "line", line: lines[9_001] });
+	});
+
+	it("merges overlapping context into one continuous range", () => {
+		const lines = Array.from({ length: 12 }, () => line());
+		lines[4] = line({ changeType: "Deleted" });
+		lines[7] = line({ changeType: "Inserted" });
+
+		const rows = getContextualDiffRows(lines, 2);
+
+		expect(rows).toHaveLength(8);
+		expect(rows.every((item) => item.kind === "line")).toBe(true);
+		expect(rows[0]).toEqual({ kind: "line", line: lines[2] });
+		expect(rows[7]).toEqual({ kind: "line", line: lines[9] });
+	});
+});
 
 describe("getCombinedLineActionPayload", () => {
 	it("pairs adjacent deleted and inserted rows into one modified payload", () => {
@@ -57,20 +89,28 @@ function lineAt(rows: DiffDisplayRow[], index: number) {
 function row(line: Partial<CommitFileDiffLine>): DiffDisplayRow {
 	return {
 		kind: "line",
-		line: {
-			changeSpans: [],
-			changeType: "",
-			newChangeSpans: [],
-			newLineNumber: null,
-			newSyntaxSpans: [],
-			newText: "",
-			oldChangeSpans: [],
-			oldLineNumber: null,
-			oldSyntaxSpans: [],
-			oldText: "",
-			syntaxSpans: [],
-			text: "",
-			...line,
-		},
+		line: lineValue(line),
+	};
+}
+
+function line(line: Partial<CommitFileDiffLine> = {}) {
+	return lineValue(line);
+}
+
+function lineValue(line: Partial<CommitFileDiffLine>) {
+	return {
+		changeSpans: [],
+		changeType: "",
+		newChangeSpans: [],
+		newLineNumber: null,
+		newSyntaxSpans: [],
+		newText: "",
+		oldChangeSpans: [],
+		oldLineNumber: null,
+		oldSyntaxSpans: [],
+		oldText: "",
+		syntaxSpans: [],
+		text: "",
+		...line,
 	};
 }
