@@ -18,13 +18,29 @@ internal sealed class BlobLineAnalyzer
         try
         {
             var blob = await ReadBlobBytesAsync(file, cancellationToken).ConfigureAwait(false);
-            return blob.IsBinary
-                ? new BlobAnalysis(blob.IsBinary, Array.Empty<LineFingerprint>())
-                : new BlobAnalysis(blob.IsBinary, BuildLineFingerprints(blob.Bytes));
+            var isBinary = IsBinary(blob);
+            return isBinary
+                ? new BlobAnalysis(isBinary, Array.Empty<LineFingerprint>())
+                : new BlobAnalysis(isBinary, BuildLineFingerprints(blob));
         }
         catch when (!cancellationToken.IsCancellationRequested)
         {
             return new BlobAnalysis(IsBinary: true, Array.Empty<LineFingerprint>());
+        }
+    }
+
+    public async Task<BlobLineSummary> SummarizeAsync(
+        GitTreeFile file,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var blob = await ReadBlobBytesAsync(file, cancellationToken).ConfigureAwait(false);
+            return Summarize(blob);
+        }
+        catch when (!cancellationToken.IsCancellationRequested)
+        {
+            return new BlobLineSummary(IsBinary: true, LineCount: 0);
         }
     }
 
@@ -35,9 +51,9 @@ internal sealed class BlobLineAnalyzer
         try
         {
             var blob = await ReadBlobBytesAsync(file, cancellationToken).ConfigureAwait(false);
-            return blob.IsBinary
+            return IsBinary(blob)
                 ? new BlobText(true, string.Empty)
-                : new BlobText(false, DecodeText(blob.Bytes));
+                : new BlobText(false, DecodeText(blob));
         }
         catch when (!cancellationToken.IsCancellationRequested)
         {
@@ -94,7 +110,7 @@ internal sealed class BlobLineAnalyzer
         return common;
     }
 
-    private static bool IsBinary(byte[] bytes)
+    private static bool IsBinary(ReadOnlySpan<byte> bytes)
     {
         var length = Math.Min(bytes.Length, 8000);
         for (var i = 0; i < length; i++)
@@ -106,6 +122,30 @@ internal sealed class BlobLineAnalyzer
         }
 
         return false;
+    }
+
+    internal static BlobLineSummary Summarize(ReadOnlySpan<byte> bytes)
+    {
+        if (IsBinary(bytes))
+        {
+            return new BlobLineSummary(IsBinary: true, LineCount: 0);
+        }
+
+        var lineCount = 0;
+        foreach (var value in bytes)
+        {
+            if (value == (byte)'\n')
+            {
+                lineCount++;
+            }
+        }
+
+        if (bytes.Length > 0 && bytes[^1] != (byte)'\n')
+        {
+            lineCount++;
+        }
+
+        return new BlobLineSummary(IsBinary: false, LineCount: lineCount);
     }
 
     private static LineFingerprint[] BuildLineFingerprints(byte[] bytes)
@@ -136,12 +176,13 @@ internal sealed class BlobLineAnalyzer
         return lines.ToArray();
     }
 
-    private async Task<(byte[] Bytes, bool IsBinary)> ReadBlobBytesAsync(
+    private async Task<byte[]> ReadBlobBytesAsync(
         GitTreeFile file,
         CancellationToken cancellationToken)
     {
-        var bytes = await _repository.ReadBlobAsync(file.ObjectId, cancellationToken).ConfigureAwait(false);
-        return (bytes, IsBinary(bytes));
+        return await _repository
+            .ReadBlobWithoutCachingAsync(file.ObjectId, cancellationToken)
+            .ConfigureAwait(false);
     }
 
     private static string DecodeText(byte[] bytes)
@@ -178,5 +219,7 @@ internal sealed class BlobLineAnalyzer
 internal readonly record struct LineFingerprint(ulong Hash, int Length);
 
 internal sealed record BlobAnalysis(bool IsBinary, LineFingerprint[] Lines);
+
+internal readonly record struct BlobLineSummary(bool IsBinary, int LineCount);
 
 internal sealed record BlobText(bool IsBinary, string Text);

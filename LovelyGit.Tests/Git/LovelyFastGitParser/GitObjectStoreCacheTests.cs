@@ -18,7 +18,12 @@ public sealed class GitObjectStoreCacheTests
         await GitTestProcess.RunAsync(directory.Path, "add", ".");
         await GitTestProcess.RunAsync(directory.Path, "commit", "-m", "unique cache fixture");
         var hash = (await GitTestProcess.RunAsync(directory.Path, "rev-parse", "HEAD")).Trim();
+        var blobHash = (await GitTestProcess.RunAsync(
+            directory.Path,
+            "rev-parse",
+            "HEAD:unique.txt")).Trim();
         var id = GitObjectId.Parse(hash);
+        var blobId = GitObjectId.Parse(blobHash);
         var gitDirectory = Path.Combine(directory.Path, ".git");
         using var store = new GitObjectStore(gitDirectory, GitObjectFormat.Sha1);
 
@@ -29,5 +34,15 @@ public sealed class GitObjectStoreCacheTests
 
         await store.ReadObjectAsync(id, CancellationToken.None);
         Assert.True(GitObjectStore.IsSharedObjectCached(id));
+
+        using var repository = await LovelyGitRepository.OpenAsync(
+            directory.Path,
+            CancellationToken.None);
+        Assert.False(GitObjectStore.IsSharedObjectCached(blobId));
+        var blob = await repository.ReadBlobWithoutCachingAsync(
+            blobId,
+            CancellationToken.None);
+        Assert.NotEmpty(blob);
+        Assert.False(GitObjectStore.IsSharedObjectCached(blobId));
     }
 }

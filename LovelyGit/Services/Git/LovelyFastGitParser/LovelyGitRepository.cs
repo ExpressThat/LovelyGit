@@ -146,6 +146,21 @@ internal sealed partial class LovelyGitRepository : IDisposable
         return data.Data;
     }
 
+    internal async Task<byte[]> ReadBlobWithoutCachingAsync(
+        GitObjectId id,
+        CancellationToken cancellationToken)
+    {
+        var data = await _objectStore
+            .ReadObjectWithoutCachingAsync(id, cancellationToken)
+            .ConfigureAwait(false);
+        if (data.Kind != GitObjectKind.Blob)
+        {
+            throw new InvalidDataException($"Object is not a blob: {id}");
+        }
+
+        return data.Data;
+    }
+
     public IReadOnlyList<GitRef> GetBranches()
     {
         return _refsByFullName.Values

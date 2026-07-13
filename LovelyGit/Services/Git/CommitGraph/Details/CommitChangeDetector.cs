@@ -17,9 +17,7 @@ internal sealed class CommitChangeDetector
         IReadOnlyDictionary<string, GitTreeFile> currentFiles,
         CancellationToken cancellationToken)
     {
-        var changedFiles = new List<ChangedFileWorkItem>();
-        var deleted = new Dictionary<string, GitTreeFile>(StringComparer.Ordinal);
-        var added = new Dictionary<string, GitTreeFile>(StringComparer.Ordinal);
+        var changedFiles = new List<ChangedFileWorkItem>(Math.Max(parentFiles.Count, currentFiles.Count));
 
         foreach (var (path, parentFile) in parentFiles)
         {
@@ -27,7 +25,7 @@ internal sealed class CommitChangeDetector
 
             if (!currentFiles.TryGetValue(path, out var currentFile))
             {
-                deleted[path] = parentFile;
+                changedFiles.Add(ChangedFileWorkItem.Deleted(parentFile));
                 continue;
             }
 
@@ -48,21 +46,12 @@ internal sealed class CommitChangeDetector
         {
             if (!parentFiles.ContainsKey(path))
             {
-                added[path] = currentFile;
+                changedFiles.Add(ChangedFileWorkItem.Added(currentFile));
             }
         }
 
-        foreach (var file in deleted.Values)
-        {
-            changedFiles.Add(ChangedFileWorkItem.Deleted(file));
-        }
-
-        foreach (var file in added.Values)
-        {
-            changedFiles.Add(ChangedFileWorkItem.Added(file));
-        }
-
-        var results = new CommitChangedFile?[changedFiles.Count];
+        changedFiles.Sort(static (left, right) => StringComparer.Ordinal.Compare(left.Path, right.Path));
+        var results = new CommitChangedFile[changedFiles.Count];
         await Parallel.ForEachAsync(
                 Enumerable.Range(0, changedFiles.Count),
                 cancellationToken,
@@ -87,11 +76,7 @@ internal sealed class CommitChangeDetector
                 })
             .ConfigureAwait(false);
 
-        return results
-            .Where(file => file != null)
-            .Cast<CommitChangedFile>()
-            .OrderBy(file => file.Path, StringComparer.Ordinal)
-            .ToList();
+        return [.. results];
     }
 
     private async Task<CommitChangedFile> BuildComparedFileAsync(
@@ -118,12 +103,12 @@ internal sealed class CommitChangeDetector
         GitTreeFile file,
         CancellationToken cancellationToken)
     {
-        var blob = await _blobLineAnalyzer.AnalyzeAsync(file, cancellationToken).ConfigureAwait(false);
+        var blob = await _blobLineAnalyzer.SummarizeAsync(file, cancellationToken).ConfigureAwait(false);
         return new CommitChangedFile
         {
             Path = file.Path,
             Status = "Added",
-            Additions = blob.IsBinary ? 0u : (uint)blob.Lines.Length,
+            Additions = blob.IsBinary ? 0u : (uint)blob.LineCount,
             Deletions = 0,
             IsBinary = blob.IsBinary,
         };
@@ -133,13 +118,13 @@ internal sealed class CommitChangeDetector
         GitTreeFile file,
         CancellationToken cancellationToken)
     {
-        var blob = await _blobLineAnalyzer.AnalyzeAsync(file, cancellationToken).ConfigureAwait(false);
+        var blob = await _blobLineAnalyzer.SummarizeAsync(file, cancellationToken).ConfigureAwait(false);
         return new CommitChangedFile
         {
             Path = file.Path,
             Status = "Deleted",
             Additions = 0,
-            Deletions = blob.IsBinary ? 0u : (uint)blob.Lines.Length,
+            Deletions = blob.IsBinary ? 0u : (uint)blob.LineCount,
             IsBinary = blob.IsBinary,
         };
     }
