@@ -184,7 +184,9 @@ internal sealed partial class ConflictResolutionService
             return new ConflictFileVersion { Exists = true, IsTooLarge = true, SizeBytes = entry.FileSize };
         }
 
-        var bytes = await repository.ReadBlobAsync(entry.ObjectId, cancellationToken).ConfigureAwait(false);
+        var bytes = await repository
+            .ReadBlobWithoutCachingAsync(entry.ObjectId, cancellationToken)
+            .ConfigureAwait(false);
         return CreateVersion(bytes);
     }
 
