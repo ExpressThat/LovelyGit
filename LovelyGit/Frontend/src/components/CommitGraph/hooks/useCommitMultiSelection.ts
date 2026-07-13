@@ -66,6 +66,7 @@ export function useCommitMultiSelection(
 
 	return {
 		clear: () => setState(emptyState(repositoryId)),
+		comparison: () => comparisonPair(rows, current.hashes),
 		count: current.hashes.size,
 		hashes: current.hashes,
 		ordered: (mode: "cherry-pick" | "revert") =>
@@ -73,6 +74,17 @@ export function useCommitMultiSelection(
 		rowsFor,
 		select,
 	};
+}
+
+export function comparisonPair(
+	rows: Array<CommitGraphRow | null>,
+	hashes: ReadonlySet<string>,
+) {
+	const selected = rows.filter(
+		(row): row is CommitGraphRow => row != null && hashes.has(row.commit.hash),
+	);
+	if (selected.length !== 2) return null;
+	return { base: selected[1], target: selected[0] };
 }
 
 export function orderSelectedCommits(

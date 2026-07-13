@@ -4,6 +4,7 @@ import { act, renderHook } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import type { CommitGraphRow } from "@/generated/types";
 import {
+	comparisonPair,
 	orderSelectedCommits,
 	useCommitMultiSelection,
 } from "./useCommitMultiSelection";
@@ -46,6 +47,18 @@ describe("useCommitMultiSelection", () => {
 			rows[0],
 		]);
 		expect(orderSelectedCommits(rows, hashes, "revert")).toEqual(rows);
+	});
+
+	it("compares exactly two commits from older base to newer target", () => {
+		const rows = [row("a"), row("b"), row("c")];
+
+		expect(
+			comparisonPair(rows, new Set([rows[0].commit.hash, rows[2].commit.hash])),
+		).toEqual({ base: rows[2], target: rows[0] });
+		expect(comparisonPair(rows, new Set([rows[0].commit.hash]))).toBeNull();
+		expect(
+			comparisonPair(rows, new Set(rows.map((item) => item.commit.hash))),
+		).toBeNull();
 	});
 });
 

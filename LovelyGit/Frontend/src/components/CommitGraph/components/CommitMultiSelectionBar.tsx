@@ -1,5 +1,10 @@
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { GitCommitHorizontal, Undo2, X } from "@/components/icons/lovelyIcons";
+import {
+	GitCommitHorizontal,
+	GitCompareArrows,
+	Undo2,
+	X,
+} from "@/components/icons/lovelyIcons";
 import { Button } from "@/components/ui/button";
 
 export function CommitMultiSelectionBar({
@@ -8,6 +13,7 @@ export function CommitMultiSelectionBar({
 	revertDisabled,
 	onCherryPick,
 	onClear,
+	onCompare,
 	onRevert,
 }: {
 	count: number;
@@ -15,6 +21,7 @@ export function CommitMultiSelectionBar({
 	revertDisabled: boolean;
 	onCherryPick: () => void;
 	onClear: () => void;
+	onCompare: () => void;
 	onRevert: () => void;
 }) {
 	const reduceMotion = useReducedMotion();
@@ -34,6 +41,11 @@ export function CommitMultiSelectionBar({
 						Ctrl toggles · Shift selects a range
 					</span>
 					<div className="ml-auto flex gap-1">
+						{count === 2 ? (
+							<Button onClick={onCompare} size="xs" variant="secondary">
+								<GitCompareArrows aria-hidden="true" /> Compare
+							</Button>
+						) : null}
 						<Button
 							disabled={cherryPickDisabled}
 							onClick={onCherryPick}

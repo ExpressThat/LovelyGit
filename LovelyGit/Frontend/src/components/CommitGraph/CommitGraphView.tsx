@@ -50,6 +50,13 @@ export function CommitGraphView({
 		else dialogs.setRevertCommits(commits);
 		commitSelection.clear();
 	};
+	const openSelectedComparison = () => {
+		const comparison = commitSelection.comparison();
+		if (!comparison) return;
+		dialogs.comparison.setBase(comparison.base);
+		dialogs.comparison.setTarget(comparison.target);
+		commitSelection.clear();
+	};
 	const {
 		branchNames,
 		branchUpstreams,
@@ -136,6 +143,7 @@ export function CommitGraphView({
 							count={commitSelection.count}
 							onCherryPick={() => openSelectedOperation("cherry-pick")}
 							onClear={commitSelection.clear}
+							onCompare={openSelectedComparison}
 							onRevert={() => openSelectedOperation("revert")}
 							revertDisabled={currentBranchName === null}
 						/>
