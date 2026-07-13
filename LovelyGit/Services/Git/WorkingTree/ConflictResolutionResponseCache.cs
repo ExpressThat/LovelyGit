@@ -47,18 +47,72 @@ internal sealed class ConflictResolutionResponseCache(int capacity = 8)
         out ConflictResolutionResponse response) =>
         TryGet(repositoryPath, path, fingerprint, !ignoreWhitespace, out response);
 
+    public bool TryGetCurrent(
+        string repositoryPath,
+        string path,
+        bool ignoreWhitespace,
+        out ConflictResolutionResponse response,
+        out ConflictResolutionCacheStamp stamp)
+    {
+        var normalizedRepository = NormalizeRepositoryPath(repositoryPath);
+        lock (_gate)
+        {
+            for (var node = _lru.Last; node is not null; node = node.Previous)
+            {
+                var entry = node.Value;
+                if (entry.RepositoryPath != normalizedRepository || entry.Path != path ||
+                    entry.IgnoreWhitespace != ignoreWhitespace || entry.Stamp is not { } candidate)
+                {
+                    continue;
+                }
+
+                if (!candidate.IsCurrent())
+                {
+                    RemoveOwner(normalizedRepository, path);
+                    break;
+                }
+
+                _lru.Remove(node);
+                _lru.AddLast(node);
+                response = entry.Response;
+                stamp = candidate;
+                return true;
+            }
+        }
+
+        response = null!;
+        stamp = default;
+        return false;
+    }
+
+    public bool TryGetCurrentSibling(
+        string repositoryPath,
+        string path,
+        bool ignoreWhitespace,
+        out ConflictResolutionResponse response,
+        out ConflictResolutionCacheStamp stamp) =>
+        TryGetCurrent(repositoryPath, path, !ignoreWhitespace, out response, out stamp);
+
     public void Set(
         string repositoryPath,
         string path,
         string fingerprint,
         bool ignoreWhitespace,
-        ConflictResolutionResponse response)
+        ConflictResolutionResponse response,
+        ConflictResolutionCacheStamp? stamp = null)
     {
         var key = Key(repositoryPath, path, fingerprint, ignoreWhitespace);
+        var normalizedRepository = NormalizeRepositoryPath(repositoryPath);
         lock (_gate)
         {
             Remove(key);
-            var node = _lru.AddLast(new Entry(key, response));
+            var node = _lru.AddLast(new Entry(
+                key,
+                normalizedRepository,
+                path,
+                ignoreWhitespace,
+                stamp,
+                response));
             _entries[key] = node;
             while (_entries.Count > capacity && _lru.First is { } oldest)
             {
@@ -99,6 +153,15 @@ internal sealed class ConflictResolutionResponseCache(int capacity = 8)
         _lru.Remove(node);
     }
 
+    private void RemoveOwner(string repositoryPath, string path)
+    {
+        var matches = _lru
+            .Where(entry => entry.RepositoryPath == repositoryPath && entry.Path == path)
+            .Select(entry => entry.Key)
+            .ToArray();
+        foreach (var key in matches) Remove(key);
+    }
+
     private static string Key(
         string repositoryPath,
         string path,
@@ -116,5 +179,11 @@ internal sealed class ConflictResolutionResponseCache(int capacity = 8)
         return OperatingSystem.IsWindows() ? normalized.ToUpperInvariant() : normalized;
     }
 
-    private sealed record Entry(string Key, ConflictResolutionResponse Response);
+    private sealed record Entry(
+        string Key,
+        string RepositoryPath,
+        string Path,
+        bool IgnoreWhitespace,
+        ConflictResolutionCacheStamp? Stamp,
+        ConflictResolutionResponse Response);
 }

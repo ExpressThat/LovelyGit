@@ -66,6 +66,70 @@ public sealed class ConflictResolutionResponseCacheTests
         Assert.True(cache.TryGet("repo-b", "file.txt", "c", false, out _));
     }
 
+    [Fact]
+    public void CurrentCache_UsesUnchangedIndexAndResultMetadata()
+    {
+        using var directory = TemporaryDirectory.Create("lovelygit-conflict-cache-");
+        var index = Path.Combine(directory.Path, "index");
+        var result = Path.Combine(directory.Path, "file.txt");
+        File.WriteAllText(index, "index");
+        File.WriteAllText(result, "result");
+        var stamp = ConflictResolutionCacheStamp.Capture(index, result);
+        var cache = new ConflictResolutionResponseCache();
+        var expected = Response("fingerprint");
+        cache.Set(directory.Path, "file.txt", "fingerprint", false, expected, stamp);
+
+        Assert.True(cache.TryGetCurrent(
+            directory.Path, "file.txt", false, out var response, out var foundStamp));
+        Assert.Same(expected, response);
+        Assert.Equal(stamp, foundStamp);
+    }
+
+    [Fact]
+    public void CurrentSiblingCache_ReusesThePreparedOppositeVariant()
+    {
+        using var directory = TemporaryDirectory.Create("lovelygit-conflict-cache-");
+        var index = Path.Combine(directory.Path, "index");
+        var result = Path.Combine(directory.Path, "file.txt");
+        File.WriteAllText(index, "index");
+        File.WriteAllText(result, "result");
+        var stamp = ConflictResolutionCacheStamp.Capture(index, result);
+        var cache = new ConflictResolutionResponseCache();
+        var expected = Response("fingerprint");
+        cache.Set(directory.Path, "file.txt", "fingerprint", false, expected, stamp);
+
+        Assert.True(cache.TryGetCurrentSibling(
+            directory.Path, "file.txt", true, out var sibling, out var siblingStamp));
+        Assert.Same(expected, sibling);
+        Assert.Equal(stamp, siblingStamp);
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void CurrentCache_InvalidatesWhenIndexOrResultChanges(bool changeIndex)
+    {
+        using var directory = TemporaryDirectory.Create("lovelygit-conflict-cache-");
+        var index = Path.Combine(directory.Path, "index");
+        var result = Path.Combine(directory.Path, "file.txt");
+        File.WriteAllText(index, "index");
+        File.WriteAllText(result, "result");
+        var cache = new ConflictResolutionResponseCache();
+        cache.Set(
+            directory.Path,
+            "file.txt",
+            "fingerprint",
+            false,
+            Response("exact"),
+            ConflictResolutionCacheStamp.Capture(index, result));
+        cache.Set(directory.Path, "file.txt", "fingerprint", true, Response("sibling"));
+
+        File.AppendAllText(changeIndex ? index : result, " changed");
+
+        Assert.False(cache.TryGetCurrent(directory.Path, "file.txt", false, out _, out _));
+        Assert.Equal(0, cache.Count);
+    }
+
     private static ConflictResolutionResponse Response(string fingerprint) => new()
     {
         Path = "file.txt",

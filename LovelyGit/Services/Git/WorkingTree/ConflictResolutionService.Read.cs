@@ -20,6 +20,16 @@ internal sealed partial class ConflictResolutionService
     {
         using var readTrace = ConflictReadTrace.Start(path, ignoreWhitespace);
         path = WorkingTreePath.NormalizeRelative(path);
+        if (TryReadMetadataCached(
+                repositoryPath,
+                path,
+                ignoreWhitespace,
+                readTrace,
+                out var current))
+        {
+            return current;
+        }
+
         var repositoryPaths = await GitRepositoryDiscovery
             .ResolveRepositoryPathsAsync(repositoryPath, cancellationToken)
             .ConfigureAwait(false);
@@ -29,6 +39,9 @@ internal sealed partial class ConflictResolutionService
         var resultPath = WorkingTreePath.Resolve(repository.WorkTreeDirectory, path);
         var fingerprint = await ConflictFingerprintAsync(resultPath, entries, cancellationToken)
             .ConfigureAwait(false);
+        var cacheStamp = ConflictResolutionCacheStamp.Capture(
+            Path.Combine(repository.GitDirectory, "index"),
+            resultPath);
         readTrace.Mark("repository-and-fingerprint");
         _responseCache.RemoveStale(repositoryPath, path, fingerprint);
         if (_responseCache.TryGet(
@@ -50,7 +63,7 @@ internal sealed partial class ConflictResolutionService
         {
             var variant = BuildCachedVariant(sibling, ignoreWhitespace);
             readTrace.Mark("sibling-variant");
-            _responseCache.Set(repositoryPath, path, fingerprint, ignoreWhitespace, variant);
+            _responseCache.Set(repositoryPath, path, fingerprint, ignoreWhitespace, variant, cacheStamp);
             return variant;
         }
 
@@ -117,7 +130,7 @@ internal sealed partial class ConflictResolutionService
         ConflictComparisonPayloadBuilder.Compact(response.IncomingComparison);
         ConflictTextPayloadBuilder.Compact(response);
         readTrace.Mark("payload-compaction");
-        _responseCache.Set(repositoryPath, path, fingerprint, ignoreWhitespace, response);
+        _responseCache.Set(repositoryPath, path, fingerprint, ignoreWhitespace, response, cacheStamp);
         return response;
     }
 
