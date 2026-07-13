@@ -1,7 +1,9 @@
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { GitBranch, UserRound, X } from "@/components/icons/lovelyIcons";
+import { UserRound, X } from "@/components/icons/lovelyIcons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import type { RepositoryRefItem } from "@/generated/types";
+import { CommitSearchScopeField } from "./CommitSearchScopeField";
 import type { CommitSearchFilters as Filters } from "./commitSearchFilters";
 
 export function AdvancedCommitSearchFilters({
@@ -9,11 +11,15 @@ export function AdvancedCommitSearchFilters({
 	onChange,
 	onClear,
 	open,
+	refs,
+	refsLoading,
 }: {
 	filters: Filters;
 	onChange: (filters: Filters) => void;
 	onClear: () => void;
 	open: boolean;
+	refs: RepositoryRefItem[];
+	refsLoading: boolean;
 }) {
 	const reduceMotion = useReducedMotion();
 	const updateAuthor = (value: string) =>
@@ -47,24 +53,12 @@ export function AdvancedCommitSearchFilters({
 								value={filters.author}
 							/>
 						</label>
-						<label
-							className="grid gap-1 text-muted-foreground text-xs"
-							htmlFor="commit-search-scope"
-						>
-							<span className="flex items-center gap-1">
-								<GitBranch aria-hidden="true" className="size-3" /> Branch or
-								tag
-							</span>
-							<Input
-								aria-label="Limit search to branch or tag"
-								className="h-8"
-								id="commit-search-scope"
-								onChange={(event) => updateScope(event.currentTarget.value)}
-								onInput={(event) => updateScope(event.currentTarget.value)}
-								placeholder="main, origin/main, or v1.0"
-								value={filters.scope}
-							/>
-						</label>
+						<CommitSearchScopeField
+							isLoading={refsLoading}
+							onChange={updateScope}
+							refs={refs}
+							value={filters.scope}
+						/>
 						<Button
 							aria-label="Clear search filters"
 							onClick={onClear}

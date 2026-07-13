@@ -4,6 +4,7 @@ import { renderHook, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { sendRequestWithResponse } from "@/lib/commands";
 import { searchResponse } from "./CommitSearchTestData";
+import { emptyCommitSearchFilters } from "./commitSearchFilters";
 import { useCommitSearch } from "./useCommitSearch";
 
 vi.mock("@/lib/commands", () => ({ sendRequestWithResponse: vi.fn() }));
@@ -56,6 +57,22 @@ describe("useCommitSearch", () => {
 				beforeDate: "2025-02-01",
 				scope: "",
 			}),
+		);
+
+		expect(result.current.isLoading).toBe(false);
+		expect(sendRequestWithResponse).not.toHaveBeenCalled();
+	});
+
+	it("does not submit a partial unknown ref scope", () => {
+		const { result } = renderHook(() =>
+			useCommitSearch(
+				"repo",
+				"needle",
+				true,
+				false,
+				{ ...emptyCommitSearchFilters, scope: "feat" },
+				false,
+			),
 		);
 
 		expect(result.current.isLoading).toBe(false);

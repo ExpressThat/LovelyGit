@@ -18,6 +18,7 @@ export function useCommitSearch(
 	enabled: boolean,
 	deep = false,
 	filters: CommitSearchFilters = emptyCommitSearchFilters,
+	scopeIsValid = true,
 ) {
 	const [response, setResponse] = useState<CommitSearchResponse | null>(null);
 	const [error, setError] = useState<string | null>(null);
@@ -32,9 +33,10 @@ export function useCommitSearch(
 		(normalizedAuthor.length === 0 ||
 			normalizedAuthor.length >= MINIMUM_QUERY_LENGTH) &&
 		isCommitSearchDateRangeValid(filters);
+	const requestIsValid = canSearch && scopeIsValid;
 
 	useEffect(() => {
-		if (!enabled || !repositoryId || !canSearch) {
+		if (!enabled || !repositoryId || !requestIsValid) {
 			setResponse(null);
 			setError(null);
 			setIsLoading(false);
@@ -86,7 +88,7 @@ export function useCommitSearch(
 	}, [
 		boundaries.afterUnixSeconds,
 		boundaries.beforeUnixSeconds,
-		canSearch,
+		requestIsValid,
 		deep,
 		enabled,
 		normalizedAuthor,

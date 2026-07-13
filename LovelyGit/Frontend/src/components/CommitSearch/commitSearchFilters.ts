@@ -39,9 +39,31 @@ export function isCommitSearchDateRangeValid(filters: CommitSearchFilters) {
 	);
 }
 
+export function isKnownCommitSearchScope(
+	scope: string,
+	refs: RepositoryRefItem[],
+) {
+	const normalized = scope.trim();
+	if (!normalized || normalized.toUpperCase() === "HEAD") return true;
+	return refs.some((reference) => {
+		if (reference.name === normalized) return true;
+		const prefix =
+			reference.kind === "Local"
+				? "refs/heads/"
+				: reference.kind === "Remote"
+					? "refs/remotes/"
+					: reference.kind === "Tag"
+						? "refs/tags/"
+						: "";
+		return prefix.length > 0 && `${prefix}${reference.name}` === normalized;
+	});
+}
+
 function dateStart(value: string, addDays = 0) {
 	if (!value) return null;
 	const [year, month, day] = value.split("-").map(Number);
 	if (!year || !month || !day) return null;
 	return Math.floor(Date.UTC(year, month - 1, day + addDays) / 1000);
 }
+
+import type { RepositoryRefItem } from "@/generated/types";

@@ -20,8 +20,10 @@ import { CommitSearchContent, CommitSearchStatus } from "./CommitSearchContent";
 import {
 	emptyCommitSearchFilters,
 	hasCommitSearchFilter,
+	isKnownCommitSearchScope,
 } from "./commitSearchFilters";
 import { useCommitSearch } from "./useCommitSearch";
+import { useCommitSearchRefs } from "./useCommitSearchRefs";
 
 export function CommitSearchDialog({
 	onOpenChange,
@@ -39,12 +41,15 @@ export function CommitSearchDialog({
 	const [filters, setFilters] = useState(emptyCommitSearchFilters);
 	const [filtersOpen, setFiltersOpen] = useState(false);
 	const [selectedIndex, setSelectedIndex] = useState(0);
+	const searchRefs = useCommitSearchRefs(repositoryId, open && filtersOpen);
 	const { error, isLoading, minimumQueryLength, response } = useCommitSearch(
 		repositoryId,
 		query,
 		open,
 		deep,
 		filters,
+		searchRefs.loadFailed ||
+			isKnownCommitSearchScope(filters.scope, searchRefs.refs),
 	);
 	const reduceMotion = useReducedMotion();
 	const results = response?.results ?? [];
@@ -149,6 +154,8 @@ export function CommitSearchDialog({
 					}}
 					onClear={() => setFilters(emptyCommitSearchFilters)}
 					open={filtersOpen}
+					refs={searchRefs.refs}
+					refsLoading={searchRefs.isLoading}
 				/>
 				<div className="custom-scrollbar h-[min(58vh,520px)] overflow-y-auto p-2">
 					<CommitSearchContent
