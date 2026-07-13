@@ -25,10 +25,6 @@ public partial class AppDbContext : DocumentDbContext
 
     public static string GetBasePath()
     {
-        var dataDirectory = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                "LovelyGit");
-        Directory.CreateDirectory(dataDirectory);
-        return Path.Combine(dataDirectory, "LovelyGit.blite");
+        return LovelyGitDataDirectory.GetFilePath("LovelyGit.blite");
     }
 }

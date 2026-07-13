@@ -94,12 +94,7 @@ public partial class GitRepoCacheDbContext : DocumentDbContext
 
     public static string GetBasePath()
     {
-        var dataDirectory = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "LovelyGit");
-        Directory.CreateDirectory(dataDirectory);
-
-        return Path.Combine(dataDirectory, "LovelyGit.Cache.blite");
+        return LovelyGitDataDirectory.GetFilePath("LovelyGit.Cache.blite");
     }
 
     private static string GetVersionPath() => GetBasePath() + ".version";
