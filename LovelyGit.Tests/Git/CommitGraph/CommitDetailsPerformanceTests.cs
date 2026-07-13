@@ -2,10 +2,13 @@ using System.Diagnostics;
 using System.Text;
 using CliWrap;
 using CliWrap.Buffered;
+using ExpressThat.LovelyGit.Services.Data;
+using ExpressThat.LovelyGit.Services.Data.Repositorys;
 using ExpressThat.LovelyGit.Services.Git.Cli;
 using ExpressThat.LovelyGit.Services.Git.CommitGraph;
 using ExpressThat.LovelyGit.Services.Git.CommitGraph.Details;
 using ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser;
+using LovelyGit.Tests.Git.WorkingTree;
 using Xunit.Abstractions;
 
 namespace LovelyGit.Tests.Git.CommitGraph;
@@ -54,6 +57,50 @@ public sealed class CommitDetailsPerformanceTests(ITestOutputHelper output)
             Assert.True(
                 treeElapsed + blobsElapsed < TimeSpan.FromMilliseconds(750),
                 $"Commit details took {treeElapsed + blobsElapsed}.");
+        }
+        finally
+        {
+            DeleteDirectory(directory);
+        }
+    }
+
+    [Fact]
+    public async Task InteractiveRead_DoesNotWaitForLargeCachePersistence()
+    {
+        var (directory, commitId) = Template.CreateCopy("lovelygit-details-interactive-");
+        using var cacheDirectory = TemporaryDirectory.Create("lovelygit-details-interactive-cache-");
+        var databasePath = Path.Combine(cacheDirectory.Path, "cache.blite");
+        GitRepoCacheDbContext.RegisterBsonKeys(databasePath);
+        using var context = new GitRepoCacheDbContext(databasePath);
+        var cache = new CommitGraphRepository(context);
+        var service = new CommitDetailsService(cache);
+        var repositoryId = Guid.NewGuid();
+        try
+        {
+            var startedAt = Stopwatch.GetTimestamp();
+            var details = await service.GetCommitDetailsAsync(
+                repositoryId,
+                directory.FullName,
+                commitId,
+                0,
+                CancellationToken.None);
+            var responseElapsed = Stopwatch.GetElapsedTime(startedAt);
+            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(3));
+            while (!await cache.HasCommitDetailsAsync(
+                       repositoryId,
+                       commitId.ToString(),
+                       timeout.Token))
+            {
+                await Task.Delay(5, timeout.Token);
+            }
+
+            var persistedElapsed = Stopwatch.GetElapsedTime(startedAt);
+            output.WriteLine(
+                $"Interactive 2,000 files: response {responseElapsed.TotalMilliseconds:N1} ms; " +
+                $"persisted {persistedElapsed.TotalMilliseconds:N1} ms");
+            Assert.Equal(FileCount, details.ChangedFiles.Count);
+            Assert.True(responseElapsed < persistedElapsed);
+            Assert.True(responseElapsed < TimeSpan.FromMilliseconds(750));
         }
         finally
         {

@@ -4,15 +4,30 @@ using ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser;
 
 namespace ExpressThat.LovelyGit.Services.Git.CommitGraph;
 
-internal sealed class CommitDetailsService
+internal sealed partial class CommitDetailsService
 {
-    private readonly CommitGraphRepository _commitGraphRepository;
-    private readonly object _commitBuildGateLock = new();
-    private readonly Dictionary<string, BuildGate> _commitBuildGates = new(StringComparer.Ordinal);
+    private readonly Func<Guid, string, CancellationToken, Task<CommitDetailsResponse?>> _getCachedDetailsAsync;
+    private readonly Func<Guid, string, CommitDetailsResponse, CancellationToken, Task> _saveDetailsAsync;
 
     public CommitDetailsService(CommitGraphRepository commitGraphRepository)
     {
-        _commitGraphRepository = commitGraphRepository;
+        _getCachedDetailsAsync = (repositoryId, hash, cancellationToken) =>
+            commitGraphRepository.GetCommitDetailsAsync(repositoryId, hash, cancellationToken);
+        _saveDetailsAsync = (repositoryId, hash, details, cancellationToken) =>
+            commitGraphRepository.SaveCommitDetailsAsync(
+                repositoryId,
+                hash,
+                details,
+                cancellationToken);
+    }
+
+    internal CommitDetailsService(
+        Func<Guid, string, CancellationToken, Task<CommitDetailsResponse?>> getCachedDetailsAsync,
+        Func<Guid, string, CommitDetailsResponse, CancellationToken, Task> saveDetailsAsync,
+        bool _)
+    {
+        _getCachedDetailsAsync = getCachedDetailsAsync;
+        _saveDetailsAsync = saveDetailsAsync;
     }
 
     public async Task<CommitDetailsResponse> GetCommitDetailsAsync(
@@ -21,11 +36,12 @@ internal sealed class CommitDetailsService
         GitObjectId commitId,
         CancellationToken cancellationToken)
     {
-        return await GetCommitDetailsAsync(
+        return await GetCommitDetailsCoreAsync(
                 repositoryId,
                 repositoryPath,
                 commitId,
                 0,
+                waitForPersistence: true,
                 cancellationToken)
             .ConfigureAwait(false);
     }
@@ -35,6 +51,24 @@ internal sealed class CommitDetailsService
         string repositoryPath,
         GitObjectId commitId,
         int parentIndex,
+        CancellationToken cancellationToken)
+    {
+        return await GetCommitDetailsCoreAsync(
+                repositoryId,
+                repositoryPath,
+                commitId,
+                parentIndex,
+                waitForPersistence: false,
+                cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    private async Task<CommitDetailsResponse> GetCommitDetailsCoreAsync(
+        Guid repositoryId,
+        string repositoryPath,
+        GitObjectId commitId,
+        int parentIndex,
+        bool waitForPersistence,
         CancellationToken cancellationToken)
     {
         if (parentIndex < 0) throw new ArgumentOutOfRangeException(nameof(parentIndex));
@@ -49,6 +83,11 @@ internal sealed class CommitDetailsService
         }
 
         var commitHash = commitId.ToString();
+        if (TryGetPendingDetails(repositoryId, commitHash, out var pendingDetails))
+        {
+            return pendingDetails;
+        }
+
         var cachedDetails = await TryGetCachedCommitDetailsAsync(
                 repositoryId,
                 commitHash,
@@ -77,6 +116,11 @@ internal sealed class CommitDetailsService
                 return cachedDetails;
             }
 
+            if (TryGetPendingDetails(repositoryId, commitHash, out pendingDetails))
+            {
+                return pendingDetails;
+            }
+
             using var repository = await LovelyGitRepository.OpenAsync(repositoryPath, cancellationToken)
                 .ConfigureAwait(false);
             var commit = await repository.GetCommitAsync(commitId, cancellationToken).ConfigureAwait(false);
@@ -87,8 +131,12 @@ internal sealed class CommitDetailsService
                 .BuildAsync(commit, firstParent, cancellationToken)
                 .ConfigureAwait(false);
 
-            await _commitGraphRepository
-                .SaveCommitDetailsAsync(repositoryId, commitHash, details, cancellationToken)
+            await PersistOrQueueAsync(
+                    repositoryId,
+                    commitHash,
+                    details,
+                    waitForPersistence,
+                    cancellationToken)
                 .ConfigureAwait(false);
 
             return details;
@@ -150,8 +198,7 @@ internal sealed class CommitDetailsService
     {
         try
         {
-            return await _commitGraphRepository
-                .GetCommitDetailsAsync(repositoryId, commitHash, cancellationToken)
+            return await _getCachedDetailsAsync(repositoryId, commitHash, cancellationToken)
                 .ConfigureAwait(false);
         }
         catch when (!cancellationToken.IsCancellationRequested)
@@ -165,40 +212,4 @@ internal sealed class CommitDetailsService
         return string.Concat(repositoryId.ToString("N"), ':', commitHash);
     }
 
-    private BuildGate GetBuildGate(string key)
-    {
-        lock (_commitBuildGateLock)
-        {
-            if (!_commitBuildGates.TryGetValue(key, out var gate))
-            {
-                gate = new BuildGate();
-                _commitBuildGates[key] = gate;
-            }
-
-            gate.ReferenceCount++;
-            return gate;
-        }
-    }
-
-    private void ReleaseBuildGate(string key, BuildGate gate)
-    {
-        lock (_commitBuildGateLock)
-        {
-            gate.ReferenceCount--;
-            if (gate.ReferenceCount == 0
-                && _commitBuildGates.TryGetValue(key, out var activeGate)
-                && ReferenceEquals(activeGate, gate))
-            {
-                _commitBuildGates.Remove(key);
-                gate.Semaphore.Dispose();
-            }
-        }
-    }
-
-    private sealed class BuildGate
-    {
-        public SemaphoreSlim Semaphore { get; } = new(1, 1);
-
-        public int ReferenceCount { get; set; }
-    }
 }
