@@ -1,4 +1,5 @@
 using System.IO.Compression;
+using System.Text;
 using ExpressThat.LovelyGit.Services.Git.WorkingTree;
 
 namespace LovelyGit.Tests.Git.WorkingTree;
@@ -20,6 +21,30 @@ public sealed class ConflictTextBundleCodecTests
         Assert.Equal(string.Empty, texts.Ours);
         Assert.Equal("theirs\r\nwithout final newline", texts.Theirs);
         Assert.Equal("result\n", texts.Result);
+    }
+
+    [Fact]
+    public void RoundTrip_StreamsLongSingleLineUnicodeThroughBoundedScratchSpace()
+    {
+        var longLine = string.Concat(Enumerable.Repeat("minified🙂", 100_000));
+
+        var bundle = ConflictTextBundleCodec.Compress(longLine, longLine, longLine, longLine);
+        var texts = ConflictTextBundleCodec.Expand(bundle);
+
+        Assert.Equal(64 * 1024, ConflictTextBundleCodec.MaximumEncodingBufferBytes);
+        Assert.Equal(longLine, texts.Base);
+        Assert.Equal(longLine, texts.Ours);
+        Assert.Equal(longLine, texts.Theirs);
+        Assert.Equal(longLine, texts.Result);
+    }
+
+    [Fact]
+    public void Compress_RejectsInvalidUnicodeWithoutReturningPartialPayload()
+    {
+        var invalid = new string(['a', '\ud800', 'b']);
+
+        Assert.Throws<EncoderFallbackException>(() =>
+            ConflictTextBundleCodec.Compress(invalid, null, null, null));
     }
 
     [Theory]

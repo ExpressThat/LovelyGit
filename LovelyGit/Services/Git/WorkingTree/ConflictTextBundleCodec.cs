@@ -9,6 +9,7 @@ internal static class ConflictTextBundleCodec
     private const int SourceCount = 3;
     private const int MaximumRows = 4 * 1024 * 1024;
     private const int MaximumEncodedTextBytes = 256 * 1024 * 1024;
+    internal const int MaximumEncodingBufferBytes = 64 * 1024;
     private static readonly UTF8Encoding StrictUtf8 = new(false, true);
 
     public static string Compress(
@@ -21,18 +22,11 @@ internal static class ConflictTextBundleCodec
         var sources = new[] { baseText, oursText, theirsText };
         Span<int> positions = stackalloc int[SourceCount];
         var rowCount = 0;
-        var maximumLineCharacters = 0;
         foreach (var source in sources)
         {
-            var shape = AnalyzeSource(source);
-            rowCount = Math.Max(rowCount, shape.LineCount);
-            maximumLineCharacters = Math.Max(maximumLineCharacters, shape.MaximumLineCharacters);
+            rowCount = Math.Max(rowCount, CountLines(source));
         }
-        var resultByteCount = resultText is null ? 0 : StrictUtf8.GetByteCount(resultText);
-        var lineBufferSize = maximumLineCharacters == 0
-            ? 0
-            : StrictUtf8.GetMaxByteCount(maximumLineCharacters);
-        var buffer = ArrayPool<byte>.Shared.Rent(Math.Max(1, Math.Max(lineBufferSize, resultByteCount)));
+        var buffer = ArrayPool<byte>.Shared.Rent(MaximumEncodingBufferBytes);
         using var output = new MemoryStream();
         try
         {
@@ -76,25 +70,18 @@ internal static class ConflictTextBundleCodec
         return new(sources[0].ToString(), sources[1].ToString(), sources[2].ToString(), result);
     }
 
-    private static SourceShape AnalyzeSource(string? text)
+    private static int CountLines(string? text)
     {
-        if (string.IsNullOrEmpty(text)) return default;
+        if (string.IsNullOrEmpty(text)) return 0;
         var lineCount = 0;
-        var maximumLineCharacters = 0;
         var lineStart = 0;
         for (var index = 0; index < text.Length; index++)
         {
             if (text[index] != '\n') continue;
             lineCount++;
-            maximumLineCharacters = Math.Max(maximumLineCharacters, index - lineStart + 1);
             lineStart = index + 1;
         }
-        if (lineStart < text.Length)
-        {
-            lineCount++;
-            maximumLineCharacters = Math.Max(maximumLineCharacters, text.Length - lineStart);
-        }
-        return new(lineCount, maximumLineCharacters);
+        return lineStart < text.Length ? lineCount + 1 : lineCount;
     }
 
     private static bool HasRemainingText(string?[] texts, ReadOnlySpan<int> positions)
@@ -131,8 +118,23 @@ internal static class ConflictTextBundleCodec
         if (byteCount > MaximumEncodedTextBytes) throw InvalidBundle("text is too large");
         WriteVarUInt(output, checked((uint)byteCount + 1));
         if (byteCount == 0) return;
-        var written = StrictUtf8.GetBytes(text, buffer);
-        output.Write(buffer, 0, written);
+        var encoder = StrictUtf8.GetEncoder();
+        while (!text.IsEmpty)
+        {
+            encoder.Convert(
+                text,
+                buffer,
+                flush: true,
+                out var charactersUsed,
+                out var bytesUsed,
+                out _);
+            if (charactersUsed == 0 && bytesUsed == 0)
+            {
+                throw InvalidBundle("could not encode text");
+            }
+            output.Write(buffer, 0, bytesUsed);
+            text = text[charactersUsed..];
+        }
     }
 
     private static string? ReadText(Stream input)
@@ -188,6 +190,4 @@ internal static class ConflictTextBundleCodec
 
     private static InvalidDataException InvalidBundle(string reason) =>
         new($"The compact conflict text bundle {reason}.");
-
-    private readonly record struct SourceShape(int LineCount, int MaximumLineCharacters);
 }
