@@ -6,6 +6,7 @@ import {
 	X,
 } from "@/components/icons/lovelyIcons";
 import { Button } from "@/components/ui/button";
+import { CommitPatchSeriesMenu } from "./CommitPatchSeriesMenu";
 
 export function CommitMultiSelectionBar({
 	count,
@@ -14,7 +15,10 @@ export function CommitMultiSelectionBar({
 	onCherryPick,
 	onClear,
 	onCompare,
+	onCopyPatchSeries,
 	onRevert,
+	onSavePatchSeries,
+	seriesBusyAction,
 }: {
 	count: number;
 	cherryPickDisabled: boolean;
@@ -22,7 +26,10 @@ export function CommitMultiSelectionBar({
 	onCherryPick: () => void;
 	onClear: () => void;
 	onCompare: () => void;
+	onCopyPatchSeries: () => void;
 	onRevert: () => void;
+	onSavePatchSeries: () => void;
+	seriesBusyAction: "copy" | "save" | null;
 }) {
 	const reduceMotion = useReducedMotion();
 	return (
@@ -41,6 +48,14 @@ export function CommitMultiSelectionBar({
 						Ctrl toggles · Shift selects a range
 					</span>
 					<div className="ml-auto flex gap-1">
+						{count > 1 ? (
+							<CommitPatchSeriesMenu
+								busyAction={seriesBusyAction}
+								count={count}
+								onCopy={onCopyPatchSeries}
+								onSave={onSavePatchSeries}
+							/>
+						) : null}
 						{count === 2 ? (
 							<Button onClick={onCompare} size="xs" variant="secondary">
 								<GitCompareArrows aria-hidden="true" /> Compare

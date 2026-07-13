@@ -47,6 +47,22 @@ public sealed class CommitPatchServiceTests
     }
 
     [Fact]
+    public async Task GetCommitPatchAsync_PreservesRequiredBlankContextAtPatchEnd()
+    {
+        using var repository = TemporaryGitRepository.Create();
+        repository.WriteFile("sample.txt", "first\nold\nlast\n\n");
+        repository.Commit("Add sample");
+        repository.WriteFile("sample.txt", "first\nnew\nlast\n\n");
+        var commitHash = repository.Commit("Update sample");
+
+        var response = await new CommitPatchService().GetCommitPatchAsync(
+            repository.Path, GitObjectId.Parse(commitHash), CancellationToken.None);
+
+        Assert.Contains(" last\n \n", response.Patch.ReplaceLineEndings("\n"), StringComparison.Ordinal);
+        repository.AssertPatchAppliesToParent(response.Patch);
+    }
+
+    [Fact]
     public async Task GetCommitPatchAsync_FlagsUnsupportedBinaryChanges()
     {
         using var repository = TemporaryGitRepository.Create();
@@ -60,6 +76,40 @@ public sealed class CommitPatchServiceTests
 
         Assert.True(response.HasUnsupportedBinaryChanges);
         Assert.Contains("Binary files", response.Patch);
+    }
+
+    [Fact]
+    public async Task GetCommitPatchAsync_EmitsApplicableNewFileHeaders()
+    {
+        using var repository = TemporaryGitRepository.Create();
+        repository.WriteFile("base.txt", "base\n");
+        repository.Commit("Base");
+        repository.WriteFile("added.txt", "added\n");
+        var commitHash = repository.Commit("Add file");
+
+        var response = await new CommitPatchService().GetCommitPatchAsync(
+            repository.Path, GitObjectId.Parse(commitHash), CancellationToken.None);
+
+        Assert.Contains("new file mode 100644", response.Patch, StringComparison.Ordinal);
+        Assert.Contains("--- /dev/null", response.Patch, StringComparison.Ordinal);
+        repository.AssertPatchAppliesToParent(response.Patch);
+    }
+
+    [Fact]
+    public async Task GetCommitPatchAsync_EmitsApplicableDeletedFileHeaders()
+    {
+        using var repository = TemporaryGitRepository.Create();
+        repository.WriteFile("deleted.txt", "deleted\n");
+        repository.Commit("Add file");
+        repository.DeleteFile("deleted.txt");
+        var commitHash = repository.Commit("Delete file");
+
+        var response = await new CommitPatchService().GetCommitPatchAsync(
+            repository.Path, GitObjectId.Parse(commitHash), CancellationToken.None);
+
+        Assert.Contains("deleted file mode 100644", response.Patch, StringComparison.Ordinal);
+        Assert.Contains("+++ /dev/null", response.Patch, StringComparison.Ordinal);
+        repository.AssertPatchAppliesToParent(response.Patch);
     }
 
     private sealed class TemporaryGitRepository : IDisposable
@@ -116,6 +166,9 @@ public sealed class CommitPatchServiceTests
             Directory.CreateDirectory(System.IO.Path.GetDirectoryName(path)!);
             File.WriteAllBytes(path, contents);
         }
+
+        public void DeleteFile(string relativePath) =>
+            File.Delete(System.IO.Path.Combine(Path, relativePath));
 
         public void AssertPatchAppliesToParent(string patch)
         {

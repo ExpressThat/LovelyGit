@@ -19,6 +19,14 @@ internal sealed class CommitPatchService
     {
         using var repository = await LovelyGitRepository.OpenAsync(repositoryPath, cancellationToken)
             .ConfigureAwait(false);
+        return await GetCommitPatchAsync(repository, commitId, cancellationToken).ConfigureAwait(false);
+    }
+
+    internal async Task<CommitPatchResponse> GetCommitPatchAsync(
+        LovelyGitRepository repository,
+        GitObjectId commitId,
+        CancellationToken cancellationToken)
+    {
         var commit = await repository.GetCommitAsync(commitId, cancellationToken).ConfigureAwait(false);
         GitCommit? firstParent = null;
         if (commit.ParentHashes.Count > 0)
@@ -83,11 +91,7 @@ internal sealed class CommitPatchService
         CancellationToken cancellationToken)
     {
         patch.Append("diff --git a/").Append(path).Append(" b/").AppendLine(path);
-        if (oldFile?.Mode != newFile?.Mode)
-        {
-            AppendModeLine(patch, "old mode", oldFile);
-            AppendModeLine(patch, "new mode", newFile);
-        }
+        AppendModeChange(patch, oldFile, newFile);
 
         var oldBlob = await ReadBlobTextAsync(analyzer, oldFile, cancellationToken).ConfigureAwait(false);
         var newBlob = await ReadBlobTextAsync(analyzer, newFile, cancellationToken).ConfigureAwait(false);
@@ -102,9 +106,33 @@ internal sealed class CommitPatchService
         }
 
         var unified = UnifiedDiffRenderer.Render(
-            oldBlob.Text, newBlob.Text, "a/" + path, "b/" + path, ContextLines);
-        patch.Append(NormalizeNewLines(unified).TrimEnd()).AppendLine();
+            oldBlob.Text,
+            newBlob.Text,
+            oldFile is null ? "/dev/null" : "a/" + path,
+            newFile is null ? "/dev/null" : "b/" + path,
+            ContextLines);
+        patch.Append(NormalizeNewLines(unified).TrimEnd('\n')).AppendLine();
         return false;
+    }
+
+    private static void AppendModeChange(
+        StringBuilder patch,
+        GitTreeFile? oldFile,
+        GitTreeFile? newFile)
+    {
+        if (oldFile is null)
+        {
+            AppendModeLine(patch, "new file mode", newFile);
+            return;
+        }
+        if (newFile is null)
+        {
+            AppendModeLine(patch, "deleted file mode", oldFile);
+            return;
+        }
+        if (oldFile.Mode == newFile.Mode) return;
+        AppendModeLine(patch, "old mode", oldFile);
+        AppendModeLine(patch, "new mode", newFile);
     }
 
     private static void AppendModeLine(StringBuilder patch, string label, GitTreeFile? file)

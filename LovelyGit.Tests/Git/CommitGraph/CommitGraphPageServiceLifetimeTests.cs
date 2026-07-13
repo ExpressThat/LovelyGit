@@ -20,16 +20,17 @@ public sealed class CommitGraphPageServiceLifetimeTests
         var graph = Assert.IsType<CommitGraphManager>(open.Graph);
         using var service = CreateService(TimeSpan.FromMilliseconds(40));
         var activeGraphs = GetActiveGraphs(service);
+        var cacheWorkLock = GetCacheWorkLock(service);
         activeGraphs.Add(repositoryId, graph);
 
         service.ScheduleGraphClose(repositoryId);
         service.CancelScheduledGraphClose(repositoryId);
         await Task.Delay(120);
 
-        Assert.True(activeGraphs.ContainsKey(repositoryId));
+        Assert.True(ContainsGraph(cacheWorkLock, activeGraphs, repositoryId));
 
         service.ScheduleGraphClose(repositoryId);
-        await WaitForAsync(() => !activeGraphs.ContainsKey(repositoryId));
+        await WaitForAsync(() => !ContainsGraph(cacheWorkLock, activeGraphs, repositoryId));
 
         await Assert.ThrowsAsync<ObjectDisposedException>(() =>
             graph.GetCommitGraphPageAsync(
@@ -54,6 +55,25 @@ public sealed class CommitGraphPageServiceLifetimeTests
             "_activeGraphs",
             BindingFlags.Instance | BindingFlags.NonPublic);
         return Assert.IsType<Dictionary<Guid, CommitGraphManager>>(field?.GetValue(service));
+    }
+
+    private static object GetCacheWorkLock(CommitGraphPageService service)
+    {
+        var field = typeof(CommitGraphPageService).GetField(
+            "_cacheWorkLock",
+            BindingFlags.Instance | BindingFlags.NonPublic);
+        return Assert.IsType<object>(field?.GetValue(service));
+    }
+
+    private static bool ContainsGraph(
+        object cacheWorkLock,
+        Dictionary<Guid, CommitGraphManager> activeGraphs,
+        Guid repositoryId)
+    {
+        lock (cacheWorkLock)
+        {
+            return activeGraphs.ContainsKey(repositoryId);
+        }
     }
 
     private static async Task WaitForAsync(Func<bool> condition)

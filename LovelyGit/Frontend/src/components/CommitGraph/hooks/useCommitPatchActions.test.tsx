@@ -102,8 +102,54 @@ describe("useCommitPatchActions", () => {
 		expect(sendRequestWithResponse).toHaveBeenCalledTimes(2);
 		await waitFor(() => expect(result.current.busyAction).toBeNull());
 	});
+
+	it("copies a native patch series in the supplied commit order", async () => {
+		vi.mocked(sendRequestWithResponse).mockResolvedValue({
+			commitCount: 2,
+			hasUnsupportedBinaryChanges: false,
+			isTruncated: false,
+			patch: "mail patch series",
+		});
+		const { result } = renderHook(() => useCommitPatchActions("repository-id"));
+
+		await act(() => result.current.copyPatchSeries([row, secondRow]));
+
+		expect(sendRequestWithResponse).toHaveBeenCalledWith({
+			arguments: {
+				commitHashes: [row.commit.hash, secondRow.commit.hash],
+				repositoryId: "repository-id",
+			},
+			commandType: "GetCommitPatchSeries",
+		});
+		expect(copyToClipboard).toHaveBeenCalledWith(
+			"mail patch series",
+			"2-commit patch series",
+		);
+	});
+
+	it("keeps a failed series selection retryable", async () => {
+		vi.mocked(sendRequestWithResponse)
+			.mockRejectedValueOnce(new Error("Series failed"))
+			.mockResolvedValueOnce({ path: "C:/series.patch", saved: true });
+		const { result } = renderHook(() => useCommitPatchActions("repository-id"));
+
+		let completed = true;
+		await act(async () => {
+			completed = await result.current.savePatchSeries([row, secondRow]);
+		});
+		expect(completed).toBe(false);
+		await act(async () => {
+			completed = await result.current.savePatchSeries([row, secondRow]);
+		});
+		expect(completed).toBe(true);
+		expect(sendRequestWithResponse).toHaveBeenCalledTimes(2);
+		await waitFor(() => expect(result.current.seriesBusyAction).toBeNull());
+	});
 });
 
 const row = {
 	commit: { hash: "1".repeat(40), message: "Patch me" },
+} as CommitGraphRow;
+const secondRow = {
+	commit: { hash: "2".repeat(40), message: "Patch me second" },
 } as CommitGraphRow;

@@ -5,6 +5,8 @@ import { sendRequestWithResponse } from "@/lib/commands";
 import { NativeMessageType } from "@/lib/nativeMessaging";
 import { copyToClipboard } from "../utils/clipboard";
 
+const SERIES_BUSY_KEY = "__patch-series__";
+
 export function useCommitPatchActions(repositoryId: string | null) {
 	const [busyCommitHash, setBusyCommitHash] = useState<string | null>(null);
 	const [busyAction, setBusyAction] = useState<
@@ -87,7 +89,85 @@ export function useCommitPatchActions(repositoryId: string | null) {
 		}
 	}
 
-	return { busyAction, busyCommitHash, copyPatch, saveArchive, savePatch };
+	async function copyPatchSeries(rows: CommitGraphRow[]) {
+		if (!repositoryId || busyCommitHash || rows.length < 2) return false;
+		setBusyCommitHash(SERIES_BUSY_KEY);
+		setBusyAction("copy");
+		try {
+			const response = await sendRequestWithResponse({
+				commandType: NativeMessageType.GetCommitPatchSeries,
+				arguments: {
+					commitHashes: rows.map((row) => row.commit.hash),
+					repositoryId,
+				},
+			});
+			if (
+				!response ||
+				response.isTruncated ||
+				response.hasUnsupportedBinaryChanges
+			) {
+				toast.error(seriesFailureMessage(response));
+				return false;
+			}
+			await copyToClipboard(
+				response.patch,
+				`${response.commitCount}-commit patch series`,
+			);
+			return true;
+		} catch (error) {
+			toast.error(
+				error instanceof Error
+					? error.message
+					: "Could not create the patch series",
+			);
+			return false;
+		} finally {
+			setBusyCommitHash(null);
+			setBusyAction(null);
+		}
+	}
+
+	async function savePatchSeries(rows: CommitGraphRow[]) {
+		if (!repositoryId || busyCommitHash || rows.length < 2) return false;
+		setBusyCommitHash(SERIES_BUSY_KEY);
+		setBusyAction("save");
+		try {
+			const response = await sendRequestWithResponse({
+				commandType: NativeMessageType.SaveCommitPatchSeries,
+				arguments: {
+					commitHashes: rows.map((row) => row.commit.hash),
+					repositoryId,
+				},
+			});
+			if (!response?.saved) return false;
+			toast.success("Patch series saved");
+			return true;
+		} catch (error) {
+			toast.error(
+				error instanceof Error
+					? error.message
+					: "Could not save the patch series",
+			);
+			return false;
+		} finally {
+			setBusyCommitHash(null);
+			setBusyAction(null);
+		}
+	}
+
+	return {
+		busyAction,
+		busyCommitHash,
+		copyPatch,
+		copyPatchSeries,
+		saveArchive,
+		savePatch,
+		savePatchSeries,
+		seriesBusyAction:
+			busyCommitHash === SERIES_BUSY_KEY && busyAction !== "archive"
+				? busyAction
+				: null,
+	};
 }
 
 function patchFailureMessage(
@@ -102,4 +182,18 @@ function patchFailureMessage(
 	return response?.isTruncated
 		? "This patch is too large to copy safely"
 		: "Could not create the commit patch";
+}
+
+function seriesFailureMessage(
+	response:
+		| { hasUnsupportedBinaryChanges: boolean; isTruncated: boolean }
+		| null
+		| undefined,
+) {
+	if (response?.hasUnsupportedBinaryChanges) {
+		return "Binary changes cannot yet be exported in a patch series";
+	}
+	return response?.isTruncated
+		? "This patch series is too large to export safely"
+		: "Could not create the patch series";
 }

@@ -19,6 +19,7 @@ import { useCommitGraphViewport } from "./hooks/useCommitGraphViewport";
 import { useCommitMultiSelection } from "./hooks/useCommitMultiSelection";
 import { useCommitPatchActions } from "./hooks/useCommitPatchActions";
 import { useRepositoryRefs } from "./hooks/useRepositoryRefs";
+import { createSelectedCommitActions } from "./hooks/useSelectedCommitActions";
 import { buildCommitGraphRefView } from "./utils/commitGraphRefView";
 export function CommitGraphView({
 	onCurrentBranchNameChange,
@@ -43,20 +44,11 @@ export function CommitGraphView({
 	} = useCommitGraphData(refreshToken);
 	const repositoryRefs = useRepositoryRefs(repositoryId, refreshToken);
 	const commitSelection = useCommitMultiSelection(repositoryId, rows);
-	const openSelectedOperation = (mode: "cherry-pick" | "revert") => {
-		const commits = commitSelection.ordered(mode);
-		if (commits.length === 0) return;
-		if (mode === "cherry-pick") dialogs.setCherryPickCommits(commits);
-		else dialogs.setRevertCommits(commits);
-		commitSelection.clear();
-	};
-	const openSelectedComparison = () => {
-		const comparison = commitSelection.comparison();
-		if (!comparison) return;
-		dialogs.comparison.setBase(comparison.base);
-		dialogs.comparison.setTarget(comparison.target);
-		commitSelection.clear();
-	};
+	const selectedActions = createSelectedCommitActions({
+		dialogs,
+		patchActions,
+		selection: commitSelection,
+	});
 	const {
 		branchNames,
 		branchUpstreams,
@@ -141,11 +133,14 @@ export function CommitGraphView({
 								)
 							}
 							count={commitSelection.count}
-							onCherryPick={() => openSelectedOperation("cherry-pick")}
+							onCherryPick={() => selectedActions.openOperation("cherry-pick")}
 							onClear={commitSelection.clear}
-							onCompare={openSelectedComparison}
-							onRevert={() => openSelectedOperation("revert")}
+							onCompare={selectedActions.openComparison}
+							onCopyPatchSeries={() => selectedActions.runPatchSeries("copy")}
+							onRevert={() => selectedActions.openOperation("revert")}
+							onSavePatchSeries={() => selectedActions.runPatchSeries("save")}
 							revertDisabled={currentBranchName === null}
+							seriesBusyAction={patchActions.seriesBusyAction}
 						/>
 						{error ? (
 							<div className="h-7 border-b border-destructive/40 bg-destructive/10 px-[10px] leading-[27px] text-destructive">

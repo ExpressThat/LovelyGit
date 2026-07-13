@@ -89,6 +89,10 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging
         GetCommitPatch,
         [NativeMessageContract(typeof(GetCommitPatchCommandArguments), typeof(CommitPatchExportResponse))]
         SaveCommitPatch,
+        [NativeMessageContract(typeof(CommitPatchSeriesCommandArguments), typeof(CommitPatchSeriesResponse))]
+        GetCommitPatchSeries,
+        [NativeMessageContract(typeof(CommitPatchSeriesCommandArguments), typeof(CommitPatchExportResponse))]
+        SaveCommitPatchSeries,
         [NativeMessageContract(typeof(GetCommitPatchCommandArguments), typeof(CommitArchiveExportResponse))]
         SaveCommitArchive,
 
