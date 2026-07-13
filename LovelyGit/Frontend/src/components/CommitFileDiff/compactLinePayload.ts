@@ -133,6 +133,10 @@ function changeType(value: number | string) {
 }
 
 export async function decodeGzipBase64(value: string) {
+	return new TextDecoder().decode(await decodeGzipBase64Bytes(value));
+}
+
+export async function decodeGzipBase64Bytes(value: string) {
 	const bytes = Uint8Array.from(atob(value), (character) =>
 		character.charCodeAt(0),
 	);
@@ -140,7 +144,7 @@ export async function decodeGzipBase64(value: string) {
 		.stream()
 		.pipeThrough(new DecompressionStream("gzip"));
 	const buffer = await new Response(stream).arrayBuffer();
-	return new TextDecoder().decode(buffer);
+	return new Uint8Array(buffer);
 }
 
 export function toDiffLine(

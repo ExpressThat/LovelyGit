@@ -23,7 +23,7 @@ public sealed class ConflictTextPayloadBuilderTests
         Assert.Equal(
             new[] { text, text + " ours", text + " theirs", text + " result" },
             Expand(response));
-        Assert.Equal("interleaved-lines-v2:gzip-base64:utf-8", response.CompactTextSchema);
+        Assert.Equal("interleaved-lines-v3:gzip-base64:varint-utf-8", response.CompactTextSchema);
         Assert.All(
             new[] { response.Base, response.Ours, response.Theirs, response.Result },
             version =>

@@ -9,7 +9,8 @@ internal static class ConflictTextPayloadBuilder
 {
     private const int MinimumCharacters = 64_000;
     private const int MaximumRetainedSourceCharacters = 2 * 1024 * 1024;
-    private const string BundleSchema = "interleaved-lines-v2:gzip-base64:utf-8";
+    private const string BundleSchema = "interleaved-lines-v3:gzip-base64:varint-utf-8";
+    private const string LegacyBundleSchema = "interleaved-lines-v2:gzip-base64:utf-8";
 
     public static void Compact(ConflictResolutionResponse response)
     {
@@ -19,21 +20,12 @@ internal static class ConflictTextPayloadBuilder
             return;
         }
 
-        using var output = new MemoryStream();
-        using (var gzip = new GZipStream(output, CompressionLevel.Fastest, leaveOpen: true))
-        using (var writer = new Utf8JsonWriter(gzip))
-        {
-            writer.WriteStartArray();
-            WriteInterleavedSources(writer, response.Base.Text, response.Ours.Text, response.Theirs.Text);
-            writer.WriteStringValue(response.Result.Text);
-            writer.WriteEndArray();
-        }
-
         response.CompactTextSchema = BundleSchema;
-        response.CompactTextBundleGzipBase64 = Convert.ToBase64String(
-            output.GetBuffer(),
-            0,
-            checked((int)output.Length));
+        response.CompactTextBundleGzipBase64 = ConflictTextBundleCodec.Compress(
+            response.Base.Text,
+            response.Ours.Text,
+            response.Theirs.Text,
+            response.Result.Text);
         foreach (var version in versions)
         {
             version.Text = null;
@@ -66,7 +58,11 @@ internal static class ConflictTextPayloadBuilder
                 response.Result.Text);
         }
 
-        if (response.CompactTextSchema != BundleSchema)
+        if (response.CompactTextSchema == BundleSchema)
+        {
+            return ConflictTextBundleCodec.Expand(bundle);
+        }
+        if (response.CompactTextSchema != LegacyBundleSchema)
         {
             throw new InvalidOperationException($"Unsupported conflict text schema: {response.CompactTextSchema}");
         }
@@ -94,49 +90,6 @@ internal static class ConflictTextPayloadBuilder
             document.RootElement[1].GetString());
     }
 
-    private static void WriteInterleavedSources(
-        Utf8JsonWriter writer,
-        string? baseText,
-        string? oursText,
-        string? theirsText)
-    {
-        var texts = new[] { baseText, oursText, theirsText };
-        var positions = new int[3];
-        writer.WriteStartArray();
-        while (HasRemainingText(texts, positions))
-        {
-            writer.WriteStartArray();
-            for (var index = 0; index < texts.Length; index++)
-            {
-                WriteNextLine(writer, texts[index], ref positions[index]);
-            }
-            writer.WriteEndArray();
-        }
-        writer.WriteEndArray();
-    }
-
-    private static bool HasRemainingText(string?[] texts, int[] positions)
-    {
-        for (var index = 0; index < texts.Length; index++)
-        {
-            if (texts[index] is { } text && positions[index] < text.Length) return true;
-        }
-        return false;
-    }
-
-    private static void WriteNextLine(Utf8JsonWriter writer, string? text, ref int position)
-    {
-        if (text is null || position >= text.Length)
-        {
-            writer.WriteNullValue();
-            return;
-        }
-
-        var newline = text.AsSpan(position).IndexOf('\n');
-        var length = newline < 0 ? text.Length - position : newline + 1;
-        writer.WriteStringValue(text.AsSpan(position, length));
-        position += length;
-    }
 }
 
 internal readonly record struct ConflictTexts(string? Base, string? Ours, string? Theirs, string? Result);
