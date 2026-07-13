@@ -7,16 +7,10 @@ namespace ExpressThat.LovelyGit.Services.Git.Diffing;
 internal static class CompactDiffPayloadBuilder
 {
     private const int MinimumRows = 750;
-    private const int MinimumCharacters = 64_000;
 
     public static CommitFileDiffResponse CompactIfUseful(CommitFileDiffResponse response)
     {
         if (response.Lines.Count < MinimumRows || HasVirtualPayload(response))
-        {
-            return response;
-        }
-
-        if (EstimateTextCharacters(response.Lines) < MinimumCharacters)
         {
             return response;
         }
@@ -31,17 +25,6 @@ internal static class CompactDiffPayloadBuilder
     private static bool HasVirtualPayload(CommitFileDiffResponse response) =>
         !string.IsNullOrEmpty(response.VirtualText)
         || !string.IsNullOrEmpty(response.VirtualTextGzipBase64);
-
-    private static int EstimateTextCharacters(IReadOnlyList<CommitFileDiffLine> lines)
-    {
-        var count = 0;
-        foreach (var line in lines)
-        {
-            count += line.OldText.Length + line.NewText.Length + line.Text.Length;
-        }
-
-        return count;
-    }
 
     private static string CompressLines(IReadOnlyList<CommitFileDiffLine> lines)
     {

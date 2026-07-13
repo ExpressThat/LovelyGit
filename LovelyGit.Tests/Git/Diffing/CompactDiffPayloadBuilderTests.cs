@@ -39,6 +39,28 @@ public sealed class CompactDiffPayloadBuilderTests
         Assert.Null(unchanged.CompactLinesGzipBase64);
     }
 
+    [Fact]
+    public void CompactIfUseful_CompactsManyShortRowsWithLargeJsonOverhead()
+    {
+        var response = new CommitFileDiffResponse
+        {
+            Lines = Enumerable.Range(0, 750)
+                .Select(index => new CommitFileDiffLine
+                {
+                    NewLineNumber = index + 1,
+                    NewText = "x",
+                    ChangeType = "Inserted",
+                })
+                .ToList(),
+        };
+
+        var compact = CompactDiffPayloadBuilder.CompactIfUseful(response);
+
+        Assert.Empty(compact.Lines);
+        Assert.Equal(750, compact.CompactLineCount);
+        Assert.NotEmpty(compact.CompactLinesGzipBase64);
+    }
+
     private static CommitFileDiffResponse CreateLargeResponse() => new()
     {
         Lines = Enumerable.Range(0, 750)

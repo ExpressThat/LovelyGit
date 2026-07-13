@@ -6,6 +6,16 @@ internal static class DiffInputGuard
 {
     public const int FastDiffInputCharacters = 300_000;
     public const int FastDiffInputLines = 20_000;
+    public const int VirtualTextInputCharacters = 64_000;
+    public const int VirtualTextInputLines = 750;
+
+    public static bool ShouldUseVirtualText(string oldText, string newText)
+    {
+        if ((oldText.Length == 0) == (newText.Length == 0)) return false;
+        var text = oldText.Length == 0 ? newText : oldText;
+        return text.Length >= VirtualTextInputCharacters
+            || CountLines(text) >= VirtualTextInputLines;
+    }
 
     public static bool ShouldUseFastDiff(string oldText, string newText)
     {

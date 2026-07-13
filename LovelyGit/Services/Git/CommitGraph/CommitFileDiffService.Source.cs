@@ -2,7 +2,6 @@ using ColorCode;
 using ColorCode.Common;
 using ColorCode.Compilation;
 using ColorCode.Parsing;
-using ExpressThat.LovelyGit.Services.Data.Repositorys;
 using ExpressThat.LovelyGit.Services.Git.CommitGraph.Details;
 using ExpressThat.LovelyGit.Services.Git.CommitGraph.Models;
 using ExpressThat.LovelyGit.Services.Git.Diffing;
@@ -37,45 +36,6 @@ internal sealed partial class CommitFileDiffService : IDisposable
             _sourceCache.Set(key, source);
         }
         return BuildResponseFromSource(commitHash, path, viewMode, ignoreWhitespace, source);
-    }
-
-    private async Task<CommitFileDiffResponse?> TryGetCachedDiffAsync(
-        Guid repositoryId,
-        string commitHash,
-        string path,
-        CommitDiffViewMode viewMode,
-        bool ignoreWhitespace,
-        CancellationToken cancellationToken)
-    {
-        try
-        {
-            var cached = await _commitGraphRepository
-                .GetCommitFileDiffAsync(
-                    repositoryId,
-                    commitHash,
-                    path,
-                    viewMode,
-                    ignoreWhitespace,
-                    cancellationToken)
-                .ConfigureAwait(false);
-            if (cached is not null && !IsValidCachedDiff(cached))
-                throw new InvalidDataException("Cached diff payload is incomplete.");
-            return cached;
-        }
-        catch when (!cancellationToken.IsCancellationRequested)
-        {
-            try
-            {
-                await _commitGraphRepository
-                    .ClearCommitFileDiffsAsync(repositoryId, commitHash, CancellationToken.None)
-                    .ConfigureAwait(false);
-            }
-            catch
-            {
-            }
-
-            return null;
-        }
     }
 
     private static async Task<CommitFileDiffSource> BuildCommitFileDiffSourceAsync(
@@ -165,7 +125,8 @@ internal sealed partial class CommitFileDiffService : IDisposable
             };
         }
 
-        if (DiffInputGuard.ShouldUseFastDiff(source.OldText, source.NewText))
+        if (DiffInputGuard.ShouldUseVirtualText(source.OldText, source.NewText)
+            || DiffInputGuard.ShouldUseFastDiff(source.OldText, source.NewText))
         {
             return CompactDiffPayloadBuilder.CompactIfUseful(LargeDiffPayloadBuilder.Build(
                 commitHash,

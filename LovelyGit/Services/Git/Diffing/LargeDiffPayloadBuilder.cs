@@ -6,7 +6,7 @@ namespace ExpressThat.LovelyGit.Services.Git.Diffing;
 
 internal static class LargeDiffPayloadBuilder
 {
-    private const int CompressVirtualTextCharacters = 256_000;
+    private const int CompressVirtualTextCharacters = 64_000;
 
     public static CommitFileDiffResponse BuildVirtualTextBytes(
         string commitHash,

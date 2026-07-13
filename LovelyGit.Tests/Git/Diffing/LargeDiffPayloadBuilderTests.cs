@@ -42,13 +42,28 @@ public sealed class LargeDiffPayloadBuilderTests
     [Fact]
     public void Build_ReturnsVirtualTextForLargeAddedFile()
     {
-        var newText = string.Join('\n', Enumerable.Range(1, DiffInputGuard.FastDiffInputLines + 1).Select(index => $"line {index}"));
+        var newText = string.Join(
+            '\n',
+            Enumerable.Range(1, DiffInputGuard.VirtualTextInputLines).Select(index => $"line {index}"));
 
         var response = LargeDiffPayloadBuilder.Build("hash", "large.txt", "Added", CommitDiffViewMode.SideBySide, false, string.Empty, newText);
 
         Assert.Empty(response.Lines);
         Assert.Equal("Inserted", response.VirtualChangeType);
         Assert.Equal(newText, response.VirtualText);
-        Assert.Equal(DiffInputGuard.FastDiffInputLines + 1, response.VirtualLineCount);
+        Assert.Equal(DiffInputGuard.VirtualTextInputLines, response.VirtualLineCount);
+    }
+
+    [Fact]
+    public void Build_CompressesLargeAddedVirtualText()
+    {
+        var newText = new string('x', DiffInputGuard.VirtualTextInputCharacters);
+
+        var response = LargeDiffPayloadBuilder.Build(
+            "hash", "large.txt", "Added", CommitDiffViewMode.SideBySide, false, string.Empty, newText);
+
+        Assert.Null(response.VirtualText);
+        Assert.Equal("gzip-base64:utf-8", response.VirtualTextEncoding);
+        Assert.NotEmpty(response.VirtualTextGzipBase64);
     }
 }

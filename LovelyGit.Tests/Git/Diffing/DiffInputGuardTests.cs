@@ -32,4 +32,26 @@ public sealed class DiffInputGuardTests
 
         Assert.True(shouldUseFastDiff);
     }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void ShouldUseVirtualText_ReturnsTrueForLargeSingleSidedInputs(bool added)
+    {
+        var text = string.Join('\n', Enumerable.Repeat("x", DiffInputGuard.VirtualTextInputLines));
+
+        var shouldUseVirtualText = DiffInputGuard.ShouldUseVirtualText(
+            added ? string.Empty : text,
+            added ? text : string.Empty);
+
+        Assert.True(shouldUseVirtualText);
+    }
+
+    [Fact]
+    public void ShouldUseVirtualText_PreservesRichDiffForTwoSidedInputs()
+    {
+        var text = new string('x', DiffInputGuard.VirtualTextInputCharacters);
+
+        Assert.False(DiffInputGuard.ShouldUseVirtualText(text, text));
+    }
 }

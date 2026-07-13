@@ -61,6 +61,7 @@ export function VirtualTextDiff({
 		count: lineCount,
 		estimateSize: () => 18,
 		getScrollElement: () => viewportRef.current,
+		measureElement: (element) => element.getBoundingClientRect().height,
 		overscan: OVERSCAN,
 	});
 	const virtualItems = virtualizer.getVirtualItems();
@@ -95,6 +96,7 @@ export function VirtualTextDiff({
 							index={item.index}
 							key={item.key}
 							line={readLine(text, lineStarts, item.index)}
+							measureElement={virtualizer.measureElement}
 							scrollLeft={scrollLeft}
 							viewMode={diff.viewMode}
 							wrapLines={wrapLines}

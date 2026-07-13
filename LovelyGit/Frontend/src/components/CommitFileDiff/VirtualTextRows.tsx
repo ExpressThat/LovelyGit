@@ -41,6 +41,7 @@ export function VirtualTextRow({
 	contentWidth,
 	index,
 	line,
+	measureElement,
 	scrollLeft,
 	viewMode,
 	wrapLines,
@@ -50,6 +51,7 @@ export function VirtualTextRow({
 	contentWidth: number;
 	index: number;
 	line: string;
+	measureElement: (element: HTMLDivElement | null) => void;
 	scrollLeft: number;
 	viewMode: string;
 	wrapLines: boolean;
@@ -65,6 +67,8 @@ export function VirtualTextRow({
 		return (
 			<div
 				className={`absolute left-0 top-0 grid w-full grid-cols-2 ${lineBackground(changeType)}`}
+				data-index={index}
+				ref={measureElement}
 				style={{ transform: `translateY(${y}px)` }}
 			>
 				<VirtualSide
@@ -84,6 +88,8 @@ export function VirtualTextRow({
 	return (
 		<div
 			className={`absolute left-0 top-0 grid w-full grid-cols-[4rem_4rem_2rem_minmax(0,1fr)] ${lineBackground(changeType)}`}
+			data-index={index}
+			ref={measureElement}
 			style={{ transform: `translateY(${y}px)` }}
 		>
 			<LineNumber value={oldNumber} />
