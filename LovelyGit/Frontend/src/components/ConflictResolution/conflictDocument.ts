@@ -1,3 +1,6 @@
+import type { ConflictResolutionResponse } from "@/generated/types";
+import { extractConflictLineRanges } from "./conflictLineRanges";
+
 export type ConflictSegment = {
 	kind: "conflict";
 	id: number;
@@ -82,38 +85,51 @@ export function createConflictDocument(
 	const parsedConflicts = parsed.filter(
 		(segment): segment is ConflictSegment => segment.kind === "conflict",
 	);
-	const baseLines = splitLines(conflict.base.text ?? "");
-	const currentLines = splitLines(conflict.ours.text ?? "");
-	const incomingLines = splitLines(conflict.theirs.text ?? "");
 	const newline = conflict.result.text?.includes("\r\n") ? "\r\n" : "\n";
 
 	if (parsedConflicts.length === conflict.hunks.length) {
+		const hunks = new Map(conflict.hunks.map((hunk) => [hunk.id, hunk]));
+		const base = extractConflictLineRanges(
+			conflict.base.text ?? "",
+			conflict.hunks.map((hunk) => ({
+				id: hunk.id,
+				startLine: hunk.baseStartLine,
+				lineCount: hunk.baseLineCount,
+			})),
+			newline,
+		);
+		const ours = extractConflictLineRanges(
+			conflict.ours.text ?? "",
+			conflict.hunks.map((hunk) => ({
+				id: hunk.id,
+				startLine: hunk.currentStartLine,
+				lineCount: hunk.currentLineCount,
+			})),
+			newline,
+		);
+		const theirs = extractConflictLineRanges(
+			conflict.theirs.text ?? "",
+			conflict.hunks.map((hunk) => ({
+				id: hunk.id,
+				startLine: hunk.incomingStartLine,
+				lineCount: hunk.incomingLineCount,
+			})),
+			newline,
+		);
 		for (const segment of parsedConflicts) {
-			const hunk = conflict.hunks.find(
-				(candidate) => candidate.id === segment.id,
-			);
+			const hunk = hunks.get(segment.id);
 			if (!hunk) continue;
-			segment.base = normalizeLineEndings(
-				sliceRange(baseLines, hunk.baseStartLine, hunk.baseLineCount),
-				newline,
-			);
-			segment.ours = normalizeLineEndings(
-				sliceRange(currentLines, hunk.currentStartLine, hunk.currentLineCount),
-				newline,
-			);
-			segment.theirs = normalizeLineEndings(
-				sliceRange(
-					incomingLines,
-					hunk.incomingStartLine,
-					hunk.incomingLineCount,
-				),
-				newline,
-			);
+			segment.base = base.get(segment.id) ?? [];
+			segment.ours = ours.get(segment.id) ?? [];
+			segment.theirs = theirs.get(segment.id) ?? [];
 		}
 		return parsed;
 	}
 
 	if (parsedConflicts.length > 0) return parsed;
+	const baseLines = splitLines(conflict.base.text ?? "");
+	const currentLines = splitLines(conflict.ours.text ?? "");
+	const incomingLines = splitLines(conflict.theirs.text ?? "");
 	return [
 		{
 			kind: "conflict",
@@ -209,19 +225,6 @@ export function splitLines(text: string) {
 	return text.match(/.*(?:\r\n|\n|$)/g)?.filter(Boolean) ?? [];
 }
 
-function sliceRange(lines: string[], oneBasedStart: number, count: number) {
-	return lines.slice(
-		Math.max(0, oneBasedStart - 1),
-		Math.max(0, oneBasedStart - 1) + count,
-	);
-}
-
-function normalizeLineEndings(lines: string[], newline: string) {
-	return lines.map((line) => line.replace(/\r?\n$/, newline));
-}
-
 function isMarker(line: string, marker: string) {
 	return line.startsWith(marker);
 }
-
-import type { ConflictResolutionResponse } from "@/generated/types";

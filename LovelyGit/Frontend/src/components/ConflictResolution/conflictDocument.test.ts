@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
 	areConflictChoicesResolved,
 	createConflictChoices,
@@ -100,5 +100,32 @@ describe("conflictDocument", () => {
 		expect(renderConflictResult(document, choices)).toBe(
 			"before\r\ncurrent\r\nafter\r\n",
 		);
+	});
+
+	it("does not split complete source files when authoritative hunk ranges exist", () => {
+		const match = vi.spyOn(String.prototype, "match");
+		try {
+			createConflictDocument({
+				base: { text: "before\nbase\nafter\n" },
+				ours: { text: "before\ncurrent\nafter\n" },
+				theirs: { text: "before\nincoming\nafter\n" },
+				result: { text: conflict },
+				hunks: [
+					{
+						id: 0,
+						baseStartLine: 2,
+						baseLineCount: 1,
+						currentStartLine: 2,
+						currentLineCount: 1,
+						incomingStartLine: 2,
+						incomingLineCount: 1,
+					},
+				],
+			} as never);
+
+			expect(match).toHaveBeenCalledTimes(1);
+		} finally {
+			match.mockRestore();
+		}
 	});
 });
