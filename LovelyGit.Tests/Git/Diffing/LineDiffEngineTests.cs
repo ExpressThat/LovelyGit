@@ -112,6 +112,20 @@ public sealed class LineDiffEngineTests
     }
 
     [Fact]
+    public void BuildUnaligned_StreamsTheSameRowsWithoutRetainingThem()
+    {
+        const string oldText = "before\nold one\nold two\nafter\n";
+        const string newText = "before\nnew one\nafter\n";
+        var aligned = LineDiffEngine.Build(oldText, newText);
+
+        var streamed = LineDiffEngine.BuildUnaligned(oldText, newText);
+
+        Assert.Empty(streamed.Rows);
+        Assert.Equal(aligned.Blocks, streamed.Blocks);
+        Assert.Equal(aligned.Rows, LineDiffEngine.EnumerateRows(streamed));
+    }
+
+    [Fact]
     public void Build_ReconstructsDeterministicRandomEdits()
     {
         var random = new Random(917_431);

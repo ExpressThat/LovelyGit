@@ -5,6 +5,9 @@ internal static class LineDiffEngine
     public static LineDiffModel Build(string oldText, string newText, bool ignoreWhitespace = false)
         => Build(Prepare(oldText), Prepare(newText), ignoreWhitespace);
 
+    public static LineDiffModel BuildUnaligned(string oldText, string newText, bool ignoreWhitespace = false)
+        => BuildCore(Prepare(oldText), Prepare(newText), ignoreWhitespace, alignRows: false);
+
     public static PreparedLineText Prepare(string text) =>
         new(SplitLines(text), EndsWithNewLine(text));
 
@@ -12,6 +15,13 @@ internal static class LineDiffEngine
         PreparedLineText oldText,
         PreparedLineText newText,
         bool ignoreWhitespace = false)
+        => BuildCore(oldText, newText, ignoreWhitespace, alignRows: true);
+
+    private static LineDiffModel BuildCore(
+        PreparedLineText oldText,
+        PreparedLineText newText,
+        bool ignoreWhitespace,
+        bool alignRows)
     {
         var endingsDiffer = oldText.EndsWithNewLine != newText.EndsWithNewLine;
         var comparisonOldLines = ComparisonLines(oldText, endingsDiffer);
@@ -25,7 +35,7 @@ internal static class LineDiffEngine
             oldText.Lines,
             newText.Lines,
             edits,
-            Align(oldText.Lines.Length, newText.Lines.Length, edits));
+            alignRows ? Align(oldText.Lines.Length, newText.Lines.Length, edits) : []);
     }
 
     private static string[] ComparisonLines(PreparedLineText text, bool endingsDiffer)
@@ -67,35 +77,37 @@ internal static class LineDiffEngine
     private static List<LineDiffRow> Align(int oldCount, int newCount, IReadOnlyList<LineDiffBlock> edits)
     {
         var rows = new List<LineDiffRow>(Math.Max(oldCount, newCount));
+        rows.AddRange(EnumerateRows(oldCount, newCount, edits));
+        return rows;
+    }
+
+    public static IEnumerable<LineDiffRow> EnumerateRows(LineDiffModel model) =>
+        EnumerateRows(model.OldLines.Length, model.NewLines.Length, model.Blocks);
+
+    private static IEnumerable<LineDiffRow> EnumerateRows(
+        int oldCount,
+        int newCount,
+        IReadOnlyList<LineDiffBlock> edits)
+    {
         var oldIndex = 0;
         var newIndex = 0;
         foreach (var edit in edits)
         {
-            AddUnchanged(rows, ref oldIndex, ref newIndex, edit.OldStart, edit.NewStart);
+            while (oldIndex < edit.OldStart && newIndex < edit.NewStart)
+                yield return new(oldIndex++, newIndex++, isChanged: false);
             var count = Math.Max(edit.OldCount, edit.NewCount);
             for (var offset = 0; offset < count; offset++)
             {
-                rows.Add(new(
+                yield return new(
                     offset < edit.OldCount ? edit.OldStart + offset : null,
                     offset < edit.NewCount ? edit.NewStart + offset : null,
-                    isChanged: true));
+                    isChanged: true);
             }
             oldIndex = edit.OldStart + edit.OldCount;
             newIndex = edit.NewStart + edit.NewCount;
         }
-        AddUnchanged(rows, ref oldIndex, ref newIndex, oldCount, newCount);
-        return rows;
-    }
-
-    private static void AddUnchanged(
-        List<LineDiffRow> rows,
-        ref int oldIndex,
-        ref int newIndex,
-        int oldEnd,
-        int newEnd)
-    {
-        while (oldIndex < oldEnd && newIndex < newEnd)
-            rows.Add(new(oldIndex++, newIndex++, isChanged: false));
+        while (oldIndex < oldCount && newIndex < newCount)
+            yield return new(oldIndex++, newIndex++, isChanged: false);
     }
 }
 

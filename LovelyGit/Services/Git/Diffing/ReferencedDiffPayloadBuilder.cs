@@ -54,7 +54,7 @@ internal static class ReferencedDiffPayloadBuilder
             writer.WriteStartArray();
             var previousOld = 0;
             var previousNew = 0;
-            foreach (var row in model.Rows)
+            foreach (var row in LineDiffEngine.EnumerateRows(model))
             {
                 WriteLine(writer, model, row, ref previousOld, ref previousNew);
                 lineCount++;

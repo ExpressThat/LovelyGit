@@ -48,7 +48,7 @@ internal static class LargeDiffPayloadBuilder
             return BuildVirtualTextResponse(commitHash, path, status, viewMode, "Deleted", oldText);
         }
 
-        var model = LineDiffEngine.Build(oldText, newText, ignoreWhitespace);
+        var model = LineDiffEngine.BuildUnaligned(oldText, newText, ignoreWhitespace);
         return ReferencedDiffPayloadBuilder.Build(
             commitHash,
             path,
