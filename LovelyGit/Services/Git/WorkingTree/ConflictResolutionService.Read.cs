@@ -19,6 +19,7 @@ internal sealed partial class ConflictResolutionService
         CancellationToken cancellationToken)
     {
         using var readTrace = ConflictReadTrace.Start(path, ignoreWhitespace);
+        cancellationToken.ThrowIfCancellationRequested();
         path = WorkingTreePath.NormalizeRelative(path);
         if (TryReadMetadataCached(
                 repositoryPath,
