@@ -25,7 +25,7 @@ public sealed class ConflictTextPayloadPerformanceTests(ITestOutputHelper output
         output.WriteLine($"Binary: {binary.Allocated:N0} bytes, {binary.Elapsed.TotalMilliseconds:N1} ms");
         output.WriteLine($"JSON: {legacy.Allocated:N0} bytes, {legacy.Elapsed.TotalMilliseconds:N1} ms");
         Assert.True(
-            binary.Allocated < legacy.Allocated * 0.80,
+            binary.Allocated < legacy.Allocated * 0.40,
             $"Binary allocated {binary.Allocated:N0} vs JSON {legacy.Allocated:N0} bytes.");
     }
 

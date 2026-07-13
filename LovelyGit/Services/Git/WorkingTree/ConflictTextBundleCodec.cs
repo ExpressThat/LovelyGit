@@ -30,6 +30,7 @@ internal static partial class ConflictTextBundleCodec
         using var output = new MemoryStream();
         try
         {
+            var encoder = StrictUtf8.GetEncoder();
             using var gzip = new GZipStream(output, compressionLevel, leaveOpen: true);
             using var buffered = new BufferedStream(gzip, 64 * 1024);
             WriteVarUInt(buffered, checked((uint)rowCount));
@@ -37,10 +38,10 @@ internal static partial class ConflictTextBundleCodec
             {
                 for (var index = 0; index < sources.Length; index++)
                 {
-                    WriteNextLine(buffered, sources[index], ref positions[index], buffer);
+                    WriteNextLine(buffered, sources[index], ref positions[index], encoder, buffer);
                 }
             }
-            WriteText(buffered, resultText.AsSpan(), resultText is not null, buffer);
+            WriteText(buffered, resultText.AsSpan(), resultText is not null, encoder, buffer);
         }
         finally
         {
@@ -72,21 +73,31 @@ internal static partial class ConflictTextBundleCodec
         return false;
     }
 
-    private static void WriteNextLine(Stream output, string? text, ref int position, byte[] buffer)
+    private static void WriteNextLine(
+        Stream output,
+        string? text,
+        ref int position,
+        Encoder encoder,
+        byte[] buffer)
     {
         if (text is null || position >= text.Length)
         {
-            WriteText(output, [], exists: false, buffer);
+            WriteText(output, [], exists: false, encoder, buffer);
             return;
         }
         var remaining = text.AsSpan(position);
         var newline = remaining.IndexOf('\n');
         var length = newline < 0 ? remaining.Length : newline + 1;
-        WriteText(output, remaining[..length], exists: true, buffer);
+        WriteText(output, remaining[..length], exists: true, encoder, buffer);
         position += length;
     }
 
-    private static void WriteText(Stream output, ReadOnlySpan<char> text, bool exists, byte[] buffer)
+    private static void WriteText(
+        Stream output,
+        ReadOnlySpan<char> text,
+        bool exists,
+        Encoder encoder,
+        byte[] buffer)
     {
         if (!exists)
         {
@@ -97,7 +108,7 @@ internal static partial class ConflictTextBundleCodec
         if (byteCount > MaximumEncodedTextBytes) throw InvalidBundle("text is too large");
         WriteVarUInt(output, checked((uint)byteCount + 1));
         if (byteCount == 0) return;
-        var encoder = StrictUtf8.GetEncoder();
+        encoder.Reset();
         while (!text.IsEmpty)
         {
             encoder.Convert(
