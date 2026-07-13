@@ -32,6 +32,7 @@ public sealed class ConflictTextBundleCodecTests
         var texts = ConflictTextBundleCodec.Expand(bundle);
 
         Assert.Equal(64 * 1024, ConflictTextBundleCodec.MaximumEncodingBufferBytes);
+        Assert.Equal(64 * 1024, ConflictTextBundleCodec.MaximumDecodingBufferBytes);
         Assert.Equal(longLine, texts.Base);
         Assert.Equal(longLine, texts.Ours);
         Assert.Equal(longLine, texts.Theirs);
@@ -54,6 +55,7 @@ public sealed class ConflictTextBundleCodecTests
     [InlineData(new byte[] { 0xff, 0xff, 0xff, 0xff, 0x10 }, "invalid integer")]
     [InlineData(new byte[] { 0xff, 0xff, 0xff, 0xff, 0x0f }, "row count is too large")]
     [InlineData(new byte[] { 0x00, 0xff, 0xff, 0xff, 0xff, 0x0f }, "text is too large")]
+    [InlineData(new byte[] { 0x01, 0x02, 0xff, 0x00, 0x00, 0x00 }, "invalid UTF-8")]
     public void Expand_RejectsMalformedPayloads(byte[] raw, string expected)
     {
         var error = Assert.Throws<InvalidDataException>(() =>

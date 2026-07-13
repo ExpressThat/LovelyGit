@@ -4,7 +4,7 @@ using System.Text;
 
 namespace ExpressThat.LovelyGit.Services.Git.WorkingTree;
 
-internal static class ConflictTextBundleCodec
+internal static partial class ConflictTextBundleCodec
 {
     private const int SourceCount = 3;
     private const int MaximumRows = 4 * 1024 * 1024;
@@ -47,27 +47,6 @@ internal static class ConflictTextBundleCodec
             ArrayPool<byte>.Shared.Return(buffer);
         }
         return Convert.ToBase64String(output.GetBuffer(), 0, checked((int)output.Length));
-    }
-
-    public static ConflictTexts Expand(string bundle)
-    {
-        var bytes = Convert.FromBase64String(bundle);
-        using var input = new MemoryStream(bytes);
-        using var gzip = new GZipStream(input, CompressionMode.Decompress);
-        var encodedRowCount = ReadVarUInt(gzip);
-        if (encodedRowCount > MaximumRows) throw InvalidBundle("row count is too large");
-        var rowCount = (int)encodedRowCount;
-        var sources = new[] { new StringBuilder(), new StringBuilder(), new StringBuilder() };
-        for (var row = 0; row < rowCount; row++)
-        {
-            for (var index = 0; index < sources.Length; index++)
-            {
-                if (ReadText(gzip) is { } line) sources[index].Append(line);
-            }
-        }
-        var result = ReadText(gzip);
-        if (gzip.ReadByte() >= 0) throw InvalidBundle("contains trailing data");
-        return new(sources[0].ToString(), sources[1].ToString(), sources[2].ToString(), result);
     }
 
     private static int CountLines(string? text)
@@ -134,29 +113,6 @@ internal static class ConflictTextBundleCodec
             }
             output.Write(buffer, 0, bytesUsed);
             text = text[charactersUsed..];
-        }
-    }
-
-    private static string? ReadText(Stream input)
-    {
-        var encodedLength = ReadVarUInt(input);
-        if (encodedLength == 0) return null;
-        if (encodedLength - 1 > MaximumEncodedTextBytes) throw InvalidBundle("text is too large");
-        var length = (int)encodedLength - 1;
-        if (length == 0) return string.Empty;
-        var buffer = ArrayPool<byte>.Shared.Rent(length);
-        try
-        {
-            input.ReadExactly(buffer.AsSpan(0, length));
-            return StrictUtf8.GetString(buffer, 0, length);
-        }
-        catch (EndOfStreamException)
-        {
-            throw InvalidBundle("is truncated");
-        }
-        finally
-        {
-            ArrayPool<byte>.Shared.Return(buffer);
         }
     }
 
