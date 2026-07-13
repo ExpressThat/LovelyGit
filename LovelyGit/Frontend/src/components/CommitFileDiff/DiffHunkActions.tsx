@@ -7,6 +7,18 @@ export type DiffHunkAction = {
 	onClick: (lines: CommitFileDiffLine[]) => void;
 };
 
+const EMPTY_HUNK_LOOKUP = new Map<CommitFileDiffLine, CommitFileDiffLine[]>();
+
+export function buildDiffHunkLookupIfActionable(
+	lines: CommitFileDiffLine[],
+	contextLines: number,
+	actionable: boolean,
+) {
+	return actionable
+		? buildDiffHunkLookup(lines, contextLines)
+		: EMPTY_HUNK_LOOKUP;
+}
+
 export function buildDiffHunkLookup(
 	lines: CommitFileDiffLine[],
 	contextLines: number,

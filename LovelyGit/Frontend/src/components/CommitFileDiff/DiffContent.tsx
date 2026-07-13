@@ -5,7 +5,7 @@ import type {
 import { CombinedDiff } from "./CombinedDiff";
 import { CompactDiffContent } from "./CompactDiffContent";
 import { hasCompactLinePayload } from "./compactLinePayload";
-import { buildDiffHunkLookup } from "./DiffHunkActions";
+import { buildDiffHunkLookupIfActionable } from "./DiffHunkActions";
 import { type DiffDisplayRow, getContextualDiffRows } from "./DiffRows";
 import { SideBySideDiff } from "./SideBySideDiff";
 import { VirtualTextDiff } from "./VirtualTextDiff";
@@ -102,7 +102,11 @@ export function DiffContent({
 		lineDisplayMode === "FullFile"
 			? diff.lines.map((line): DiffDisplayRow => ({ kind: "line", line }))
 			: getContextualDiffRows(diff.lines, contextLines);
-	const hunkLookup = buildDiffHunkLookup(diff.lines, contextLines);
+	const hunkLookup = buildDiffHunkLookupIfActionable(
+		diff.lines,
+		contextLines,
+		Boolean(onStageHunk || onUnstageHunk),
+	);
 
 	return diff.viewMode === "SideBySide" ? (
 		<SideBySideDiff

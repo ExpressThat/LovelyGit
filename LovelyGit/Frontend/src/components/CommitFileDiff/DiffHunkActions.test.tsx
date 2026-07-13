@@ -6,11 +6,24 @@ import { describe, expect, it, vi } from "vitest";
 import type { CommitFileDiffLine } from "@/generated/types";
 import {
 	buildDiffHunkLookup,
+	buildDiffHunkLookupIfActionable,
 	DiffHunkActionButton,
 	getDiffHunkAction,
 } from "./DiffHunkActions";
 
 describe("diff hunk actions", () => {
+	it("does not inspect diff lines when hunk actions are unavailable", () => {
+		const unreadableLines = new Proxy([] as CommitFileDiffLine[], {
+			get: () => {
+				throw new Error("read-only commit lines should not be scanned");
+			},
+		});
+
+		expect(
+			buildDiffHunkLookupIfActionable(unreadableLines, 3, false).size,
+		).toBe(0);
+	});
+
 	it("groups nearby changes and separates changes beyond their context", () => {
 		const first = line("Modified");
 		const second = line("Inserted");
