@@ -89,6 +89,29 @@ describe("commitFileDiffCache", () => {
 		expect(getCachedCommitFileDiff(sideBySideKey)).toBeUndefined();
 	});
 
+	it("retains both views only for the latest oversized payload", () => {
+		const first = {
+			...response("first-large.txt"),
+			compactLineCount: 5_001,
+			compactLineSchema: "tuple-v4-delta-refs:gzip-base64:utf-8",
+			compactSourceBundleGzipBase64: "first-sources",
+		};
+		const second = {
+			...response("second-large.txt"),
+			compactLineCount: 5_001,
+			compactLineSchema: "tuple-v4-delta-refs:gzip-base64:utf-8",
+			compactSourceBundleGzipBase64: "second-sources",
+		};
+
+		cacheCommitFileDiffViews("first-combined", "first-side", first);
+		cacheCommitFileDiffViews("second-combined", "second-side", second);
+
+		expect(getCachedCommitFileDiff("first-combined")).toBeUndefined();
+		expect(getCachedCommitFileDiff("first-side")).toBeUndefined();
+		expect(getCachedCommitFileDiff("second-combined")).toBe(second);
+		expect(getCachedCommitFileDiff("second-side")?.viewMode).toBe("SideBySide");
+	});
+
 	it("evicts the least recently used response after eight variants", () => {
 		for (let index = 0; index < 8; index += 1) {
 			cacheCommitFileDiff(
