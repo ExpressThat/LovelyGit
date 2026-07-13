@@ -37,6 +37,7 @@ internal sealed class SearchCommitsCommandResolver : CommandResponder<SearchComm
         }
 
         var author = arguments.Author.Trim();
+        var scope = arguments.Scope.Trim();
         var validationError = CommitSearchRequestValidator.Validate(arguments);
         if (validationError != null)
         {
@@ -57,6 +58,7 @@ internal sealed class SearchCommitsCommandResolver : CommandResponder<SearchComm
                 repository.Path,
                 query,
                 author,
+                scope,
                 arguments.AfterUnixSeconds,
                 arguments.BeforeUnixSeconds,
                 arguments.Limit,

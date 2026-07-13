@@ -17,6 +17,7 @@ internal static partial class NativeCommitSearchReader
         string repositoryPath,
         string query,
         string author,
+        string scope,
         long? afterUnixSeconds,
         long? beforeUnixSeconds,
         int limit,
@@ -26,6 +27,7 @@ internal static partial class NativeCommitSearchReader
     {
         var normalizedQuery = query.Trim();
         var normalizedAuthor = author.Trim();
+        var normalizedScope = scope.Trim();
         var queryUtf8 = Encoding.UTF8.GetBytes(normalizedQuery);
         var authorUtf8 = Encoding.UTF8.GetBytes(normalizedAuthor);
         var resultLimit = Math.Clamp(limit, 1, MaximumResultLimit);
@@ -35,6 +37,7 @@ internal static partial class NativeCommitSearchReader
             .OpenAsync(repositoryPath, cancellationToken)
             .ConfigureAwait(false);
         var directHashResult = normalizedAuthor.Length == 0
+            && normalizedScope.Length == 0
             && afterUnixSeconds == null
             && beforeUnixSeconds == null
             ? await TryResolveHashAsync(
@@ -46,6 +49,7 @@ internal static partial class NativeCommitSearchReader
             {
                 Query = normalizedQuery,
                 Author = normalizedAuthor,
+                Scope = normalizedScope,
                 AfterUnixSeconds = afterUnixSeconds,
                 BeforeUnixSeconds = beforeUnixSeconds,
                 Results = [directHashResult],
@@ -54,9 +58,22 @@ internal static partial class NativeCommitSearchReader
                 IsPartial = false,
             };
         }
-        var startingCommits = await repository
-            .GetStartingCommitsAsync(cancellationToken, includeTags: true)
-            .ConfigureAwait(false);
+        IReadOnlyList<GitCommit> startingCommits;
+        if (normalizedScope.Length == 0)
+        {
+            startingCommits = await repository
+                .GetStartingCommitsAsync(cancellationToken, includeTags: true)
+                .ConfigureAwait(false);
+        }
+        else
+        {
+            if (!repository.TryResolveRefTarget(normalizedScope, out var target))
+            {
+                throw new ArgumentException($"Git ref not found: {normalizedScope}", nameof(scope));
+            }
+            startingCommits = [await repository.GetGraphCommitAsync(target, cancellationToken)
+                .ConfigureAwait(false)];
+        }
         var primaryHistory = new Stack<GitObjectId>();
         var otherHistory = new Queue<GitObjectId>(startingCommits.Count);
         var seen = new HashSet<GitObjectId>();
@@ -139,6 +156,7 @@ internal static partial class NativeCommitSearchReader
         {
             Query = normalizedQuery,
             Author = normalizedAuthor,
+            Scope = normalizedScope,
             AfterUnixSeconds = afterUnixSeconds,
             BeforeUnixSeconds = beforeUnixSeconds,
             Results = newestMatches.UnorderedItems

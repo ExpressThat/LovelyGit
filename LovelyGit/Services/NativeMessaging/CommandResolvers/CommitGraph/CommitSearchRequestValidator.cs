@@ -8,13 +8,14 @@ internal static class CommitSearchRequestValidator
     {
         var query = arguments.Query.Trim();
         var author = arguments.Author.Trim();
+        var scope = arguments.Scope.Trim();
         if (query.Length is > 0 and < MinimumTextLength
             || author.Length is > 0 and < MinimumTextLength)
         {
             return "Text and author filters need at least two characters.";
         }
 
-        if (query.Length == 0 && author.Length == 0
+        if (query.Length == 0 && author.Length == 0 && scope.Length == 0
             && arguments.AfterUnixSeconds == null && arguments.BeforeUnixSeconds == null)
         {
             return "Enter search text or choose at least one filter.";

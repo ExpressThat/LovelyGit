@@ -2,12 +2,14 @@ export type CommitSearchFilters = {
 	author: string;
 	afterDate: string;
 	beforeDate: string;
+	scope: string;
 };
 
 export const emptyCommitSearchFilters: CommitSearchFilters = {
 	author: "",
 	afterDate: "",
 	beforeDate: "",
+	scope: "",
 };
 
 export function toSearchBoundaries(filters: CommitSearchFilters) {
@@ -21,7 +23,10 @@ export function toSearchBoundaries(filters: CommitSearchFilters) {
 
 export function hasCommitSearchFilter(filters: CommitSearchFilters) {
 	return Boolean(
-		filters.author.trim() || filters.afterDate || filters.beforeDate,
+		filters.author.trim() ||
+			filters.scope.trim() ||
+			filters.afterDate ||
+			filters.beforeDate,
 	);
 }
 

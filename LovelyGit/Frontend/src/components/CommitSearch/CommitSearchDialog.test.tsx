@@ -131,6 +131,39 @@ describe("CommitSearchDialog", () => {
 						author: "Alice",
 						beforeUnixSeconds: 1719792000,
 						query: "",
+						scope: "",
+					}),
+				}),
+				undefined,
+			),
+		);
+	});
+
+	it("scopes a filter-only search to a branch or tag", async () => {
+		const user = userEvent.setup();
+		vi.mocked(sendRequestWithResponse).mockResolvedValue(searchResponse());
+		render(
+			<CommitSearchDialog
+				onOpenChange={vi.fn()}
+				onSelectCommit={vi.fn()}
+				open
+				repositoryId="repo"
+			/>,
+		);
+
+		await user.click(
+			screen.getByRole("button", { name: "Advanced commit filters" }),
+		);
+		fireEvent.input(screen.getByLabelText("Limit search to branch or tag"), {
+			target: { value: "origin/release" },
+		});
+
+		await waitFor(() =>
+			expect(sendRequestWithResponse).toHaveBeenCalledWith(
+				expect.objectContaining({
+					arguments: expect.objectContaining({
+						query: "",
+						scope: "origin/release",
 					}),
 				}),
 				undefined,

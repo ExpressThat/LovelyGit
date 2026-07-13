@@ -24,6 +24,7 @@ export function useCommitSearch(
 	const [isLoading, setIsLoading] = useState(false);
 	const normalizedQuery = query.trim();
 	const normalizedAuthor = filters.author.trim();
+	const normalizedScope = filters.scope.trim();
 	const boundaries = toSearchBoundaries(filters);
 	const canSearch =
 		(normalizedQuery.length >= MINIMUM_QUERY_LENGTH ||
@@ -54,6 +55,7 @@ export function useCommitSearch(
 						knownRepositoryId: repositoryId,
 						limit: 50,
 						query: normalizedQuery,
+						scope: normalizedScope,
 					},
 					commandType: "SearchCommits",
 				},
@@ -89,6 +91,7 @@ export function useCommitSearch(
 		enabled,
 		normalizedAuthor,
 		normalizedQuery,
+		normalizedScope,
 		repositoryId,
 	]);
 

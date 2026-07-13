@@ -38,6 +38,7 @@ public sealed class CommitSearchRequestValidatorTests
         new() { Author = "Al" },
         new() { AfterUnixSeconds = 10 },
         new() { BeforeUnixSeconds = 20 },
+        new() { Scope = "main" },
         new() { AfterUnixSeconds = 10, BeforeUnixSeconds = 20 },
     };
 }

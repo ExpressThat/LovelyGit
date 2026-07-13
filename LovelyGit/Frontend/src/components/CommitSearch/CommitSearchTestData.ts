@@ -28,6 +28,7 @@ export function searchResponse(
 		isPartial: false,
 		matchingCommitCount: results.length,
 		query: "needle",
+		scope: "",
 		results,
 		scannedCommitCount: 42,
 	};

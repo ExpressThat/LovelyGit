@@ -12,6 +12,7 @@ describe("commit search filters", () => {
 				afterDate: "2024-06-01",
 				author: "",
 				beforeDate: "2024-06-30",
+				scope: "",
 			}),
 		).toEqual({
 			afterUnixSeconds: 1717200000,
@@ -21,13 +22,19 @@ describe("commit search filters", () => {
 
 	it("recognizes filter-only searches and invalid reversed ranges", () => {
 		expect(
-			hasCommitSearchFilter({ author: "Alice", afterDate: "", beforeDate: "" }),
+			hasCommitSearchFilter({
+				author: "Alice",
+				afterDate: "",
+				beforeDate: "",
+				scope: "",
+			}),
 		).toBe(true);
 		expect(
 			isCommitSearchDateRangeValid({
 				afterDate: "2024-07-02",
 				author: "",
 				beforeDate: "2024-07-01",
+				scope: "",
 			}),
 		).toBe(false);
 	});

@@ -30,6 +30,7 @@ describe("useCommitSearch", () => {
 					knownRepositoryId: "repo",
 					limit: 50,
 					query: "needle",
+					scope: "",
 				},
 				commandType: "SearchCommits",
 			},
@@ -53,6 +54,7 @@ describe("useCommitSearch", () => {
 				afterDate: "2025-02-02",
 				author: "",
 				beforeDate: "2025-02-01",
+				scope: "",
 			}),
 		);
 

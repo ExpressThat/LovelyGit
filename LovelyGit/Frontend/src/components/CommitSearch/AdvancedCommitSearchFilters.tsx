@@ -1,5 +1,5 @@
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { UserRound, X } from "@/components/icons/lovelyIcons";
+import { GitBranch, UserRound, X } from "@/components/icons/lovelyIcons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { CommitSearchFilters as Filters } from "./commitSearchFilters";
@@ -18,6 +18,7 @@ export function AdvancedCommitSearchFilters({
 	const reduceMotion = useReducedMotion();
 	const updateAuthor = (value: string) =>
 		onChange({ ...filters, author: value });
+	const updateScope = (value: string) => onChange({ ...filters, scope: value });
 	return (
 		<AnimatePresence initial={false}>
 			{open ? (
@@ -28,7 +29,7 @@ export function AdvancedCommitSearchFilters({
 					initial={{ height: 0, opacity: 0 }}
 					transition={{ duration: reduceMotion ? 0 : 0.16 }}
 				>
-					<div className="grid grid-cols-[minmax(0,1.3fr)_1fr_1fr_auto] items-end gap-2 p-3">
+					<div className="grid grid-cols-[1fr_1fr_auto] items-end gap-2 p-3">
 						<label
 							className="grid gap-1 text-muted-foreground text-xs"
 							htmlFor="commit-search-author"
@@ -46,6 +47,32 @@ export function AdvancedCommitSearchFilters({
 								value={filters.author}
 							/>
 						</label>
+						<label
+							className="grid gap-1 text-muted-foreground text-xs"
+							htmlFor="commit-search-scope"
+						>
+							<span className="flex items-center gap-1">
+								<GitBranch aria-hidden="true" className="size-3" /> Branch or
+								tag
+							</span>
+							<Input
+								aria-label="Limit search to branch or tag"
+								className="h-8"
+								id="commit-search-scope"
+								onChange={(event) => updateScope(event.currentTarget.value)}
+								onInput={(event) => updateScope(event.currentTarget.value)}
+								placeholder="main, origin/main, or v1.0"
+								value={filters.scope}
+							/>
+						</label>
+						<Button
+							aria-label="Clear search filters"
+							onClick={onClear}
+							size="icon-sm"
+							variant="ghost"
+						>
+							<X aria-hidden="true" />
+						</Button>
 						<DateFilter
 							label="From"
 							name="afterDate"
@@ -56,14 +83,7 @@ export function AdvancedCommitSearchFilters({
 							name="beforeDate"
 							{...{ filters, onChange }}
 						/>
-						<Button
-							aria-label="Clear search filters"
-							onClick={onClear}
-							size="icon-sm"
-							variant="ghost"
-						>
-							<X aria-hidden="true" />
-						</Button>
+						<div aria-hidden="true" />
 					</div>
 				</motion.div>
 			) : null}
