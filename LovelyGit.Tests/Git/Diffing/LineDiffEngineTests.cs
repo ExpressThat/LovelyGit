@@ -138,7 +138,7 @@ public sealed class LineDiffEngineTests
     [Fact]
     public void ChangeSpans_UseTheSameEngineForCharacterChanges()
     {
-        var row = new LineDiffRow(0, 0, IsChanged: true);
+        var row = new LineDiffRow(0, 0, isChanged: true);
 
         var spans = LineDiffRendering.ChangeSpans("hello world", "hello LovelyGit", row);
 

@@ -54,7 +54,7 @@ public sealed class ConflictPreparationPerformanceTests(ITestOutputHelper output
         _ = ConflictHunkBuilder.BuildLineModel(fixture.Base, fixture.Current);
         var lineDiff = Measure(() => ConflictHunkBuilder.BuildLineModel(fixture.Base, fixture.Current));
         output.WriteLine($"Line diff: {lineDiff.Elapsed.TotalMilliseconds:N1} ms, {lineDiff.Allocated:N0} bytes");
-        Assert.True(lineDiff.Allocated < 1_000_000, $"Line diff allocated {lineDiff.Allocated:N0} bytes.");
+        Assert.True(lineDiff.Allocated < 875_000, $"Line diff allocated {lineDiff.Allocated:N0} bytes.");
     }
 
     [Fact]

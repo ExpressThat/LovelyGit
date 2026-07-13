@@ -78,7 +78,7 @@ internal static class LineDiffEngine
                 rows.Add(new(
                     offset < edit.OldCount ? edit.OldStart + offset : null,
                     offset < edit.NewCount ? edit.NewStart + offset : null,
-                    IsChanged: true));
+                    isChanged: true));
             }
             oldIndex = edit.OldStart + edit.OldCount;
             newIndex = edit.NewStart + edit.NewCount;
@@ -95,7 +95,7 @@ internal static class LineDiffEngine
         int newEnd)
     {
         while (oldIndex < oldEnd && newIndex < newEnd)
-            rows.Add(new(oldIndex++, newIndex++, IsChanged: false));
+            rows.Add(new(oldIndex++, newIndex++, isChanged: false));
     }
 }
 
@@ -111,4 +111,31 @@ internal sealed record LineDiffModel(
 }
 
 internal readonly record struct LineDiffBlock(int OldStart, int NewStart, int OldCount, int NewCount);
-internal readonly record struct LineDiffRow(int? OldIndex, int? NewIndex, bool IsChanged);
+internal readonly record struct LineDiffRow
+{
+    private const int MissingIndex = int.MaxValue;
+    private const uint ChangedMask = 1u << 31;
+    private const uint IndexMask = ChangedMask - 1;
+
+    private readonly int oldIndex;
+    private readonly uint newIndexAndFlags;
+
+    public LineDiffRow(int? oldIndex, int? newIndex, bool isChanged)
+    {
+        this.oldIndex = oldIndex ?? MissingIndex;
+        newIndexAndFlags = (uint)(newIndex ?? MissingIndex);
+        if (isChanged) newIndexAndFlags |= ChangedMask;
+    }
+
+    public int? OldIndex => oldIndex == MissingIndex ? null : oldIndex;
+    public int? NewIndex
+    {
+        get
+        {
+            var value = newIndexAndFlags & IndexMask;
+            return value == MissingIndex ? null : (int)value;
+        }
+    }
+
+    public bool IsChanged => (newIndexAndFlags & ChangedMask) != 0;
+}
