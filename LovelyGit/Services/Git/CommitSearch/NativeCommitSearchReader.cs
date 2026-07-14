@@ -7,6 +7,7 @@ namespace ExpressThat.LovelyGit.Services.Git.CommitSearch;
 internal static partial class NativeCommitSearchReader
 {
     public const int DefaultMaximumCommits = 100_000;
+    public const int DefaultResponsiveMatchScanCount = 64;
     public const int DefaultResultLimit = 50;
     public static readonly TimeSpan DefaultMaximumDuration = TimeSpan.FromMilliseconds(1_500);
     public const int DeepMaximumCommits = 500_000;
@@ -23,7 +24,8 @@ internal static partial class NativeCommitSearchReader
         int limit,
         int maximumCommits,
         TimeSpan maximumDuration,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        int? responsiveMatchScanCount = null)
     {
         var normalizedQuery = query.Trim();
         var normalizedAuthor = author.Trim();
@@ -149,6 +151,13 @@ internal static partial class NativeCommitSearchReader
                     var parent = header.GetParentHash(index);
                     if (seen.Add(parent)) otherHistory.Enqueue(parent);
                 }
+            }
+
+            if (matchingCount > 0
+                && responsiveMatchScanCount is > 0
+                && scannedCount >= responsiveMatchScanCount.Value)
+            {
+                break;
             }
         }
 

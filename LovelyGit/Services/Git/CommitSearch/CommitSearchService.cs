@@ -41,7 +41,9 @@ internal sealed class CommitSearchService : IDisposable
                 deep
                     ? NativeCommitSearchReader.DeepMaximumDuration
                     : NativeCommitSearchReader.DefaultMaximumDuration,
-                source.Token).ConfigureAwait(false);
+                source.Token,
+                deep ? null : NativeCommitSearchReader.DefaultResponsiveMatchScanCount)
+                .ConfigureAwait(false);
         }
         finally
         {
