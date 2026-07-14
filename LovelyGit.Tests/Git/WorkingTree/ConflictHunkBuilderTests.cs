@@ -51,6 +51,20 @@ public sealed class ConflictHunkBuilderTests
         Assert.Equal(2, hunk.BaseStartLine);
     }
 
+    [Fact]
+    public void Build_LocatesAnEmptyCandidateAfterRepeatedContext()
+    {
+        var hunk = Assert.Single(ConflictHunkBuilder.Build(
+            "repeat\nremoved one\nmiddle\nrepeat\nremoved two\nafter\n",
+            "repeat\nremoved one\nmiddle\nrepeat\nafter\n",
+            "repeat\nremoved one\nmiddle\nrepeat\nincoming\nafter\n",
+            "repeat\nremoved one\nmiddle\nrepeat\n<<<<<<< HEAD\n=======\nincoming\n>>>>>>> feature\nafter\n"));
+
+        Assert.Equal(5, hunk.CurrentStartLine);
+        Assert.Equal(0, hunk.CurrentLineCount);
+        Assert.Equal(5, hunk.IncomingStartLine);
+    }
+
     [Theory]
     [InlineData("one\r\ntwo\r\n", 2)]
     [InlineData("one\ntwo", 2)]

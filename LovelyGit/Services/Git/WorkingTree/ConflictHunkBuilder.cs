@@ -29,8 +29,8 @@ internal static class ConflictHunkBuilder
         var hunks = new List<ConflictHunk>(parsed.Count);
         foreach (var conflict in parsed)
         {
-            var currentStart = Locate(currentLines, conflict.Current, conflict.PreviousCommon, currentCursor);
-            var incomingStart = Locate(incomingLines, conflict.Incoming, conflict.PreviousCommon, incomingCursor);
+            var currentStart = Locate(currentLines, conflict.Current, resultText, conflict, currentCursor);
+            var incomingStart = Locate(incomingLines, conflict.Incoming, resultText, conflict, incomingCursor);
             var baseRange = ConflictHunkRangeMapper.Union(
                 ConflictHunkRangeMapper.Map(currentDiff, currentStart, conflict.Current.Count),
                 ConflictHunkRangeMapper.Map(incomingDiff, incomingStart, conflict.Incoming.Count));
@@ -74,62 +74,59 @@ internal static class ConflictHunkBuilder
 
     private static List<ParsedConflict> Parse(string text)
     {
-        var lines = SplitLines(text);
         var conflicts = new List<ParsedConflict>();
-        var common = new List<string>();
-        for (var index = 0; index < lines.Count; index++)
+        var commonStart = 0;
+        var searchStart = 0;
+        while (searchStart < text.Length)
         {
-            if (!lines[index].StartsWith("<<<<<<<", StringComparison.Ordinal))
+            var openingStart = FindMarker(text, "<<<<<<<", searchStart);
+            if (openingStart < 0) break;
+            var parsed = ReadConflict(text, openingStart, commonStart, conflicts.Count);
+            if (parsed is null)
             {
-                common.Add(lines[index]);
+                searchStart = LineEnd(text, openingStart);
                 continue;
             }
-
-            var current = new List<string>();
-            var incoming = new List<string>();
-            var target = current;
-            var foundSeparator = false;
-            var end = index + 1;
-            for (; end < lines.Count; end++)
-            {
-                var line = lines[end];
-                if (line.StartsWith("|||||||", StringComparison.Ordinal))
-                {
-                    target = new List<string>();
-                }
-                else if (line.StartsWith("=======", StringComparison.Ordinal))
-                {
-                    target = incoming;
-                    foundSeparator = true;
-                }
-                else if (line.StartsWith(">>>>>>>", StringComparison.Ordinal))
-                {
-                    break;
-                }
-                else
-                {
-                    target.Add(line);
-                }
-            }
-
-            if (!foundSeparator || end >= lines.Count)
-            {
-                common.Add(lines[index]);
-                continue;
-            }
-
-            conflicts.Add(new ParsedConflict(conflicts.Count, common.ToArray(), current, incoming));
-            common.Clear();
-            index = end;
+            conflicts.Add(parsed);
+            commonStart = parsed.End;
+            searchStart = parsed.End;
         }
-
         return conflicts;
+    }
+
+    private static ParsedConflict? ReadConflict(string text, int start, int commonStart, int id)
+    {
+        var current = new List<string>();
+        var incoming = new List<string>();
+        List<string>? target = current;
+        var foundSeparator = false;
+        var cursor = LineEnd(text, start);
+        while (cursor < text.Length)
+        {
+            var end = LineEnd(text, cursor);
+            if (text.AsSpan(cursor).StartsWith("|||||||", StringComparison.Ordinal)) target = null;
+            else if (text.AsSpan(cursor).StartsWith("=======", StringComparison.Ordinal))
+            {
+                target = incoming;
+                foundSeparator = true;
+            }
+            else if (text.AsSpan(cursor).StartsWith(">>>>>>>", StringComparison.Ordinal))
+            {
+                return foundSeparator
+                    ? new ParsedConflict(id, commonStart, start, current, incoming, end)
+                    : null;
+            }
+            else if (target is not null) target.Add(ReadLine(text, cursor, end));
+            cursor = end;
+        }
+        return null;
     }
 
     private static int Locate(
         IReadOnlyList<string> source,
         IReadOnlyList<string> target,
-        IReadOnlyList<string> previousCommon,
+        string resultText,
+        ParsedConflict conflict,
         int cursor)
     {
         if (target.Count > 0)
@@ -138,15 +135,20 @@ internal static class ConflictHunkBuilder
             return found >= 0 ? found : cursor;
         }
 
-        for (var commonIndex = previousCommon.Count - 1; commonIndex >= 0; commonIndex--)
+        var commonEnd = conflict.CommonEnd;
+        while (commonEnd > conflict.CommonStart)
         {
+            if (resultText[commonEnd - 1] == '\n') commonEnd--;
+            if (commonEnd > conflict.CommonStart && resultText[commonEnd - 1] == '\r') commonEnd--;
+            var commonLineStart = commonEnd;
+            while (commonLineStart > conflict.CommonStart &&
+                   resultText[commonLineStart - 1] is not ('\r' or '\n')) commonLineStart--;
+            var commonLine = resultText.AsSpan(commonLineStart, commonEnd - commonLineStart);
             for (var sourceIndex = source.Count - 1; sourceIndex >= cursor; sourceIndex--)
             {
-                if (string.Equals(previousCommon[commonIndex], source[sourceIndex], StringComparison.Ordinal))
-                {
-                    return sourceIndex + 1;
-                }
+                if (commonLine.SequenceEqual(source[sourceIndex])) return sourceIndex + 1;
             }
+            commonEnd = commonLineStart;
         }
 
         return cursor;
@@ -178,10 +180,37 @@ internal static class ConflictHunkBuilder
         return -1;
     }
 
+    private static int FindMarker(string text, string marker, int start)
+    {
+        var index = text.IndexOf(marker, start, StringComparison.Ordinal);
+        while (index >= 0)
+        {
+            if (index == 0 || text[index - 1] == '\n') return index;
+            index = text.IndexOf(marker, index + 1, StringComparison.Ordinal);
+        }
+        return -1;
+    }
+
+    private static int LineEnd(string text, int start)
+    {
+        var newline = text.IndexOf('\n', start);
+        return newline < 0 ? text.Length : newline + 1;
+    }
+
+    private static string ReadLine(string text, int start, int end)
+    {
+        var contentEnd = end;
+        if (contentEnd > start && text[contentEnd - 1] == '\n') contentEnd--;
+        if (contentEnd > start && text[contentEnd - 1] == '\r') contentEnd--;
+        return text.Substring(start, contentEnd - start);
+    }
+
     private sealed record ParsedConflict(
         int Id,
-        IReadOnlyList<string> PreviousCommon,
+        int CommonStart,
+        int CommonEnd,
         IReadOnlyList<string> Current,
-        IReadOnlyList<string> Incoming);
+        IReadOnlyList<string> Incoming,
+        int End);
 
 }

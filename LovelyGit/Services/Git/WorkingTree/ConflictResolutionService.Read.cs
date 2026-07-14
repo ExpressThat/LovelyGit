@@ -100,6 +100,21 @@ internal sealed partial class ConflictResolutionService
             : null;
         readTrace.Mark("diff-models");
 
+        var hunks = canBuildTextMerge
+            ? ConflictHunkBuilder.Build(
+                result.Text!,
+                diffModels!.CurrentHunk,
+                diffModels.IncomingHunk)
+            : [];
+        readTrace.Mark("hunks");
+        var currentComparison = canBuildTextMerge
+            ? BuildBaseComparison(path, baseVersion.Text!, ours.Text!, diffModels!.CurrentComparison)
+            : null;
+        readTrace.Mark("current-comparison");
+        var incomingComparison = canBuildTextMerge
+            ? BuildBaseComparison(path, baseVersion.Text!, theirs.Text!, diffModels!.IncomingComparison)
+            : null;
+        readTrace.Mark("incoming-comparison");
         var response = new ConflictResolutionResponse
         {
             Path = path,
@@ -110,25 +125,17 @@ internal sealed partial class ConflictResolutionService
             Result = result,
             CurrentSource = currentSource,
             IncomingSource = incomingSource,
-            Hunks = canBuildTextMerge
-                ? ConflictHunkBuilder.Build(
-                    result.Text!,
-                    diffModels!.CurrentHunk,
-                    diffModels.IncomingHunk)
-                : new List<ConflictHunk>(),
-            CurrentComparison = canBuildTextMerge
-                ? BuildBaseComparison(path, baseVersion.Text!, ours.Text!, diffModels!.CurrentComparison)
-                : null,
-            IncomingComparison = canBuildTextMerge
-                ? BuildBaseComparison(path, baseVersion.Text!, theirs.Text!, diffModels!.IncomingComparison)
-                : null,
+            Hunks = hunks,
+            CurrentComparison = currentComparison,
+            IncomingComparison = incomingComparison,
         };
-        readTrace.Mark("hunks-and-rendering");
         var retainedSources = ConflictTextPayloadBuilder.RetainSources(response);
+        readTrace.Mark("retain-sources");
         ConflictComparisonPayloadBuilder.Compact(response.CurrentComparison);
         ConflictComparisonPayloadBuilder.Compact(response.IncomingComparison);
+        readTrace.Mark("compact-comparisons");
         ConflictTextPayloadBuilder.Compact(response);
-        readTrace.Mark("payload-compaction");
+        readTrace.Mark("compact-text");
         _responseCache.Set(
             repositoryPath,
             path,
