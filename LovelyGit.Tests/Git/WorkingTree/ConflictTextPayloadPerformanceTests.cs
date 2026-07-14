@@ -8,6 +8,7 @@ using Xunit.Abstractions;
 
 namespace LovelyGit.Tests.Git.WorkingTree;
 
+[Collection(PerformanceTestCollection.Name)]
 public sealed class ConflictTextPayloadPerformanceTests(ITestOutputHelper output)
 {
     [Fact]

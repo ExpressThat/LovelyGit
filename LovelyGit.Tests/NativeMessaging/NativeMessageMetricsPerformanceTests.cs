@@ -4,6 +4,7 @@ using Xunit.Abstractions;
 
 namespace LovelyGit.Tests.NativeMessaging;
 
+[Collection(PerformanceTestCollection.Name)]
 public sealed class NativeMessageMetricsPerformanceTests
 {
     private const int Iterations = 1_000;

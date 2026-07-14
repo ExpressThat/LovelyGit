@@ -113,9 +113,9 @@ internal static class WorkingTreePreliminaryIndexReader
 
     private static string ReadVersion4Path(PooledSequentialReader reader, string previousPath)
     {
-        var prefixLength = ReadIndexVarInt(reader);
+        var removeLength = ReadIndexVarInt(reader);
         var suffix = ReadNulTerminatedString(reader);
-        return string.Concat(previousPath.AsSpan(0, prefixLength), suffix);
+        return GitIndexPathCompression.Restore(previousPath, removeLength, suffix);
     }
 
     private static int ReadRootNameAndSkipPaddedPath(

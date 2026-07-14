@@ -156,10 +156,10 @@ internal sealed partial class ConflictResolutionService
         CancellationToken cancellationToken)
     {
         var entries = await new GitIndexReader()
-            .ReadAsync(repository.GitDirectory, repository.ObjectFormat, cancellationToken)
+            .ReadEntriesForPathAsync(repository.GitDirectory, repository.ObjectFormat, path, cancellationToken)
             .ConfigureAwait(false);
         var conflict = entries
-            .Where(entry => entry.Path == path && entry.Stage is >= 1 and <= 3)
+            .Where(entry => entry.Stage is >= 1 and <= 3)
             .ToDictionary(entry => entry.Stage);
         if (conflict.Count == 0)
         {

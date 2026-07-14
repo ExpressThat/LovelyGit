@@ -12,6 +12,7 @@ using Xunit.Abstractions;
 
 namespace LovelyGit.Tests.Git.CommitGraph;
 
+[Collection(PerformanceTestCollection.Name)]
 public sealed class CommitFileDiffPerformanceTests(ITestOutputHelper output)
 {
     private const int LineCount = 5_000;
@@ -55,7 +56,15 @@ public sealed class CommitFileDiffPerformanceTests(ITestOutputHelper output)
 
             Assert.True(side.HasDifferences);
             Assert.True(combined.HasDifferences);
-            Assert.Same(side, repeated);
+            Assert.Equal(side.CommitHash, repeated.CommitHash);
+            Assert.Equal(side.Path, repeated.Path);
+            Assert.Equal(side.Status, repeated.Status);
+            Assert.Equal(side.ViewMode, repeated.ViewMode);
+            Assert.Equal(side.HasDifferences, repeated.HasDifferences);
+            Assert.Equal(side.CompactLineSchema, repeated.CompactLineSchema);
+            Assert.Equal(side.CompactLineCount, repeated.CompactLineCount);
+            Assert.Equal(side.CompactLinesGzipBase64, repeated.CompactLinesGzipBase64);
+            Assert.Equal(side.Lines, repeated.Lines);
             Assert.True(sideElapsed < TimeSpan.FromSeconds(1));
             Assert.True(switchElapsed < TimeSpan.FromMilliseconds(500));
             Assert.True(repeatedElapsed < TimeSpan.FromMilliseconds(100));

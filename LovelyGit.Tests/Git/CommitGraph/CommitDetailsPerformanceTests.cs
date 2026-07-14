@@ -13,6 +13,7 @@ using Xunit.Abstractions;
 
 namespace LovelyGit.Tests.Git.CommitGraph;
 
+[Collection(PerformanceTestCollection.Name)]
 public sealed class CommitDetailsPerformanceTests(ITestOutputHelper output)
 {
     private const int FileCount = 2_000;

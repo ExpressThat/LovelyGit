@@ -4,6 +4,7 @@ using Xunit.Abstractions;
 
 namespace LovelyGit.Tests.Git.Diffing;
 
+[Collection(PerformanceTestCollection.Name)]
 public sealed class LineDiffStreamingPerformanceTests(ITestOutputHelper output)
 {
     [Fact]

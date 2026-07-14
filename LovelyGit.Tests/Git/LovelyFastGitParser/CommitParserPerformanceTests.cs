@@ -5,6 +5,7 @@ using Xunit.Abstractions;
 
 namespace LovelyGit.Tests.Git.LovelyFastGitParser;
 
+[Collection(PerformanceTestCollection.Name)]
 public sealed class CommitParserPerformanceTests
 {
     private const int Iterations = 200_000;

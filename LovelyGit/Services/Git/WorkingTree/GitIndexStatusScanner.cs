@@ -138,7 +138,7 @@ internal sealed partial class GitIndexStatusScanner
 
     private static string ReadVersion4Path(byte[] bytes, ref int offset, string previousPath)
     {
-        var prefixLength = ReadIndexVarInt(bytes, ref offset);
+        var removeLength = ReadIndexVarInt(bytes, ref offset);
         var end = Array.IndexOf(bytes, (byte)0, offset);
         if (end < 0)
         {
@@ -147,7 +147,7 @@ internal sealed partial class GitIndexStatusScanner
 
         var suffix = Encoding.UTF8.GetString(bytes, offset, end - offset);
         offset = end + 1;
-        return string.Concat(previousPath.AsSpan(0, prefixLength), suffix);
+        return GitIndexPathCompression.Restore(previousPath, removeLength, suffix);
     }
 
     private static string ReadPaddedPath(byte[] bytes, ref int offset, int entryStart, ushort flags)

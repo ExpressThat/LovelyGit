@@ -88,14 +88,19 @@ public sealed class CommitDetailsPersistenceTests
         var first = await ReadInteractiveAsync(service, fixture);
         var retry = first;
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(2));
-        while (Volatile.Read(ref saveCount) < 2)
+        while (ReferenceEquals(first, retry))
         {
             await Task.Delay(1, timeout.Token);
             retry = await ReadInteractiveAsync(service, fixture);
         }
+        while (Volatile.Read(ref saveCount) < 2)
+        {
+            await Task.Delay(1, timeout.Token);
+        }
 
         Assert.Single(first.ChangedFiles);
         Assert.Single(retry.ChangedFiles);
+        Assert.NotSame(first, retry);
         Assert.Equal(2, Volatile.Read(ref saveCount));
     }
 

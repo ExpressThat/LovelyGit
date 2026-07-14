@@ -85,7 +85,7 @@ internal sealed partial class GitIndexReader
             string path;
             if (version == 4)
             {
-                var prefixLength = ReadIndexVarInt(bytes, ref offset);
+                var removeLength = ReadIndexVarInt(bytes, ref offset);
                 var end = Array.IndexOf(bytes, (byte)0, offset);
                 if (end < 0)
                 {
@@ -94,7 +94,7 @@ internal sealed partial class GitIndexReader
 
                 var suffix = Encoding.UTF8.GetString(bytes, offset, end - offset);
                 offset = end + 1;
-                path = string.Concat(previousPath.AsSpan(0, prefixLength), suffix);
+                path = GitIndexPathCompression.Restore(previousPath, removeLength, suffix);
             }
             else
             {
