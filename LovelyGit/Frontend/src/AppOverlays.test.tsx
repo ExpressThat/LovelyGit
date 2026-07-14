@@ -30,6 +30,10 @@ vi.mock("./components/Settings/SettingsDialog", () => ({
 	SettingsDialog: ({ open }: { open?: boolean }) =>
 		open ? <div>Settings loaded</div> : null,
 }));
+vi.mock("./components/CommandPalette/CommandPalette", () => ({
+	CommandPalette: ({ open }: { open: boolean }) =>
+		open ? <div>Command palette loaded</div> : null,
+}));
 vi.mock("./components/ui/sonner", () => ({ Toaster: () => null }));
 
 const defaultProps = {
@@ -81,5 +85,15 @@ describe("AppOverlays", () => {
 
 		view.rerender(<AppOverlays {...defaultProps} />);
 		expect(await screen.findByText("Search loaded: false")).toBeVisible();
+	});
+
+	it("loads the primary command palette only when requested", async () => {
+		const view = render(<AppOverlays {...defaultProps} />);
+		expect(
+			screen.queryByText("Command palette loaded"),
+		).not.toBeInTheDocument();
+
+		view.rerender(<AppOverlays {...defaultProps} isCommandPaletteOpen />);
+		expect(await screen.findByText("Command palette loaded")).toBeVisible();
 	});
 });

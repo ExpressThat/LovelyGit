@@ -1,5 +1,9 @@
 import { lazy, Suspense } from "react";
 import { SurfaceLoading } from "./AppLazySurfaces";
+import {
+	PrimaryCommandPalette,
+	PrimarySettingsDialog,
+} from "./AppPrimaryOverlays";
 import type { FileBlameTarget } from "./components/FileBlame/FileBlameDialog";
 import type { FileHistoryTarget } from "./components/FileHistory/FileHistoryDialog";
 import {
@@ -24,19 +28,9 @@ const FileBlameDialog = lazy(() =>
 		default: module.FileBlameDialog,
 	})),
 );
-const CommandPalette = lazy(() =>
-	import("./components/CommandPalette/CommandPalette").then((module) => ({
-		default: module.CommandPalette,
-	})),
-);
 const StashDialog = lazy(() =>
 	import("./components/WorkingChanges/StashDialog").then((module) => ({
 		default: module.StashDialog,
-	})),
-);
-const SettingsDialog = lazy(() =>
-	import("./components/Settings/SettingsDialog").then((module) => ({
-		default: module.SettingsDialog,
 	})),
 );
 
@@ -116,7 +110,7 @@ export function AppOverlays({
 			/>
 			<Suspense fallback={<SurfaceLoading label="Opening tool" overlay />}>
 				{retainSettings ? (
-					<SettingsDialog
+					<PrimarySettingsDialog
 						onOpenChange={onSettingsOpenChange}
 						open={settingsOpen}
 						showTrigger={false}
@@ -133,7 +127,7 @@ export function AppOverlays({
 					/>
 				) : null}
 				{retainPalette ? (
-					<CommandPalette
+					<PrimaryCommandPalette
 						onCreateBranch={() => onCreateBranchOpenChange(true)}
 						onManageRemotes={() => onRemoteManagerOpenChange(true)}
 						onManageStashes={() => onStashOpenChange(true)}
