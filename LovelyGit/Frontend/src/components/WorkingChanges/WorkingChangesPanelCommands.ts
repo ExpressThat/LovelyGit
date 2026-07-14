@@ -100,6 +100,7 @@ export async function runIndexCommand({
 		indexUpdated = true;
 		setSelectedKeys(new Set());
 		await onRefresh();
+		setOptimisticChanges(null);
 	} catch (error) {
 		if (!indexUpdated) {
 			setOptimisticChanges(null);

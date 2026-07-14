@@ -42,8 +42,7 @@ export function WorkingChangesPanel({
 	const [optimisticView, setOptimisticView] =
 		useState<OptimisticWorkingTreeView | null>(null);
 	const optimisticChanges =
-		optimisticView?.repositoryId === repositoryId &&
-		optimisticView.source === changes
+		optimisticView?.repositoryId === repositoryId
 			? optimisticView.changes
 			: null;
 	const setOptimisticChanges = (
@@ -51,7 +50,7 @@ export function WorkingChangesPanel({
 	) =>
 		setOptimisticView(
 			nextChanges
-				? { changes: nextChanges, repositoryId, source: changes }
+				? { changes: nextChanges, repositoryId }
 				: null,
 		);
 	const visibleChanges = optimisticChanges ??
@@ -192,5 +191,4 @@ export function WorkingChangesPanel({
 type OptimisticWorkingTreeView = {
 	changes: WorkingTreeChangesResponse;
 	repositoryId: string;
-	source: WorkingTreeChangesResponse | null;
 };

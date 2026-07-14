@@ -47,6 +47,7 @@ describe("working changes index commands", () => {
 		command.resolve(undefined);
 		await pending;
 		expect(harness.onRefresh).toHaveBeenCalledOnce();
+		expect(harness.setOptimisticChanges).toHaveBeenLastCalledWith(null);
 	});
 
 	it("rolls the preview back and permits retry when Git rejects the mutation", async () => {
