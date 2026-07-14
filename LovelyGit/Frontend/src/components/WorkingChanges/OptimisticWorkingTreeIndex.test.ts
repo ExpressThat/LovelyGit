@@ -73,6 +73,32 @@ describe("optimistic working-tree index changes", () => {
 			changes,
 		);
 	});
+
+	it("keeps untouched large groups stable for a single-file stage", () => {
+		const staged = Array.from({ length: 20_000 }, (_, index) =>
+			file(
+				`staged/${index.toString().padStart(5, "0")}.ts`,
+				"Staged",
+				"Modified",
+			),
+		);
+		const untracked = [file("z-new.ts", "Untracked", "Added")];
+		const target = file("working/10000.ts", "Unstaged", "Modified");
+		const changes = response({ staged, unstaged: [target], untracked });
+
+		const next = applyOptimisticIndexMutation(
+			changes,
+			"stage",
+			[target],
+			false,
+		);
+
+		expect(next.untracked).toBe(untracked);
+		expect(next.unmerged).toBe(changes.unmerged);
+		expect(next.staged).toHaveLength(20_001);
+		expect(next.staged[20_000]?.path).toBe(target.path);
+		expect(next.unstaged).toEqual([]);
+	});
 });
 
 function response(
