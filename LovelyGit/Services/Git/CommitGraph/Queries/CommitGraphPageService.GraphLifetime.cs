@@ -7,6 +7,12 @@ internal sealed partial class CommitGraphPageService
         var work = new ActiveGraphCloseWork();
         lock (_cacheWorkLock)
         {
+            if (_activeRepositoryId == repositoryId)
+            {
+                work.Dispose();
+                return;
+            }
+
             CancelScheduledGraphCloseCore(repositoryId);
             _activeGraphCloseWork[repositoryId] = work;
             work.Task = CloseGraphAfterIdleAsync(

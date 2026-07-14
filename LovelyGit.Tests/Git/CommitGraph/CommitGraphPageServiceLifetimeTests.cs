@@ -8,6 +8,34 @@ namespace LovelyGit.Tests.Git.CommitGraph;
 public sealed class CommitGraphPageServiceLifetimeTests
 {
     [Fact]
+    public async Task IdleClose_KeepsTheVisibleRepositoryTraversalAlive()
+    {
+        using var repository = TemporaryGitRepository.Create();
+        var repositoryId = Guid.NewGuid();
+        var open = await CommitGraphManager.TryOpenAsync(
+            repository.Path,
+            repositoryId,
+            null!,
+            CancellationToken.None);
+        var graph = Assert.IsType<CommitGraphManager>(open.Graph);
+        using var service = CreateService(TimeSpan.FromMilliseconds(40));
+        var activeGraphs = GetActiveGraphs(service);
+        var cacheWorkLock = GetCacheWorkLock(service);
+        activeGraphs.Add(repositoryId, graph);
+        SetActiveRepository(service, repositoryId);
+
+        service.ScheduleGraphClose(repositoryId);
+        await Task.Delay(120);
+
+        Assert.True(ContainsGraph(cacheWorkLock, activeGraphs, repositoryId));
+        var page = await graph.GetCommitGraphPageAsync(
+            new CommitGraphCursorState(null, 0),
+            1,
+            CancellationToken.None);
+        Assert.Single(page.Response.Rows);
+    }
+
+    [Fact]
     public async Task IdleClose_CanBeCancelledAndEventuallyDisposesGraph()
     {
         using var repository = TemporaryGitRepository.Create();
@@ -63,6 +91,15 @@ public sealed class CommitGraphPageServiceLifetimeTests
             "_cacheWorkLock",
             BindingFlags.Instance | BindingFlags.NonPublic);
         return Assert.IsType<object>(field?.GetValue(service));
+    }
+
+    private static void SetActiveRepository(CommitGraphPageService service, Guid repositoryId)
+    {
+        var field = typeof(CommitGraphPageService).GetField(
+            "_activeRepositoryId",
+            BindingFlags.Instance | BindingFlags.NonPublic);
+        Assert.NotNull(field);
+        field.SetValue(service, repositoryId);
     }
 
     private static bool ContainsGraph(
