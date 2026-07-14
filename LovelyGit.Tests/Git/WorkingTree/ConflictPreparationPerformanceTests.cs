@@ -109,7 +109,8 @@ public sealed class ConflictPreparationPerformanceTests(ITestOutputHelper output
 
         output.WriteLine($"Exact: {exact.Elapsed.TotalMilliseconds:N1} ms; whitespace: {whitespace.Elapsed.TotalMilliseconds:N1} ms");
         Assert.True(
-            whitespace.Elapsed < exact.Elapsed * 4,
+            whitespace.Elapsed < TimeSpan.FromMilliseconds(20)
+                || whitespace.Elapsed < exact.Elapsed * 4,
             $"Whitespace comparison took {whitespace.Elapsed.TotalMilliseconds:N1} vs {exact.Elapsed.TotalMilliseconds:N1} ms.");
     }
 

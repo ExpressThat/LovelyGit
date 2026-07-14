@@ -24,7 +24,6 @@ internal sealed partial class GitIndexReader
         }
 
         var bytes = await ReadIndexBytesAsync(indexPath, cancellationToken).ConfigureAwait(false);
-        var length = bytes.Length;
         if (bytes.Length < 12 || !bytes.AsSpan(0, 4).SequenceEqual("DIRC"u8))
         {
             throw new InvalidDataException("Git index header is invalid.");
@@ -141,7 +140,6 @@ internal sealed partial class GitIndexReader
 
         var rootTreeId = TryReadCacheTreeRootId(bytes, offset, hashLength, objectFormat);
         bytes = [];
-        GitIndexMemory.ReleaseLargeBuffer(length);
         return new GitIndexSnapshot(entries, rootTreeId);
     }
 

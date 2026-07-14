@@ -64,14 +64,11 @@ public sealed class GitIndexReaderTests
             GitObjectFormat.Sha1,
             CancellationToken.None,
             includeTrackedChanges: false);
-        var roots = await new GitIndexRootTracker().ReadAsync(
-            gitDirectory, GitObjectFormat.Sha1, CancellationToken.None);
 
         Assert.Equal([1, 2, 3], entries.Select(entry => entry.Stage));
         Assert.Equal(objectIds, entries.Select(entry => entry.ObjectId.Value));
         Assert.Equal(["a.txt", "middle.txt", "middle.txt", "middle.txt", "z.txt"], snapshot.Select(entry => entry.Path));
         Assert.Equal("middle.txt", Assert.Single(status.Response.Unmerged).Path);
-        Assert.Equal(["a.txt", "middle.txt", "z.txt"], roots.RootTrackedFiles.Order());
         Assert.Equal(1, WorkingTreePreliminaryIndexReader.CountMissingRootEntries(
             Path.Combine(gitDirectory, "index"), ["a.txt", "missing.txt"], CancellationToken.None));
         Assert.Empty(await reader.ReadEntriesForPathAsync(

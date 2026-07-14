@@ -53,6 +53,29 @@ public sealed class WorkingTreeStatusListServiceTests
     }
 
     [Fact]
+    public async Task GetChangesAsync_ReturnsTrackedAndRootUntrackedChangesTogether()
+    {
+        using var directory = TemporaryDirectory.Create("lovelygit-status-mixed-");
+        await CreateInitialCommitAsync(directory.Path);
+        await File.WriteAllTextAsync(Path.Combine(directory.Path, "file.txt"), "changed content");
+        await File.WriteAllTextAsync(Path.Combine(directory.Path, "new.txt"), "new content");
+
+        var response = await new WorkingTreeStatusListService(new GitCliService())
+            .GetChangesAsync(directory.Path, CancellationToken.None);
+
+        AssertStatus(
+            Assert.Single(response.Unstaged),
+            "file.txt",
+            "Modified",
+            WorkingTreeChangeGroup.Unstaged);
+        AssertStatus(
+            Assert.Single(response.Untracked),
+            "new.txt",
+            "Added",
+            WorkingTreeChangeGroup.Untracked);
+    }
+
+    [Fact]
     public async Task GetChangesAsync_DoesNotReportNestedTrackedFilesAsUntracked()
     {
         using var directory = TemporaryDirectory.Create("lovelygit-status-");

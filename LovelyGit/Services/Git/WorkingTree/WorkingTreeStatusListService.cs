@@ -51,37 +51,6 @@ internal sealed partial class WorkingTreeStatusListService
 
         var objectFormat = await GitRepositoryDiscovery.ReadObjectFormatAsync(paths.GitDirectory, cancellationToken)
             .ConfigureAwait(false);
-        var rootTracking = await new GitIndexRootTracker()
-            .ReadAsync(paths.WorktreeGitDirectory, objectFormat, cancellationToken)
-            .ConfigureAwait(false);
-        var fastResponse = new WorkingTreeChangesResponse();
-        var rootUntracked = await FindUntrackedFilesAsync(
-                paths.WorkTreeDirectory,
-                paths.GitDirectory,
-                rootTracking.RootTrackedFiles,
-                rootTracking.RootTrackedDirectories,
-                cancellationToken,
-                scanTrackedDirectories: false)
-            .ConfigureAwait(false);
-        if (!rootUntracked.IsComplete)
-        {
-            return null;
-        }
-
-        fastResponse.Untracked.AddRange(rootUntracked.Files);
-        if (fastResponse.Untracked.Count > 0)
-        {
-            Sort(fastResponse.Untracked);
-            return fastResponse;
-        }
-
-        if (WorkingTreeStatusScanPolicy.ShouldUseCompleteFallbackForDeepUntrackedScan(
-                rootTracking.RootTrackedDirectories.Count,
-                rootTracking.TrackedEntryCount))
-        {
-            return null;
-        }
-
         var scanner = new GitIndexStatusScanner();
         var fullScan = await scanner
             .ScanAsync(
@@ -109,12 +78,15 @@ internal sealed partial class WorkingTreeStatusListService
                 fullScan.RootTrackedDirectories,
                 cancellationToken)
             .ConfigureAwait(false);
+        if (!untracked.IsComplete)
+        {
+            return null;
+        }
 
         var response = fullScan.Response;
         response.Untracked.AddRange(untracked.Files);
         fullScan.RootTrackedFiles.Clear();
         fullScan.RootTrackedDirectories.Clear();
-        GitIndexMemory.ReleaseLargeAllocations();
         Sort(response.Unstaged);
         Sort(response.Untracked);
         Sort(response.Unmerged);

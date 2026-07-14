@@ -101,12 +101,6 @@ public sealed class WorkingTreeWatcherServicePolicyTests
     }
 
     [Fact]
-    public void ReleaseLargeBuffer_DoesNotThrowForLargeIndex()
-    {
-        GitIndexMemory.ReleaseLargeBuffer(32 * 1024 * 1024);
-    }
-
-    [Fact]
     public async Task SwitchActiveRepository_DoesNotPublishSyntheticInvalidation()
     {
         using var repository = TemporaryDirectory.Create("lovelygit-watch-switch-");

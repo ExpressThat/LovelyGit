@@ -22,7 +22,6 @@ internal sealed partial class GitIndexStatusScanner
         }
 
         var bytes = await File.ReadAllBytesAsync(indexPath, cancellationToken).ConfigureAwait(false);
-        var length = bytes.Length;
         var result = Scan(
             bytes,
             workTreeDirectory,
@@ -31,7 +30,6 @@ internal sealed partial class GitIndexStatusScanner
             includeTrackedChanges,
             collectRootTracking);
         bytes = [];
-        GitIndexMemory.ReleaseLargeBuffer(length);
         return result;
     }
 
