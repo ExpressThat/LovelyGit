@@ -199,7 +199,10 @@ function App() {
 										? workingTreeChanges.message
 										: null
 								}
-								isLoading={workingTreeChanges.status === "loading"}
+								isLoading={
+									workingTreeChanges.status === "loading" ||
+									workingTreeChanges.isReloading
+								}
 								onRefresh={() => {
 									return workingTreeChanges.reload();
 								}}

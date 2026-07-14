@@ -41,8 +41,11 @@ export function WorkingChangesHeader({
 				{actions}
 				<button
 					aria-label="Refresh working changes"
-					className="inline-flex size-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-					onClick={onRefresh}
+					className="inline-flex size-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground disabled:pointer-events-none disabled:opacity-50"
+					disabled={isLoading}
+					onClick={() => {
+						void Promise.resolve(onRefresh()).catch(() => undefined);
+					}}
 					type="button"
 				>
 					<RefreshCw
