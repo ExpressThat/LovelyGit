@@ -2,14 +2,14 @@
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
-	overlayExitRetentionMs,
+	overlayIdleRetentionMs,
 	useRetainedSurface,
 } from "./useRetainedSurface";
 
 describe("useRetainedSurface", () => {
 	afterEach(() => vi.useRealTimers());
 
-	it("releases a closed surface after its exit animation", () => {
+	it("releases a closed surface after its idle retention window", () => {
 		vi.useFakeTimers();
 		const { result, rerender } = renderHook(
 			({ active }) => useRetainedSurface(active),
@@ -21,7 +21,7 @@ describe("useRetainedSurface", () => {
 		rerender({ active: false });
 		expect(result.current).toBe(true);
 
-		act(() => vi.advanceTimersByTime(overlayExitRetentionMs - 1));
+		act(() => vi.advanceTimersByTime(overlayIdleRetentionMs - 1));
 		expect(result.current).toBe(true);
 		act(() => vi.advanceTimersByTime(1));
 		expect(result.current).toBe(false);
@@ -35,7 +35,7 @@ describe("useRetainedSurface", () => {
 		);
 
 		rerender({ active: false });
-		act(() => vi.advanceTimersByTime(overlayExitRetentionMs - 1));
+		act(() => vi.advanceTimersByTime(overlayIdleRetentionMs - 1));
 		rerender({ active: true });
 		act(() => vi.advanceTimersByTime(1));
 

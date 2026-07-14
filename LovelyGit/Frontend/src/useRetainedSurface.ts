@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-export const overlayExitRetentionMs = 300;
+export const overlayIdleRetentionMs = 30_000;
 
 export function useRetainedSurface(active: boolean) {
 	const [retained, setRetained] = useState(active);
@@ -12,7 +12,7 @@ export function useRetainedSurface(active: boolean) {
 		if (!retained) return;
 		const release = window.setTimeout(
 			() => setRetained(false),
-			overlayExitRetentionMs,
+			overlayIdleRetentionMs,
 		);
 		return () => window.clearTimeout(release);
 	}, [active, retained]);
