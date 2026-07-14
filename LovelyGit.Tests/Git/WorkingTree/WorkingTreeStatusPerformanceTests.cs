@@ -11,7 +11,8 @@ public sealed class WorkingTreeStatusPerformanceTests(ITestOutputHelper output)
     [Fact]
     public async Task NativeStatus_ScansLargeIndexWithoutForcingFullCollection()
     {
-        const int entryCount = 10_000;
+        const int entryCount =
+            (int)WorkingTreeStatusScanPolicy.MaxTrackedEntriesForNativeDeepUntrackedScan;
         using var directory = TemporaryDirectory.Create("lovelygit-status-performance-");
         var gitDirectory = Directory.CreateDirectory(Path.Combine(directory.Path, ".git"));
         SyntheticGitIndexWriter.WriteVersion2(
@@ -28,7 +29,7 @@ public sealed class WorkingTreeStatusPerformanceTests(ITestOutputHelper output)
         var collections = GC.CollectionCount(2) - collectionsBefore;
 
         output.WriteLine(
-            $"10k status: {elapsed.TotalMilliseconds:N1} ms, " +
+            $"{entryCount:N0}-entry native status: {elapsed.TotalMilliseconds:N1} ms, " +
             $"{allocated:N0} bytes, {collections} gen-2 collections");
         Assert.Equal(entryCount, response.Unstaged.Count);
         Assert.Equal(0, collections);
