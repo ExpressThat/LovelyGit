@@ -59,6 +59,20 @@ export function estimateConflictPaneCodeWidth(items: ConflictDiffItem[]) {
 	return Math.min(48_000, Math.max(80, longest * 7.25 + 32));
 }
 
+export function estimateConflictPaneGutterWidth(items: ConflictDiffItem[]) {
+	let highestLine = 0;
+	for (const item of items) {
+		if (item.kind !== "line") continue;
+		highestLine = Math.max(
+			highestLine,
+			item.baseLine ?? 0,
+			item.sourceLine ?? 0,
+		);
+	}
+	const digits = Math.max(1, String(highestLine).length);
+	return Math.max(48, digits * 8 + 16);
+}
+
 function expandLine(line: CommitFileDiffLine) {
 	if (line.changeType === "Modified") {
 		return [oldRow(line, "deleted"), newRow(line, "inserted")];

@@ -130,7 +130,7 @@ function SourceLine({
 	return (
 		<div
 			className={cn(
-				"grid min-h-[18px] grid-cols-[3rem_3rem_minmax(0,1fr)_2rem]",
+				"grid min-h-[18px] grid-cols-[var(--conflict-gutter-width)_var(--conflict-gutter-width)_minmax(0,1fr)_2rem]",
 				item.variant === "deleted" && "bg-red-500/8",
 				item.variant === "inserted" && "bg-emerald-500/8",
 				selected && "ring-1 ring-inset ring-primary/80",

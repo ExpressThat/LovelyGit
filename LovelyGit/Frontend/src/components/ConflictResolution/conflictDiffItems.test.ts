@@ -3,6 +3,7 @@ import type { CommitFileDiffLine, ConflictHunk } from "@/generated/types";
 import {
 	buildConflictDiffItems,
 	estimateConflictPaneCodeWidth,
+	estimateConflictPaneGutterWidth,
 } from "./conflictDiffItems";
 
 const hunk: ConflictHunk = {
@@ -62,6 +63,24 @@ describe("buildConflictDiffItems", () => {
 			"ours",
 		);
 		expect(estimateConflictPaneCodeWidth(items)).toBe(80);
+	});
+
+	it("widens both line-number gutters for five-digit source positions", () => {
+		const items = buildConflictDiffItems(
+			[
+				line({
+					oldLineNumber: 14_999,
+					newLineNumber: 15_000,
+					oldText: "before",
+					newText: "after",
+					changeType: "Modified",
+				}),
+			],
+			[],
+			"ours",
+		);
+
+		expect(estimateConflictPaneGutterWidth(items)).toBe(56);
 	});
 });
 

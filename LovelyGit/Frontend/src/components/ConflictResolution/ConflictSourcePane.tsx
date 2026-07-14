@@ -1,5 +1,5 @@
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { type RefObject, useEffect, useMemo } from "react";
+import { type CSSProperties, type RefObject, useEffect, useMemo } from "react";
 import type {
 	CommitFileDiffResponse,
 	ConflictHunk,
@@ -14,6 +14,7 @@ import {
 	type ConflictDiffItem,
 	type ConflictSide,
 	estimateConflictPaneCodeWidth,
+	estimateConflictPaneGutterWidth,
 } from "./conflictDiffItems";
 import type { ConflictChoice } from "./conflictDocument";
 import { filterConflictLines } from "./conflictLineFilter";
@@ -67,6 +68,10 @@ export function ConflictSourcePane({
 		[contextLines, lineDisplayMode, loaded, hunks, side],
 	);
 	const width = useMemo(() => estimateConflictPaneCodeWidth(items), [items]);
+	const gutterWidth = useMemo(
+		() => estimateConflictPaneGutterWidth(items),
+		[items],
+	);
 	const virtualizer = useVirtualizer({
 		count: items.length,
 		estimateSize: (index) => (items[index]?.kind === "hunk" ? 34 : 18),
@@ -93,9 +98,14 @@ export function ConflictSourcePane({
 		<section
 			aria-label={`${sideLabel(side)} source`}
 			className="flex min-h-0 min-w-0 flex-1 flex-col"
+			style={
+				{
+					"--conflict-gutter-width": `${gutterWidth}px`,
+				} as CSSProperties
+			}
 		>
 			<ConflictSourceHeader metadata={metadata} side={side} />
-			<div className="grid h-6 shrink-0 grid-cols-[3rem_3rem_minmax(0,1fr)_2rem] border-b bg-card text-[9px] font-semibold uppercase text-muted-foreground">
+			<div className="grid h-6 shrink-0 grid-cols-[var(--conflict-gutter-width)_var(--conflict-gutter-width)_minmax(0,1fr)_2rem] border-b bg-card text-[9px] font-semibold uppercase text-muted-foreground">
 				<span className="border-r px-2 py-1 text-right">Base</span>
 				<span className="border-r px-2 py-1 text-right">Line</span>
 				<span className="px-2 py-1">Content</span>
