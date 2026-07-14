@@ -3,6 +3,8 @@ import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import {
 	CommitDetailsSurface,
+	CommitFileDiffSurface,
+	preloadCommitFileDiffSurface,
 	WorkingTreeDiffSurface,
 } from "./AppLazySurfaces";
 
@@ -11,6 +13,9 @@ vi.mock("./components/CommitDetails/CommitDetails", () => ({
 }));
 vi.mock("./components/ConflictResolution/ConflictResolutionView", () => ({
 	ConflictResolutionView: () => <div>Loaded conflict resolver</div>,
+}));
+vi.mock("./components/CommitFileDiff/CommitFileDiffView", () => ({
+	CommitFileDiffView: () => <div>Loaded commit diff</div>,
 }));
 
 describe("AppLazySurfaces", () => {
@@ -49,5 +54,28 @@ describe("AppLazySurfaces", () => {
 		);
 
 		expect(await screen.findByText("Loaded conflict resolver")).toBeVisible();
+	});
+
+	it("can preload the commit diff surface before a file is selected", async () => {
+		await preloadCommitFileDiffSurface();
+
+		render(
+			<CommitFileDiffSurface
+				commitHash={"a".repeat(40)}
+				file={{
+					additions: 1,
+					deletions: 1,
+					isBinary: false,
+					path: "file.txt",
+					status: "Modified",
+				}}
+				onClose={vi.fn()}
+				parentIndex={0}
+				repositoryId="repo"
+			/>,
+		);
+
+		expect(await screen.findByText("Loaded commit diff")).toBeVisible();
+		expect(screen.queryByLabelText("Preparing commit diff")).toBeNull();
 	});
 });

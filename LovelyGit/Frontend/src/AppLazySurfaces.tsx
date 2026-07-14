@@ -16,10 +16,10 @@ import type { ConflictResolutionView as ConflictResolutionComponent } from "./co
 import type { WorkingChangesPanel as WorkingChangesComponent } from "./components/WorkingChanges/WorkingChangesPanel";
 import type { WorkingTreeFileDiffView as WorkingTreeDiffComponent } from "./components/WorkingChanges/WorkingTreeFileDiffView";
 
-const LazyCommitFileDiff = lazy(() =>
-	import("./components/CommitFileDiff/CommitFileDiffView").then((module) => ({
-		default: module.CommitFileDiffView,
-	})),
+const commitFileDiffLoader = createDeferredLoader(() =>
+	import("./components/CommitFileDiff/CommitFileDiffView").then(
+		(module) => module.CommitFileDiffView,
+	),
 );
 const LazyWorkingChanges = lazy(() =>
 	import("./components/WorkingChanges/WorkingChangesPanel").then((module) => ({
@@ -49,10 +49,51 @@ export function CommitDetailsSurface(
 export function CommitFileDiffSurface(
 	props: ComponentProps<typeof CommitFileDiffComponent>,
 ) {
-	return (
-		<Suspense fallback={<SurfaceLoading label="Preparing commit diff" fill />}>
-			<LazyCommitFileDiff {...props} />
-		</Suspense>
+	const [Component, setComponent] = useState<ComponentType<
+		ComponentProps<typeof CommitFileDiffComponent>
+	> | null>(() => commitFileDiffLoader.get());
+	const [error, setError] = useState<string | null>(null);
+	const [attempt, setAttempt] = useState(0);
+	useEffect(() => {
+		void attempt;
+		let active = true;
+		commitFileDiffLoader.load().then(
+			(loaded) => {
+				if (active) setComponent(() => loaded);
+			},
+			(loadError: unknown) => {
+				if (active) {
+					setError(
+						loadError instanceof Error
+							? loadError.message
+							: "Failed to load commit diff.",
+					);
+				}
+			},
+		);
+		return () => {
+			active = false;
+		};
+	}, [attempt]);
+	if (Component) return <Component {...props} />;
+	if (error) {
+		return (
+			<SurfaceLoadError
+				message={error}
+				onRetry={() => {
+					setError(null);
+					setAttempt((value) => value + 1);
+				}}
+			/>
+		);
+	}
+	return <SurfaceLoading label="Preparing commit diff" fill />;
+}
+
+export function preloadCommitFileDiffSurface() {
+	return commitFileDiffLoader.load().then(
+		() => undefined,
+		() => undefined,
 	);
 }
 
@@ -112,24 +153,35 @@ function DeferredConflictResolution(props: ConflictResolutionProps) {
 	if (Component) return <Component {...props} />;
 	if (error) {
 		return (
-			<div className="grid h-full place-items-center bg-background p-4 text-sm text-destructive">
-				<div className="space-y-3 text-center">
-					<p>{error}</p>
-					<Button
-						onClick={() => {
-							setError(null);
-							setAttempt((value) => value + 1);
-						}}
-						type="button"
-						variant="outline"
-					>
-						Retry
-					</Button>
-				</div>
-			</div>
+			<SurfaceLoadError
+				message={error}
+				onRetry={() => {
+					setError(null);
+					setAttempt((value) => value + 1);
+				}}
+			/>
 		);
 	}
 	return <SurfaceLoading label="Preparing conflict resolver" fill />;
+}
+
+function SurfaceLoadError({
+	message,
+	onRetry,
+}: {
+	message: string;
+	onRetry: () => void;
+}) {
+	return (
+		<div className="grid h-full place-items-center bg-background p-4 text-sm text-destructive">
+			<div className="space-y-3 text-center">
+				<p>{message}</p>
+				<Button onClick={onRetry} type="button" variant="outline">
+					Retry
+				</Button>
+			</div>
+		</div>
+	);
 }
 
 export function SurfaceLoading({

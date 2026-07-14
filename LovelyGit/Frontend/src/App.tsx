@@ -48,6 +48,7 @@ function App() {
 		setCommitGraphRefreshToken,
 	);
 	const selectCommit = (row: CommitGraphRow) => {
+		void LazySurfaces.preloadCommitFileDiffSurface();
 		setDetailsPanel({ commitHash: row.commit.hash, kind: "commit" });
 	};
 	return (
