@@ -56,6 +56,7 @@ export function WorkingChangesPanel({
 		);
 	const visibleChanges = optimisticChanges ??
 		changes ?? {
+			isComplete: true,
 			staged: [],
 			unstaged: [],
 			untracked: [],
@@ -101,7 +102,8 @@ export function WorkingChangesPanel({
 		},
 		repositoryId,
 	});
-	const controlsBusy = isBusy || undo.isBusy;
+	const controlsBusy =
+		isBusy || undo.isBusy || visibleChanges.isComplete === false;
 	const stashPaths = selectedStashPaths(visibleChanges, selectedKeys);
 	return (
 		<div className="custom-scrollbar flex h-full min-h-0 flex-col gap-4 overflow-y-auto p-4 text-left text-sm">
@@ -115,6 +117,7 @@ export function WorkingChangesPanel({
 					/>
 				}
 				isLoading={isLoading}
+				isStatusComplete={visibleChanges.isComplete}
 				onRefresh={onRefresh}
 				totalCount={changes?.totalCount ?? totalCount}
 			/>

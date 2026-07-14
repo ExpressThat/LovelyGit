@@ -77,6 +77,7 @@ describe("shouldApplyObservedWorkingTreeChanges", () => {
 
 function response(files: WorkingTreeChangedFile[]): WorkingTreeChangesResponse {
 	return {
+		isComplete: true,
 		staged: [],
 		unstaged: [],
 		untracked: files,

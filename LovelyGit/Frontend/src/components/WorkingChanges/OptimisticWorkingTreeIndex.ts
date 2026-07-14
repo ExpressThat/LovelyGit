@@ -20,6 +20,7 @@ export function applyOptimisticIndexMutation(
 
 	const paths = new Set(selected.map((file) => file.path));
 	const next = {
+		isComplete: current.isComplete,
 		staged: current.staged.filter((file) => !paths.has(file.path)),
 		unstaged: current.unstaged.filter((file) => !paths.has(file.path)),
 		untracked: current.untracked.filter((file) => !paths.has(file.path)),
@@ -83,6 +84,7 @@ function applySinglePathMutation(
 	}
 
 	return {
+		isComplete: current.isComplete,
 		staged,
 		unstaged,
 		untracked,

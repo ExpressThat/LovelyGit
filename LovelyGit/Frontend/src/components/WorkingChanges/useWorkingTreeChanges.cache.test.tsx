@@ -39,6 +39,7 @@ describe("useWorkingTreeChanges cache restoration", () => {
 			totalCount: 2,
 		});
 		setCachedWorkingTreeChanges("repo", {
+			isComplete: true,
 			staged: [],
 			unstaged: [],
 			untracked: [],

@@ -22,11 +22,13 @@ export function WorkingChangesSkeleton() {
 export function WorkingChangesHeader({
 	actions,
 	isLoading,
+	isStatusComplete = true,
 	onRefresh,
 	totalCount,
 }: {
 	actions?: ReactNode;
 	isLoading: boolean;
+	isStatusComplete?: boolean;
 	onRefresh: () => Promise<void> | void;
 	totalCount: number;
 }) {
@@ -37,7 +39,9 @@ export function WorkingChangesHeader({
 					{totalCount} changed files
 				</div>
 				<div className="text-xs text-muted-foreground">
-					Staged, working tree, and unmerged
+					{isStatusComplete
+						? "Staged, working tree, and unmerged"
+						: "Finding untracked files…"}
 				</div>
 			</div>
 			<div className="flex items-center gap-2">

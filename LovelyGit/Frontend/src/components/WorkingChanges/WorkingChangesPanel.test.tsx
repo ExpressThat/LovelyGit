@@ -22,18 +22,42 @@ describe("WorkingChangesPanel optimistic index state", () => {
 		const refresh = deferred<void>();
 		vi.mocked(sendRequestWithResponse).mockReturnValue(command.promise);
 		const props = createProps(() => refresh.promise);
-		const view = render(<WorkingChangesPanel {...props} changes={response()} />);
+		const view = render(
+			<WorkingChangesPanel {...props} changes={response()} />,
+		);
 
 		fireEvent.click(screen.getByRole("button", { name: "Stage all changes" }));
-		expect(screen.getByRole("heading", { name: "Staged files (1)" })).toBeTruthy();
+		expect(
+			screen.getByRole("heading", { name: "Staged files (1)" }),
+		).toBeTruthy();
 
 		view.rerender(<WorkingChangesPanel {...props} changes={response()} />);
-		expect(screen.getByRole("heading", { name: "Staged files (1)" })).toBeTruthy();
-		expect(screen.getByRole("heading", { name: "Unstaged files (0)" })).toBeTruthy();
+		expect(
+			screen.getByRole("heading", { name: "Staged files (1)" }),
+		).toBeTruthy();
+		expect(
+			screen.getByRole("heading", { name: "Unstaged files (0)" }),
+		).toBeTruthy();
 
 		await act(async () => command.resolve(undefined));
 		expect(props.onRefresh).toHaveBeenCalledOnce();
 		await act(async () => refresh.resolve());
+	});
+
+	it("disables mutations while untracked discovery completes", () => {
+		const changes = response();
+		changes.isComplete = false;
+		render(
+			<WorkingChangesPanel
+				{...createProps(() => Promise.resolve())}
+				changes={changes}
+			/>,
+		);
+
+		expect(
+			screen.getByRole("button", { name: "Stage all changes" }),
+		).toBeDisabled();
+		expect(screen.getByText("Finding untracked files…")).toBeVisible();
 	});
 });
 
@@ -53,6 +77,7 @@ function createProps(onRefresh: () => Promise<void>) {
 
 function response(): WorkingTreeChangesResponse {
 	return {
+		isComplete: true,
 		staged: [],
 		totalCount: 1,
 		unmerged: [],

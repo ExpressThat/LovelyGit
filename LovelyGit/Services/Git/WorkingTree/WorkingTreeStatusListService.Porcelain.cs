@@ -7,6 +7,7 @@ internal sealed partial class WorkingTreeStatusListService
 {
     private async Task<WorkingTreeChangesResponse> GetPorcelainChangesAsync(
         string repositoryPath,
+        bool trackedOnly,
         CancellationToken cancellationToken)
     {
         var paths = await GitRepositoryDiscovery
@@ -14,7 +15,13 @@ internal sealed partial class WorkingTreeStatusListService
             .ConfigureAwait(false);
         var result = await _gitCliService
             .ExecuteBufferedAsync(
-                ["--no-optional-locks", "status", "--porcelain=v1", "-z", "--untracked-files=all"],
+                [
+                    "--no-optional-locks",
+                    "status",
+                    "--porcelain=v1",
+                    "-z",
+                    trackedOnly ? "--untracked-files=no" : "--untracked-files=all",
+                ],
                 paths.WorkTreeDirectory,
                 validateExitCode: false,
                 cancellationToken)
@@ -27,7 +34,9 @@ internal sealed partial class WorkingTreeStatusListService
                 ?? "Git status failed.");
         }
 
-        return ParsePorcelainStatus(result.StandardOutput.AsSpan());
+        var response = ParsePorcelainStatus(result.StandardOutput.AsSpan());
+        response.IsComplete = !trackedOnly;
+        return response;
     }
 
     internal static WorkingTreeChangesResponse ParsePorcelainStatus(ReadOnlySpan<char> output)

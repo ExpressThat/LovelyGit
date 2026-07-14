@@ -46,7 +46,10 @@ internal sealed class GetWorkingTreeChangesCommandResolver : CommandResponder<Ge
         try
         {
             var response = await _workingTreeStatusListService
-                .GetChangesAsync(foundRepo.Path, CancellationToken.None)
+                .GetChangesAsync(
+                    foundRepo.Path,
+                    command.Arguments.TrackedOnly,
+                    CancellationToken.None)
                 .ConfigureAwait(false);
             return new CommandResponse<WorkingTreeChangesResponse>
             {

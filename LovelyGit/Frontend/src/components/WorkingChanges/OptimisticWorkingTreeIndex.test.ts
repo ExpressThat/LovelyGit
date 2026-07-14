@@ -110,6 +110,7 @@ function response(
 	>,
 ): WorkingTreeChangesResponse {
 	const result = {
+		isComplete: true,
 		staged: groups.staged ?? [],
 		unstaged: groups.unstaged ?? [],
 		untracked: groups.untracked ?? [],

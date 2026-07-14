@@ -10,6 +10,7 @@ import {
 describe("splitWorkingChanges", () => {
 	it("splits files into unstaged and staged boxes", () => {
 		const changes = {
+			isComplete: true,
 			staged: [file("staged.txt", "Staged")],
 			unstaged: [file("modified.txt", "Unstaged")],
 			untracked: [file("new.txt", "Untracked")],
@@ -46,6 +47,7 @@ describe("splitWorkingChanges", () => {
 
 	it("keeps the display order explicit", () => {
 		const changes = {
+			isComplete: true,
 			staged: [file("staged.txt", "Staged")],
 			unstaged: [file("modified.txt", "Unstaged")],
 			untracked: [file("new.txt", "Untracked")],
@@ -60,6 +62,7 @@ describe("splitWorkingChanges", () => {
 
 	it("keeps actionable files enabled when a scanner bucket is stale", () => {
 		const changes = {
+			isComplete: true,
 			staged: [],
 			unstaged: [],
 			untracked: [],

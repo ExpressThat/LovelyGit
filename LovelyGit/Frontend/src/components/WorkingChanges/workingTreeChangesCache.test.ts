@@ -34,6 +34,7 @@ describe("workingTreeChangesCache", () => {
 
 function response(totalCount: number): WorkingTreeChangesResponse {
 	return {
+		isComplete: true,
 		staged: Array.from({ length: totalCount }, (_, index) => ({
 			additions: 1,
 			deletions: 0,

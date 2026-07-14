@@ -9,6 +9,7 @@ public record GetWorkingTreeChangesCommandArguments
 {
     public Guid RepositoryId { get; set; }
     public bool AllowIncompleteSummary { get; set; }
+    public bool TrackedOnly { get; set; }
 }
 
 [TypeSharp]

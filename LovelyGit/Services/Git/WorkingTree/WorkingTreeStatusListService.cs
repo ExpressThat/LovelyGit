@@ -28,14 +28,24 @@ internal sealed partial class WorkingTreeStatusListService
         string repositoryPath,
         CancellationToken cancellationToken)
     {
-        var nativeResult = await TryGetNativeChangesAsync(repositoryPath, cancellationToken)
+        return await GetChangesAsync(repositoryPath, trackedOnly: false, cancellationToken)
             .ConfigureAwait(false);
-        return nativeResult ?? await GetPorcelainChangesAsync(repositoryPath, cancellationToken)
+    }
+
+    public async Task<WorkingTreeChangesResponse> GetChangesAsync(
+        string repositoryPath,
+        bool trackedOnly,
+        CancellationToken cancellationToken)
+    {
+        var nativeResult = await TryGetNativeChangesAsync(repositoryPath, trackedOnly, cancellationToken)
+            .ConfigureAwait(false);
+        return nativeResult ?? await GetPorcelainChangesAsync(repositoryPath, trackedOnly, cancellationToken)
             .ConfigureAwait(false);
     }
 
     private async Task<WorkingTreeChangesResponse?> TryGetNativeChangesAsync(
         string repositoryPath,
+        bool trackedOnly,
         CancellationToken cancellationToken)
     {
         var paths = await GitRepositoryDiscovery.ResolveRepositoryPathsAsync(repositoryPath, cancellationToken)
@@ -58,7 +68,7 @@ internal sealed partial class WorkingTreeStatusListService
                 paths.WorkTreeDirectory,
                 objectFormat,
                 cancellationToken,
-                collectRootTracking: true)
+                collectRootTracking: !trackedOnly)
             .ConfigureAwait(false);
         var headTreeId = await ReadHeadTreeIdAsync(
                 paths.WorktreeGitDirectory,
@@ -76,6 +86,16 @@ internal sealed partial class WorkingTreeStatusListService
                 .ConfigureAwait(false);
             if (staged is null) return null;
             fullScan.Response.Staged.AddRange(staged);
+        }
+
+        if (trackedOnly)
+        {
+            var trackedResponse = fullScan.Response;
+            trackedResponse.IsComplete = false;
+            Sort(trackedResponse.Staged);
+            Sort(trackedResponse.Unstaged);
+            Sort(trackedResponse.Unmerged);
+            return trackedResponse;
         }
 
         var untracked = await FindUntrackedFilesAsync(

@@ -45,6 +45,7 @@ export function shouldApplyObservedWorkingTreeChanges(
 
 export function createEmptyWorkingTreeChanges(): WorkingTreeChangesResponse {
 	return {
+		isComplete: true,
 		staged: [],
 		unstaged: [],
 		untracked: [],
@@ -69,6 +70,7 @@ function cloneChanges(
 	current: WorkingTreeChangesResponse | null,
 ): WorkingTreeChangesResponse {
 	return {
+		isComplete: current?.isComplete ?? true,
 		staged: [...(current?.staged ?? [])],
 		unstaged: [...(current?.unstaged ?? [])],
 		untracked: [...(current?.untracked ?? [])],

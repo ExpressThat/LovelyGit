@@ -36,6 +36,7 @@ public record WorkingTreeChangesResponse
     public List<WorkingTreeChangedFile> Unstaged { get; set; } = new();
     public List<WorkingTreeChangedFile> Untracked { get; set; } = new();
     public List<WorkingTreeChangedFile> Unmerged { get; set; } = new();
+    public bool IsComplete { get; set; } = true;
 
     public int TotalCount => Staged.Count + Unstaged.Count + Untracked.Count + Unmerged.Count;
 }

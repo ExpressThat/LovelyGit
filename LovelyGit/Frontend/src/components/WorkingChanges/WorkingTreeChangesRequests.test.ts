@@ -31,10 +31,62 @@ describe("loadWorkingTreeChanges", () => {
 		await expect(loadWorkingTreeChanges("repo")).resolves.toEqual(response());
 		expect(send).toHaveBeenCalledTimes(2);
 	});
+
+	it("publishes tracked changes before completing untracked discovery", async () => {
+		const preliminary = response(false);
+		const complete = response();
+		const onPreliminary = vi.fn();
+		send.mockResolvedValueOnce(preliminary).mockResolvedValueOnce(complete);
+
+		await expect(
+			loadWorkingTreeChanges("repo", onPreliminary),
+		).resolves.toEqual(complete);
+
+		expect(onPreliminary).toHaveBeenCalledWith(preliminary);
+		expect(send).toHaveBeenNthCalledWith(
+			1,
+			expect.objectContaining({
+				arguments: expect.objectContaining({ trackedOnly: true }),
+			}),
+			expect.anything(),
+		);
+		expect(send).toHaveBeenNthCalledWith(
+			2,
+			expect.objectContaining({
+				arguments: expect.objectContaining({ trackedOnly: false }),
+			}),
+			expect.anything(),
+		);
+	});
+
+	it("does not publish or cache a complete result when the second phase fails", async () => {
+		const onPreliminary = vi.fn();
+		send
+			.mockResolvedValueOnce(response(false))
+			.mockRejectedValueOnce(new Error("full scan failed"));
+
+		await expect(loadWorkingTreeChanges("repo", onPreliminary)).rejects.toThrow(
+			"full scan failed",
+		);
+		expect(onPreliminary).toHaveBeenCalledWith(response(false));
+	});
+
+	it("falls back to the complete scan when the preliminary scan fails", async () => {
+		const onPreliminary = vi.fn();
+		send
+			.mockRejectedValueOnce(new Error("preliminary failed"))
+			.mockResolvedValueOnce(response());
+
+		await expect(
+			loadWorkingTreeChanges("repo", onPreliminary),
+		).resolves.toEqual(response());
+		expect(onPreliminary).not.toHaveBeenCalled();
+	});
 });
 
-function response() {
+function response(isComplete = true) {
 	return {
+		isComplete,
 		staged: [],
 		unstaged: [],
 		untracked: [],

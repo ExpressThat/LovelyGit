@@ -124,6 +124,7 @@ function createCommitHarness({ amend }: { amend: boolean }) {
 
 function emptyChanges(): WorkingTreeChangesResponse {
 	return {
+		isComplete: true,
 		staged: [],
 		totalCount: 0,
 		unmerged: [],

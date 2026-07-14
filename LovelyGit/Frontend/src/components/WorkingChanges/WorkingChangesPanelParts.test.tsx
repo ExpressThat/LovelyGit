@@ -19,6 +19,19 @@ describe("WorkingChangesHeader", () => {
 			screen.getByRole("button", { name: "Refresh working changes" }),
 		).toBeDisabled();
 	});
+
+	it("explains when untracked discovery is still running", () => {
+		render(
+			<WorkingChangesHeader
+				isLoading
+				isStatusComplete={false}
+				onRefresh={vi.fn()}
+				totalCount={3}
+			/>,
+		);
+
+		expect(screen.getByText("Finding untracked files…")).toBeVisible();
+	});
 });
 
 describe("selectedStashPaths", () => {
@@ -31,6 +44,7 @@ describe("selectedStashPaths", () => {
 		expect(
 			selectedStashPaths(
 				{
+					isComplete: true,
 					staged: [staged],
 					unstaged: [unstaged],
 					untracked: [untracked],

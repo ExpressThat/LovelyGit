@@ -8,6 +8,7 @@ vi.mock("@/components/WorkingChanges/WorkingTreeChangesRequests", () => ({
 
 const load = vi.mocked(loadWorkingTreeChanges);
 const status = (unmerged: boolean) => ({
+	isComplete: true,
 	staged: [],
 	unstaged: [],
 	untracked: [],

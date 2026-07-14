@@ -229,6 +229,7 @@ describe("useWorkingTreeChanges preload", () => {
 
 function response(totalCount: number) {
 	return {
+		isComplete: true,
 		staged: [],
 		unstaged: [],
 		untracked: [],

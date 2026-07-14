@@ -38,6 +38,7 @@ describe("working changes index commands", () => {
 
 		expect(harness.setOptimisticChanges).toHaveBeenCalledWith(
 			expect.objectContaining({
+				isComplete: true,
 				staged: [expect.objectContaining({ path: "file.ts" })],
 				unstaged: [],
 			}),
@@ -101,6 +102,7 @@ function createHarness() {
 
 function response(changed: WorkingTreeChangedFile): WorkingTreeChangesResponse {
 	return {
+		isComplete: true,
 		staged: [],
 		totalCount: 1,
 		unmerged: [],

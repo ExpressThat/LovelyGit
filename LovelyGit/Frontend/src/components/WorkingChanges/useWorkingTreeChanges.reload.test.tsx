@@ -148,6 +148,7 @@ describe("useWorkingTreeChanges manual reload", () => {
 
 function response(totalCount: number) {
 	return {
+		isComplete: true,
 		staged: [],
 		unstaged: [],
 		untracked: [],

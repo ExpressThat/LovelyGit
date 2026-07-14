@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { subscribeToServerEvent } from "@/lib/commands";
+import { createWorkingTreeReload } from "./createWorkingTreeReload";
 import {
 	applyObservedWorkingTreeChanges,
 	countObservedNewPaths,
@@ -94,7 +95,9 @@ export function useWorkingTreeChanges(
 					? { status: "loaded", changes: current.changes }
 					: { status: "loading", changes: null },
 			);
-			const promise = loadWorkingTreeChanges(repositoryId)
+			const promise = loadWorkingTreeChanges(repositoryId, (changes) => {
+				if (isActive) setState({ status: "loaded", changes });
+			})
 				.then((changes) => {
 					if (isActive) {
 						setState({
@@ -193,51 +196,17 @@ export function useWorkingTreeChanges(
 		setSummaryCount,
 	});
 
-	const reload = () => {
-		if (!repositoryId) {
-			return Promise.resolve();
-		}
-
-		const existing = reloadRequestRef.current;
-		if (existing?.repositoryId === repositoryId) {
-			return existing.promise;
-		}
-
-		setIsReloading(true);
-		const requestedRepositoryId = repositoryId;
-		const promise = loadWorkingTreeChanges(requestedRepositoryId)
-			.then((changes) => {
-				if (previousRepositoryIdRef.current !== requestedRepositoryId) return;
-				setState({ status: "loaded", changes });
-				setSummaryCount(changes.totalCount);
-				cacheCompleteWorkingTreeSummary(
-					requestedRepositoryId,
-					changes.totalCount,
-				);
-				setCachedWorkingTreeChanges(requestedRepositoryId, changes);
-				setIsDirty(false);
-				setHasSummaryLoaded(true);
-				hasFreshChangesRef.current = true;
-			})
-			.catch((error: unknown) => {
-				if (previousRepositoryIdRef.current === requestedRepositoryId) {
-					setState((current) => ({
-						status: "error",
-						changes: current.changes,
-						message: getWorkingTreeLoadErrorMessage(error),
-					}));
-				}
-				throw error;
-			})
-			.finally(() => {
-				if (reloadRequestRef.current?.promise === promise) {
-					reloadRequestRef.current = null;
-					setIsReloading(false);
-				}
-			});
-		reloadRequestRef.current = { promise, repositoryId };
-		return promise;
-	};
+	const reload = createWorkingTreeReload({
+		hasFreshChangesRef,
+		previousRepositoryIdRef,
+		reloadRequestRef,
+		repositoryId,
+		setHasSummaryLoaded,
+		setIsDirty,
+		setIsReloading,
+		setState,
+		setSummaryCount,
+	});
 
 	return {
 		...state,
