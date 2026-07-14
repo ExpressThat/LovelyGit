@@ -14,6 +14,7 @@ describe("workingTreeSummaryCache", () => {
 		setCachedWorkingTreeSummary("repo", {
 			hasChanges: true,
 			isComplete: false,
+			shouldPreloadChanges: true,
 			totalCount: 3,
 		});
 		expect(getCachedWorkingTreeSummary("repo")?.totalCount).toBe(3);
@@ -29,6 +30,7 @@ describe("workingTreeSummaryCache", () => {
 		expect(getCachedWorkingTreeSummary("repo")).toEqual({
 			hasChanges: true,
 			isComplete: true,
+			shouldPreloadChanges: true,
 			totalCount: 2,
 		});
 	});

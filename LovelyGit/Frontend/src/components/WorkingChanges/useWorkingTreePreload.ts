@@ -76,6 +76,23 @@ export function useWorkingTreePreload({
 						}
 						isLoading = true;
 						try {
+							if (!summary.shouldPreloadChanges) {
+								const exactSummary = await loadWorkingTreeChangeSummary(
+									repositoryId,
+								);
+								if (
+									previousRepositoryIdRef.current !== repositoryId ||
+									loadGeneration !== invalidationGeneration
+								) {
+									reloadAgain = true;
+									return;
+								}
+								setSummaryCount(exactSummary.totalCount);
+								setCachedWorkingTreeSummary(repositoryId, exactSummary);
+								setIsDirty(false);
+								setHasSummaryLoaded(true);
+								return;
+							}
 							const changes = await loadWorkingTreeChanges(repositoryId);
 							if (
 								previousRepositoryIdRef.current !== repositoryId ||

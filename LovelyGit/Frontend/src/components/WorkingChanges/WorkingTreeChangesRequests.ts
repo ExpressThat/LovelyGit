@@ -35,7 +35,14 @@ export async function loadWorkingTreeChangeSummary(
 		},
 		{ timeoutMs: workingTreeStatusTimeoutMs },
 	);
-	return summary ?? { hasChanges: false, isComplete: true, totalCount: 0 };
+	return (
+		summary ?? {
+			hasChanges: false,
+			isComplete: true,
+			shouldPreloadChanges: true,
+			totalCount: 0,
+		}
+	);
 }
 
 type ReturnTypeResult = ReturnType<typeof createEmptyWorkingTreeChanges>;

@@ -45,6 +45,7 @@ public record WorkingTreeChangeSummaryResponse
 {
     public int TotalCount { get; set; }
     public bool IsComplete { get; set; } = true;
+    public bool ShouldPreloadChanges { get; set; } = true;
     public bool HasChanges => TotalCount > 0;
 }
 

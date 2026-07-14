@@ -4,11 +4,16 @@ namespace ExpressThat.LovelyGit.Services.Git.WorkingTree;
 
 internal sealed partial class WorkingTreePreliminarySummaryService
 {
-    public Task<WorkingTreeChangeSummaryResponse> GetSummaryAsync(
+    public async Task<WorkingTreeChangeSummaryResponse> GetSummaryAsync(
         string workTreeDirectory,
         string gitDirectory,
         CancellationToken cancellationToken)
     {
+        var trackedEntryCount = await GitIndexHeaderReader
+            .ReadEntryCountAsync(gitDirectory, cancellationToken)
+            .ConfigureAwait(false);
+        var shouldPreloadChanges = trackedEntryCount is not uint trackedCount ||
+            !WorkingTreeStatusScanPolicy.ShouldSkipNativeScanBeforeRootTracking(trackedCount);
         var candidates = Directory.EnumerateFileSystemEntries(workTreeDirectory)
             .Select(Path.GetFileName)
             .OfType<string>()
@@ -18,11 +23,14 @@ internal sealed partial class WorkingTreePreliminarySummaryService
             .ToArray();
         if (candidates.Length == 0)
         {
-            return Task.FromResult(Incomplete(0));
+            return Incomplete(0, shouldPreloadChanges);
         }
 
-        var count = CountRootEntriesMissingFromIndexCached(gitDirectory, candidates, cancellationToken);
-        return Task.FromResult(Incomplete(count));
+        var missingCount = CountRootEntriesMissingFromIndexCached(
+            gitDirectory,
+            candidates,
+            cancellationToken);
+        return Incomplete(missingCount, shouldPreloadChanges);
     }
 
     private static int CountRootEntriesMissingFromIndex(
@@ -34,9 +42,12 @@ internal sealed partial class WorkingTreePreliminarySummaryService
             candidates,
             cancellationToken);
 
-    private static WorkingTreeChangeSummaryResponse Incomplete(int totalCount) => new()
+    private static WorkingTreeChangeSummaryResponse Incomplete(
+        int totalCount,
+        bool shouldPreloadChanges) => new()
     {
         IsComplete = false,
+        ShouldPreloadChanges = shouldPreloadChanges,
         TotalCount = totalCount,
     };
 }

@@ -39,6 +39,7 @@ export function cacheCompleteWorkingTreeSummary(
 	setCachedWorkingTreeSummary(repositoryId, {
 		hasChanges: totalCount > 0,
 		isComplete: true,
+		shouldPreloadChanges: true,
 		totalCount,
 	});
 }

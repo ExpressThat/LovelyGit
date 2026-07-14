@@ -43,6 +43,7 @@ describe("useWorkingTreeChanges preload", () => {
 		loadSummary.mockResolvedValue({
 			hasChanges: false,
 			isComplete: false,
+			shouldPreloadChanges: true,
 			totalCount: 0,
 		});
 	});
@@ -54,6 +55,7 @@ describe("useWorkingTreeChanges preload", () => {
 		setCachedWorkingTreeSummary("repo", {
 			hasChanges: true,
 			isComplete: true,
+			shouldPreloadChanges: true,
 			totalCount: 7,
 		});
 		const { result } = renderHook(() => useWorkingTreeChanges("repo", false));
@@ -70,11 +72,13 @@ describe("useWorkingTreeChanges preload", () => {
 		setCachedWorkingTreeSummary("repo", {
 			hasChanges: true,
 			isComplete: false,
+			shouldPreloadChanges: true,
 			totalCount: 7,
 		});
 		loadSummary.mockResolvedValue({
 			hasChanges: false,
 			isComplete: true,
+			shouldPreloadChanges: true,
 			totalCount: 0,
 		});
 		const { result } = renderHook(() => useWorkingTreeChanges("repo", false));
@@ -92,6 +96,7 @@ describe("useWorkingTreeChanges preload", () => {
 			setCachedWorkingTreeSummary(repositoryId, {
 				hasChanges: false,
 				isComplete: true,
+				shouldPreloadChanges: true,
 				totalCount: 0,
 			});
 		}
@@ -143,6 +148,32 @@ describe("useWorkingTreeChanges preload", () => {
 
 		rerender({ enabled: true });
 		await waitFor(() => expect(loadChanges).toHaveBeenCalledTimes(2));
+	});
+
+	it("loads only a count for repositories whose index is too wide to preload", async () => {
+		loadSummary
+			.mockResolvedValueOnce({
+				hasChanges: false,
+				isComplete: false,
+				shouldPreloadChanges: false,
+				totalCount: 0,
+			})
+			.mockResolvedValueOnce({
+				hasChanges: true,
+				isComplete: true,
+				shouldPreloadChanges: true,
+				totalCount: 8_000,
+			});
+		const { result } = renderHook(() =>
+			useWorkingTreeChanges("wide-repo", false),
+		);
+
+		await startBackgroundFullScan();
+		await waitFor(() => expect(loadSummary).toHaveBeenCalledTimes(2));
+
+		expect(loadChanges).not.toHaveBeenCalled();
+		expect(result.current.totalCount).toBe(8_000);
+		expect(result.current.changes).toBeNull();
 	});
 
 	it("discards a preload invalidated while its full scan is running", async () => {

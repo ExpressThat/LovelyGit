@@ -1,3 +1,5 @@
+using System.Text;
+using CliWrap;
 using ExpressThat.LovelyGit.Services.Git.Cli;
 using ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser;
 using ExpressThat.LovelyGit.Services.Git.WorkingTree.Models;
@@ -32,24 +34,27 @@ internal sealed class WorkingTreeSummaryService
                 .ConfigureAwait(false);
         }
 
+        var counter = new PorcelainStatusCounter();
+        var standardError = new StringBuilder();
         var result = await _gitCliService
-            .ExecuteBufferedAsync(
+            .CreateCommand(
                 ["--no-optional-locks", "status", "--porcelain=v1", "-z", "--untracked-files=all"],
                 paths.WorkTreeDirectory,
-                validateExitCode: false,
-                cancellationToken)
+                validateExitCode: false)
+            .WithStandardOutputPipe(PipeTarget.ToStream(counter))
+            .WithStandardErrorPipe(PipeTarget.ToStringBuilder(standardError))
+            .ExecuteAsync(cancellationToken)
             .ConfigureAwait(false);
 
         if (result.ExitCode != 0)
         {
-            throw new InvalidOperationException(FirstNonEmptyLine(result.StandardError)
-                ?? FirstNonEmptyLine(result.StandardOutput)
+            throw new InvalidOperationException(FirstNonEmptyLine(standardError.ToString())
                 ?? "Git status summary failed.");
         }
 
         return new WorkingTreeChangeSummaryResponse
         {
-            TotalCount = CountPorcelainRecords(result.StandardOutput.AsSpan()),
+            TotalCount = counter.Count,
         };
     }
 
