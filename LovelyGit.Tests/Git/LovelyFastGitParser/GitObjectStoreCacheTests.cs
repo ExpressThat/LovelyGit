@@ -69,4 +69,25 @@ public sealed class GitObjectStoreCacheTests
         await store.ReadObjectAsync(id, CancellationToken.None);
         Assert.True(store.PackObjectCacheBytes >= uncached.Data.Length);
     }
+
+    [Fact]
+    public async Task ReadObjectWithTransientPackCacheAsync_DoesNotPolluteSharedCache()
+    {
+        using var directory = TemporaryDirectory.Create("lovelygit-transient-pack-cache-");
+        await GitTestProcess.RunAsync(directory.Path, "init");
+        await GitTestProcess.RunAsync(directory.Path, "config", "user.email", "test@example.com");
+        await GitTestProcess.RunAsync(directory.Path, "config", "user.name", "Test User");
+        await GitTestProcess.RunAsync(
+            directory.Path, "commit", "--allow-empty", "-m", "transient cache fixture");
+        var hash = (await GitTestProcess.RunAsync(directory.Path, "rev-parse", "HEAD")).Trim();
+        await GitTestProcess.RunAsync(directory.Path, "gc", "--prune=now");
+        using var store = new GitObjectStore(Path.Combine(directory.Path, ".git"), GitObjectFormat.Sha1);
+        var id = GitObjectId.Parse(hash);
+
+        var commit = await store.ReadObjectWithTransientPackCacheAsync(id, CancellationToken.None);
+
+        Assert.Equal(GitObjectKind.Commit, commit.Kind);
+        Assert.False(GitObjectStore.IsSharedObjectCached(id));
+        Assert.InRange(store.PackObjectCacheBytes, 1, 8 * 1024 * 1024);
+    }
 }

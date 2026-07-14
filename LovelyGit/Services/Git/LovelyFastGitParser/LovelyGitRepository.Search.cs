@@ -11,7 +11,7 @@ internal sealed partial class LovelyGitRepository
         CancellationToken cancellationToken)
     {
         var data = await _objectStore
-            .ReadObjectWithoutCachingAsync(id, cancellationToken)
+            .ReadObjectWithTransientPackCacheAsync(id, cancellationToken)
             .ConfigureAwait(false);
         if (data.Kind != GitObjectKind.Commit)
         {

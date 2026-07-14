@@ -2,7 +2,7 @@ using System.Buffers.Binary;
 
 namespace ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser.Packs;
 
-internal sealed class GitPackIndex : IDisposable
+internal sealed partial class GitPackIndex : IDisposable
 {
     private const int HeaderLength = 8;
     private const int FanoutBytes = 256 * 4;
@@ -198,24 +198,6 @@ internal sealed class GitPackIndex : IDisposable
         }
 
         return (long)largeOffset;
-    }
-
-    private void ReadExactlyAt(Span<byte> buffer, long offset)
-    {
-        var filled = 0;
-        while (filled < buffer.Length)
-        {
-            var read = RandomAccess.Read(
-                _file.SafeFileHandle,
-                buffer[filled..],
-                offset + filled);
-            if (read == 0)
-            {
-                throw new EndOfStreamException();
-            }
-
-            filled += read;
-        }
     }
 
     public void Dispose()

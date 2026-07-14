@@ -4,7 +4,7 @@ namespace ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser.Packs;
 
 internal sealed partial class GitPackReader : IDisposable
 {
-    private const int PackOffsetCacheSize = 256;
+    private const int PackOffsetCacheSize = 4_096;
     private const int PackOffsetCacheBytes = 8 * 1024 * 1024;
 
     private readonly GitObjectFormat _objectFormat;

@@ -88,6 +88,27 @@ internal sealed partial class GitObjectStore : IDisposable
             ?? throw new FileNotFoundException($"Git object was not found: {id}");
     }
 
+    public async ValueTask<GitObjectData> ReadObjectWithTransientPackCacheAsync(
+        GitObjectId id,
+        CancellationToken cancellationToken)
+    {
+        if (SharedObjectCache.TryGet(id, out var cached))
+        {
+            return cached;
+        }
+
+        var loose = await TryReadLooseObjectAsync(id, cancellationToken).ConfigureAwait(false);
+        if (loose != null)
+        {
+            return loose;
+        }
+
+        var packed = await TryReadPackedObjectAsync(id, cacheObject: true, cancellationToken)
+            .ConfigureAwait(false);
+        return packed
+            ?? throw new FileNotFoundException($"Git object was not found: {id}");
+    }
+
     public void ClearObjectCaches()
     {
         _packReader.ClearObjectCache();
