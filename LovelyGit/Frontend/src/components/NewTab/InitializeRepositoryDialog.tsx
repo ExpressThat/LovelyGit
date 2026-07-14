@@ -1,4 +1,3 @@
-import { motion, useReducedMotion } from "motion/react";
 import {
 	FolderGit2,
 	FolderOpen,
@@ -16,6 +15,7 @@ import {
 	DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { motion, useReducedMotion } from "@/lib/motion";
 import { useInitializeRepository } from "./useInitializeRepository";
 
 export function InitializeRepositoryDialog() {

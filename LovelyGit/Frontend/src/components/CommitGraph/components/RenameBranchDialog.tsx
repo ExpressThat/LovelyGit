@@ -1,4 +1,3 @@
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useState } from "react";
 import { GitBranch, LoaderCircle } from "@/components/icons/lovelyIcons";
 import { Button } from "@/components/ui/button";
@@ -11,6 +10,7 @@ import {
 	DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { AnimatePresence, motion, useReducedMotion } from "@/lib/motion";
 
 export function RenameBranchDialog({
 	branchName,

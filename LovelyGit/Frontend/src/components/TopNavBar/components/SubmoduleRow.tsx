@@ -1,4 +1,3 @@
-import { motion } from "motion/react";
 import {
 	Box,
 	LoaderCircle,
@@ -8,6 +7,7 @@ import {
 } from "@/components/icons/lovelyIcons";
 import { Button } from "@/components/ui/button";
 import type { GitSubmodule, SubmoduleAction } from "@/generated/types";
+import { motion } from "@/lib/motion";
 
 export function SubmoduleRow({
 	busy,

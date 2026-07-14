@@ -1,4 +1,4 @@
-import { motion, useReducedMotion } from "motion/react";
+import { motion, useReducedMotion } from "@/lib/motion";
 import { shortHash } from "../CommitGraph/utils/format";
 
 export function CommitParentSelector({

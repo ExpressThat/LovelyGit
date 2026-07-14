@@ -1,8 +1,8 @@
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { UserRound, X } from "@/components/icons/lovelyIcons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { RepositoryRefItem } from "@/generated/types";
+import { AnimatePresence, motion, useReducedMotion } from "@/lib/motion";
 import { CommitSearchScopeField } from "./CommitSearchScopeField";
 import type { CommitSearchFilters as Filters } from "./commitSearchFilters";
 

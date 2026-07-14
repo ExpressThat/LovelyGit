@@ -1,4 +1,3 @@
-import { motion, useReducedMotion } from "motion/react";
 import { useEffect, useState } from "react";
 import { Link2, LoaderCircle, Unlink } from "@/components/icons/lovelyIcons";
 import { Button } from "@/components/ui/button";
@@ -17,6 +16,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import { motion, useReducedMotion } from "@/lib/motion";
 
 export function BranchUpstreamDialog({
 	branchName,

@@ -4,8 +4,10 @@ import {
 	forwardRef,
 	type RefAttributes,
 } from "react";
-import iconSpriteUrl from "@/assets/lovely-icons.svg?no-inline";
+import iconSpriteMarkup from "@/assets/lovely-icons.svg?raw";
 import { cn } from "@/lib/utils";
+
+const iconSpriteHostId = "lovely-icon-sprite";
 
 export const lovelyIconNames = [
 	"added-file",
@@ -124,7 +126,18 @@ export type LucideIcon = ForwardRefExoticComponent<
 >;
 
 export function getLovelyIconUrl(name: LovelyIconName): string {
-	return `${iconSpriteUrl}#lovely-${name}`;
+	return `#lovely-${name}`;
+}
+
+export function installLovelyIconSprite(ownerDocument: Document): void {
+	if (ownerDocument.getElementById(iconSpriteHostId)) return;
+	const host = ownerDocument.createElement("div");
+	host.id = iconSpriteHostId;
+	host.ariaHidden = "true";
+	host.style.cssText =
+		"position:absolute;width:0;height:0;overflow:hidden;pointer-events:none";
+	host.innerHTML = iconSpriteMarkup;
+	ownerDocument.body.prepend(host);
 }
 
 export function createLovelyIcon(

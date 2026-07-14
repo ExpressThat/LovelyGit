@@ -1,7 +1,7 @@
-import { motion } from "motion/react";
 import { formatDate, shortHash } from "@/components/CommitGraph/utils/format";
 import { GitCommitHorizontal } from "@/components/icons/lovelyIcons";
 import type { CommitSearchResult } from "@/generated/types";
+import { motion } from "@/lib/motion";
 
 export function CommitSearchResultRow({
 	index,

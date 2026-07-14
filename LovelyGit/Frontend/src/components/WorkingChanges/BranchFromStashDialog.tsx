@@ -1,4 +1,3 @@
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useEffect, useState } from "react";
 import {
 	GitBranch,
@@ -16,6 +15,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import type { RepositoryStashItem } from "@/generated/types";
+import { AnimatePresence, motion, useReducedMotion } from "@/lib/motion";
 
 export function BranchFromStashDialog({
 	branchNames,

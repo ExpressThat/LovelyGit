@@ -1,4 +1,3 @@
-import { AnimatePresence } from "motion/react";
 import {
 	LoaderCircle,
 	Plus,
@@ -24,6 +23,7 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
+import { AnimatePresence } from "@/lib/motion";
 import { RemoteEditor } from "./RemoteEditor";
 import { RemoteRow } from "./RemoteRow";
 import { useRemoteManager } from "./useRemoteManager";

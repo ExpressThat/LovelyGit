@@ -1,6 +1,6 @@
-import { motion, useReducedMotion } from "motion/react";
 import { useRef } from "react";
 import type { ConflictResolutionResponse } from "@/generated/types";
+import { motion, useReducedMotion } from "@/lib/motion";
 import { ConflictSourcePane } from "./ConflictSourcePane";
 import type { ConflictSide } from "./conflictDiffItems";
 import type { ConflictChoice } from "./conflictDocument";

@@ -1,4 +1,3 @@
-import { AnimatePresence } from "motion/react";
 import { useState } from "react";
 import {
 	AlertTriangle,
@@ -18,6 +17,7 @@ import {
 	DialogTitle,
 } from "@/components/ui/dialog";
 import type { BranchComparisonFile } from "@/generated/types";
+import { AnimatePresence } from "@/lib/motion";
 import { useBranchComparison } from "../hooks/useBranchComparison";
 import {
 	BranchComparisonContent,

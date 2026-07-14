@@ -1,4 +1,3 @@
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { lazy, Suspense, useState } from "react";
 import {
 	AlertTriangle,
@@ -11,6 +10,7 @@ import type {
 	GitCommitIdentity,
 	GitIdentityValueSource,
 } from "@/generated/types";
+import { AnimatePresence, motion, useReducedMotion } from "@/lib/motion";
 import { useCommitIdentity } from "./useCommitIdentity";
 
 const CommitIdentityDialog = lazy(() =>

@@ -1,4 +1,3 @@
-import { motion } from "motion/react";
 import {
 	Layers3,
 	ListRestart,
@@ -8,6 +7,7 @@ import {
 	GitResetMode,
 	type GitResetMode as GitResetModeValue,
 } from "@/generated/types";
+import { motion } from "@/lib/motion";
 
 export const resetOptions = [
 	{

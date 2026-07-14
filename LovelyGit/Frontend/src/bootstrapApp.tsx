@@ -1,6 +1,8 @@
 import ReactDOM from "react-dom/client";
 import App from "./App";
+import { installLovelyIconSprite } from "./components/icons/LovelyIcon";
 import { TooltipProvider } from "./components/ui/tooltip";
+import { LazyMotion } from "./lib/motion";
 import { applyFontsToDocument } from "./lib/settings/font/fontUtils";
 import { getSetting, initSettingsStore } from "./lib/settings/settingsStore";
 import {
@@ -9,7 +11,11 @@ import {
 	calculateTheme,
 } from "./lib/settings/theme/themeUtils";
 
+const loadMotionFeatures = () =>
+	import("./lib/motionFeatures").then((module) => module.default);
+
 export async function bootstrapApp(rootElement: HTMLElement) {
+	installLovelyIconSprite(rootElement.ownerDocument);
 	await initSettingsStore();
 	const side = calculateAppearanceSide(getSetting("Theme"));
 	applyThemeToDocument(
@@ -44,8 +50,10 @@ export async function bootstrapApp(rootElement: HTMLElement) {
 	);
 
 	ReactDOM.createRoot(rootElement).render(
-		<TooltipProvider>
-			<App />
-		</TooltipProvider>,
+		<LazyMotion features={loadMotionFeatures} strict>
+			<TooltipProvider>
+				<App />
+			</TooltipProvider>
+		</LazyMotion>,
 	);
 }

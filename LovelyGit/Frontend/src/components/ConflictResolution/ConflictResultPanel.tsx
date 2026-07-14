@@ -1,5 +1,5 @@
-import { motion, useReducedMotion } from "motion/react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { motion, useReducedMotion } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 import { ConflictResultPreview } from "./ConflictResultPreview";
 

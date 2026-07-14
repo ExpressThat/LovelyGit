@@ -1,4 +1,3 @@
-import { motion, useReducedMotion } from "motion/react";
 import { useEffect, useState } from "react";
 import {
 	LoaderCircle,
@@ -17,6 +16,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import type { GitCommitIdentity } from "@/generated/types";
+import { motion, useReducedMotion } from "@/lib/motion";
 
 export function CommitIdentityDialog({
 	error,

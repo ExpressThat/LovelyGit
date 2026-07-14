@@ -1,4 +1,3 @@
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useState } from "react";
 import {
 	LoaderCircle,
@@ -16,6 +15,7 @@ import {
 	AlertDialogMedia,
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { AnimatePresence, motion, useReducedMotion } from "@/lib/motion";
 import { MutationOptionToggle } from "./MutationOptionToggle";
 
 export function DeleteBranchDialog({

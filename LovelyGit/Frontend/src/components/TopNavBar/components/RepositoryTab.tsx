@@ -1,6 +1,6 @@
-import { AnimatePresence, motion } from "motion/react";
 import { X } from "@/components/icons/lovelyIcons";
 import type { KnownGitRepository } from "@/generated/types";
+import { AnimatePresence, motion } from "@/lib/motion";
 import { cn, getPathTail } from "@/lib/utils";
 
 type RepositoryTabProps = {

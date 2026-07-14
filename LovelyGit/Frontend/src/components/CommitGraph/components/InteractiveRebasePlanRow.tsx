@@ -1,4 +1,3 @@
-import { motion, useReducedMotion } from "motion/react";
 import { ArrowDown, ArrowUp } from "@/components/icons/lovelyIcons";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,6 +12,7 @@ import {
 	type InteractiveRebaseCommit,
 	type InteractiveRebasePlanItem,
 } from "@/generated/types";
+import { motion, useReducedMotion } from "@/lib/motion";
 import { shortHash } from "../utils/format";
 
 const actions = Object.values(InteractiveRebaseAction);

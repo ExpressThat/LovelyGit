@@ -1,4 +1,3 @@
-import { motion, useReducedMotion } from "motion/react";
 import { useState } from "react";
 import {
 	FolderGit2,
@@ -23,6 +22,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import type { RepositoryWorktreeItem } from "@/generated/types";
+import { motion, useReducedMotion } from "@/lib/motion";
 
 export function CreateWorktreeDialog({
 	branchName,

@@ -2,7 +2,11 @@
 
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import { getLovelyIconUrl, lovelyIconNames } from "./LovelyIcon";
+import {
+	getLovelyIconUrl,
+	installLovelyIconSprite,
+	lovelyIconNames,
+} from "./LovelyIcon";
 import { LoaderCircle, Search } from "./lovelyIcons";
 
 describe("LovelyIcon", () => {
@@ -34,6 +38,15 @@ describe("LovelyIcon", () => {
 		expect(icon).toHaveAttribute("stroke", "currentColor");
 		expect(icon.style.height).toBe("18px");
 		expect(icon.style.width).toBe("18px");
+	});
+
+	it("installs the sprite once and resolves icons through local fragments", () => {
+		installLovelyIconSprite(document);
+		installLovelyIconSprite(document);
+
+		expect(document.querySelectorAll("#lovely-icon-sprite")).toHaveLength(1);
+		expect(document.querySelector("#lovely-search")).toBeInTheDocument();
+		expect(getLovelyIconUrl("search")).toBe("#lovely-search");
 	});
 
 	it("keeps decorative and animated icons compatible with existing controls", () => {

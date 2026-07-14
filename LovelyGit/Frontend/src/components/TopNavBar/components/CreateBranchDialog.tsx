@@ -1,4 +1,3 @@
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { GitBranch, LoaderCircle } from "@/components/icons/lovelyIcons";
@@ -15,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { sendRequestWithResponse } from "@/lib/commands";
 import { gitMutationTimeoutMs } from "@/lib/gitMutationTimeout";
+import { AnimatePresence, motion, useReducedMotion } from "@/lib/motion";
 import { NativeMessageType } from "@/lib/nativeMessaging";
 
 export function CreateBranchDialog({

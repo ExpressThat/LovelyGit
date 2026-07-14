@@ -1,4 +1,3 @@
-import { AnimatePresence } from "motion/react";
 import { useState } from "react";
 import {
 	AlertTriangle,
@@ -15,6 +14,7 @@ import {
 	DialogTitle,
 } from "@/components/ui/dialog";
 import type { BranchComparisonFile, CommitGraphRow } from "@/generated/types";
+import { AnimatePresence } from "@/lib/motion";
 import { useCommitComparison } from "../hooks/useCommitComparison";
 import { shortHash } from "../utils/format";
 import {

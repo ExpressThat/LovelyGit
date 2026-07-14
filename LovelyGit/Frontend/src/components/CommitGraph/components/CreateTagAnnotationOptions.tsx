@@ -1,5 +1,5 @@
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { BadgeCheck } from "@/components/icons/lovelyIcons";
+import { AnimatePresence, motion, useReducedMotion } from "@/lib/motion";
 import { MutationOptionToggle } from "./MutationOptionToggle";
 
 export function CreateTagAnnotationOptions({

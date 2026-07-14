@@ -1,4 +1,3 @@
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import {
 	GitCommitHorizontal,
 	GitCompareArrows,
@@ -6,6 +5,7 @@ import {
 	X,
 } from "@/components/icons/lovelyIcons";
 import { Button } from "@/components/ui/button";
+import { AnimatePresence, motion, useReducedMotion } from "@/lib/motion";
 import { CommitPatchSeriesMenu } from "./CommitPatchSeriesMenu";
 
 export function CommitMultiSelectionBar({

@@ -1,4 +1,3 @@
-import { motion, useReducedMotion } from "motion/react";
 import type { ReactNode } from "react";
 import { FileDiff, GitCommitHorizontal } from "@/components/icons/lovelyIcons";
 import type {
@@ -6,6 +5,7 @@ import type {
 	BranchComparisonFile,
 	BranchComparisonResponse,
 } from "@/generated/types";
+import { motion, useReducedMotion } from "@/lib/motion";
 import { shortHash } from "../utils/format";
 
 export type BranchComparisonSection = "ahead" | "behind" | "files";

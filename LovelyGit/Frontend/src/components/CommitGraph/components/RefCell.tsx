@@ -1,7 +1,7 @@
 import { PreviewCard } from "@base-ui/react/preview-card";
-import { motion, useReducedMotion } from "motion/react";
 import type { BranchIntegrationMode } from "@/components/TopNavBar/components/BranchIntegrationDialog";
 import type { CommitGraphRow } from "@/generated/types";
+import { motion, useReducedMotion } from "@/lib/motion";
 import { type BranchAction, BranchContextMenu } from "./BranchContextMenu";
 import { buildRefCellGroupView } from "./RefCellGrouping";
 import {

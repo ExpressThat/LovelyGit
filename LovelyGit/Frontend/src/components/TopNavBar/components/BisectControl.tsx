@@ -1,4 +1,3 @@
-import { motion } from "motion/react";
 import { lazy, Suspense, useState } from "react";
 import { SearchCode } from "@/components/icons/lovelyIcons";
 import {
@@ -9,6 +8,7 @@ import {
 	DialogTitle,
 	DialogTrigger,
 } from "@/components/ui/dialog";
+import { motion } from "@/lib/motion";
 import { useBisectSession } from "./useBisectSession";
 
 const BisectSessionContent = lazy(() =>

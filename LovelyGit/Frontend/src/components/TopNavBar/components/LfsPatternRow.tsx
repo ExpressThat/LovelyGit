@@ -1,10 +1,10 @@
-import { motion, useReducedMotion } from "motion/react";
 import {
 	FileArchive,
 	LoaderCircle,
 	Trash2,
 } from "@/components/icons/lovelyIcons";
 import { Button } from "@/components/ui/button";
+import { motion, useReducedMotion } from "@/lib/motion";
 
 export function LfsPatternRow({
 	busy,

@@ -1,4 +1,3 @@
-import { AnimatePresence } from "motion/react";
 import { useEffect, useState } from "react";
 import {
 	Download,
@@ -27,6 +26,7 @@ import {
 	DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { AnimatePresence } from "@/lib/motion";
 import { LfsPatternRow } from "./LfsPatternRow";
 import { useLfsManager } from "./useLfsManager";
 

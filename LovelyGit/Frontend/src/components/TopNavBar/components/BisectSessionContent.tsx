@@ -1,4 +1,3 @@
-import { AnimatePresence, motion } from "motion/react";
 import {
 	CircleCheck,
 	CircleX,
@@ -9,6 +8,7 @@ import {
 } from "@/components/icons/lovelyIcons";
 import { Button } from "@/components/ui/button";
 import type { GitBisectAction, GitBisectState } from "@/generated/types";
+import { AnimatePresence, motion } from "@/lib/motion";
 
 export function BisectSessionContent({
 	busyAction,

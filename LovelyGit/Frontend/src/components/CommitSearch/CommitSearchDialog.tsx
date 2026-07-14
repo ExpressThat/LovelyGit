@@ -1,4 +1,3 @@
-import { useReducedMotion } from "motion/react";
 import { useEffect, useState } from "react";
 import {
 	CornerDownLeft,
@@ -15,6 +14,7 @@ import {
 	DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { useReducedMotion } from "@/lib/motion";
 import { AdvancedCommitSearchFilters } from "./AdvancedCommitSearchFilters";
 import { CommitSearchContent, CommitSearchStatus } from "./CommitSearchContent";
 import {

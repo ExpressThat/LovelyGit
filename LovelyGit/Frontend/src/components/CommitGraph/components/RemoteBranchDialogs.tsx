@@ -1,4 +1,3 @@
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useState } from "react";
 import {
 	CloudDownload,
@@ -26,6 +25,7 @@ import {
 	DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { AnimatePresence, motion, useReducedMotion } from "@/lib/motion";
 
 export function CheckoutRemoteBranchDialog({
 	existingBranchNames,

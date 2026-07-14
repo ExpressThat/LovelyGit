@@ -1,4 +1,3 @@
-import { AnimatePresence, motion } from "motion/react";
 import { FileDiff, LoaderCircle } from "@/components/icons/lovelyIcons";
 import { Button } from "@/components/ui/button";
 import {
@@ -11,6 +10,7 @@ import {
 	DialogTitle,
 } from "@/components/ui/dialog";
 import type { PatchPreviewResponse } from "@/generated/types";
+import { AnimatePresence, motion } from "@/lib/motion";
 import { PatchApplyPreview } from "./PatchApplyPreview";
 
 export function PatchApplyDialog({

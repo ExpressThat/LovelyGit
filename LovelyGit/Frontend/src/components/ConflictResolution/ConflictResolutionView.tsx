@@ -1,7 +1,7 @@
-import { motion, useReducedMotion } from "motion/react";
 import { useRef } from "react";
 import { AlertTriangle } from "@/components/icons/lovelyIcons";
 import type { WorkingTreeChangedFile } from "@/generated/types";
+import { motion, useReducedMotion } from "@/lib/motion";
 import { LoadingDiff } from "../CommitFileDiff/DiffContent";
 import { DiffToolbarControls } from "../CommitFileDiff/DiffToolbarControls";
 import { ConflictMergeHeader } from "./ConflictMergeHeader";

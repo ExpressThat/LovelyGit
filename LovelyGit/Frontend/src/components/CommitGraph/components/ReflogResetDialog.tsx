@@ -1,4 +1,3 @@
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { ListRestart, LoaderCircle } from "@/components/icons/lovelyIcons";
@@ -19,6 +18,7 @@ import {
 } from "@/generated/types";
 import { sendRequestWithResponse } from "@/lib/commands";
 import { gitMutationTimeoutMs } from "@/lib/gitMutationTimeout";
+import { AnimatePresence, motion, useReducedMotion } from "@/lib/motion";
 import { shortHash } from "../utils/format";
 import { ResetModeOption, resetOptions } from "./ResetModeOption";
 

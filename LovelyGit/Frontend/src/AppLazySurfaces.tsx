@@ -1,4 +1,3 @@
-import { motion, useReducedMotion } from "motion/react";
 import {
 	type ComponentProps,
 	type ComponentType,
@@ -10,6 +9,7 @@ import {
 import { LoaderCircle } from "@/components/icons/lovelyIcons";
 import { Button } from "@/components/ui/button";
 import { createDeferredLoader } from "@/lib/deferredLoader";
+import { motion, useReducedMotion } from "@/lib/motion";
 import { CommitDetails } from "./components/CommitDetails/CommitDetails";
 import type { CommitFileDiffView as CommitFileDiffComponent } from "./components/CommitFileDiff/CommitFileDiffView";
 import type { ConflictResolutionView as ConflictResolutionComponent } from "./components/ConflictResolution/ConflictResolutionView";

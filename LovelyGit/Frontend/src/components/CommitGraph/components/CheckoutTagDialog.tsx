@@ -1,4 +1,3 @@
-import { motion, useReducedMotion } from "motion/react";
 import { useState } from "react";
 import { toast } from "sonner";
 import {
@@ -17,6 +16,7 @@ import {
 } from "@/components/ui/dialog";
 import { sendRequestWithResponse } from "@/lib/commands";
 import { gitMutationTimeoutMs } from "@/lib/gitMutationTimeout";
+import { motion, useReducedMotion } from "@/lib/motion";
 import { NativeMessageType } from "@/lib/nativeMessaging";
 
 export function CheckoutTagDialog({

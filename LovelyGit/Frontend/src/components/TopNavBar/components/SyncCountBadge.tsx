@@ -1,5 +1,5 @@
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { ArrowDown, ArrowUp } from "@/components/icons/lovelyIcons";
+import { AnimatePresence, motion, useReducedMotion } from "@/lib/motion";
 
 export function SyncCountBadge({
 	count,

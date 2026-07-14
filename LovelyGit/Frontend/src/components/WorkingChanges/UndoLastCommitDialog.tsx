@@ -1,4 +1,3 @@
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import {
 	GitCommitHorizontal,
 	LoaderCircle,
@@ -16,6 +15,7 @@ import {
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import type { HeadCommitMessageResponse } from "@/generated/types";
+import { AnimatePresence, motion, useReducedMotion } from "@/lib/motion";
 
 export function UndoLastCommitDialog({
 	error,

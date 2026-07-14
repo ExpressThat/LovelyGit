@@ -1,4 +1,3 @@
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { lazy, Suspense, useState } from "react";
 import { Archive, FileSearch } from "@/components/icons/lovelyIcons";
 import { Button } from "@/components/ui/button";
@@ -10,6 +9,7 @@ import {
 	DialogTitle,
 } from "@/components/ui/dialog";
 import type { RepositoryStashItem } from "@/generated/types";
+import { AnimatePresence, motion, useReducedMotion } from "@/lib/motion";
 import { StashInspectionFileList } from "./StashInspectionFileList";
 import {
 	type StashInspectionFile,

@@ -1,5 +1,5 @@
-import { motion } from "motion/react";
 import type { CommitGraphRow } from "@/generated/types";
+import { motion } from "@/lib/motion";
 import { CommitGraphView } from "./CommitGraphView";
 
 export function CommitGraphLayer({

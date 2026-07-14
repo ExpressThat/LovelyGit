@@ -1,3 +1,5 @@
+// @vitest-environment jsdom
+
 import { describe, expect, it, vi } from "vitest";
 
 const calls = vi.hoisted(() => [] as string[]);
@@ -42,8 +44,11 @@ describe("bootstrapApp", () => {
 		calls.length = 0;
 		const { bootstrapApp } = await import("./bootstrapApp");
 
-		await bootstrapApp({} as HTMLElement);
+		const root = document.createElement("div");
+		document.body.append(root);
+		await bootstrapApp(root);
 
 		expect(calls).toEqual(["settings", "render"]);
+		expect(document.querySelector("#lovely-icon-sprite")).toBeInTheDocument();
 	});
 });

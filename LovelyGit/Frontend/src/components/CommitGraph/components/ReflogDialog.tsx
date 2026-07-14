@@ -1,4 +1,3 @@
-import { motion, useReducedMotion } from "motion/react";
 import { toast } from "sonner";
 import {
 	AlertTriangle,
@@ -16,6 +15,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import type { GitReflogEntry } from "@/generated/types";
+import { motion, useReducedMotion } from "@/lib/motion";
 import { useReflog } from "../hooks/useReflog";
 import { ReflogEntryRow } from "./ReflogEntryRow";
 

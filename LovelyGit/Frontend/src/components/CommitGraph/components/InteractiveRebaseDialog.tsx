@@ -1,4 +1,3 @@
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { toast } from "sonner";
 import {
 	AlertTriangle,
@@ -15,6 +14,7 @@ import {
 	DialogTitle,
 } from "@/components/ui/dialog";
 import type { CommitGraphRow } from "@/generated/types";
+import { AnimatePresence, motion, useReducedMotion } from "@/lib/motion";
 import { useInteractiveRebasePlan } from "../hooks/useInteractiveRebasePlan";
 import { shortHash } from "../utils/format";
 import { InteractiveRebasePlanRow } from "./InteractiveRebasePlanRow";

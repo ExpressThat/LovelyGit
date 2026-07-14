@@ -1,6 +1,6 @@
 import "./App.css";
-import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
+import { AnimatePresence, motion } from "@/lib/motion";
 import { AppCommitDetailsPanel } from "./AppCommitDetailsPanel";
 import * as LazySurfaces from "./AppLazySurfaces";
 import { AppOverlaysContainer } from "./AppOverlaysContainer";

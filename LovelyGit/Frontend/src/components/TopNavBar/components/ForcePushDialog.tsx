@@ -1,4 +1,3 @@
-import { motion, useReducedMotion } from "motion/react";
 import { ShieldAlert } from "@/components/icons/lovelyIcons";
 import {
 	AlertDialog,
@@ -11,6 +10,7 @@ import {
 	AlertDialogMedia,
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { motion, useReducedMotion } from "@/lib/motion";
 
 export function ForcePushDialog({
 	branchName,

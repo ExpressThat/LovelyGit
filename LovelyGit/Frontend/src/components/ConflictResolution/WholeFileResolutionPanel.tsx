@@ -1,7 +1,7 @@
-import { motion } from "motion/react";
 import { FileMinus2, GitBranch } from "@/components/icons/lovelyIcons";
 import { Button } from "@/components/ui/button";
 import type { ConflictResolutionSource } from "@/generated/types";
+import { motion } from "@/lib/motion";
 
 export function WholeFileResolutionPanel({
 	exists,

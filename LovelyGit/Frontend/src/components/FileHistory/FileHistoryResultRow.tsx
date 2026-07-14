@@ -1,7 +1,7 @@
-import { motion } from "motion/react";
 import { formatDate, shortHash } from "@/components/CommitGraph/utils/format";
 import { FileClock } from "@/components/icons/lovelyIcons";
 import type { FileHistoryResult } from "@/generated/types";
+import { motion } from "@/lib/motion";
 
 export function FileHistoryResultRow({
 	index,

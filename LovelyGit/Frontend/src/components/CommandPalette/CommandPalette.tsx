@@ -1,4 +1,3 @@
-import { motion, useReducedMotion } from "motion/react";
 import { useEffect, useMemo, useState } from "react";
 import { copyToClipboard } from "@/components/CommitGraph/utils/clipboard";
 import { Search } from "@/components/icons/lovelyIcons";
@@ -15,6 +14,7 @@ import {
 	DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { motion, useReducedMotion } from "@/lib/motion";
 import { useRepositoryContext } from "@/lib/repositoryContext";
 import { cn } from "@/lib/utils";
 import {

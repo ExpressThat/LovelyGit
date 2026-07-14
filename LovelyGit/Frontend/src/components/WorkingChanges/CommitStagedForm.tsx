@@ -1,4 +1,3 @@
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import {
 	GitCommitHorizontal,
 	LoaderCircle,
@@ -6,6 +5,7 @@ import {
 	Undo2,
 } from "@/components/icons/lovelyIcons";
 import { Switch } from "@/components/ui/switch";
+import { AnimatePresence, motion, useReducedMotion } from "@/lib/motion";
 import { CommitIdentityControl } from "./CommitIdentityControl";
 import { ActionButton } from "./WorkingChangesPanelParts";
 
