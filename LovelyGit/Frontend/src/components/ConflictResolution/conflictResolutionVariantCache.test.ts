@@ -1,6 +1,32 @@
 import { describe, expect, it, vi } from "vitest";
 import type { ConflictResolutionResponse } from "@/generated/types";
-import { ConflictResolutionVariantCache } from "./conflictResolutionVariantCache";
+import {
+	ConflictDocumentCache,
+	ConflictResolutionVariantCache,
+} from "./conflictResolutionVariantCache";
+
+const conflictResponse = (fingerprint: string) =>
+	({
+		worktreeFingerprint: fingerprint,
+		base: { text: "base\n" },
+		ours: { text: "current\n" },
+		theirs: { text: "incoming\n" },
+		result: {
+			text: "<<<<<<< HEAD\ncurrent\n=======\nincoming\n>>>>>>> other\n",
+		},
+		hunks: [],
+	}) as unknown as ConflictResolutionResponse;
+
+describe("ConflictDocumentCache", () => {
+	it("reuses the prepared document until the worktree changes", () => {
+		const cache = new ConflictDocumentCache();
+		const first = cache.get("repo\0file", conflictResponse("one"));
+
+		expect(cache.get("repo\0file", conflictResponse("one"))).toBe(first);
+		expect(cache.get("repo\0file", conflictResponse("two"))).not.toBe(first);
+		expect(cache.get("repo\0other", conflictResponse("two"))).not.toBe(first);
+	});
+});
 
 describe("ConflictResolutionVariantCache", () => {
 	it("reuses each prepared whitespace variant", async () => {

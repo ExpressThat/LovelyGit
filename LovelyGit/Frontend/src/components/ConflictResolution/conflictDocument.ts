@@ -178,13 +178,14 @@ export function areConflictChoicesResolved(
 }
 
 export function hasConflictMarkers(text: string) {
-	return text
-		.split(/\r?\n/)
-		.some((line) =>
-			["<<<<<<<", "=======", ">>>>>>>"].some((marker) =>
-				line.startsWith(marker),
-			),
-		);
+	return ["<<<<<<<", "=======", ">>>>>>>"].some((marker) => {
+		let index = text.indexOf(marker);
+		while (index >= 0) {
+			if (index === 0 || text.charCodeAt(index - 1) === 10) return true;
+			index = text.indexOf(marker, index + 1);
+		}
+		return false;
+	});
 }
 
 function readConflict(lines: string[], start: number, id: number) {

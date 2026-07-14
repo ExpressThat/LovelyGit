@@ -4,6 +4,8 @@ import { cn } from "@/lib/utils";
 
 const LINE_HEIGHT = 18;
 const GUTTER_OVERSCAN = 4;
+const CHARACTER_WIDTH = 7.25;
+const HORIZONTAL_PADDING = 24;
 
 export function ConflictResultPanel({
 	isManualResult,
@@ -21,17 +23,23 @@ export function ConflictResultPanel({
 	const reduceMotion = useReducedMotion();
 	const [scrollTop, setScrollTop] = useState(0);
 	const [viewportHeight, setViewportHeight] = useState(400);
+	const [viewportWidth, setViewportWidth] = useState(800);
 	const textareaRef = useRef<HTMLTextAreaElement>(null);
-	const lineCount = useMemo(() => countLines(value), [value]);
+	const textMetrics = useMemo(() => measureConflictText(value), [value]);
+	const effectiveWrapLines =
+		wrapLines &&
+		textMetrics.maximumColumns * CHARACTER_WIDTH >
+			viewportWidth - HORIZONTAL_PADDING;
 	const lineNumbers = useMemo(
-		() => visibleLineNumbers(lineCount, scrollTop, viewportHeight),
-		[lineCount, scrollTop, viewportHeight],
+		() => visibleLineNumbers(textMetrics.lineCount, scrollTop, viewportHeight),
+		[textMetrics.lineCount, scrollTop, viewportHeight],
 	);
 	useEffect(() => {
 		const textarea = textareaRef.current;
 		if (!textarea) return;
 		const updateHeight = () => {
 			if (textarea.clientHeight > 0) setViewportHeight(textarea.clientHeight);
+			if (textarea.clientWidth > 0) setViewportWidth(textarea.clientWidth);
 		};
 		updateHeight();
 		const observer = new ResizeObserver(updateHeight);
@@ -86,26 +94,40 @@ export function ConflictResultPanel({
 					aria-label="Editable result preview"
 					className={cn(
 						"custom-scrollbar min-h-0 min-w-0 flex-1 resize-none bg-background px-3 py-2 font-mono text-[12px] leading-[18px] outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring",
-						wrapLines ? "whitespace-pre-wrap" : "whitespace-pre",
+						effectiveWrapLines ? "whitespace-pre-wrap" : "whitespace-pre",
 					)}
 					onChange={(event) => onEdit(event.target.value)}
 					onScroll={(event) => setScrollTop(event.currentTarget.scrollTop)}
 					ref={textareaRef}
 					spellCheck={false}
 					value={value}
-					wrap={wrapLines ? "soft" : "off"}
+					wrap={effectiveWrapLines ? "soft" : "off"}
 				/>
 			</div>
 		</motion.section>
 	);
 }
 
-function countLines(value: string) {
+export function measureConflictText(value: string) {
 	let lineCount = 1;
+	let columns = 0;
+	let maximumColumns = 0;
 	for (let index = 0; index < value.length; index++) {
-		if (value.charCodeAt(index) === 10) lineCount++;
+		const character = value.charCodeAt(index);
+		if (character === 10) {
+			lineCount++;
+			maximumColumns = Math.max(maximumColumns, columns);
+			columns = 0;
+		} else if (character === 9) {
+			columns += 4 - (columns % 4);
+		} else if (character !== 13) {
+			columns++;
+		}
 	}
-	return lineCount;
+	return {
+		lineCount,
+		maximumColumns: Math.max(maximumColumns, columns),
+	};
 }
 
 function visibleLineNumbers(

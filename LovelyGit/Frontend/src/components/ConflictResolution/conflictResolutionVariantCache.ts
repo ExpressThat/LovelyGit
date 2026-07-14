@@ -1,4 +1,28 @@
 import type { ConflictResolutionResponse } from "@/generated/types";
+import { createConflictDocument } from "./conflictDocument";
+
+export type ConflictLoadState =
+	| { status: "loading" }
+	| { status: "error"; message: string }
+	| {
+			status: "loaded";
+			conflict: ConflictResolutionResponse;
+			document: ReturnType<typeof createConflictDocument>;
+	  };
+
+export class ConflictDocumentCache {
+	private identity = "";
+	private document: ReturnType<typeof createConflictDocument> = [];
+
+	get(owner: string, conflict: ConflictResolutionResponse) {
+		const identity = `${owner}\0${conflict.worktreeFingerprint}`;
+		if (this.identity !== identity) {
+			this.identity = identity;
+			this.document = createConflictDocument(conflict);
+		}
+		return this.document;
+	}
+}
 
 export class ConflictResolutionVariantCache {
 	private owner = "";

@@ -12,18 +12,17 @@ import {
 	areConflictChoicesResolved,
 	type ConflictChoice,
 	createConflictChoices,
-	createConflictDocument,
 	hasConflictMarkers,
 	renderConflictResult,
 } from "./conflictDocument";
-import { ConflictResolutionVariantCache } from "./conflictResolutionVariantCache";
+import {
+	ConflictDocumentCache,
+	type ConflictLoadState,
+	ConflictResolutionVariantCache,
+} from "./conflictResolutionVariantCache";
 import { loadConflictTextPayloads } from "./conflictTextPayload";
 import { verifyExternalConflictResolved } from "./externalConflictVerification";
 
-type LoadState =
-	| { status: "loading" }
-	| { status: "error"; message: string }
-	| { status: "loaded"; conflict: ConflictResolutionResponse };
 type BusyAction = "save" | "external" | null;
 
 export function useConflictResolution({
@@ -41,7 +40,7 @@ export function useConflictResolution({
 	const wrapLines = useSetting("CommitDiffWrapLines");
 	const contextLines = useSetting("CommitDiffContextLines");
 	const lineDisplayMode = useSetting("CommitDiffLineDisplayMode");
-	const [state, setState] = useState<LoadState>({ status: "loading" });
+	const [state, setState] = useState<ConflictLoadState>({ status: "loading" });
 	const [choices, setChoices] = useState<Record<number, ConflictChoice>>({});
 	const [resultText, setResultText] = useState("");
 	const [isManualResult, setIsManualResult] = useState(false);
@@ -51,7 +50,8 @@ export function useConflictResolution({
 	const [busyAction, setBusyAction] = useState<BusyAction>(null);
 	const [actionError, setActionError] = useState<string | null>(null);
 	const [activeConflict, setActiveConflict] = useState(0);
-	const loadedFingerprint = useRef<string | null>(null);
+	const loadedIdentity = useRef<string | null>(null);
+	const documentCache = useRef(new ConflictDocumentCache());
 	const variantCache = useRef(new ConflictResolutionVariantCache());
 	const fetchConflict = useCallback(
 		() =>
@@ -76,23 +76,25 @@ export function useConflictResolution({
 
 	useEffect(() => {
 		let active = true;
-		if (loadedFingerprint.current === null) setState({ status: "loading" });
+		if (loadedIdentity.current === null) setState({ status: "loading" });
 		fetchConflict()
 			.then((conflict) => {
 				if (!active || !conflict) return;
-				if (loadedFingerprint.current === conflict.worktreeFingerprint) {
-					setState({ status: "loaded", conflict });
+				const owner = `${repositoryId}\0${file.path}`;
+				const identity = `${owner}\0${conflict.worktreeFingerprint}`;
+				const preparedDocument = documentCache.current.get(owner, conflict);
+				if (loadedIdentity.current === identity) {
+					setState({ status: "loaded", conflict, document: preparedDocument });
 					return;
 				}
-				loadedFingerprint.current = conflict.worktreeFingerprint;
-				const document = createConflictDocument(conflict);
-				const initialChoices = createConflictChoices(document);
+				loadedIdentity.current = identity;
+				const initialChoices = createConflictChoices(preparedDocument);
 				setChoices(initialChoices);
-				setResultText(renderConflictResult(document, initialChoices));
+				setResultText(renderConflictResult(preparedDocument, initialChoices));
 				setIsManualResult(false);
 				setWholeFileSelection(null);
 				setActiveConflict(0);
-				setState({ status: "loaded", conflict });
+				setState({ status: "loaded", conflict, document: preparedDocument });
 			})
 			.catch((error: unknown) => {
 				if (active) setState({ status: "error", message: errorMessage(error) });
@@ -100,20 +102,20 @@ export function useConflictResolution({
 		return () => {
 			active = false;
 		};
-	}, [fetchConflict]);
+	}, [fetchConflict, file.path, repositoryId]);
 
-	const document = useMemo(
-		() =>
-			state.status === "loaded" ? createConflictDocument(state.conflict) : [],
-		[state],
-	);
+	const document = state.status === "loaded" ? state.document : [];
 	const textConflicts = document.filter(
 		(segment) => segment.kind === "conflict",
 	);
 	const wholeFile =
 		state.status === "loaded" && requiresWholeFileChoice(state.conflict);
+	const resultHasConflictMarkers = useMemo(
+		() => hasConflictMarkers(resultText),
+		[resultText],
+	);
 	const isTextResolved =
-		!hasConflictMarkers(resultText) &&
+		!resultHasConflictMarkers &&
 		(isManualResult || areConflictChoicesResolved(document, choices));
 	const canSave = wholeFile ? wholeFileSelection !== null : isTextResolved;
 	const unresolved = isManualResult
