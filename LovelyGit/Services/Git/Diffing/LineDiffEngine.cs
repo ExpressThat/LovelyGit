@@ -1,6 +1,6 @@
 namespace ExpressThat.LovelyGit.Services.Git.Diffing;
 
-internal static class LineDiffEngine
+internal static partial class LineDiffEngine
 {
     public static LineDiffModel Build(string oldText, string newText, bool ignoreWhitespace = false)
         => Build(Prepare(oldText), Prepare(newText), ignoreWhitespace);
@@ -13,12 +13,6 @@ internal static class LineDiffEngine
         PreparedLineText newText,
         bool ignoreWhitespace = false)
         => BuildCore(oldText, newText, ignoreWhitespace, alignRows: false);
-
-    public static PreparedLineText Prepare(string text) =>
-        new(SplitLines(text), EndsWithNewLine(text));
-
-    public static PreparedLineText Prepare(string text, PreparedLineText reuseSameIndexFrom) =>
-        new(SplitLines(text, reuseSameIndexFrom.Lines), EndsWithNewLine(text));
 
     public static LineDiffModel Build(
         PreparedLineText oldText,
@@ -117,51 +111,6 @@ internal static class LineDiffEngine
         var comparison = (string[])text.Lines.Clone();
         comparison[^1] += "\n";
         return comparison;
-    }
-
-    private static bool EndsWithNewLine(string text) => text.EndsWith('\n') || text.EndsWith('\r');
-
-    public static string[] SplitLines(string text) => SplitLines(text, []);
-
-    private static string[] SplitLines(string text, string[] reuseSameIndexFrom)
-    {
-        if (text.Length == 0) return [];
-        var separatorCount = 0;
-        for (var index = 0; index < text.Length; index++)
-        {
-            if (text[index] is not ('\r' or '\n')) continue;
-            separatorCount++;
-            if (text[index] == '\r' && index + 1 < text.Length && text[index + 1] == '\n') index++;
-        }
-
-        var endsWithNewLine = EndsWithNewLine(text);
-        var lines = new string[separatorCount + (endsWithNewLine ? 0 : 1)];
-        var lineStart = 0;
-        var lineIndex = 0;
-        for (var index = 0; index < text.Length && lineIndex < lines.Length; index++)
-        {
-            if (text[index] is not ('\r' or '\n')) continue;
-            lines[lineIndex] = CreateOrReuseLine(text, lineStart, index - lineStart, lineIndex, reuseSameIndexFrom);
-            lineIndex++;
-            if (text[index] == '\r' && index + 1 < text.Length && text[index + 1] == '\n') index++;
-            lineStart = index + 1;
-        }
-        if (!endsWithNewLine)
-            lines[^1] = CreateOrReuseLine(text, lineStart, text.Length - lineStart, lines.Length - 1, reuseSameIndexFrom);
-        return lines;
-    }
-
-    private static string CreateOrReuseLine(
-        string text,
-        int start,
-        int length,
-        int lineIndex,
-        string[] reuseSameIndexFrom)
-    {
-        var candidate = text.AsSpan(start, length);
-        if (lineIndex < reuseSameIndexFrom.Length && candidate.SequenceEqual(reuseSameIndexFrom[lineIndex]))
-            return reuseSameIndexFrom[lineIndex];
-        return new string(candidate);
     }
 
     private static List<LineDiffRow> Align(int oldCount, int newCount, IReadOnlyList<LineDiffBlock> edits)
