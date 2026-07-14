@@ -1,16 +1,5 @@
-import { useState } from "react";
-import { Archive, LoaderCircle, Trash2 } from "@/components/icons/lovelyIcons";
-import {
-	AlertDialog,
-	AlertDialogAction,
-	AlertDialogCancel,
-	AlertDialogContent,
-	AlertDialogDescription,
-	AlertDialogFooter,
-	AlertDialogHeader,
-	AlertDialogMedia,
-	AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { useEffect, useState } from "react";
+import { Archive, LoaderCircle } from "@/components/icons/lovelyIcons";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -24,8 +13,10 @@ import {
 import { Input } from "@/components/ui/input";
 import { type RepositoryStashItem, StashAction } from "@/generated/types";
 import { BranchFromStashDialog } from "./BranchFromStashDialog";
+import { DropStashDialog } from "./DropStashDialog";
 import { StashInspectionDialog } from "./StashInspectionDialog";
 import { StashList } from "./StashList";
+import { StashScopeControl } from "./StashScopeControl";
 import { useStashDialog } from "./useStashDialog";
 
 export function StashDialog({
@@ -34,6 +25,7 @@ export function StashDialog({
 	onRepositoryChanged,
 	open: controlledOpen,
 	repositoryId,
+	selectedPaths = [],
 	showTrigger = true,
 }: {
 	canCreate: boolean;
@@ -41,13 +33,23 @@ export function StashDialog({
 	onRepositoryChanged: () => Promise<void> | void;
 	open?: boolean;
 	repositoryId: string;
+	selectedPaths?: string[];
 	showTrigger?: boolean;
 }) {
+	const [selectedOnly, setSelectedOnly] = useState(
+		() => selectedPaths.length > 0,
+	);
 	const controlled =
 		controlledOpen === undefined || onOpenChange === undefined
 			? undefined
 			: { onOpenChange, open: controlledOpen };
-	const stash = useStashDialog(repositoryId, onRepositoryChanged, controlled);
+	const stash = useStashDialog(
+		repositoryId,
+		onRepositoryChanged,
+		controlled,
+		selectedOnly,
+		selectedOnly ? selectedPaths : [],
+	);
 	const [inspectionTarget, setInspectionTarget] =
 		useState<RepositoryStashItem | null>(null);
 	const {
@@ -70,6 +72,9 @@ export function StashDialog({
 		setRestoreIndex,
 		stashes,
 	} = stash;
+	useEffect(() => {
+		if (!open) setSelectedOnly(selectedPaths.length > 0);
+	}, [open, selectedPaths.length]);
 
 	return (
 		<>
@@ -113,6 +118,11 @@ export function StashDialog({
 								value={message}
 							/>
 						</div>
+						<StashScopeControl
+							onSelectedOnlyChange={setSelectedOnly}
+							selectedCount={selectedPaths.length}
+							selectedOnly={selectedOnly}
+						/>
 						<div className="flex flex-wrap items-center justify-between gap-3">
 							<label
 								className="flex items-center gap-2 text-sm"
@@ -127,7 +137,11 @@ export function StashDialog({
 								Include untracked files
 							</label>
 							<Button
-								disabled={!canCreate || busyAction !== null}
+								disabled={
+									!canCreate ||
+									busyAction !== null ||
+									(selectedOnly && selectedPaths.length === 0)
+								}
 								onClick={() => void runAction(StashAction.Create)}
 								size="sm"
 							>
@@ -175,41 +189,12 @@ export function StashDialog({
 					</section>
 				</DialogContent>
 			</Dialog>
-			<AlertDialog
-				onOpenChange={(isOpen) => {
-					if (!isOpen && busyAction !== StashAction.Drop) {
-						setDropTarget(null);
-					}
-				}}
-				open={dropTarget !== null}
-			>
-				<AlertDialogContent>
-					<AlertDialogHeader>
-						<AlertDialogMedia className="bg-destructive/10 text-destructive">
-							<Trash2 aria-hidden="true" />
-						</AlertDialogMedia>
-						<AlertDialogTitle>Delete this stash?</AlertDialogTitle>
-						<AlertDialogDescription>
-							{dropTarget?.selector} will be permanently removed from the
-							repository reflog.
-						</AlertDialogDescription>
-					</AlertDialogHeader>
-					<AlertDialogFooter>
-						<AlertDialogCancel disabled={busyAction === StashAction.Drop}>
-							Cancel
-						</AlertDialogCancel>
-						<AlertDialogAction
-							disabled={!dropTarget || busyAction === StashAction.Drop}
-							onClick={() => {
-								if (dropTarget) void runAction(StashAction.Drop, dropTarget);
-							}}
-							variant="destructive"
-						>
-							Delete stash
-						</AlertDialogAction>
-					</AlertDialogFooter>
-				</AlertDialogContent>
-			</AlertDialog>
+			<DropStashDialog
+				busyAction={busyAction}
+				onConfirm={(target) => void runAction(StashAction.Drop, target)}
+				onTargetChange={setDropTarget}
+				target={dropTarget}
+			/>
 			<BranchFromStashDialog
 				branchNames={branchNames}
 				isBusy={busyAction === StashAction.Branch}

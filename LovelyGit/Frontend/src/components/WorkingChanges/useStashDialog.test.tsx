@@ -116,6 +116,39 @@ describe("useStashDialog", () => {
 		expect(onRepositoryChanged).toHaveBeenCalledOnce();
 	});
 
+	it("sends selected paths only when creating a stash", async () => {
+		const { result } = renderHook(() =>
+			useStashDialog("repo", vi.fn(), undefined, true, [
+				"src/a.ts",
+				"new file.txt",
+			]),
+		);
+		send.mockResolvedValueOnce(undefined);
+		send.mockResolvedValueOnce({ stashes: [] });
+
+		await act(() => result.current.runAction(StashAction.Create));
+
+		expect(send).toHaveBeenNthCalledWith(
+			1,
+			expect.objectContaining({
+				arguments: expect.objectContaining({
+					paths: ["src/a.ts", "new file.txt"],
+					selectedOnly: true,
+				}),
+			}),
+			expect.any(Object),
+		);
+
+		send.mockResolvedValueOnce(undefined);
+		await act(() => result.current.runAction(StashAction.Apply, stash));
+		expect(send).toHaveBeenLastCalledWith(
+			expect.objectContaining({
+				arguments: expect.objectContaining({ paths: [], selectedOnly: false }),
+			}),
+			expect.any(Object),
+		);
+	});
+
 	it("preserves a failed branch target and clears it after retry", async () => {
 		const onRepositoryChanged = vi.fn();
 		send.mockResolvedValueOnce({

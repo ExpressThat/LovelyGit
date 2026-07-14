@@ -146,4 +146,6 @@ public record StashCommandArguments
     public bool IncludeUntracked { get; set; }
     public bool RestoreIndex { get; set; }
     public string? BranchName { get; set; }
+    public bool SelectedOnly { get; set; }
+    public List<string> Paths { get; set; } = new();
 }

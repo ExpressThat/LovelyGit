@@ -20,6 +20,8 @@ export function useStashDialog(
 		onOpenChange: (open: boolean) => void;
 		open: boolean;
 	},
+	createSelectedOnly = false,
+	createPaths: string[] = [],
 ) {
 	const [busyAction, setBusyAction] = useState<StashAction | null>(null);
 	const [branchNames, setBranchNames] = useState<string[]>([]);
@@ -85,8 +87,10 @@ export function useStashDialog(
 						includeUntracked,
 						message:
 							action === StashAction.Create ? message.trim() || null : null,
+						paths: action === StashAction.Create ? createPaths : [],
 						repositoryId,
 						restoreIndex,
+						selectedOnly: action === StashAction.Create && createSelectedOnly,
 						selector: stash?.selector ?? null,
 					},
 					commandType: NativeMessageType.ManageStash,

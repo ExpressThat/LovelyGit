@@ -4,7 +4,10 @@ import {
 	RefreshCw,
 	SquareCheckBig,
 } from "@/components/icons/lovelyIcons";
-import type { WorkingTreeChangedFile } from "@/generated/types";
+import type {
+	WorkingTreeChangedFile,
+	WorkingTreeChangesResponse,
+} from "@/generated/types";
 
 export function WorkingChangesSkeleton() {
 	return (
@@ -123,6 +126,18 @@ export function selectedFiles(
 
 export function uniquePaths(files: WorkingTreeChangedFile[]) {
 	return [...new Set(files.map((file) => file.path))];
+}
+
+export function selectedStashPaths(
+	changes: WorkingTreeChangesResponse,
+	selectedKeys: Set<string>,
+) {
+	return uniquePaths(
+		selectedFiles(
+			[...changes.staged, ...changes.unstaged, ...changes.untracked],
+			selectedKeys,
+		),
+	);
 }
 
 export function fileKey(file: WorkingTreeChangedFile) {

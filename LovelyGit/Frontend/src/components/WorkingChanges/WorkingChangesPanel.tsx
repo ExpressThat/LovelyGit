@@ -15,7 +15,10 @@ import {
 	WorkingChangesList,
 	workingFilesOnly,
 } from "./WorkingChangesList";
-import { WorkingChangesHeader } from "./WorkingChangesPanelParts";
+import {
+	selectedStashPaths,
+	WorkingChangesHeader,
+} from "./WorkingChangesPanelParts";
 export function WorkingChangesPanel({
 	changes,
 	error,
@@ -49,9 +52,7 @@ export function WorkingChangesPanel({
 		nextChanges: WorkingTreeChangesResponse | null,
 	) =>
 		setOptimisticView(
-			nextChanges
-				? { changes: nextChanges, repositoryId }
-				: null,
+			nextChanges ? { changes: nextChanges, repositoryId } : null,
 		);
 	const visibleChanges = optimisticChanges ??
 		changes ?? {
@@ -101,6 +102,7 @@ export function WorkingChangesPanel({
 		repositoryId,
 	});
 	const controlsBusy = isBusy || undo.isBusy;
+	const stashPaths = selectedStashPaths(visibleChanges, selectedKeys);
 	return (
 		<div className="custom-scrollbar flex h-full min-h-0 flex-col gap-4 overflow-y-auto p-4 text-left text-sm">
 			<WorkingChangesHeader
@@ -109,6 +111,7 @@ export function WorkingChangesPanel({
 						canCreate={(changes?.totalCount ?? totalCount) > 0}
 						onRepositoryChanged={onCommitSuccess}
 						repositoryId={repositoryId}
+						selectedPaths={stashPaths}
 					/>
 				}
 				isLoading={isLoading}

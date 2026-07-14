@@ -60,6 +60,8 @@ internal sealed class StashCommandResolver : CommandResponder<StashCommandArgume
                     arguments.Message,
                     arguments.IncludeUntracked,
                     arguments.RestoreIndex,
+                    arguments.SelectedOnly,
+                    arguments.Paths,
                     CancellationToken.None).ConfigureAwait(false);
             }
             return Success(command);

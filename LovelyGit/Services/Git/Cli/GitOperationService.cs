@@ -1,3 +1,4 @@
+using CliWrap;
 using CliWrap.Buffered;
 
 namespace ExpressThat.LovelyGit.Services.Git.Cli;
@@ -48,6 +49,35 @@ internal sealed class GitOperationService
             recoveryHint,
             cancellationToken).ConfigureAwait(false);
 
+        if (!result.IsSuccess)
+        {
+            throw new GitOperationException(result);
+        }
+
+        return result;
+    }
+
+    public async Task<GitOperationResult> ExecuteRequiredBufferedWithInputAsync(
+        string operationName,
+        IReadOnlyList<string> arguments,
+        string workingDirectory,
+        string? recoveryHint,
+        PipeSource standardInput,
+        CancellationToken cancellationToken)
+    {
+        var startedAt = DateTimeOffset.UtcNow;
+        var output = await _gitCliService
+            .CreateCommand(arguments, workingDirectory, validateExitCode: false)
+            .WithStandardInputPipe(standardInput)
+            .ExecuteBufferedAsync(cancellationToken)
+            .ConfigureAwait(false);
+        var result = CreateResult(
+            operationName,
+            arguments,
+            workingDirectory,
+            recoveryHint,
+            startedAt,
+            output);
         if (!result.IsSuccess)
         {
             throw new GitOperationException(result);

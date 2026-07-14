@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using CliWrap;
 using ExpressThat.LovelyGit.Services.Git.Cli;
 using ExpressThat.LovelyGit.Services.Git.Branches;
 using ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser;
@@ -22,18 +23,33 @@ internal sealed partial class GitStashCommandService
         string? message,
         bool includeUntracked,
         bool restoreIndex,
+        bool selectedOnly,
+        IReadOnlyList<string>? paths,
         CancellationToken cancellationToken)
     {
+        if (action != StashAction.Create && (selectedOnly || paths is { Count: > 0 }))
+        {
+            throw new InvalidOperationException("File paths are only valid when creating a stash.");
+        }
+
+        if (!selectedOnly && paths is { Count: > 0 })
+        {
+            throw new InvalidOperationException("Selected stash paths require selected-file scope.");
+        }
+
+        var selectedPaths = selectedOnly
+            ? GitPathspecs.Normalize(paths ?? [])
+            : [];
         var arguments = action switch
         {
-            StashAction.Create => BuildCreateArguments(message, includeUntracked),
+            StashAction.Create => BuildCreateArguments(message, includeUntracked, selectedPaths.Count > 0),
             StashAction.Apply => BuildExistingArguments("apply", selector, restoreIndex),
             StashAction.Pop => BuildExistingArguments("pop", selector, restoreIndex),
             StashAction.Drop => BuildExistingArguments("drop", selector, restoreIndex: false),
             _ => throw new ArgumentOutOfRangeException(nameof(action), action, null),
         };
 
-        return RunAsync(repositoryPath, action, arguments, cancellationToken);
+        return RunAsync(repositoryPath, action, arguments, selectedPaths, cancellationToken);
     }
 
     public Task StashChangesAsync(
@@ -54,6 +70,8 @@ internal sealed partial class GitStashCommandService
             message,
             includeUntracked,
             restoreIndex: false,
+            selectedOnly: false,
+            paths: null,
             cancellationToken);
     }
 
@@ -61,19 +79,19 @@ internal sealed partial class GitStashCommandService
         string repositoryPath,
         string selector,
         CancellationToken cancellationToken) =>
-        ExecuteAsync(repositoryPath, StashAction.Apply, NormalizeAlias(selector), null, false, false, cancellationToken);
+        ExecuteAsync(repositoryPath, StashAction.Apply, NormalizeAlias(selector), null, false, false, false, null, cancellationToken);
 
     public Task PopStashAsync(
         string repositoryPath,
         string selector,
         CancellationToken cancellationToken) =>
-        ExecuteAsync(repositoryPath, StashAction.Pop, NormalizeAlias(selector), null, false, false, cancellationToken);
+        ExecuteAsync(repositoryPath, StashAction.Pop, NormalizeAlias(selector), null, false, false, false, null, cancellationToken);
 
     public Task DropStashAsync(
         string repositoryPath,
         string selector,
         CancellationToken cancellationToken) =>
-        ExecuteAsync(repositoryPath, StashAction.Drop, NormalizeAlias(selector), null, false, false, cancellationToken);
+        ExecuteAsync(repositoryPath, StashAction.Drop, NormalizeAlias(selector), null, false, false, false, null, cancellationToken);
 
     public Task BranchFromStashAsync(
         string repositoryPath,
@@ -92,33 +110,56 @@ internal sealed partial class GitStashCommandService
             selector,
             restoreIndex: false).ToList();
         arguments.Insert(2, normalizedBranchName);
-        return RunAsync(repositoryPath, StashAction.Branch, arguments, cancellationToken);
+        return RunAsync(repositoryPath, StashAction.Branch, arguments, [], cancellationToken);
     }
 
     private async Task RunAsync(
         string repositoryPath,
         StashAction action,
         IReadOnlyList<string> arguments,
+        IReadOnlyList<string> selectedPaths,
         CancellationToken cancellationToken)
     {
         var paths = await GitRepositoryDiscovery
             .ResolveRepositoryPathsAsync(repositoryPath, cancellationToken)
             .ConfigureAwait(false);
-        await _gitOperationService.ExecuteRequiredBufferedAsync(
+        var recoveryHint = action is StashAction.Apply or StashAction.Pop or StashAction.Branch
+            ? "Resolve any conflicts in the working tree, then continue from there."
+            : null;
+        if (selectedPaths.Count == 0)
+        {
+            await _gitOperationService.ExecuteRequiredBufferedAsync(
+                $"{action} stash",
+                arguments,
+                paths.WorkTreeDirectory,
+                recoveryHint,
+                cancellationToken).ConfigureAwait(false);
+            return;
+        }
+
+        await _gitOperationService.ExecuteRequiredBufferedWithInputAsync(
             $"{action} stash",
             arguments,
             paths.WorkTreeDirectory,
-            action is StashAction.Apply or StashAction.Pop or StashAction.Branch
-                ? "Resolve any conflicts in the working tree, then continue from there."
-                : null,
+            recoveryHint,
+            PipeSource.Create((stream, token) =>
+                GitPathspecs.WriteNullTerminatedAsync(stream, selectedPaths, token)),
             cancellationToken).ConfigureAwait(false);
     }
 
     private static IReadOnlyList<string> BuildCreateArguments(
         string? message,
-        bool includeUntracked)
+        bool includeUntracked,
+        bool hasSelectedPaths)
     {
-        var arguments = new List<string> { "stash", "push" };
+        var arguments = new List<string>();
+        if (hasSelectedPaths)
+        {
+            arguments.Add("--literal-pathspecs");
+        }
+
+        arguments.Add("stash");
+        arguments.Add("push");
         if (includeUntracked)
         {
             arguments.Add("--include-untracked");
@@ -128,6 +169,12 @@ internal sealed partial class GitStashCommandService
         {
             arguments.Add("--message");
             arguments.Add(message.Trim());
+        }
+
+        if (hasSelectedPaths)
+        {
+            arguments.Add("--pathspec-from-file=-");
+            arguments.Add("--pathspec-file-nul");
         }
 
         return arguments;
