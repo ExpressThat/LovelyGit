@@ -11,8 +11,8 @@ internal sealed partial class ConflictResolutionService
         bool ignoreWhitespace)
     {
         var baseLines = ConflictHunkBuilder.PrepareLineText(baseText);
-        var currentLines = ConflictHunkBuilder.PrepareLineText(currentText);
-        var incomingLines = ConflictHunkBuilder.PrepareLineText(incomingText);
+        var currentLines = ConflictHunkBuilder.PrepareLineText(currentText, baseLines);
+        var incomingLines = ConflictHunkBuilder.PrepareLineText(incomingText, baseLines);
         var currentHunk = ConflictHunkBuilder.BuildLineModel(baseLines, currentLines);
         var incomingHunk = ConflictHunkBuilder.BuildLineModel(baseLines, incomingLines);
         return new(

@@ -49,6 +49,9 @@ internal static class ConflictHunkBuilder
 
     internal static PreparedLineText PrepareLineText(string text) => LineDiffEngine.Prepare(text);
 
+    internal static PreparedLineText PrepareLineText(string text, PreparedLineText reuseSameIndexFrom) =>
+        LineDiffEngine.Prepare(text, reuseSameIndexFrom);
+
     internal static LineDiffModel BuildLineModel(
         PreparedLineText baseText,
         PreparedLineText sourceText,
