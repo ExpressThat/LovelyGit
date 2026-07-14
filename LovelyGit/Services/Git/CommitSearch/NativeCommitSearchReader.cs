@@ -7,7 +7,7 @@ internal static partial class NativeCommitSearchReader
     public const int DefaultMaximumCommits = 100_000;
     public const int DefaultResponsiveMatchScanCount = 64;
     public const int DefaultResultLimit = 50;
-    public static readonly TimeSpan DefaultMaximumDuration = TimeSpan.FromMilliseconds(1_500);
+    public static readonly TimeSpan DefaultMaximumDuration = TimeSpan.FromMilliseconds(300);
     public const int DeepMaximumCommits = 500_000;
     public static readonly TimeSpan DeepMaximumDuration = TimeSpan.FromSeconds(9);
     internal const int MaximumResultLimit = 100;

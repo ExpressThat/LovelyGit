@@ -6,6 +6,15 @@ namespace LovelyGit.Tests.Git.CommitSearch;
 public sealed partial class NativeCommitSearchReaderTests
 {
     [Fact]
+    public void DefaultSearchBudget_RemainsInteractive()
+    {
+        Assert.InRange(
+            NativeCommitSearchReader.DefaultMaximumDuration,
+            TimeSpan.FromMilliseconds(100),
+            TimeSpan.FromMilliseconds(350));
+    }
+
+    [Fact]
     public async Task SearchAsync_ReturnsRecentMatchesAfterResponsiveScanWindow()
     {
         using var repository = TemporaryGitRepository.Create();
