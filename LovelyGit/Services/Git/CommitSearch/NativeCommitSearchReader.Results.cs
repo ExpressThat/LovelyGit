@@ -7,7 +7,7 @@ internal static partial class NativeCommitSearchReader
 {
     private const int PreviewLength = 180;
 
-    private static bool ShouldMaterialize(
+    internal static bool ShouldMaterialize(
         PriorityQueue<CommitSearchResult, SearchResultPriority> results,
         SearchResultPriority priority,
         int limit) =>
@@ -15,7 +15,7 @@ internal static partial class NativeCommitSearchReader
         || !results.TryPeek(out _, out var oldest)
         || SearchResultPriorityComparer.Instance.Compare(priority, oldest) > 0;
 
-    private static CommitSearchResult ToResult(GitCommit commit, string query)
+    internal static CommitSearchResult ToResult(GitCommit commit, string query)
     {
         var subject = string.IsNullOrWhiteSpace(commit.Subject)
             ? "(no commit message)"
@@ -61,9 +61,9 @@ internal static partial class NativeCommitSearchReader
         return builder.ToString();
     }
 
-    private readonly record struct SearchResultPriority(long Date, string Hash);
+    internal readonly record struct SearchResultPriority(long Date, string Hash);
 
-    private sealed class SearchResultPriorityComparer : IComparer<SearchResultPriority>
+    internal sealed class SearchResultPriorityComparer : IComparer<SearchResultPriority>
     {
         public static SearchResultPriorityComparer Instance { get; } = new();
 

@@ -84,9 +84,12 @@ internal static partial class GitRefReader
         }
     }
 
-    private static RefFingerprint CreateFingerprint(string gitDirectory)
+    internal static RefFingerprint CreateFingerprint(
+        string gitDirectory,
+        string? worktreeGitDirectory = null)
     {
         var hash = new HashCode();
+        AddFile(Path.Combine(worktreeGitDirectory ?? gitDirectory, "HEAD"), ref hash);
         AddFile(Path.Combine(gitDirectory, "packed-refs"), ref hash);
         AddFile(Path.Combine(gitDirectory, "logs", "refs", "stash"), ref hash);
         var refsDirectory = Path.Combine(gitDirectory, "refs");
@@ -127,7 +130,7 @@ internal static partial class GitRefReader
         GitObjectFormat ObjectFormat,
         int MaxTags);
 
-    private readonly record struct RefFingerprint(int Hash, int LooseRefCount);
+    internal readonly record struct RefFingerprint(int Hash, int LooseRefCount);
 
     private sealed record CacheEntry(
         CacheKey Key,

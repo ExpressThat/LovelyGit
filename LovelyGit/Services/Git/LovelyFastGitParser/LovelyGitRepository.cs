@@ -18,6 +18,7 @@ internal sealed partial class LovelyGitRepository : IDisposable
 
     private LovelyGitRepository(
         string gitDirectory,
+        string worktreeGitDirectory,
         string workTreeDirectory,
         GitObjectFormat objectFormat,
         GitObjectStore objectStore,
@@ -28,6 +29,7 @@ internal sealed partial class LovelyGitRepository : IDisposable
         IReadOnlyList<string> remotePrefixes)
     {
         GitDirectory = gitDirectory;
+        WorktreeGitDirectory = worktreeGitDirectory;
         WorkTreeDirectory = workTreeDirectory;
         ObjectFormat = objectFormat;
         _objectStore = objectStore;
@@ -39,6 +41,7 @@ internal sealed partial class LovelyGitRepository : IDisposable
     }
 
     public string GitDirectory { get; }
+    public string WorktreeGitDirectory { get; }
     public string WorkTreeDirectory { get; }
     public GitObjectFormat ObjectFormat { get; }
     public GitObjectId? HeadTarget { get; }
@@ -113,6 +116,7 @@ internal sealed partial class LovelyGitRepository : IDisposable
 
         return new LovelyGitRepository(
             gitDirectory,
+            paths.WorktreeGitDirectory,
             paths.WorkTreeDirectory,
             objectFormat,
             objectStore,

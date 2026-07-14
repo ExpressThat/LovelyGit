@@ -130,6 +130,21 @@ public sealed class LovelyGitRepositoryRefSummaryTests
     }
 
     [Fact]
+    public async Task RefFingerprint_ChangesWhenHeadBecomesDetached()
+    {
+        using var temporary = TemporaryGitRepository.Create();
+        var paths = await GitRepositoryDiscovery.ResolveRepositoryPathsAsync(
+            temporary.Path,
+            CancellationToken.None);
+        var first = GitRefReader.CreateFingerprint(paths.GitDirectory);
+
+        await temporary.RunGitAsync(["checkout", "--detach", "HEAD"]);
+        var detached = GitRefReader.CreateFingerprint(paths.GitDirectory);
+
+        Assert.NotEqual(first, detached);
+    }
+
+    [Fact]
     public async Task ReadAsync_HonorsCancellationBeforeReadingLooseRefs()
     {
         using var temporary = TemporaryGitRepository.Create();
