@@ -9,3 +9,14 @@ export type WorkingTreeChangesState =
 			message: string;
 	  }
 	| { status: "loaded"; changes: WorkingTreeChangesResponse };
+
+export type WorkingTreeReloadRequest = {
+	promise: Promise<void>;
+	repositoryId: string;
+};
+
+export function getWorkingTreeLoadErrorMessage(error: unknown) {
+	return error instanceof Error
+		? error.message
+		: "Failed to load working changes.";
+}

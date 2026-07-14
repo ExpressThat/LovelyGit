@@ -21,13 +21,20 @@ vi.mock("./WorkingTreeChangesRequests", () => ({
 
 const loadChanges = vi.mocked(loadWorkingTreeChanges);
 const loadSummary = vi.mocked(loadWorkingTreeChangeSummary);
+let notifyWorkingTreeChanged: (event: {
+	generation: number;
+	observedChanges: [];
+}) => void = () => undefined;
 
 describe("useWorkingTreeChanges manual reload", () => {
 	beforeEach(() => {
 		clearWorkingTreeSummaryCache();
 		clearWorkingTreeChangesCache();
 		vi.clearAllMocks();
-		vi.mocked(subscribeToServerEvent).mockReturnValue(vi.fn());
+		vi.mocked(subscribeToServerEvent).mockImplementation((_type, handler) => {
+			notifyWorkingTreeChanged = handler;
+			return vi.fn();
+		});
 		loadSummary.mockResolvedValue({
 			hasChanges: true,
 			isComplete: true,
@@ -61,6 +68,29 @@ describe("useWorkingTreeChanges manual reload", () => {
 		});
 
 		expect(result.current.isReloading).toBe(false);
+		expect(result.current.totalCount).toBe(2);
+	});
+
+	it("shares an in-flight watcher reconciliation with a manual reload", async () => {
+		const { result } = renderHook(() => useWorkingTreeChanges("repo", true));
+		await waitFor(() => expect(result.current.status).toBe("loaded"));
+		loadChanges.mockReset();
+		const reconciliation = deferred<ReturnTypeResponse>();
+		loadChanges.mockReturnValue(reconciliation.promise);
+
+		act(() => notifyWorkingTreeChanged({ generation: 1, observedChanges: [] }));
+		await waitFor(() => expect(loadChanges).toHaveBeenCalledOnce());
+
+		let manualReload: Promise<void> | undefined;
+		act(() => {
+			manualReload = result.current.reload();
+		});
+		expect(loadChanges).toHaveBeenCalledOnce();
+
+		await act(async () => {
+			reconciliation.resolve(response(2));
+			await manualReload;
+		});
 		expect(result.current.totalCount).toBe(2);
 	});
 

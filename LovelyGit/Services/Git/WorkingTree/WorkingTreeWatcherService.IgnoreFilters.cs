@@ -13,12 +13,14 @@ internal sealed partial class WorkingTreeWatcherService
         }
 
         var relativePath = Path.GetRelativePath(gitDirectory, path).Replace('\\', '/');
-        return relativePath.Equals("index", StringComparison.Ordinal)
-            || relativePath.Equals("index.lock", StringComparison.Ordinal)
+        return IsRelevantGitMetadataRelativePath(relativePath);
+    }
+
+    internal static bool IsRelevantGitMetadataRelativePath(string relativePath) =>
+        relativePath.Equals("index", StringComparison.Ordinal)
             || relativePath.Equals("HEAD", StringComparison.Ordinal)
             || relativePath.Equals("packed-refs", StringComparison.Ordinal)
             || relativePath.StartsWith("refs/", StringComparison.Ordinal);
-    }
 
     private bool IsCommitGraphMetadataPath(string path)
     {

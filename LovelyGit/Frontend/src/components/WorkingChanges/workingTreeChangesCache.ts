@@ -1,10 +1,24 @@
 import type { WorkingTreeChangesResponse } from "@/generated/types";
 import { MAX_CACHED_REPOSITORIES } from "@/lib/repositoryCacheLimits";
+import type { WorkingTreeChangesState } from "./WorkingTreeChangesState";
 
 export const MAX_CACHED_WORKING_TREE_FILES_PER_REPOSITORY = 500;
 const MAX_CACHED_WORKING_TREE_FILES = 1_000;
 const entries = new Map<string, WorkingTreeChangesResponse>();
 let cachedFileCount = 0;
+
+export function getInitialWorkingTreeChangesState(repositoryId: string | null) {
+	const changes = repositoryId
+		? getCachedWorkingTreeChanges(repositoryId)
+		: null;
+	return {
+		changes,
+		isLoaded: changes !== null,
+		state: (changes
+			? { status: "loaded", changes }
+			: { status: "idle", changes: null }) as WorkingTreeChangesState,
+	};
+}
 
 export function getCachedWorkingTreeChanges(repositoryId: string) {
 	const changes = entries.get(repositoryId);

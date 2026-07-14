@@ -7,9 +7,14 @@ import {
 } from "./OptimisticWorkingTreeChanges";
 import { useWorkingTreePreload } from "./useWorkingTreePreload";
 import { loadWorkingTreeChanges } from "./WorkingTreeChangesRequests";
-import type { WorkingTreeChangesState } from "./WorkingTreeChangesState";
+import {
+	getWorkingTreeLoadErrorMessage,
+	type WorkingTreeChangesState,
+	type WorkingTreeReloadRequest,
+} from "./WorkingTreeChangesState";
 import {
 	getCachedWorkingTreeChanges,
+	getInitialWorkingTreeChangesState,
 	invalidateCachedWorkingTreeChanges,
 	setCachedWorkingTreeChanges,
 } from "./workingTreeChangesCache";
@@ -22,24 +27,18 @@ export function useWorkingTreeChanges(
 	repositoryId: string | null,
 	enabled: boolean,
 ) {
-	const [initialChanges] = useState(() =>
-		repositoryId ? getCachedWorkingTreeChanges(repositoryId) : null,
+	const [initial] = useState(() =>
+		getInitialWorkingTreeChangesState(repositoryId),
 	);
-	const [state, setState] = useState<WorkingTreeChangesState>(() =>
-		initialChanges
-			? { status: "loaded", changes: initialChanges }
-			: { status: "idle", changes: null },
-	);
+	const [state, setState] = useState<WorkingTreeChangesState>(initial.state);
 	const [isDirty, setIsDirty] = useState(false);
 	const [summaryCount, setSummaryCount] = useState(
-		initialChanges?.totalCount ?? 0,
+		initial.changes?.totalCount ?? 0,
 	);
-	const [hasSummaryLoaded, setHasSummaryLoaded] = useState(
-		initialChanges !== null,
-	);
+	const [hasSummaryLoaded, setHasSummaryLoaded] = useState(initial.isLoaded);
 	const [isReloading, setIsReloading] = useState(false);
-	const hasFreshChangesRef = useRef(initialChanges !== null);
-	const reloadRequestRef = useRef<ReloadRequest | null>(null);
+	const hasFreshChangesRef = useRef(initial.isLoaded);
+	const reloadRequestRef = useRef<WorkingTreeReloadRequest | null>(null);
 	const previousRepositoryIdRef = useRef<string | null>(repositoryId);
 
 	useEffect(() => {
@@ -78,10 +77,15 @@ export function useWorkingTreeChanges(
 		let isLoading = false;
 		let reloadAgain = false;
 		let reconcileTimer: number | null = null;
-		const load = async () => {
+		const load = () => {
 			if (isLoading) {
 				reloadAgain = true;
-				return;
+				return reloadRequestRef.current?.promise ?? Promise.resolve();
+			}
+
+			const existing = reloadRequestRef.current;
+			if (existing?.repositoryId === repositoryId) {
+				return existing.promise;
 			}
 
 			isLoading = true;
@@ -90,41 +94,46 @@ export function useWorkingTreeChanges(
 					? { status: "loaded", changes: current.changes }
 					: { status: "loading", changes: null },
 			);
-			try {
-				const changes = await loadWorkingTreeChanges(repositoryId);
-				if (isActive) {
-					setState({
-						status: "loaded",
-						changes,
-					});
-					setSummaryCount(changes.totalCount);
-					cacheCompleteWorkingTreeSummary(repositoryId, changes.totalCount);
-					setCachedWorkingTreeChanges(repositoryId, changes);
-					setIsDirty(false);
-					setHasSummaryLoaded(true);
-					hasFreshChangesRef.current = true;
-				}
-			} catch (error) {
-				if (isActive) {
-					setState((current) => ({
-						status: "error",
-						changes: current.changes,
-						message:
-							error instanceof Error
-								? error.message
-								: "Failed to load working changes.",
-					}));
-				}
-			} finally {
-				isLoading = false;
-				if (isActive && reloadAgain) {
-					reloadAgain = false;
-					void load();
-				}
-			}
+			const promise = loadWorkingTreeChanges(repositoryId)
+				.then((changes) => {
+					if (isActive) {
+						setState({
+							status: "loaded",
+							changes,
+						});
+						setSummaryCount(changes.totalCount);
+						cacheCompleteWorkingTreeSummary(repositoryId, changes.totalCount);
+						setCachedWorkingTreeChanges(repositoryId, changes);
+						setIsDirty(false);
+						setHasSummaryLoaded(true);
+						hasFreshChangesRef.current = true;
+					}
+				})
+				.catch((error: unknown) => {
+					if (isActive) {
+						setState((current) => ({
+							status: "error",
+							changes: current.changes,
+							message: getWorkingTreeLoadErrorMessage(error),
+						}));
+					}
+					throw error;
+				})
+				.finally(() => {
+					isLoading = false;
+					if (reloadRequestRef.current?.promise === promise) {
+						reloadRequestRef.current = null;
+					}
+					if (isActive && reloadAgain) {
+						reloadAgain = false;
+						void load().catch(() => undefined);
+					}
+				});
+			reloadRequestRef.current = { promise, repositoryId };
+			return promise;
 		};
 
-		if (!hasFreshChangesRef.current) void load();
+		if (!hasFreshChangesRef.current) void load().catch(() => undefined);
 		const unsubscribe = subscribeToServerEvent(
 			"WorkingTreeChanged",
 			(event) => {
@@ -158,8 +167,8 @@ export function useWorkingTreeChanges(
 				}
 
 				reconcileTimer = applyObserved
-					? window.setTimeout(() => void load(), 500)
-					: window.setTimeout(() => void load(), 0);
+					? window.setTimeout(() => void load().catch(() => undefined), 500)
+					: window.setTimeout(() => void load().catch(() => undefined), 0);
 			},
 		);
 
@@ -215,10 +224,7 @@ export function useWorkingTreeChanges(
 					setState((current) => ({
 						status: "error",
 						changes: current.changes,
-						message:
-							error instanceof Error
-								? error.message
-								: "Failed to load working changes.",
+						message: getWorkingTreeLoadErrorMessage(error),
 					}));
 				}
 				throw error;
@@ -242,8 +248,3 @@ export function useWorkingTreeChanges(
 		reload,
 	};
 }
-
-type ReloadRequest = {
-	promise: Promise<void>;
-	repositoryId: string;
-};

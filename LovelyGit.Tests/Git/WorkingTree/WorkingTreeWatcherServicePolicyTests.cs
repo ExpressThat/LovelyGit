@@ -7,6 +7,21 @@ namespace LovelyGit.Tests.Git.WorkingTree;
 
 public sealed class WorkingTreeWatcherServicePolicyTests
 {
+    [Theory]
+    [InlineData("index", true)]
+    [InlineData("index.lock", false)]
+    [InlineData("HEAD", true)]
+    [InlineData("packed-refs", true)]
+    [InlineData("refs/heads/main", true)]
+    public void GitMetadataPolicyWaitsForCompletedIndexWrites(
+        string relativePath,
+        bool expected)
+    {
+        Assert.Equal(
+            expected,
+            WorkingTreeWatcherService.IsRelevantGitMetadataRelativePath(relativePath));
+    }
+
     [Fact]
     public void GetWorkTreeWatchRoots_ReturnsEmptyForMissingDirectory()
     {
