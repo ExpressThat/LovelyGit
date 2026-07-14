@@ -24,6 +24,13 @@ internal sealed partial class ConflictResolutionService
         CancellationToken cancellationToken)
     {
         var worktreeFingerprint = await FingerprintAsync(path, cancellationToken).ConfigureAwait(false);
+        return ConflictFingerprint(worktreeFingerprint, entries);
+    }
+
+    private static string ConflictFingerprint(
+        string worktreeFingerprint,
+        IReadOnlyDictionary<int, GitIndexEntry> entries)
+    {
         var descriptor = string.Join(
             ';',
             entries.OrderBy(entry => entry.Key).Select(entry => $"{entry.Key}:{entry.Value.ObjectId}"));

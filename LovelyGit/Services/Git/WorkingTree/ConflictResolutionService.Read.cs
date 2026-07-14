@@ -1,4 +1,3 @@
-using System.Text;
 using ExpressThat.LovelyGit.Services.Git.CommitGraph.Models;
 using ExpressThat.LovelyGit.Services.Git.Diffing;
 using ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser;
@@ -9,7 +8,6 @@ namespace ExpressThat.LovelyGit.Services.Git.WorkingTree;
 internal sealed partial class ConflictResolutionService
 {
     private const int MaxTextBytes = 4 * 1024 * 1024;
-    private static readonly UTF8Encoding StrictUtf8 = new(false, true);
 
     public async Task<ConflictResolutionResponse> ReadAsync(
         string repositoryPath,
@@ -34,16 +32,22 @@ internal sealed partial class ConflictResolutionService
         var repositoryPaths = await GitRepositoryDiscovery
             .ResolveRepositoryPathsAsync(repositoryPath, cancellationToken)
             .ConfigureAwait(false);
+        readTrace.Mark("repository-paths");
         using var repository = await LovelyGitRepository.OpenAsync(repositoryPath, cancellationToken)
             .ConfigureAwait(false);
+        readTrace.Mark("repository-open");
         var entries = await ReadConflictEntriesAsync(repository, path, cancellationToken).ConfigureAwait(false);
+        readTrace.Mark("index-entry");
         var resultPath = WorkingTreePath.Resolve(repository.WorkTreeDirectory, path);
-        var fingerprint = await ConflictFingerprintAsync(resultPath, entries, cancellationToken)
+        var resultSnapshot = await ConflictWorktreeSnapshotReader
+            .ReadAsync(resultPath, MaxTextBytes, cancellationToken)
             .ConfigureAwait(false);
+        var fingerprint = ConflictFingerprint(resultSnapshot.Fingerprint, entries);
+        readTrace.Mark("fingerprint");
         var cacheStamp = ConflictResolutionCacheStamp.Capture(
             Path.Combine(repository.GitDirectory, "index"),
-            resultPath);
-        readTrace.Mark("repository-and-fingerprint");
+            resultPath,
+            resultSnapshot.Stamp);
         _responseCache.RemoveStale(repositoryPath, path, fingerprint);
         if (_responseCache.TryGet(
                 repositoryPath,
@@ -82,7 +86,7 @@ internal sealed partial class ConflictResolutionService
             .ConfigureAwait(false);
         var theirs = await ReadVersionAsync(repository, entries.GetValueOrDefault(3), cancellationToken)
             .ConfigureAwait(false);
-        var result = await ReadWorktreeVersionAsync(resultPath, cancellationToken).ConfigureAwait(false);
+        var result = CreateWorktreeVersion(resultSnapshot);
         readTrace.Mark("read-versions");
         var currentSource = CreateCurrentSource(repository, entries.GetValueOrDefault(2));
         var incomingSource = await CreateIncomingSourceAsync(
@@ -174,75 +178,6 @@ internal sealed partial class ConflictResolutionService
         }
 
         return conflict;
-    }
-
-    private static async Task<ConflictFileVersion> ReadVersionAsync(
-        LovelyGitRepository repository,
-        GitIndexEntry? entry,
-        CancellationToken cancellationToken)
-    {
-        if (entry == null)
-        {
-            return new ConflictFileVersion();
-        }
-
-        if (entry.FileSize > MaxTextBytes)
-        {
-            return new ConflictFileVersion { Exists = true, IsTooLarge = true, SizeBytes = entry.FileSize };
-        }
-
-        var bytes = await repository
-            .ReadBlobWithoutCachingAsync(entry.ObjectId, cancellationToken)
-            .ConfigureAwait(false);
-        return CreateVersion(bytes);
-    }
-
-    private static async Task<ConflictFileVersion> ReadWorktreeVersionAsync(
-        string path,
-        CancellationToken cancellationToken)
-    {
-        if (!File.Exists(path))
-        {
-            return new ConflictFileVersion();
-        }
-
-        var info = new FileInfo(path);
-        if (info.Attributes.HasFlag(FileAttributes.ReparsePoint))
-        {
-            throw new InvalidOperationException("Symbolic-link conflicts are not supported yet.");
-        }
-
-        if (info.Length > MaxTextBytes)
-        {
-            return new ConflictFileVersion { Exists = true, IsTooLarge = true, SizeBytes = info.Length };
-        }
-
-        return CreateVersion(await File.ReadAllBytesAsync(path, cancellationToken).ConfigureAwait(false));
-    }
-
-    private static ConflictFileVersion CreateVersion(byte[] bytes)
-    {
-        var isBinary = WorkingTreeChangeService.IsBinary(bytes);
-        string? text = null;
-        if (!isBinary)
-        {
-            try
-            {
-                text = StrictUtf8.GetString(bytes);
-            }
-            catch (DecoderFallbackException)
-            {
-                isBinary = true;
-            }
-        }
-
-        return new ConflictFileVersion
-        {
-            Exists = true,
-            IsBinary = isBinary,
-            SizeBytes = bytes.Length,
-            Text = text,
-        };
     }
 
 }

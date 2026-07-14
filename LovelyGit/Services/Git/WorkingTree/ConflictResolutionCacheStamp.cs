@@ -12,6 +12,15 @@ internal readonly record struct ConflictResolutionCacheStamp(
         resultPath,
         ConflictResolutionFileStamp.Capture(resultPath));
 
+    public static ConflictResolutionCacheStamp Capture(
+        string indexPath,
+        string resultPath,
+        ConflictResolutionFileStamp resultStamp) => new(
+        indexPath,
+        ConflictResolutionFileStamp.Capture(indexPath),
+        resultPath,
+        resultStamp);
+
     public bool IsCurrent() =>
         Index == ConflictResolutionFileStamp.Capture(IndexPath) &&
         Result == ConflictResolutionFileStamp.Capture(ResultPath);
