@@ -63,6 +63,7 @@ internal sealed partial class CommitDetailsService
         string key,
         PendingDetails pending)
     {
+        await Task.Yield();
         try
         {
             await _saveDetailsAsync(

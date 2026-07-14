@@ -8,6 +8,38 @@ namespace LovelyGit.Tests.Git.CommitGraph;
 public sealed class CommitDetailsPersistenceTests
 {
     [Fact]
+    public async Task InteractiveRead_DoesNotRunSynchronousPersistenceWorkInline()
+    {
+        using var fixture = RepositoryFixture.Create();
+        var saveEntered = NewSignal();
+        var releaseSave = NewSignal();
+        var saveCompleted = NewSignal();
+        var service = CreateService(
+            (_, _, _) => Task.FromResult<CommitDetailsResponse?>(null),
+            (_, _, _, _) =>
+            {
+                saveEntered.TrySetResult();
+                releaseSave.Task.GetAwaiter().GetResult();
+                saveCompleted.TrySetResult();
+                return Task.CompletedTask;
+            });
+
+        var read = ReadInteractiveAsync(service, fixture);
+        await saveEntered.Task.WaitAsync(TimeSpan.FromSeconds(2));
+        try
+        {
+            var details = await read.WaitAsync(TimeSpan.FromSeconds(1));
+            Assert.Single(details.ChangedFiles);
+        }
+        finally
+        {
+            releaseSave.TrySetResult();
+        }
+
+        await saveCompleted.Task.WaitAsync(TimeSpan.FromSeconds(2));
+    }
+
+    [Fact]
     public async Task InteractiveRead_ReturnsBeforePersistenceAndCoalescesRepeatedRead()
     {
         using var fixture = RepositoryFixture.Create();
@@ -54,7 +86,13 @@ public sealed class CommitDetailsPersistenceTests
             });
 
         var first = await ReadInteractiveAsync(service, fixture);
-        var retry = await ReadInteractiveAsync(service, fixture);
+        var retry = first;
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(2));
+        while (Volatile.Read(ref saveCount) < 2)
+        {
+            await Task.Delay(1, timeout.Token);
+            retry = await ReadInteractiveAsync(service, fixture);
+        }
 
         Assert.Single(first.ChangedFiles);
         Assert.Single(retry.ChangedFiles);

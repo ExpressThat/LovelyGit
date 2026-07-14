@@ -95,17 +95,69 @@ public sealed class CommitDetailsPerformanceTests(ITestOutputHelper output)
             }
 
             var persistedElapsed = Stopwatch.GetElapsedTime(startedAt);
+            var warmedRepositoryId = Guid.NewGuid();
+            startedAt = Stopwatch.GetTimestamp();
+            var warmedDetails = await service.GetCommitDetailsAsync(
+                warmedRepositoryId,
+                directory.FullName,
+                commitId,
+                0,
+                CancellationToken.None);
+            var warmedElapsed = Stopwatch.GetElapsedTime(startedAt);
             output.WriteLine(
                 $"Interactive 2,000 files: response {responseElapsed.TotalMilliseconds:N1} ms; " +
-                $"persisted {persistedElapsed.TotalMilliseconds:N1} ms");
+                $"persisted {persistedElapsed.TotalMilliseconds:N1} ms; " +
+                $"warmed response {warmedElapsed.TotalMilliseconds:N1} ms");
+            await WriteColdPathBreakdownAsync(cache, directory, commitId);
             Assert.Equal(FileCount, details.ChangedFiles.Count);
+            Assert.Equal(FileCount, warmedDetails.ChangedFiles.Count);
             Assert.True(responseElapsed < persistedElapsed);
             Assert.True(responseElapsed < TimeSpan.FromMilliseconds(750));
+            while (!await cache.HasCommitDetailsAsync(
+                       warmedRepositoryId,
+                       commitId.ToString(),
+                       timeout.Token))
+            {
+                await Task.Delay(5, timeout.Token);
+            }
         }
         finally
         {
             DeleteDirectory(directory);
         }
+    }
+
+    private async Task WriteColdPathBreakdownAsync(
+        CommitGraphRepository cache,
+        DirectoryInfo directory,
+        GitObjectId commitId)
+    {
+        var startedAt = Stopwatch.GetTimestamp();
+        var cacheMiss = await cache.GetCommitDetailsAsync(
+            Guid.NewGuid(),
+            commitId.ToString(),
+            CancellationToken.None);
+        var cacheElapsed = Stopwatch.GetElapsedTime(startedAt);
+        Assert.Null(cacheMiss);
+
+        startedAt = Stopwatch.GetTimestamp();
+        using var repository = await LovelyGitRepository.OpenAsync(
+            directory.FullName,
+            CancellationToken.None);
+        var openElapsed = Stopwatch.GetElapsedTime(startedAt);
+        startedAt = Stopwatch.GetTimestamp();
+        var commit = await repository.GetCommitAsync(commitId, CancellationToken.None);
+        var parent = await repository.GetCommitAsync(commit.ParentHashes[0], CancellationToken.None);
+        var commitsElapsed = Stopwatch.GetElapsedTime(startedAt);
+        startedAt = Stopwatch.GetTimestamp();
+        var details = await new CommitDetailsBuilder(repository)
+            .BuildAsync(commit, parent, CancellationToken.None);
+        var buildElapsed = Stopwatch.GetElapsedTime(startedAt);
+        Assert.Equal(FileCount, details.ChangedFiles.Count);
+        output.WriteLine(
+            $"Breakdown: cache miss {cacheElapsed.TotalMilliseconds:N1} ms; " +
+            $"open {openElapsed.TotalMilliseconds:N1} ms; commits {commitsElapsed.TotalMilliseconds:N1} ms; " +
+            $"build {buildElapsed.TotalMilliseconds:N1} ms");
     }
 
     private static GitObjectId InitializeTemplate(DirectoryInfo directory)
