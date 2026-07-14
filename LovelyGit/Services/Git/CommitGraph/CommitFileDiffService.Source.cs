@@ -62,11 +62,14 @@ internal sealed partial class CommitFileDiffService : IDisposable
                 cancellationToken)
             .ConfigureAwait(false);
 
-        var comparison = await repository
-            .GetChangedTreeFilesAsync(comparisonParent?.TreeHash, commit.TreeHash, cancellationToken)
-            .ConfigureAwait(false);
-        comparison.ParentFiles.TryGetValue(path, out var oldFile);
-        comparison.CurrentFiles.TryGetValue(path, out var newFile);
+        var oldFile = comparisonParent?.TreeHash is { } parentTree
+            ? await repository.TryGetTreeFileAsync(parentTree, path, cancellationToken)
+                .ConfigureAwait(false)
+            : null;
+        var newFile = commit.TreeHash is { } currentTree
+            ? await repository.TryGetTreeFileAsync(currentTree, path, cancellationToken)
+                .ConfigureAwait(false)
+            : null;
         if (oldFile == null && newFile == null)
         {
             throw new FileNotFoundException("Changed file not found in commit.", path);
