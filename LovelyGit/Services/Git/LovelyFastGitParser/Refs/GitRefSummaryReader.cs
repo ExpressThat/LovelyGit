@@ -12,8 +12,15 @@ internal static class GitRefSummaryReader
         var seenFullNames = new HashSet<string>(StringComparer.Ordinal);
         var remotePrefixes = new HashSet<string>(StringComparer.Ordinal);
         var tagCount = 0;
-        await ReadLooseRefsAsync(gitDirectory, objectFormat, refs, seenFullNames, remotePrefixes, maxTags, tagCount, cancellationToken)
-            .ConfigureAwait(false);
+        ReadLooseRefs(
+            gitDirectory,
+            objectFormat,
+            refs,
+            seenFullNames,
+            remotePrefixes,
+            maxTags,
+            tagCount,
+            cancellationToken);
         tagCount = refs.Count(reference => reference.Kind == GitRefKind.Tag);
         await ReadPackedRefsAsync(gitDirectory, objectFormat, refs, seenFullNames, remotePrefixes, maxTags, tagCount, cancellationToken)
             .ConfigureAwait(false);
@@ -27,7 +34,7 @@ internal static class GitRefSummaryReader
             refs.OrderBy(reference => reference.Kind).ThenBy(reference => reference.Name, StringComparer.Ordinal).ToArray());
     }
 
-    private static async Task ReadLooseRefsAsync(
+    private static void ReadLooseRefs(
         string gitDirectory,
         GitObjectFormat objectFormat,
         List<GitRef> refs,
@@ -47,7 +54,7 @@ internal static class GitRefSummaryReader
         {
             cancellationToken.ThrowIfCancellationRequested();
             var fullName = Path.GetRelativePath(gitDirectory, file).Replace('\\', '/');
-            var text = (await File.ReadAllTextAsync(file, cancellationToken).ConfigureAwait(false)).Trim();
+            var text = File.ReadAllText(file).AsSpan().Trim();
             if (GitObjectId.TryParse(text, objectFormat, out var id))
             {
                 AddRef(refs, seenFullNames, remotePrefixes, fullName, id, maxTags, ref tagCount);

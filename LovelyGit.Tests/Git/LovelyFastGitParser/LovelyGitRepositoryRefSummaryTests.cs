@@ -129,6 +129,27 @@ public sealed class LovelyGitRepositoryRefSummaryTests
         Assert.Contains("refs/tags/new-snapshot-tag", changed.Keys);
     }
 
+    [Fact]
+    public async Task ReadAsync_HonorsCancellationBeforeReadingLooseRefs()
+    {
+        using var temporary = TemporaryGitRepository.Create();
+        var paths = await GitRepositoryDiscovery.ResolveRepositoryPathsAsync(
+            temporary.Path,
+            CancellationToken.None);
+        var objectFormat = await GitRepositoryDiscovery.ReadObjectFormatAsync(
+            paths.GitDirectory,
+            CancellationToken.None);
+        using var cancellation = new CancellationTokenSource();
+        cancellation.Cancel();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+            GitRefSummaryReader.ReadAsync(
+                paths.GitDirectory,
+                objectFormat,
+                GitRefReader.DefaultTagLimit,
+                cancellation.Token));
+    }
+
     private sealed class TemporaryGitRepository : IDisposable
     {
         private static readonly RepositoryTemplate<bool> Template = new(
