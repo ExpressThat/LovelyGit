@@ -23,8 +23,10 @@ internal sealed partial class CommitFileDiffService : IDisposable
         {
             if (!string.IsNullOrEmpty(previousCommitHash))
             {
-                await _commitGraphRepository
-                    .ClearCommitFileDiffsAsync(repositoryId, previousCommitHash, CancellationToken.None)
+                await ClearPersistentDiffsAsync(
+                        repositoryId,
+                        previousCommitHash,
+                        CancellationToken.None)
                     .ConfigureAwait(false);
             }
 
@@ -105,15 +107,13 @@ internal sealed partial class CommitFileDiffService : IDisposable
 
             if (CommitFileDiffCachingPolicy.ShouldPersist(response))
             {
-                await _commitGraphRepository
-                    .SaveCommitFileDiffAsync(
-                        repositoryId,
-                        commitHash,
-                        path,
-                        response,
-                        ignoreWhitespace,
-                        cancellationToken)
-                    .ConfigureAwait(false);
+                QueueDiffPersistence(
+                    repositoryId,
+                    commitHash,
+                    path,
+                    response,
+                    ignoreWhitespace,
+                    cancellationToken);
             }
 
             return response;
@@ -163,8 +163,7 @@ internal sealed partial class CommitFileDiffService : IDisposable
             var response = BuildResponseFromSource(commitHash, path, viewMode, ignoreWhitespace, source);
             if (CommitFileDiffCachingPolicy.ShouldPersist(response))
             {
-                await _commitGraphRepository
-                    .SaveCommitFileDiffAsync(
+                await SavePersistentDiffAsync(
                         repositoryId,
                         commitHash,
                         path,

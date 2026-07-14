@@ -13,7 +13,7 @@ internal sealed partial class CommitFileDiffService : IDisposable
 {
     private const int MaxSyntaxHighlightedCharacters = 750_000;
     private const int MaxSyntaxHighlightedLineLength = 2_000;
-    private readonly CommitGraphRepository _commitGraphRepository;
+    private readonly ICommitFileDiffCache? _persistentCache;
     private readonly object _preparationLock = new();
     private readonly object _diffBuildGateLock = new();
     private readonly Dictionary<Guid, ActivePreparation> _activePreparations = new();
@@ -23,7 +23,14 @@ internal sealed partial class CommitFileDiffService : IDisposable
 
     public CommitFileDiffService(CommitGraphRepository commitGraphRepository)
     {
-        _commitGraphRepository = commitGraphRepository;
+        _persistentCache = commitGraphRepository is null
+            ? null
+            : new CommitFileDiffCacheAdapter(commitGraphRepository);
+    }
+
+    internal CommitFileDiffService(ICommitFileDiffCache persistentCache, bool _)
+    {
+        _persistentCache = persistentCache;
     }
 
     public void StartPreparingCommitDiffs(

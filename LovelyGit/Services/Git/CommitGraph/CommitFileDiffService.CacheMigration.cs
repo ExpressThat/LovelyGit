@@ -13,10 +13,21 @@ internal sealed partial class CommitFileDiffService
         bool ignoreWhitespace,
         CancellationToken cancellationToken)
     {
+        var key = MakeDiffGateKey(
+            repositoryId,
+            commitHash,
+            path,
+            viewMode,
+            ignoreWhitespace);
+        if (TryGetPendingDiff(key, out var pending))
+        {
+            return pending;
+        }
+
         try
         {
-            var cached = await _commitGraphRepository
-                .GetCommitFileDiffAsync(
+            var cached = await _persistentCache!
+                .GetAsync(
                     repositoryId,
                     commitHash,
                     path,
@@ -32,7 +43,7 @@ internal sealed partial class CommitFileDiffService
                 CompactDiffPayloadBuilder.CompactIfUseful(cached);
                 if (!CommitFileDiffCachingPolicy.ShouldPersist(cached))
                 {
-                    await _commitGraphRepository.RemoveCommitFileDiffAsync(
+                    await RemovePersistentDiffAsync(
                             repositoryId,
                             commitHash,
                             path,
@@ -58,8 +69,10 @@ internal sealed partial class CommitFileDiffService
         {
             try
             {
-                await _commitGraphRepository
-                    .ClearCommitFileDiffsAsync(repositoryId, commitHash, CancellationToken.None)
+                await ClearPersistentDiffsAsync(
+                        repositoryId,
+                        commitHash,
+                        CancellationToken.None)
                     .ConfigureAwait(false);
             }
             catch
@@ -77,10 +90,11 @@ internal sealed partial class CommitFileDiffService
         bool ignoreWhitespace,
         CommitFileDiffResponse response)
     {
+        await Task.Yield();
         if (!CommitFileDiffCachingPolicy.ShouldPersist(response)) return;
         try
         {
-            await _commitGraphRepository.SaveCommitFileDiffAsync(
+            await SavePersistentDiffAsync(
                     repositoryId,
                     commitHash,
                     path,

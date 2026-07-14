@@ -83,8 +83,7 @@ internal sealed partial class CommitFileDiffService
         CancellationToken cancellationToken)
     {
         if (!CommitFileDiffCachingPolicy.ShouldPersist(response)) return;
-        await _commitGraphRepository
-            .SaveCommitFileDiffAsync(
+        await SavePersistentDiffAsync(
                 repositoryId,
                 commitHash,
                 path,

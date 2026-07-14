@@ -65,17 +65,27 @@ internal sealed partial class CommitFileDiffService
         }
     }
 
-    private Task<bool> HasCachedViewAsync(
+    private async Task<bool> HasCachedViewAsync(
         Guid repositoryId,
         string commitHash,
         string path,
         CommitDiffViewMode viewMode,
-        CancellationToken cancellationToken) =>
-        _commitGraphRepository.HasCommitFileDiffAsync(
+        CancellationToken cancellationToken)
+    {
+        var key = MakeDiffGateKey(
             repositoryId,
             commitHash,
             path,
             viewMode,
-            ignoreWhitespace: false,
-            cancellationToken);
+            ignoreWhitespace: false);
+        if (TryGetPendingDiff(key, out _)) return true;
+        return await _persistentCache!.HasAsync(
+                repositoryId,
+                commitHash,
+                path,
+                viewMode,
+                ignoreWhitespace: false,
+                cancellationToken)
+            .ConfigureAwait(false);
+    }
 }
