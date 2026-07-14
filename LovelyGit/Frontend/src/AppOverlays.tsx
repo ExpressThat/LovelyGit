@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useState } from "react";
+import { lazy, Suspense } from "react";
 import { SurfaceLoading } from "./AppLazySurfaces";
 import type { FileBlameTarget } from "./components/FileBlame/FileBlameDialog";
 import type { FileHistoryTarget } from "./components/FileHistory/FileHistoryDialog";
@@ -7,6 +7,7 @@ import {
 	LazyRemoteManagerDialog,
 } from "./components/TopNavBar/components/LazyRepositoryDialogs";
 import { Toaster } from "./components/ui/sonner";
+import { useRetainedSurface } from "./useRetainedSurface";
 
 const CommitSearchDialog = lazy(() =>
 	import("./components/CommitSearch/CommitSearchDialog").then((module) => ({
@@ -172,12 +173,4 @@ export function AppOverlays({
 			<Toaster />
 		</>
 	);
-}
-
-function useRetainedSurface(active: boolean) {
-	const [retained, setRetained] = useState(active);
-	useEffect(() => {
-		if (active) setRetained(true);
-	}, [active]);
-	return retained;
 }
