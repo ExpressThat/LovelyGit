@@ -13,7 +13,7 @@ internal static class CommitGraphServiceCollectionExtensions
 {
     public static IServiceCollection AddCommitGraphCommands(this IServiceCollection services)
     {
-        services.AddLovelyGitJsonTypeInfoResolver(CommitGraphJsonSerializerContext.Default);
+        services.AddLovelyGitJsonTypeInfoResolver(CommitGraphJsonSerialization.Resolver);
         services.AddLovelyGitJsonTypeInfoResolver(BranchComparisonJsonSerializerContext.Default);
         services.AddSingleton<CommitDetailsService>();
         services.AddSingleton<CommitFileDiffService>();

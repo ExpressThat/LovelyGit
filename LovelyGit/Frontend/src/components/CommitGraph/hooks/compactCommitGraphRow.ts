@@ -3,13 +3,23 @@ import type { CommitGraphRow, CommitLaneColor } from "@/generated/types";
 const EMPTY_ARRAY = Object.freeze([]) as unknown as never[];
 
 export function compactCommitGraphRow(row: CommitGraphRow) {
+	row.lane ??= 0;
+	row.colorIndex ??= 0;
 	row.commit.signatureKind ||= "None";
 	row.isBranchTip ||= false;
 	row.isMergeCommit ||= false;
 	row.activeLanesAbove = reuseEmpty(row.activeLanesAbove);
-	row.activeLanesBelow = reuseEmpty(row.activeLanesBelow);
+	row.activeLanesBelow = row.activeLanesBelow
+		? reuseEmpty(row.activeLanesBelow)
+		: row.activeLanesAbove;
 	row.laneColorsAbove = reuseEmpty(row.laneColorsAbove);
-	row.laneColorsBelow = reuseEmpty(row.laneColorsBelow);
+	row.laneColorsBelow = row.laneColorsBelow
+		? reuseEmpty(row.laneColorsBelow)
+		: row.laneColorsAbove;
+	hydrateLaneColors(row.laneColorsAbove);
+	if (row.laneColorsBelow !== row.laneColorsAbove) {
+		hydrateLaneColors(row.laneColorsBelow);
+	}
 	if (sameNumbers(row.activeLanesAbove, row.activeLanesBelow)) {
 		row.activeLanesBelow = row.activeLanesAbove;
 	}
@@ -22,8 +32,15 @@ export function compactCommitGraphRow(row: CommitGraphRow) {
 	return row;
 }
 
-function reuseEmpty<T>(values: T[]) {
-	return values.length === 0 ? (EMPTY_ARRAY as T[]) : values;
+function reuseEmpty<T>(values: T[] | undefined) {
+	return !values || values.length === 0 ? (EMPTY_ARRAY as T[]) : values;
+}
+
+function hydrateLaneColors(colors: CommitLaneColor[]) {
+	for (const color of colors) {
+		color.lane ??= 0;
+		color.colorIndex ??= 0;
+	}
 }
 
 function sameNumbers(left: number[], right: number[]) {

@@ -37,6 +37,30 @@ describe("compactCommitGraphRow", () => {
 		expect(stable.laneColorsBelow).toBe(stable.laneColorsAbove);
 		expect(transition.activeLanesBelow).not.toBe(transition.activeLanesAbove);
 	});
+
+	it("hydrates collections omitted by the compact wire format", () => {
+		const compact = row();
+		compact.activeLanesAbove = [0, 2];
+		compact.laneColorsAbove = [{} as (typeof compact.laneColorsAbove)[number]];
+		delete (compact as Partial<typeof compact>).lane;
+		delete (compact as Partial<typeof compact>).colorIndex;
+		delete (compact as Partial<typeof compact>).activeLanesBelow;
+		delete (compact as Partial<typeof compact>).laneColorsBelow;
+		delete (compact as Partial<typeof compact>).edgesAbove;
+		delete (compact as Partial<typeof compact>).edgesBelow;
+		delete (compact.commit as Partial<typeof compact.commit>).refs;
+
+		compactCommitGraphRow(compact);
+
+		expect(compact.activeLanesBelow).toBe(compact.activeLanesAbove);
+		expect(compact.laneColorsBelow).toBe(compact.laneColorsAbove);
+		expect(compact.laneColorsAbove).toEqual([{ colorIndex: 0, lane: 0 }]);
+		expect(compact.lane).toBe(0);
+		expect(compact.colorIndex).toBe(0);
+		expect(compact.edgesAbove).toEqual([]);
+		expect(compact.edgesBelow).toEqual([]);
+		expect(compact.commit.refs).toEqual([]);
+	});
 });
 
 function row(): CommitGraphRow {

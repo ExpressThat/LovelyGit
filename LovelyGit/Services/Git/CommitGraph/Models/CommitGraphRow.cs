@@ -8,7 +8,9 @@ namespace ExpressThat.LovelyGit.Services.Git.CommitGraph.Models
     {
         public CommitInfo Commit { get; set; } = new();
         public int RowIndex { get; set; }
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         public int Lane { get; set; }
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         public int ColorIndex { get; set; }
         public List<int> ActiveLanesAbove { get; set; } = new();
         public List<int> ActiveLanesBelow { get; set; } = new();
