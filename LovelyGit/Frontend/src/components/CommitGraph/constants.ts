@@ -1,5 +1,7 @@
 export const ROW_HEIGHT = 22;
-export const OVERSCAN = 36;
+// Keep enough rows mounted to absorb a fast wheel gesture without making every
+// scroll frame reconcile several additional viewports of SVG graph content.
+export const OVERSCAN = 8;
 export const LANE_GAP = 14;
 export const GRAPH_PADDING_LEFT = 18;
 export const ROW_CENTER_Y = ROW_HEIGHT / 2;
