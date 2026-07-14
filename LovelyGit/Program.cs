@@ -3,7 +3,6 @@ using ExpressThat.LovelyGit.Services.Data;
 using ExpressThat.LovelyGit.Services.Dialogs;
 using ExpressThat.LovelyGit.Services.Git.CommitGraph;
 using ExpressThat.LovelyGit.Services.NativeMessaging;
-using ExpressThat.LovelyGit.Services.Keyring;
 using ExpressThat.LovelyGit.Services.Updates;
 using InfiniFrame;
 using InfiniFrame.WebServer;
@@ -58,8 +57,6 @@ public static class Program
                     ;
 
         ApplyInitialWindowPlacement(windowBuilder);
-
-        Keyring.GetPassword();
 
         var application = appBuilder.Build();
         application.WebApp.Services
