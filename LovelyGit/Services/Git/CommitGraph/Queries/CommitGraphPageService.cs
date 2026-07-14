@@ -115,7 +115,7 @@ internal sealed partial class CommitGraphPageService : IDisposable
         }
     }
 
-    private async Task ResetRepositoryGraphAsync(Guid repositoryId, CancellationToken cancellationToken)
+    internal async Task ResetRepositoryGraphAsync(Guid repositoryId, CancellationToken cancellationToken)
     {
         CancelScheduledGraphClose(repositoryId);
         AdvanceCacheGeneration(repositoryId);
@@ -124,7 +124,9 @@ internal sealed partial class CommitGraphPageService : IDisposable
         await _commitFileDiffService.CancelRepositoryPreparationAsync(repositoryId, cancellationToken).ConfigureAwait(false);
         if (MarkRepositoryLoaded(repositoryId))
         {
-            await _commitGraphRepository.ClearRepositoryAsync(repositoryId, cancellationToken).ConfigureAwait(false);
+            await _commitGraphRepository
+                .DeleteTraversalEntriesAsync(repositoryId, cancellationToken)
+                .ConfigureAwait(false);
         }
 
         CloseGraph(repositoryId);

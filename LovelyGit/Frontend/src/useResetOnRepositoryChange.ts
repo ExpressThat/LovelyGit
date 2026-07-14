@@ -14,7 +14,9 @@ export function useResetOnRepositoryChange(
 	useEffect(() => {
 		if (previousRepositoryIdRef.current === repositoryId) return;
 		previousRepositoryIdRef.current = repositoryId;
-		setBranchName(null);
+		if (!repositoryId) {
+			setBranchName(null);
+		}
 		setDetailsPanel(null);
 		resetRepositoryOverlays();
 		resetFileDiscovery();

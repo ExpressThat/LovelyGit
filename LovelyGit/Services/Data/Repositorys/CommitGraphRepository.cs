@@ -8,14 +8,12 @@ namespace ExpressThat.LovelyGit.Services.Data.Repositorys
         private readonly CommitGraphTraversalCache _traversalCache;
         private readonly CommitDetailsCacheRepository _detailsCache;
         private readonly CommitFileDiffCacheRepository _fileDiffCache;
-        private readonly CommitGraphRepositoryCleaner _cleaner;
 
         public CommitGraphRepository(GitRepoCacheDbContext gitRepoCache)
         {
             _traversalCache = new CommitGraphTraversalCache(gitRepoCache);
             _detailsCache = new CommitDetailsCacheRepository(gitRepoCache);
             _fileDiffCache = new CommitFileDiffCacheRepository(gitRepoCache);
-            _cleaner = new CommitGraphRepositoryCleaner(gitRepoCache, _traversalCache, _detailsCache, _fileDiffCache);
         }
 
         public Task<CommitGraphRepositoryState?> GetRepositoryStateAsync(
@@ -219,9 +217,5 @@ namespace ExpressThat.LovelyGit.Services.Data.Repositorys
             return _traversalCache.DeleteTraversalEntriesAsync(repositoryId, cancellationToken);
         }
 
-        public Task ClearRepositoryAsync(Guid repositoryId, CancellationToken cancellationToken)
-        {
-            return _cleaner.ClearRepositoryAsync(repositoryId, cancellationToken);
-        }
     }
 }

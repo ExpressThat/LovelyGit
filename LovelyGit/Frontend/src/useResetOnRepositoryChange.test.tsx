@@ -7,7 +7,7 @@ import type { DetailsPanelState } from "./AppPanelState";
 import { useResetOnRepositoryChange } from "./useResetOnRepositoryChange";
 
 describe("useResetOnRepositoryChange", () => {
-	it("clears repository-scoped overlays and selections when the tab changes", () => {
+	it("clears repository-scoped overlays without overwriting the next graph branch", () => {
 		const scopeHistory: Array<{ repositoryId: string; isCurrent: boolean }> =
 			[];
 		const { result, rerender } = renderHook(
@@ -35,7 +35,7 @@ describe("useResetOnRepositoryChange", () => {
 		act(() => rerender({ repositoryId: "two" }));
 
 		expect(result.current).toEqual({
-			branch: null,
+			branch: "main",
 			details: null,
 			fileDiscoveryOpen: false,
 			isCurrent: true,
@@ -45,5 +45,27 @@ describe("useResetOnRepositoryChange", () => {
 			repositoryId: "two",
 			isCurrent: false,
 		});
+	});
+
+	it("clears the branch when switching to the new tab", () => {
+		const { result, rerender } = renderHook(
+			({ repositoryId }) => {
+				const [branch, setBranch] = useState<string | null>("main");
+				const [, setDetails] = useState<DetailsPanelState | null>(null);
+				useResetOnRepositoryChange(
+					repositoryId,
+					setBranch,
+					setDetails,
+					() => undefined,
+					() => undefined,
+				);
+				return branch;
+			},
+			{ initialProps: { repositoryId: "one" as string | null } },
+		);
+
+		act(() => rerender({ repositoryId: null }));
+
+		expect(result.current).toBeNull();
 	});
 });
