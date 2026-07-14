@@ -2,6 +2,7 @@ import type {
 	CommitFileDiffChangeSpan,
 	CommitFileDiffSyntaxSpan,
 } from "@/generated/types";
+import { getVisibleCharacterRange } from "./DiffLineViewport";
 
 export function LineNumber({ value }: { value?: number | null }) {
 	return (
@@ -27,9 +28,11 @@ export function CodeCell({
 	wrapLines: boolean;
 }) {
 	const displayText = text ?? "";
-	const startOffset = wrapLines
-		? 0
-		: Math.min(displayText.length, Math.floor(scrollLeft / 7.25));
+	const { endOffset, startOffset } = getVisibleCharacterRange(
+		displayText.length,
+		scrollLeft,
+		wrapLines,
+	);
 	return (
 		<div
 			className={`min-h-[18px] overflow-hidden border-r px-2 ${
@@ -43,22 +46,11 @@ export function CodeCell({
 					changeSpans ?? [],
 					variant,
 					startOffset,
+					endOffset,
 				)}
 			</div>
 		</div>
 	);
-}
-
-export function estimateCodeWidth(values: Iterable<string | null | undefined>) {
-	let longestLineLength = 0;
-	for (const value of values) {
-		longestLineLength = Math.max(longestLineLength, value?.length ?? 0);
-		if (longestLineLength >= 6_617) {
-			break;
-		}
-	}
-
-	return Math.min(48_000, Math.max(320, longestLineLength * 7.25 + 32));
 }
 
 function renderSyntaxLine(
@@ -67,22 +59,29 @@ function renderSyntaxLine(
 	changeSpans: CommitFileDiffChangeSpan[],
 	variant: "deleted" | "inserted" | "plain",
 	startOffset: number,
+	endOffset: number,
 ): React.ReactNode {
 	if (text.length === 0) {
 		return "\u00a0";
 	}
 
-	const boundaries = new Set<number>([startOffset, text.length]);
-	for (const span of spans) {
-		boundaries.add(Math.min(Math.max(span.start, 0), text.length));
+	const visibleSyntaxSpans = spans.filter((span) =>
+		overlaps(span.start, span.length, startOffset, endOffset),
+	);
+	const visibleChangeSpans = changeSpans.filter((span) =>
+		overlaps(span.start, span.length, startOffset, endOffset),
+	);
+	const boundaries = new Set<number>([startOffset, endOffset]);
+	for (const span of visibleSyntaxSpans) {
+		boundaries.add(Math.min(Math.max(span.start, startOffset), endOffset));
 		boundaries.add(
-			Math.min(Math.max(span.start + span.length, 0), text.length),
+			Math.min(Math.max(span.start + span.length, startOffset), endOffset),
 		);
 	}
-	for (const span of changeSpans) {
-		boundaries.add(Math.min(Math.max(span.start, 0), text.length));
+	for (const span of visibleChangeSpans) {
+		boundaries.add(Math.min(Math.max(span.start, startOffset), endOffset));
 		boundaries.add(
-			Math.min(Math.max(span.start + span.length, 0), text.length),
+			Math.min(Math.max(span.start + span.length, startOffset), endOffset),
 		);
 	}
 
@@ -97,8 +96,8 @@ function renderSyntaxLine(
 			continue;
 		}
 
-		const syntax = findCoveringSyntaxSpan(start, spans);
-		const change = findCoveringChangeSpan(start, changeSpans);
+		const syntax = findCoveringSyntaxSpan(start, visibleSyntaxSpans);
+		const change = findCoveringChangeSpan(start, visibleChangeSpans);
 		nodes.push(
 			<span
 				className={[
@@ -114,16 +113,28 @@ function renderSyntaxLine(
 		);
 	}
 
-	return nodes.length > 0 ? nodes : text.slice(startOffset);
+	return nodes.length > 0 ? nodes : text.slice(startOffset, endOffset);
+}
+
+function overlaps(start: number, length: number, from: number, to: number) {
+	return start < to && start + length > from;
 }
 
 function findCoveringSyntaxSpan(
 	offset: number,
 	spans: CommitFileDiffSyntaxSpan[],
 ) {
-	return spans
-		.filter((span) => offset >= span.start && offset < span.start + span.length)
-		.sort((left, right) => left.length - right.length)[0];
+	let covering: CommitFileDiffSyntaxSpan | undefined;
+	for (const span of spans) {
+		if (
+			offset >= span.start &&
+			offset < span.start + span.length &&
+			(covering === undefined || span.length < covering.length)
+		) {
+			covering = span;
+		}
+	}
+	return covering;
 }
 
 function findCoveringChangeSpan(

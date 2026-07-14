@@ -1,14 +1,15 @@
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { useMemo, useRef, useState } from "react";
 import type { CommitFileDiffLine } from "@/generated/types";
+import { DiffHorizontalScroller } from "./DiffHorizontalScroller";
 import { DiffHunkActionButton, getDiffHunkAction } from "./DiffHunkActions";
 import {
 	CodeCell,
 	changeMarker,
-	estimateCodeWidth,
 	LineNumber,
 	lineBackground,
 } from "./DiffLineRendering";
+import { estimateCodeWidth } from "./DiffLineViewport";
 import {
 	DiffChunkSeparator,
 	type DiffDisplayRow,
@@ -16,7 +17,6 @@ import {
 	getCombinedLineAction,
 	getCombinedLineActionPayload,
 } from "./DiffRows";
-import { DiffHorizontalScroller } from "./DiffHorizontalScroller";
 
 const DIFF_OVERSCAN = 12;
 const EMPTY_HUNK_LOOKUP = new Map<CommitFileDiffLine, CommitFileDiffLine[]>();

@@ -2,7 +2,7 @@ import { useVirtualizer } from "@tanstack/react-virtual";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { CommitFileDiffResponse } from "@/generated/types";
 import { DiffHorizontalScroller } from "./DiffHorizontalScroller";
-import { estimateCodeWidth } from "./DiffLineRendering";
+import { estimateCodeWidth } from "./DiffLineViewport";
 import {
 	VirtualTextHeaders,
 	VirtualTextLoading,

@@ -1,14 +1,14 @@
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { useMemo, useRef } from "react";
 import type { CommitFileDiffLine } from "@/generated/types";
+import { DiffHorizontalScroller } from "./DiffHorizontalScroller";
 import { getSideDiffHunkAction } from "./DiffHunkActions";
-import { estimateCodeWidth } from "./DiffLineRendering";
+import { estimateCodeWidth } from "./DiffLineViewport";
 import {
 	DiffChunkSeparator,
 	type DiffDisplayRow,
 	getSideBySideLineAction,
 } from "./DiffRows";
-import { DiffHorizontalScroller } from "./DiffHorizontalScroller";
 import { DiffPaneHeader, SideBySideRow } from "./SideBySideRow";
 import { useSynchronizedDiffScroll } from "./useSynchronizedDiffScroll";
 

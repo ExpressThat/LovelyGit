@@ -56,6 +56,28 @@ describe("DiffHorizontalScroller", () => {
 		expect(onValueChange).toHaveBeenCalledWith(100);
 	});
 
+	it("keeps the end of extremely wide lines reachable", () => {
+		vi.spyOn(HTMLElement.prototype, "clientWidth", "get").mockReturnValue(400);
+		vi.spyOn(window, "requestAnimationFrame").mockImplementation((callback) => {
+			callback(0);
+			return 1;
+		});
+		const onValueChange = vi.fn();
+		render(
+			<DiffHorizontalScroller
+				contentWidth={1_450_032}
+				label="Horizontal combined diff scroll"
+				onValueChange={onValueChange}
+				value={0}
+			/>,
+		);
+
+		const slider = screen.getByRole<HTMLInputElement>("slider");
+		expect(slider.max).toBe("1449632");
+		fireEvent.change(slider, { target: { value: slider.max } });
+		expect(onValueChange).toHaveBeenCalledWith(1_449_632);
+	});
+
 	it("does not show a scrollbar when the content fits", () => {
 		vi.spyOn(HTMLElement.prototype, "clientWidth", "get").mockReturnValue(800);
 		render(
