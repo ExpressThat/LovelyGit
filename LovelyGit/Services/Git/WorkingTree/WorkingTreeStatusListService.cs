@@ -60,15 +60,22 @@ internal sealed partial class WorkingTreeStatusListService
                 cancellationToken,
                 collectRootTracking: true)
             .ConfigureAwait(false);
-        if (await HasStagedChangesAsync(
+        var headTreeId = await ReadHeadTreeIdAsync(
                 paths.WorktreeGitDirectory,
                 paths.GitDirectory,
                 objectFormat,
-                fullScan,
                 cancellationToken)
-                .ConfigureAwait(false))
+            .ConfigureAwait(false);
+        if (HasStagedChanges(fullScan, headTreeId))
         {
-            return null;
+            var staged = await TryGetStagedChangesAsync(
+                    paths.WorkTreeDirectory,
+                    objectFormat,
+                    headTreeId,
+                    cancellationToken)
+                .ConfigureAwait(false);
+            if (staged is null) return null;
+            fullScan.Response.Staged.AddRange(staged);
         }
 
         var untracked = await FindUntrackedFilesAsync(
@@ -87,6 +94,7 @@ internal sealed partial class WorkingTreeStatusListService
         response.Untracked.AddRange(untracked.Files);
         fullScan.RootTrackedFiles.Clear();
         fullScan.RootTrackedDirectories.Clear();
+        Sort(response.Staged);
         Sort(response.Unstaged);
         Sort(response.Untracked);
         Sort(response.Unmerged);

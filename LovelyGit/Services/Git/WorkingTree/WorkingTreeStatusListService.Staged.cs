@@ -4,21 +4,10 @@ namespace ExpressThat.LovelyGit.Services.Git.WorkingTree;
 
 internal sealed partial class WorkingTreeStatusListService
 {
-    private static async Task<bool> HasStagedChangesAsync(
-        string worktreeGitDirectory,
-        string commonGitDirectory,
-        GitObjectFormat objectFormat,
+    private static bool HasStagedChanges(
         GitIndexStatusScan scan,
-        CancellationToken cancellationToken)
+        GitObjectId? headTreeId)
     {
-        if (scan.Response.Unmerged.Count > 0)
-        {
-            return false;
-        }
-
-        var headTreeId = await ReadHeadTreeIdAsync(
-            worktreeGitDirectory, commonGitDirectory, objectFormat, cancellationToken)
-            .ConfigureAwait(false);
         return headTreeId == null
             ? scan.RootTreeId != null
             : scan.RootTreeId != headTreeId;
