@@ -4,20 +4,17 @@ using ExpressThat.LovelyGit.Services.Dialogs;
 using ExpressThat.LovelyGit.Services.Git.CommitGraph;
 using ExpressThat.LovelyGit.Services.NativeMessaging;
 using ExpressThat.LovelyGit.Services.Keyring;
+using ExpressThat.LovelyGit.Services.Updates;
 using InfiniFrame;
 using InfiniFrame.WebServer;
-using System.Diagnostics;
 using System.Drawing;
 using System.Runtime.InteropServices;
 using Velopack;
-using Velopack.Sources;
 
 namespace ExpressThat.LovelyGit;
 
 public static class Program
 {
-    private const string GitHubRepositoryUrl = "https://github.com/ExpressThat/LovelyGit";
-    private const bool IncludePrereleases = true;
     private const bool EnableCommitGraphCacheWorker = false;
     private const bool EnableCommitDetailsPreloadWorker = false;
     private const bool EnableCommitFileDiffPreparationWorker = false;
@@ -35,10 +32,13 @@ public static class Program
         AppDbContext.RegisterBsonKeys();
         GitRepoCacheDbContext.EnsureCacheReady();
         VelopackApp.Build().Run();
-        CheckForUpdatesAtStartup(args);
+        var startupUpdates = StartupUpdateCoordinator.Create(() => new VelopackUpdateClient());
+        startupUpdates.ApplyPendingUpdate(args);
 
         InfiniFrameWebApplicationBuilder appBuilder = InfiniFrameWebApplication.CreateBuilder(args);
 
+        appBuilder.Services.AddSingleton(startupUpdates);
+        appBuilder.Services.AddHostedService<StartupUpdateBackgroundService>();
         appBuilder.Services.AddSingleton(new CommitGraphBackgroundWorkerOptions(
             EnableCommitGraphCacheWorker,
             EnableCommitDetailsPreloadWorker,
@@ -136,44 +136,5 @@ public static class Program
         return int.TryParse(value, out var parsed) && parsed >= 400
             ? parsed
             : fallback;
-    }
-
-    private static void CheckForUpdatesAtStartup(string[] args)
-    {
-        try
-        {
-            var source = new GithubSource(
-                GitHubRepositoryUrl,
-                accessToken: null,
-                prerelease: IncludePrereleases,
-                downloader: null);
-
-            var updateManager = new UpdateManager(source);
-            if (!updateManager.IsInstalled)
-            {
-                return;
-            }
-
-            var pendingUpdate = updateManager.UpdatePendingRestart;
-            if (pendingUpdate is not null)
-            {
-                updateManager.ApplyUpdatesAndRestart(pendingUpdate, args);
-                return;
-            }
-
-            var updateInfo = updateManager.CheckForUpdates();
-            if (updateInfo is null)
-            {
-                return;
-            }
-
-            updateManager.DownloadUpdates(updateInfo, progress: null);
-            updateManager.ApplyUpdatesAndRestart(updateInfo.TargetFullRelease, args);
-        }
-        catch (Exception exception)
-        {
-            Trace.TraceWarning("Velopack startup update check failed: {0}", exception);
-            Console.Error.WriteLine("Velopack startup update check failed: {0}", exception);
-        }
     }
 }
