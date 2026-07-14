@@ -1,6 +1,7 @@
 using ExpressThat.LovelyGit.Services.Git.Branches;
 using ExpressThat.LovelyGit.Services.Git.BranchComparison;
 using ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser;
+using ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser.Refs;
 
 namespace ExpressThat.LovelyGit.Services.Git.RemoteSync;
 
@@ -10,35 +11,48 @@ internal static class NativeRemoteSyncStatusReader
         string repositoryPath,
         CancellationToken cancellationToken)
     {
-        using var repository = await LovelyGitRepository.OpenAsync(repositoryPath, cancellationToken)
+        var paths = await GitRepositoryDiscovery
+            .ResolveRepositoryPathsAsync(repositoryPath, cancellationToken)
             .ConfigureAwait(false);
-        var branchName = repository.CurrentBranchName;
-        var localHash = repository.HeadTarget;
+        var objectFormat = await GitRepositoryDiscovery
+            .ReadObjectFormatAsync(paths.GitDirectory, cancellationToken)
+            .ConfigureAwait(false);
+        var branchName = await GitRefReader
+            .ResolveHeadBranchNameAsync(paths.WorktreeGitDirectory, cancellationToken)
+            .ConfigureAwait(false);
+        var localHash = await GitHeadReader
+            .ResolveAsync(
+                paths.WorktreeGitDirectory,
+                paths.GitDirectory,
+                objectFormat,
+                cancellationToken)
+            .ConfigureAwait(false);
         if (branchName == null || localHash == null)
         {
-            return new RemoteSyncStatusResponse
-            {
-                BranchName = branchName,
-                LocalHash = localHash?.ToString(),
-            };
+            return Calm(branchName, localHash);
         }
 
         var upstreams = await GitBranchUpstreamConfigReader
-            .ReadAsync(repository.GitDirectory, cancellationToken)
+            .ReadAsync(paths.GitDirectory, cancellationToken)
             .ConfigureAwait(false);
-        var upstreamName = upstreams
-            .FirstOrDefault(upstream => string.Equals(
-                upstream.BranchName,
-                branchName,
-                StringComparison.Ordinal))
-            ?.UpstreamName;
+        if (FindUpstream(upstreams, branchName) == null)
+        {
+            return Calm(branchName, localHash);
+        }
+
+        using var repository = await LovelyGitRepository.OpenAsync(repositoryPath, cancellationToken)
+            .ConfigureAwait(false);
+        branchName = repository.CurrentBranchName;
+        localHash = repository.HeadTarget;
+        if (branchName == null || localHash == null)
+        {
+            return Calm(branchName, localHash);
+        }
+
+        var upstreamName = FindUpstream(upstreams, branchName);
         if (upstreamName == null)
         {
-            return new RemoteSyncStatusResponse
-            {
-                BranchName = branchName,
-                LocalHash = localHash.Value.ToString(),
-            };
+            return Calm(branchName, localHash);
         }
 
         if (!repository.TryGetBranch(upstreamName, out var upstream) || upstream == null)
@@ -70,4 +84,19 @@ internal static class NativeRemoteSyncStatusReader
             IsHistoryPartial = counts.IsPartial,
         };
     }
+
+    private static string? FindUpstream(
+        IEnumerable<GitBranchUpstream> upstreams,
+        string branchName) =>
+        upstreams.FirstOrDefault(upstream => string.Equals(
+            upstream.BranchName,
+            branchName,
+            StringComparison.Ordinal))?.UpstreamName;
+
+    private static RemoteSyncStatusResponse Calm(string? branchName, GitObjectId? localHash) =>
+        new()
+        {
+            BranchName = branchName,
+            LocalHash = localHash?.ToString(),
+        };
 }

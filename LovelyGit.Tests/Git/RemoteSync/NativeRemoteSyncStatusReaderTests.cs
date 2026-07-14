@@ -61,6 +61,17 @@ public sealed class NativeRemoteSyncStatusReaderTests
         Assert.NotNull(detached.LocalHash);
     }
 
+    [Fact]
+    public async Task ReadAsync_HonorsCancellationOnTheLightweightPath()
+    {
+        using var repository = TemporaryGitRepository.Create();
+        using var cancellation = new CancellationTokenSource();
+        cancellation.Cancel();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+            NativeRemoteSyncStatusReader.ReadAsync(repository.Path, cancellation.Token));
+    }
+
     private static Task<RemoteSyncStatusResponse> ReadAsync(string path) =>
         NativeRemoteSyncStatusReader.ReadAsync(path, CancellationToken.None);
 
