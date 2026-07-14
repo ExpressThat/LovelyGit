@@ -75,6 +75,7 @@ function renderActions() {
 			onCommitSuccess: vi.fn(),
 			onRefresh: vi.fn(),
 			repositoryId: "repo",
+			setOptimisticChanges: vi.fn(),
 		}),
 	);
 }

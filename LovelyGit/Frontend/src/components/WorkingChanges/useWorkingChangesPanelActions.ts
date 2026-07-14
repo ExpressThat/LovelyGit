@@ -19,11 +19,13 @@ export function useWorkingChangesPanelActions({
 	onCommitSuccess,
 	onRefresh,
 	repositoryId,
+	setOptimisticChanges,
 }: {
 	changes: WorkingTreeChangesResponse | null;
 	onCommitSuccess: () => Promise<void> | void;
 	onRefresh: () => Promise<void> | void;
 	repositoryId: string;
+	setOptimisticChanges: (changes: WorkingTreeChangesResponse | null) => void;
 }) {
 	const signCommitsByDefault = useSetting("SignCommitsByDefault");
 	const [selectedKeys, setSelectedKeys] = useState<Set<string>>(
@@ -118,6 +120,7 @@ export function useWorkingChangesPanelActions({
 			includeAll: boolean,
 		) =>
 			runIndexCommand({
+				changes,
 				commandType,
 				files,
 				includeAll,
@@ -125,6 +128,7 @@ export function useWorkingChangesPanelActions({
 				repositoryId,
 				setActionError,
 				setIsMutating,
+				setOptimisticChanges,
 				setSelectedKeys,
 			}),
 		selectedKeys,

@@ -127,19 +127,19 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging
         RevealWorkingTreeFile,
         [NativeMessageContract(typeof(IgnoreWorkingTreePathCommandArguments), typeof(GitIgnoreResult))]
         IgnoreWorkingTreePath,
-        [NativeMessageContract(typeof(UpdateWorkingTreeIndexCommandArguments))]
+        [NativeMessageContract(typeof(UpdateWorkingTreeIndexCommandArguments), typeof(EmptyCommandArguments))]
         StageWorkingTreeFiles,
-        [NativeMessageContract(typeof(UpdateWorkingTreeIndexCommandArguments))]
+        [NativeMessageContract(typeof(UpdateWorkingTreeIndexCommandArguments), typeof(EmptyCommandArguments))]
         UnstageWorkingTreeFiles,
         [NativeMessageContract(typeof(DiscardWorkingTreeChangesCommandArguments))]
         DiscardWorkingTreeChanges,
-        [NativeMessageContract(typeof(StageWorkingTreeLineCommandArguments))]
+        [NativeMessageContract(typeof(StageWorkingTreeLineCommandArguments), typeof(EmptyCommandArguments))]
         StageWorkingTreeLine,
-        [NativeMessageContract(typeof(StageWorkingTreeLineCommandArguments))]
+        [NativeMessageContract(typeof(StageWorkingTreeLineCommandArguments), typeof(EmptyCommandArguments))]
         UnstageWorkingTreeLine,
-        [NativeMessageContract(typeof(StageWorkingTreeHunkCommandArguments))]
+        [NativeMessageContract(typeof(StageWorkingTreeHunkCommandArguments), typeof(EmptyCommandArguments))]
         StageWorkingTreeHunk,
-        [NativeMessageContract(typeof(StageWorkingTreeHunkCommandArguments))]
+        [NativeMessageContract(typeof(StageWorkingTreeHunkCommandArguments), typeof(EmptyCommandArguments))]
         UnstageWorkingTreeHunk,
         [NativeMessageContract(typeof(GetHeadCommitMessageCommandArguments), typeof(HeadCommitMessageResponse))]
         GetHeadCommitMessage,

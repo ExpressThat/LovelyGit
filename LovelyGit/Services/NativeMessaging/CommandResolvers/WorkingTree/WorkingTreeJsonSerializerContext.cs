@@ -78,6 +78,7 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Workin
 [JsonSerializable(typeof(CommandResponse<CommitFileDiffResponse>))]
 [JsonSerializable(typeof(CommandResponse<ConflictResolutionResponse>))]
 [JsonSerializable(typeof(CommandResponse<GitIgnoreResult>))]
+[JsonSerializable(typeof(CommandResponse<EmptyCommandArguments>))]
 [JsonSerializable(typeof(CommandResponse<HeadCommitMessageResponse>))]
 [JsonSerializable(typeof(CommandResponse<List<GitRemote>>))]
 [JsonSerializable(typeof(CommandResponse<RemoteSyncStatusResponse>))]

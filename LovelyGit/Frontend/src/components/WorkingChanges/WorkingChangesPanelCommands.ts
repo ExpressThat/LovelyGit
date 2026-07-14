@@ -5,6 +5,7 @@ import type {
 	WorkingTreeChangesResponse,
 } from "@/generated/types";
 import { sendRequestWithResponse } from "@/lib/commands";
+import { applyOptimisticIndexMutation } from "./OptimisticWorkingTreeIndex";
 import { uniquePaths } from "./WorkingChangesPanelParts";
 
 export type IndexCommandType =
@@ -50,6 +51,7 @@ export async function ignoreWorkingTreePath({
 }
 
 export async function runIndexCommand({
+	changes,
 	commandType,
 	files,
 	includeAll,
@@ -57,8 +59,10 @@ export async function runIndexCommand({
 	repositoryId,
 	setActionError,
 	setIsMutating,
+	setOptimisticChanges,
 	setSelectedKeys,
 }: {
+	changes: WorkingTreeChangesResponse | null;
 	commandType: IndexCommandType;
 	files: WorkingTreeChangedFile[];
 	includeAll: boolean;
@@ -66,14 +70,24 @@ export async function runIndexCommand({
 	repositoryId: string;
 	setActionError: (message: string | null) => void;
 	setIsMutating: (isMutating: boolean) => void;
+	setOptimisticChanges: (changes: WorkingTreeChangesResponse | null) => void;
 	setSelectedKeys: (keys: Set<string>) => void;
 }) {
-	if (!includeAll && files.length === 0) {
+	if (!changes || (!includeAll && files.length === 0)) {
 		return;
 	}
 
 	setIsMutating(true);
 	setActionError(null);
+	setOptimisticChanges(
+		applyOptimisticIndexMutation(
+			changes,
+			commandType === "StageWorkingTreeFiles" ? "stage" : "unstage",
+			files,
+			includeAll,
+		),
+	);
+	let indexUpdated = false;
 	try {
 		await sendRequestWithResponse({
 			commandType,
@@ -83,11 +97,19 @@ export async function runIndexCommand({
 				repositoryId,
 			},
 		});
+		indexUpdated = true;
 		setSelectedKeys(new Set());
 		await onRefresh();
 	} catch (error) {
+		if (!indexUpdated) {
+			setOptimisticChanges(null);
+		}
 		setActionError(
-			error instanceof Error ? error.message : "Failed to update the index.",
+			error instanceof Error
+				? error.message
+				: indexUpdated
+					? "The index was updated, but its status could not be refreshed."
+					: "Failed to update the index.",
 		);
 	} finally {
 		setIsMutating(false);

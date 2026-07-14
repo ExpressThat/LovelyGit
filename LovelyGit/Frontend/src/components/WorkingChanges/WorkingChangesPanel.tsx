@@ -1,3 +1,4 @@
+import { useState } from "react";
 import type {
 	WorkingTreeChangedFile,
 	WorkingTreeChangesResponse,
@@ -38,13 +39,29 @@ export function WorkingChangesPanel({
 	repositoryId: string;
 	totalCount: number;
 }) {
-	const visibleChanges = changes ?? {
-		staged: [],
-		unstaged: [],
-		untracked: [],
-		unmerged: [],
-		totalCount,
-	};
+	const [optimisticView, setOptimisticView] =
+		useState<OptimisticWorkingTreeView | null>(null);
+	const optimisticChanges =
+		optimisticView?.repositoryId === repositoryId &&
+		optimisticView.source === changes
+			? optimisticView.changes
+			: null;
+	const setOptimisticChanges = (
+		nextChanges: WorkingTreeChangesResponse | null,
+	) =>
+		setOptimisticView(
+			nextChanges
+				? { changes: nextChanges, repositoryId, source: changes }
+				: null,
+		);
+	const visibleChanges = optimisticChanges ??
+		changes ?? {
+			staged: [],
+			unstaged: [],
+			untracked: [],
+			unmerged: [],
+			totalCount,
+		};
 	const { stagedFiles, unstagedFiles } = splitWorkingChanges(visibleChanges);
 	const workingFiles = workingFilesOnly(unstagedFiles);
 	const {
@@ -71,10 +88,11 @@ export function WorkingChangesPanel({
 		toggleSelected,
 		toggleAmend,
 	} = useWorkingChangesPanelActions({
-		changes,
+		changes: visibleChanges,
 		onCommitSuccess,
 		onRefresh,
 		repositoryId,
+		setOptimisticChanges,
 	});
 	const undo = useUndoLastCommit({
 		onSuccess: async (message) => {
@@ -170,3 +188,9 @@ export function WorkingChangesPanel({
 		</div>
 	);
 }
+
+type OptimisticWorkingTreeView = {
+	changes: WorkingTreeChangesResponse;
+	repositoryId: string;
+	source: WorkingTreeChangesResponse | null;
+};

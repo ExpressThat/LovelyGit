@@ -57,11 +57,12 @@ internal sealed class StageWorkingTreeFilesCommandResolver : CommandResponder<Up
 
     private static CommandResponseBase Success(NativeCommand<UpdateWorkingTreeIndexCommandArguments> command)
     {
-        return new CommandResponseBase
+        return new CommandResponse<EmptyCommandArguments>
         {
             CommandUniqueId = command.CommandUniqueId,
             CommandType = command.CommandType,
             IsSuccess = true,
+            Result = new EmptyCommandArguments(),
         };
     }
 

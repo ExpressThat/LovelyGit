@@ -66,11 +66,12 @@ internal sealed class StageWorkingTreeLineCommandResolver : CommandResponder<Sta
 
     private static CommandResponseBase Success(NativeCommand<StageWorkingTreeLineCommandArguments> command)
     {
-        return new CommandResponseBase
+        return new CommandResponse<EmptyCommandArguments>
         {
             CommandUniqueId = command.CommandUniqueId,
             CommandType = command.CommandType,
             IsSuccess = true,
+            Result = new EmptyCommandArguments(),
         };
     }
 

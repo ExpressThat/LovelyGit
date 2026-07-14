@@ -65,11 +65,12 @@ internal sealed class UnstageWorkingTreeLineCommandResolver : CommandResponder<S
 
     private static CommandResponseBase Success(NativeCommand<StageWorkingTreeLineCommandArguments> command)
     {
-        return new CommandResponseBase
+        return new CommandResponse<EmptyCommandArguments>
         {
             CommandUniqueId = command.CommandUniqueId,
             CommandType = command.CommandType,
             IsSuccess = true,
+            Result = new EmptyCommandArguments(),
         };
     }
 

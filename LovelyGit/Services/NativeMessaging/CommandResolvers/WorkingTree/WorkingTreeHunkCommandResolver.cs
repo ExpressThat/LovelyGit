@@ -72,11 +72,12 @@ internal sealed class WorkingTreeHunkCommandResolver
 
     private static CommandResponseBase Success(
         NativeCommand<StageWorkingTreeHunkCommandArguments> command) =>
-        new()
+        new CommandResponse<EmptyCommandArguments>
         {
             CommandUniqueId = command.CommandUniqueId,
             CommandType = command.CommandType,
             IsSuccess = true,
+            Result = new EmptyCommandArguments(),
         };
 
     private static CommandResponseBase Failure(
