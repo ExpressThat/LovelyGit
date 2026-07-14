@@ -134,6 +134,7 @@ function details(path: string): CommitDetailsResponse {
 		date: 1,
 		email: "ada@example.test",
 		hash: "a".repeat(40),
+		hasLineStats: true,
 		message: "Merge",
 		parents: ["b".repeat(40), "c".repeat(40)],
 		signatureKind: "None",

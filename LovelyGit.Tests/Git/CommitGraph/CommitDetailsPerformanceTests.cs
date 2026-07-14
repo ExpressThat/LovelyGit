@@ -111,6 +111,8 @@ public sealed class CommitDetailsPerformanceTests(ITestOutputHelper output)
                 $"warmed response {warmedElapsed.TotalMilliseconds:N1} ms");
             await WriteColdPathBreakdownAsync(cache, directory, commitId);
             Assert.Equal(FileCount, details.ChangedFiles.Count);
+            Assert.False(details.HasLineStats);
+            Assert.All(details.ChangedFiles, file => Assert.Equal((0u, 0u), (file.Additions, file.Deletions)));
             Assert.Equal(FileCount, warmedDetails.ChangedFiles.Count);
             Assert.True(responseElapsed < persistedElapsed);
             Assert.True(responseElapsed < TimeSpan.FromMilliseconds(750));

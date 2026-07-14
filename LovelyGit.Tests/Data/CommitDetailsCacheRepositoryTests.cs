@@ -19,7 +19,7 @@ public sealed class CommitDetailsCacheRepositoryTests(ITestOutputHelper output)
         var repository = new CommitGraphRepository(context);
         var repositoryId = Guid.NewGuid();
         const string hash = "0123456789012345678901234567890123456789";
-        var initial = CreateDetails(2_000);
+        var initial = CreateDetails(2_000, hasLineStats: false);
         var started = Stopwatch.GetTimestamp();
 
         await repository.SaveCommitDetailsAsync(
@@ -37,7 +37,9 @@ public sealed class CommitDetailsCacheRepositoryTests(ITestOutputHelper output)
             CancellationToken.None);
         var loadElapsed = Stopwatch.GetElapsedTime(started);
         output.WriteLine($"Loaded 2,000 files in {loadElapsed.TotalMilliseconds:N0} ms");
-        Assert.Equal(initial.ChangedFiles, Assert.IsType<CommitDetailsResponse>(loaded).ChangedFiles);
+        var loadedDetails = Assert.IsType<CommitDetailsResponse>(loaded);
+        Assert.Equal(initial.ChangedFiles, loadedDetails.ChangedFiles);
+        Assert.False(loadedDetails.HasLineStats);
         Assert.True(elapsed < TimeSpan.FromSeconds(3), $"Bulk save took {elapsed}.");
         Assert.True(loadElapsed < TimeSpan.FromSeconds(1), $"Indexed load took {loadElapsed}.");
 
@@ -78,7 +80,7 @@ public sealed class CommitDetailsCacheRepositoryTests(ITestOutputHelper output)
         Assert.Empty(Assert.IsType<CommitDetailsResponse>(loaded).ChangedFiles);
     }
 
-    private static CommitDetailsResponse CreateDetails(int fileCount)
+    private static CommitDetailsResponse CreateDetails(int fileCount, bool hasLineStats = true)
     {
         var files = new List<CommitChangedFile>(fileCount);
         for (var index = 0; index < fileCount; index++)
@@ -98,6 +100,7 @@ public sealed class CommitDetailsCacheRepositoryTests(ITestOutputHelper output)
             Hash = "hash",
             Subject = "Large details",
             ChangedFiles = files,
+            HasLineStats = hasLineStats,
             Stats = new CommitStats { Additions = 1, Deletions = 2 },
         };
     }

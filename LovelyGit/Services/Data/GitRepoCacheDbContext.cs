@@ -6,7 +6,7 @@ namespace ExpressThat.LovelyGit.Services.Data;
 
 public partial class GitRepoCacheDbContext : DocumentDbContext
 {
-    private const string CacheSchemaVersion = "2";
+    private const string CacheSchemaVersion = "3";
     public DocumentCollection<Guid, CommitGraphRepositoryState> CommitGraphStates { get; set; } = null!;
     public DocumentCollection<string, CommitGraphFrontierEntry> CommitGraphFrontier { get; set; } = null!;
     public DocumentCollection<string, CommitGraphSeenEntry> CommitGraphSeen { get; set; } = null!;

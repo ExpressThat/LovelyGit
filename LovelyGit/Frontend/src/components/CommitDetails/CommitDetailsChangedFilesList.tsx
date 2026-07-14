@@ -4,6 +4,7 @@ import { File, FilePlus2, FileX2 } from "@/components/icons/lovelyIcons";
 import { Button } from "@/components/ui/button";
 import type { CommitChangedFile } from "@/generated/types";
 import { FileHistoryContextMenu } from "../FileHistory/FileHistoryContextMenu";
+import { CommitChangedFileStats } from "./CommitChangedFileStats";
 
 const ROW_HEIGHT = 42;
 const MAX_VISIBLE_ROWS = 10;
@@ -14,11 +15,13 @@ export function getChangedFileListHeight(fileCount: number) {
 
 export function CommitDetailsChangedFilesList({
 	files,
+	hasLineStats,
 	onOpenBlame,
 	onOpenHistory,
 	onSelectFile,
 }: {
 	files: CommitChangedFile[];
+	hasLineStats: boolean;
 	onOpenBlame: (file: CommitChangedFile) => void;
 	onOpenHistory: (file: CommitChangedFile) => void;
 	onSelectFile: (file: CommitChangedFile) => void;
@@ -63,6 +66,7 @@ export function CommitDetailsChangedFilesList({
 							>
 								<ChangedFileRow
 									file={file}
+									hasLineStats={hasLineStats}
 									onSelect={() => onSelectFile(file)}
 								/>
 							</FileHistoryContextMenu>
@@ -76,9 +80,11 @@ export function CommitDetailsChangedFilesList({
 
 function ChangedFileRow({
 	file,
+	hasLineStats,
 	onSelect,
 }: {
 	file: CommitChangedFile;
+	hasLineStats: boolean;
 	onSelect: () => void;
 }) {
 	const Icon = statusIcon(file.status);
@@ -101,14 +107,7 @@ function ChangedFileRow({
 					{file.isBinary ? " binary" : ""}
 				</div>
 			</div>
-			<div className="shrink-0 font-mono text-xs">
-				<span className="text-emerald-600 dark:text-emerald-400">
-					+{file.additions}
-				</span>{" "}
-				<span className="text-red-600 dark:text-red-400">
-					-{file.deletions}
-				</span>
-			</div>
+			<CommitChangedFileStats file={file} visible={hasLineStats} />
 		</Button>
 	);
 }

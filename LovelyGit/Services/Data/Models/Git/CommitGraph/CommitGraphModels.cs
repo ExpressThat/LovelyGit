@@ -117,6 +117,9 @@ namespace ExpressThat.LovelyGit.Services.Data.Models.Git.CommitGraph
 
         [Column("stats")]
         public CommitStatsCache Stats { get; set; } = new();
+
+        [Column("haslinestats")]
+        public bool HasLineStats { get; set; } = true;
     }
 
     public sealed record CommitStatsCache

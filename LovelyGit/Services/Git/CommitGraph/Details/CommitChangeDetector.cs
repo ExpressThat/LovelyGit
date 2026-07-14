@@ -15,7 +15,8 @@ internal sealed class CommitChangeDetector
     public async Task<List<CommitChangedFile>> BuildChangedFilesAsync(
         IReadOnlyDictionary<string, GitTreeFile> parentFiles,
         IReadOnlyDictionary<string, GitTreeFile> currentFiles,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        int maxFilesWithLineStats = int.MaxValue)
     {
         var changedFiles = new List<ChangedFileWorkItem>(Math.Max(parentFiles.Count, currentFiles.Count));
 
@@ -51,6 +52,11 @@ internal sealed class CommitChangeDetector
         }
 
         changedFiles.Sort(static (left, right) => StringComparer.Ordinal.Compare(left.Path, right.Path));
+        if (changedFiles.Count > maxFilesWithLineStats)
+        {
+            return changedFiles.Select(BuildMetadataOnlyFile).ToList();
+        }
+
         var results = new CommitChangedFile[changedFiles.Count];
         await Parallel.ForEachAsync(
                 Enumerable.Range(0, changedFiles.Count),
@@ -77,6 +83,15 @@ internal sealed class CommitChangeDetector
             .ConfigureAwait(false);
 
         return [.. results];
+    }
+
+    private static CommitChangedFile BuildMetadataOnlyFile(ChangedFileWorkItem item)
+    {
+        return new CommitChangedFile
+        {
+            Path = item.Path,
+            Status = item.Status,
+        };
     }
 
     private async Task<CommitChangedFile> BuildComparedFileAsync(

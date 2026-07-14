@@ -4,6 +4,7 @@ import type { CommitChangedFile } from "@/generated/types";
 import { formatDate, shortHash } from "../CommitGraph/utils/format";
 import { CommitDetailsChangedFilesList } from "./CommitDetailsChangedFilesList";
 import { CommitDetailsCopyButtons } from "./CommitDetailsCopyButtons";
+import { CommitDetailsStats } from "./CommitDetailsStats";
 import { CommitParentSelector } from "./CommitParentSelector";
 import { useCommitDetails } from "./useCommitDetails";
 
@@ -98,17 +99,11 @@ export function CommitDetails({
 				</pre>
 			) : null}
 
-			<section className="grid grid-cols-3 gap-2">
-				<Stat label="Files" value={details.changedFiles.length} />
-				<Stat
-					label="Additions"
-					value={`+${details.stats.additions.toLocaleString()}`}
-				/>
-				<Stat
-					label="Deletions"
-					value={`-${details.stats.deletions.toLocaleString()}`}
-				/>
-			</section>
+			<CommitDetailsStats
+				fileCount={details.changedFiles.length}
+				hasLineStats={details.hasLineStats}
+				stats={details.stats}
+			/>
 
 			{details.branches.length > 0 || details.tags.length > 0 ? (
 				<section className="flex flex-wrap gap-1.5">
@@ -131,22 +126,12 @@ export function CommitDetails({
 			>
 				<CommitDetailsChangedFilesList
 					files={details.changedFiles}
+					hasLineStats={details.hasLineStats}
 					onOpenBlame={onOpenFileBlame}
 					onOpenHistory={onOpenFileHistory}
 					onSelectFile={onSelectFile}
 				/>
 			</div>
-		</div>
-	);
-}
-
-function Stat({ label, value }: { label: string; value: number | string }) {
-	return (
-		<div className="rounded-md border bg-card p-2">
-			<div className="text-[10px] font-semibold uppercase text-muted-foreground">
-				{label}
-			</div>
-			<div className="mt-1 font-mono text-sm text-foreground">{value}</div>
 		</div>
 	);
 }

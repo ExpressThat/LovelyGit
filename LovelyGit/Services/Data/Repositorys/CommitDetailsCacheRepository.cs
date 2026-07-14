@@ -169,6 +169,7 @@ internal sealed partial class CommitDetailsCacheRepository
                 Additions = response.Stats?.Additions ?? 0,
                 Deletions = response.Stats?.Deletions ?? 0,
             },
+            HasLineStats = response.HasLineStats,
         };
     }
 
@@ -206,6 +207,7 @@ internal sealed partial class CommitDetailsCacheRepository
                     IsBinary = file.IsBinary,
                 })
                 .ToList(),
+            HasLineStats = cache.HasLineStats,
         };
     }
 

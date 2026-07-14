@@ -23,8 +23,13 @@ internal sealed class CommitDetailsBuilder
         var comparison = await _repository.GetChangedTreeFilesAsync(comparisonParent?.TreeHash, commit.TreeHash, cancellationToken)
             .ConfigureAwait(false);
         var changedFiles = await _changeDetector
-            .BuildChangedFilesAsync(comparison.ParentFiles, comparison.CurrentFiles, cancellationToken)
+            .BuildChangedFilesAsync(
+                comparison.ParentFiles,
+                comparison.CurrentFiles,
+                cancellationToken,
+                CommitDetailsLineStatsPolicy.MaxFiles)
             .ConfigureAwait(false);
+        var hasLineStats = CommitDetailsLineStatsPolicy.ShouldCalculate(changedFiles.Count);
 
         return new CommitDetailsResponse
         {
@@ -44,6 +49,7 @@ internal sealed class CommitDetailsBuilder
                 Deletions = changedFiles.Aggregate(0u, (total, file) => total + file.Deletions),
             },
             ChangedFiles = changedFiles,
+            HasLineStats = hasLineStats,
             SignatureKind = CommitGraphCommitMapper.MapSignatureKind(commit.SignatureKind),
         };
     }

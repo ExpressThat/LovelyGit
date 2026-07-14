@@ -123,6 +123,7 @@ function details() {
 		date: 1,
 		email: "test@example.com",
 		hash: "stash-commit",
+		hasLineStats: true,
 		message: "stash",
 		parents: ["head", "index"],
 		signatureKind: "None" as const,

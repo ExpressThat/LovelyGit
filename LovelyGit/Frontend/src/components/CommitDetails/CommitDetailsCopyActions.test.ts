@@ -50,5 +50,6 @@ function createDetails(
 		subject: "",
 		tags: [],
 		...overrides,
+		hasLineStats: overrides.hasLineStats ?? true,
 	};
 }

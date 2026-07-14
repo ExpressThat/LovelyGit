@@ -91,6 +91,7 @@ function details(fileCount: number): CommitDetailsResponse {
 		date: 1,
 		email: "ada@example.test",
 		hash: "a".repeat(40),
+		hasLineStats: true,
 		message: "Commit",
 		parents: [],
 		signatureKind: "None",

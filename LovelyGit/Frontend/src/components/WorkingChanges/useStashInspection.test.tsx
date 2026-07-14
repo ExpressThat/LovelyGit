@@ -133,6 +133,7 @@ function details(
 		date: 1,
 		email: "test@example.com",
 		hash,
+		hasLineStats: true,
 		message: "stash",
 		parents,
 		signatureKind: "None",
