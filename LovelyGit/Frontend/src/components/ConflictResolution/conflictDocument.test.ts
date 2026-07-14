@@ -123,7 +123,7 @@ describe("conflictDocument", () => {
 				],
 			} as never);
 
-			expect(match).toHaveBeenCalledTimes(1);
+			expect(match).not.toHaveBeenCalled();
 		} finally {
 			match.mockRestore();
 		}

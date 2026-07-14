@@ -1,11 +1,13 @@
 import { motion, useReducedMotion } from "motion/react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
+import { ConflictResultPreview } from "./ConflictResultPreview";
 
 const LINE_HEIGHT = 18;
 const GUTTER_OVERSCAN = 4;
 const CHARACTER_WIDTH = 7.25;
 const HORIZONTAL_PADDING = 24;
+const VIRTUAL_PREVIEW_MINIMUM_CHARACTERS = 128 * 1024;
 
 export function ConflictResultPanel({
 	isManualResult,
@@ -21,29 +23,29 @@ export function ConflictResultPanel({
 	wrapLines: boolean;
 }) {
 	const reduceMotion = useReducedMotion();
-	const [scrollTop, setScrollTop] = useState(0);
-	const [viewportHeight, setViewportHeight] = useState(400);
+	const [isEditing, setIsEditing] = useState(false);
 	const [viewportWidth, setViewportWidth] = useState(800);
-	const textareaRef = useRef<HTMLTextAreaElement>(null);
+	const [editPosition, setEditPosition] = useState({
+		scrollTop: 0,
+		selectionStart: 0,
+	});
+	const viewportRef = useRef<HTMLDivElement>(null);
 	const textMetrics = useMemo(() => measureConflictText(value), [value]);
 	const effectiveWrapLines =
 		wrapLines &&
 		textMetrics.maximumColumns * CHARACTER_WIDTH >
 			viewportWidth - HORIZONTAL_PADDING;
-	const lineNumbers = useMemo(
-		() => visibleLineNumbers(textMetrics.lineCount, scrollTop, viewportHeight),
-		[textMetrics.lineCount, scrollTop, viewportHeight],
-	);
+	const showVirtualPreview =
+		!isEditing && value.length >= VIRTUAL_PREVIEW_MINIMUM_CHARACTERS;
 	useEffect(() => {
-		const textarea = textareaRef.current;
-		if (!textarea) return;
-		const updateHeight = () => {
-			if (textarea.clientHeight > 0) setViewportHeight(textarea.clientHeight);
-			if (textarea.clientWidth > 0) setViewportWidth(textarea.clientWidth);
+		const viewport = viewportRef.current;
+		if (!viewport) return;
+		const updateWidth = () => {
+			if (viewport.clientWidth > 0) setViewportWidth(viewport.clientWidth);
 		};
-		updateHeight();
-		const observer = new ResizeObserver(updateHeight);
-		observer.observe(textarea);
+		updateWidth();
+		const observer = new ResizeObserver(updateWidth);
+		observer.observe(viewport);
 		return () => observer.disconnect();
 	}, []);
 	return (
@@ -76,35 +78,103 @@ export function ConflictResultPanel({
 					{isResolved ? "Ready to save" : "Resolution required"}
 				</span>
 			</div>
-			<div className="relative flex min-h-0 flex-1 overflow-hidden font-mono text-[12px] leading-[18px]">
-				<div
-					aria-hidden="true"
-					className="w-14 shrink-0 overflow-hidden border-r bg-card/45 py-2 text-right text-muted-foreground"
-				>
-					<div
-						className="whitespace-pre px-2 tabular-nums"
-						data-testid="conflict-result-line-numbers"
-						style={{ transform: `translateY(${lineNumbers.offset}px)` }}
-					>
-						{lineNumbers.text}
-					</div>
-				</div>
-				<textarea
-					aria-invalid={!isResolved}
-					aria-label="Editable result preview"
-					className={cn(
-						"custom-scrollbar min-h-0 min-w-0 flex-1 resize-none bg-background px-3 py-2 font-mono text-[12px] leading-[18px] outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring",
-						effectiveWrapLines ? "whitespace-pre-wrap" : "whitespace-pre",
-					)}
-					onChange={(event) => onEdit(event.target.value)}
-					onScroll={(event) => setScrollTop(event.currentTarget.scrollTop)}
-					ref={textareaRef}
-					spellCheck={false}
-					value={value}
-					wrap={effectiveWrapLines ? "soft" : "off"}
-				/>
+			<div
+				className="relative flex min-h-0 flex-1 overflow-hidden font-mono text-[12px] leading-[18px]"
+				ref={viewportRef}
+			>
+				{showVirtualPreview ? (
+					<ConflictResultPreview
+						onActivate={(position) => {
+							setEditPosition(position);
+							setIsEditing(true);
+						}}
+						value={value}
+						wrapLines={effectiveWrapLines}
+					/>
+				) : (
+					<ConflictResultEditor
+						initialPosition={editPosition}
+						isResolved={isResolved}
+						onEdit={onEdit}
+						value={value}
+						wrapLines={effectiveWrapLines}
+					/>
+				)}
 			</div>
 		</motion.section>
+	);
+}
+
+function ConflictResultEditor({
+	initialPosition,
+	isResolved,
+	onEdit,
+	value,
+	wrapLines,
+}: {
+	initialPosition: { scrollTop: number; selectionStart: number };
+	isResolved: boolean;
+	onEdit: (value: string) => void;
+	value: string;
+	wrapLines: boolean;
+}) {
+	const [scrollTop, setScrollTop] = useState(0);
+	const [viewportHeight, setViewportHeight] = useState(400);
+	const textareaRef = useRef<HTMLTextAreaElement>(null);
+	const lineCount = useMemo(
+		() => measureConflictText(value).lineCount,
+		[value],
+	);
+	const lineNumbers = useMemo(
+		() => visibleLineNumbers(lineCount, scrollTop, viewportHeight),
+		[lineCount, scrollTop, viewportHeight],
+	);
+	useEffect(() => {
+		const textarea = textareaRef.current;
+		if (!textarea) return;
+		textarea.focus();
+		textarea.scrollTop = initialPosition.scrollTop;
+		textarea.setSelectionRange(
+			initialPosition.selectionStart,
+			initialPosition.selectionStart,
+		);
+		const updateHeight = () => {
+			if (textarea.clientHeight > 0) setViewportHeight(textarea.clientHeight);
+		};
+		updateHeight();
+		const observer = new ResizeObserver(updateHeight);
+		observer.observe(textarea);
+		return () => observer.disconnect();
+	}, [initialPosition]);
+	return (
+		<>
+			<div
+				aria-hidden="true"
+				className="w-14 shrink-0 overflow-hidden border-r bg-card/45 py-2 text-right text-muted-foreground"
+			>
+				<div
+					className="whitespace-pre px-2 tabular-nums"
+					data-testid="conflict-result-line-numbers"
+					style={{ transform: `translateY(${lineNumbers.offset}px)` }}
+				>
+					{lineNumbers.text}
+				</div>
+			</div>
+			<textarea
+				aria-invalid={!isResolved}
+				aria-label="Editable result preview"
+				className={cn(
+					"custom-scrollbar min-h-0 min-w-0 flex-1 resize-none bg-background px-3 py-2 font-mono text-[12px] leading-[18px] outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring",
+					wrapLines ? "whitespace-pre-wrap" : "whitespace-pre",
+				)}
+				onChange={(event) => onEdit(event.target.value)}
+				onScroll={(event) => setScrollTop(event.currentTarget.scrollTop)}
+				ref={textareaRef}
+				spellCheck={false}
+				value={value}
+				wrap={wrapLines ? "soft" : "off"}
+			/>
+		</>
 	);
 }
 

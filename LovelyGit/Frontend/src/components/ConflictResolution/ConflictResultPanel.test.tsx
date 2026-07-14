@@ -6,6 +6,7 @@ import {
 	ConflictResultPanel,
 	measureConflictText,
 } from "./ConflictResultPanel";
+import { buildLineStarts } from "./ConflictResultPreview";
 
 describe("ConflictResultPanel", () => {
 	it("keeps a large result gutter bounded to the visible lines", () => {
@@ -28,10 +29,13 @@ describe("ConflictResultPanel", () => {
 		expect(gutter.textContent?.length).toBeLessThan(500);
 		expect(gutter).not.toHaveTextContent("20000");
 
-		fireEvent.scroll(editor, { target: { scrollTop: 9_000 } });
-
-		expect(gutter).toHaveTextContent("500");
-		expect(gutter).not.toHaveTextContent(/^1\s/);
+		expect(editor).toHaveAttribute(
+			"title",
+			"Click to edit the complete output",
+		);
+		expect(editor.querySelectorAll("[data-result-line-number]")).toHaveLength(
+			30,
+		);
 		expect(gutter.textContent?.length).toBeLessThan(500);
 	});
 
@@ -51,8 +55,34 @@ describe("ConflictResultPanel", () => {
 		);
 
 		const editor = screen.getByLabelText("Editable result preview");
-		expect(editor).toHaveAttribute("wrap", "off");
-		expect(editor).toHaveClass("whitespace-pre");
+		expect(editor.tagName).toBe("BUTTON");
+		expect(editor.querySelector(".whitespace-pre")).toBeTruthy();
+	});
+
+	it("activates the full editor only when a large result is edited", () => {
+		const onEdit = vi.fn();
+		const value = "result line\n".repeat(20_000);
+		render(
+			<ConflictResultPanel
+				isManualResult={false}
+				isResolved={false}
+				onEdit={onEdit}
+				value={value}
+				wrapLines={false}
+			/>,
+		);
+
+		const preview = screen.getByLabelText("Editable result preview");
+		preview.scrollTop = 180;
+		fireEvent.click(preview.querySelector('[data-index="10"]') as Element);
+		const editor = screen.getByLabelText(
+			"Editable result preview",
+		) as HTMLTextAreaElement;
+		expect(editor.tagName).toBe("TEXTAREA");
+		expect(editor.scrollTop).toBe(180);
+		expect(editor.selectionStart).toBe("result line\n".length * 10);
+		fireEvent.change(editor, { target: { value: "manual" } });
+		expect(onEdit).toHaveBeenCalledWith("manual");
 	});
 
 	it("still wraps result lines that exceed the editor width", () => {
@@ -76,5 +106,6 @@ describe("ConflictResultPanel", () => {
 			lineCount: 2,
 			maximumColumns: 5,
 		});
+		expect(buildLineStarts("one\n")).toEqual([0, 4]);
 	});
 });
