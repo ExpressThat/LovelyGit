@@ -1,6 +1,7 @@
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { CommitFileDiffResponse } from "@/generated/types";
+import { DiffHorizontalScroller } from "./DiffHorizontalScroller";
 import { estimateCodeWidth } from "./DiffLineRendering";
 import {
 	VirtualTextHeaders,
@@ -92,7 +93,6 @@ export function VirtualTextDiff({
 					{virtualItems.map((item) => (
 						<VirtualTextRow
 							changeType={changeType}
-							contentWidth={contentWidth}
 							index={item.index}
 							key={item.key}
 							line={readLine(text, lineStarts, item.index)}
@@ -106,12 +106,12 @@ export function VirtualTextDiff({
 				</div>
 			</div>
 			{wrapLines ? null : (
-				<div
-					className="custom-scrollbar h-3 shrink-0 overflow-x-auto overflow-y-hidden border-t bg-background"
-					onScroll={(event) => setScrollLeft(event.currentTarget.scrollLeft)}
-				>
-					<div style={{ height: 1, width: contentWidth }} />
-				</div>
+				<DiffHorizontalScroller
+					contentWidth={contentWidth}
+					label="Horizontal text diff scroll"
+					onValueChange={setScrollLeft}
+					value={scrollLeft}
+				/>
 			)}
 		</div>
 	);

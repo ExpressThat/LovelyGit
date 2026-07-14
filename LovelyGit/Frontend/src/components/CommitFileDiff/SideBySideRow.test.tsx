@@ -18,7 +18,6 @@ describe("SideBySideRow partial-stage controls", () => {
 				lineAction={{ kind: "stage", onClick: onLine }}
 				scrollLeft={0}
 				side="new"
-				width={400}
 				wrapLines={false}
 			/>,
 		);
@@ -39,7 +38,6 @@ describe("SideBySideRow partial-stage controls", () => {
 				lineAction={{ kind: "unstage", onClick: vi.fn() }}
 				scrollLeft={0}
 				side="new"
-				width={400}
 				wrapLines={false}
 			/>,
 		);

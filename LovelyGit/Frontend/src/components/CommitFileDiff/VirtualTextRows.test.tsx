@@ -9,7 +9,6 @@ it("registers wrapped rows for dynamic virtualizer measurement", () => {
 	const { container } = render(
 		<VirtualTextRow
 			changeType="Inserted"
-			contentWidth={800}
 			index={12}
 			line={"a long line ".repeat(30)}
 			measureElement={measureElement}

@@ -8,6 +8,7 @@ import {
 	type DiffDisplayRow,
 	getSideBySideLineAction,
 } from "./DiffRows";
+import { DiffHorizontalScroller } from "./DiffHorizontalScroller";
 import { DiffPaneHeader, SideBySideRow } from "./SideBySideRow";
 import { useSynchronizedDiffScroll } from "./useSynchronizedDiffScroll";
 
@@ -115,7 +116,6 @@ export function SideBySideDiff({
 										rowHeight={item.size}
 										scrollLeft={scroll.oldScrollLeft}
 										side="old"
-										width={contentWidth}
 										wrapLines={wrapLines}
 									/>
 								</div>
@@ -138,7 +138,6 @@ export function SideBySideDiff({
 									rowHeight={item.size}
 									scrollLeft={scroll.newScrollLeft}
 									side="new"
-									width={contentWidth}
 									wrapLines={wrapLines}
 								/>
 							</div>
@@ -147,21 +146,19 @@ export function SideBySideDiff({
 				</div>
 			</div>
 			{wrapLines ? null : (
-				<div className="grid h-3 shrink-0 grid-cols-2 border-t bg-background">
-					<div
-						className="custom-scrollbar overflow-x-auto overflow-y-hidden border-r"
-						onScroll={(event) => scroll.syncBottomScroll("old", event)}
-						ref={scroll.oldScrollerRef}
-					>
-						<div style={{ height: 1, width: contentWidth }} />
-					</div>
-					<div
-						className="custom-scrollbar overflow-x-auto overflow-y-hidden"
-						onScroll={(event) => scroll.syncBottomScroll("new", event)}
-						ref={scroll.newScrollerRef}
-					>
-						<div style={{ height: 1, width: contentWidth }} />
-					</div>
+				<div className="grid h-3 shrink-0 grid-cols-2 bg-background">
+					<DiffHorizontalScroller
+						contentWidth={contentWidth}
+						label="Horizontal before diff scroll"
+						onValueChange={scroll.setScrollLeft}
+						value={scroll.oldScrollLeft}
+					/>
+					<DiffHorizontalScroller
+						contentWidth={contentWidth}
+						label="Horizontal after diff scroll"
+						onValueChange={scroll.setScrollLeft}
+						value={scroll.newScrollLeft}
+					/>
 				</div>
 			)}
 		</div>

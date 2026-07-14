@@ -13,7 +13,6 @@ type PaneItemProps = {
 	disabled: boolean;
 	onChoice: (id: number, choice: ConflictChoice) => void;
 	side: ConflictSide;
-	width: number;
 	wrapLines: boolean;
 };
 
@@ -120,7 +119,6 @@ function SourceLine({
 	item,
 	onChoice,
 	side,
-	width,
 	wrapLines,
 }: Omit<PaneItemProps, "item"> & {
 	item: Extract<ConflictDiffItem, { kind: "line" }>;
@@ -146,7 +144,6 @@ function SourceLine({
 				spans={item.syntaxSpans}
 				text={item.text}
 				variant={item.variant}
-				width={width}
 				wrapLines={wrapLines}
 			/>
 			{item.candidateIndex == null || item.hunkId == null ? (

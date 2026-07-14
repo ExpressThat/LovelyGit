@@ -39,7 +39,6 @@ export function SideBySideRow({
 	rowHeight,
 	scrollLeft,
 	side,
-	width,
 	wrapLines,
 }: {
 	isLineActionBusy?: boolean;
@@ -49,7 +48,6 @@ export function SideBySideRow({
 	rowHeight?: number;
 	scrollLeft: number;
 	side: "old" | "new";
-	width: number;
 	wrapLines: boolean;
 }) {
 	const isOld = side === "old";
@@ -69,7 +67,6 @@ export function SideBySideRow({
 						? oldSideVariant(line.changeType)
 						: newSideVariant(line.changeType)
 				}
-				width={width}
 				wrapLines={wrapLines}
 			/>
 			{lineAction ? (

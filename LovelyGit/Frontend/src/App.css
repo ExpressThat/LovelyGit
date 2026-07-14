@@ -72,6 +72,29 @@
 	background: color-mix(in oklch, var(--muted-foreground) 65%, transparent);
 }
 
+.diff-horizontal-range {
+	appearance: none;
+	background: var(--background);
+	cursor: ew-resize;
+	padding-inline: 4px;
+}
+
+.diff-horizontal-range::-webkit-slider-runnable-track {
+	height: 4px;
+	border-radius: 999px;
+	background: color-mix(in oklch, var(--muted-foreground) 22%, transparent);
+}
+
+.diff-horizontal-range::-webkit-slider-thumb {
+	width: 32px;
+	height: 8px;
+	margin-top: -2px;
+	appearance: none;
+	border: 1px solid var(--border);
+	border-radius: 999px;
+	background: color-mix(in oklch, var(--muted-foreground) 65%, transparent);
+}
+
 .select-scrollbar::-webkit-scrollbar-track {
 	background: var(--popover);
 }

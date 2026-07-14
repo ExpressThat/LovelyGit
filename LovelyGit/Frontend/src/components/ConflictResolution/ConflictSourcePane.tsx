@@ -128,7 +128,7 @@ export function ConflictSourcePane({
 							style={{ transform: `translateY(${virtualItem.start}px)` }}
 						>
 							<ConflictPaneItem
-								{...{ choices, disabled, onChoice, side, width, wrapLines }}
+								{...{ choices, disabled, onChoice, side, wrapLines }}
 								item={items[virtualItem.index]}
 							/>
 						</div>

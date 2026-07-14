@@ -16,6 +16,7 @@ import {
 	getCombinedLineAction,
 	getCombinedLineActionPayload,
 } from "./DiffRows";
+import { DiffHorizontalScroller } from "./DiffHorizontalScroller";
 
 const DIFF_OVERSCAN = 12;
 const EMPTY_HUNK_LOOKUP = new Map<CommitFileDiffLine, CommitFileDiffLine[]>();
@@ -41,7 +42,6 @@ export function CombinedDiff({
 }) {
 	const hasLineAction = Boolean(onStageLine || onUnstageLine);
 	const viewportRef = useRef<HTMLDivElement | null>(null);
-	const scrollerRef = useRef<HTMLDivElement | null>(null);
 	const [scrollLeft, setScrollLeft] = useState(0);
 	const contentWidth = useMemo(
 		() => estimateCodeWidth(iterCombinedText(lines)),
@@ -134,7 +134,6 @@ export function CombinedDiff({
 												? "inserted"
 												: "plain"
 									}
-									width={contentWidth}
 									wrapLines={wrapLines}
 								/>
 								{lineAction ? (
@@ -158,13 +157,12 @@ export function CombinedDiff({
 				</div>
 			</div>
 			{wrapLines ? null : (
-				<div
-					className="custom-scrollbar h-3 shrink-0 overflow-x-auto overflow-y-hidden border-t bg-background"
-					onScroll={(event) => setScrollLeft(event.currentTarget.scrollLeft)}
-					ref={scrollerRef}
-				>
-					<div style={{ height: 1, width: contentWidth }} />
-				</div>
+				<DiffHorizontalScroller
+					contentWidth={contentWidth}
+					label="Horizontal combined diff scroll"
+					onValueChange={setScrollLeft}
+					value={scrollLeft}
+				/>
 			)}
 		</div>
 	);

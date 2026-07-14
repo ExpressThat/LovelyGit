@@ -17,7 +17,6 @@ export function CodeCell({
 	spans,
 	text,
 	variant,
-	width,
 	wrapLines,
 }: {
 	changeSpans?: CommitFileDiffChangeSpan[] | null;
@@ -25,27 +24,26 @@ export function CodeCell({
 	spans?: CommitFileDiffSyntaxSpan[] | null;
 	text?: string | null;
 	variant: "deleted" | "inserted" | "plain";
-	width: number;
 	wrapLines: boolean;
 }) {
 	const displayText = text ?? "";
+	const startOffset = wrapLines
+		? 0
+		: Math.min(displayText.length, Math.floor(scrollLeft / 7.25));
 	return (
 		<div
 			className={`min-h-[18px] overflow-hidden border-r px-2 ${
 				wrapLines ? "whitespace-pre-wrap break-all" : "whitespace-pre"
 			} ${codeVariantClass(variant)}`}
 		>
-			<div
-				style={
-					wrapLines
-						? undefined
-						: {
-								transform: `translateX(-${scrollLeft}px)`,
-								width,
-							}
-				}
-			>
-				{renderSyntaxLine(displayText, spans ?? [], changeSpans ?? [], variant)}
+			<div>
+				{renderSyntaxLine(
+					displayText,
+					spans ?? [],
+					changeSpans ?? [],
+					variant,
+					startOffset,
+				)}
 			</div>
 		</div>
 	);
@@ -60,7 +58,7 @@ export function estimateCodeWidth(values: Iterable<string | null | undefined>) {
 		}
 	}
 
-	return Math.min(48_000, Math.max(1_200, longestLineLength * 7.25 + 32));
+	return Math.min(48_000, Math.max(320, longestLineLength * 7.25 + 32));
 }
 
 function renderSyntaxLine(
@@ -68,12 +66,13 @@ function renderSyntaxLine(
 	spans: CommitFileDiffSyntaxSpan[],
 	changeSpans: CommitFileDiffChangeSpan[],
 	variant: "deleted" | "inserted" | "plain",
+	startOffset: number,
 ): React.ReactNode {
 	if (text.length === 0) {
 		return "\u00a0";
 	}
 
-	const boundaries = new Set<number>([0, text.length]);
+	const boundaries = new Set<number>([startOffset, text.length]);
 	for (const span of spans) {
 		boundaries.add(Math.min(Math.max(span.start, 0), text.length));
 		boundaries.add(
@@ -87,9 +86,9 @@ function renderSyntaxLine(
 		);
 	}
 
-	const sortedBoundaries = Array.from(boundaries).sort(
-		(left, right) => left - right,
-	);
+	const sortedBoundaries = Array.from(boundaries)
+		.filter((boundary) => boundary >= startOffset)
+		.sort((left, right) => left - right);
 	const nodes: React.ReactNode[] = [];
 	for (let index = 0; index < sortedBoundaries.length - 1; index++) {
 		const start = sortedBoundaries[index];
@@ -115,7 +114,7 @@ function renderSyntaxLine(
 		);
 	}
 
-	return nodes.length > 0 ? nodes : text;
+	return nodes.length > 0 ? nodes : text.slice(startOffset);
 }
 
 function findCoveringSyntaxSpan(

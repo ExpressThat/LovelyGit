@@ -38,7 +38,6 @@ export function VirtualTextLoading() {
 
 export function VirtualTextRow({
 	changeType,
-	contentWidth,
 	index,
 	line,
 	measureElement,
@@ -48,7 +47,6 @@ export function VirtualTextRow({
 	y,
 }: {
 	changeType: string;
-	contentWidth: number;
 	index: number;
 	line: string;
 	measureElement: (element: HTMLDivElement | null) => void;
@@ -74,12 +72,12 @@ export function VirtualTextRow({
 				<VirtualSide
 					number={oldNumber}
 					showText={!isInserted}
-					{...{ contentWidth, line, scrollLeft, variant, wrapLines }}
+					{...{ line, scrollLeft, variant, wrapLines }}
 				/>
 				<VirtualSide
 					number={newNumber}
 					showText={isInserted}
-					{...{ contentWidth, line, scrollLeft, variant, wrapLines }}
+					{...{ line, scrollLeft, variant, wrapLines }}
 				/>
 			</div>
 		);
@@ -103,7 +101,6 @@ export function VirtualTextRow({
 				spans={null}
 				text={line}
 				variant={variant}
-				width={contentWidth}
 				wrapLines={wrapLines}
 			/>
 		</div>
@@ -111,7 +108,6 @@ export function VirtualTextRow({
 }
 
 function VirtualSide({
-	contentWidth,
 	line,
 	number,
 	scrollLeft,
@@ -119,7 +115,6 @@ function VirtualSide({
 	variant,
 	wrapLines,
 }: {
-	contentWidth: number;
 	line: string;
 	number: number | null;
 	scrollLeft: number;
@@ -136,7 +131,6 @@ function VirtualSide({
 				spans={null}
 				text={showText ? line : ""}
 				variant={showText ? variant : "plain"}
-				width={contentWidth}
 				wrapLines={wrapLines}
 			/>
 		</div>
