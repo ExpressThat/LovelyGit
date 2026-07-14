@@ -8,6 +8,7 @@ import {
 	loadWorkingTreeChangeSummary,
 	loadWorkingTreeChanges,
 } from "./WorkingTreeChangesRequests";
+import { clearWorkingTreeChangesCache } from "./workingTreeChangesCache";
 import { clearWorkingTreeSummaryCache } from "./workingTreeSummaryCache";
 
 vi.mock("@/lib/commands", () => ({
@@ -24,6 +25,7 @@ const loadSummary = vi.mocked(loadWorkingTreeChangeSummary);
 describe("useWorkingTreeChanges manual reload", () => {
 	beforeEach(() => {
 		clearWorkingTreeSummaryCache();
+		clearWorkingTreeChangesCache();
 		vi.clearAllMocks();
 		vi.mocked(subscribeToServerEvent).mockReturnValue(vi.fn());
 		loadSummary.mockResolvedValue({

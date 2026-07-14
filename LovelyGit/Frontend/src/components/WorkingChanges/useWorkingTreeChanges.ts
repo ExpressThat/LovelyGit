@@ -9,6 +9,11 @@ import { useWorkingTreePreload } from "./useWorkingTreePreload";
 import { loadWorkingTreeChanges } from "./WorkingTreeChangesRequests";
 import type { WorkingTreeChangesState } from "./WorkingTreeChangesState";
 import {
+	getCachedWorkingTreeChanges,
+	invalidateCachedWorkingTreeChanges,
+	setCachedWorkingTreeChanges,
+} from "./workingTreeChangesCache";
+import {
 	cacheCompleteWorkingTreeSummary,
 	invalidateWorkingTreeSummary,
 } from "./workingTreeSummaryCache";
@@ -17,28 +22,43 @@ export function useWorkingTreeChanges(
 	repositoryId: string | null,
 	enabled: boolean,
 ) {
-	const [state, setState] = useState<WorkingTreeChangesState>({
-		status: "idle",
-		changes: null,
-	});
+	const [initialChanges] = useState(() =>
+		repositoryId ? getCachedWorkingTreeChanges(repositoryId) : null,
+	);
+	const [state, setState] = useState<WorkingTreeChangesState>(() =>
+		initialChanges
+			? { status: "loaded", changes: initialChanges }
+			: { status: "idle", changes: null },
+	);
 	const [isDirty, setIsDirty] = useState(false);
-	const [summaryCount, setSummaryCount] = useState(0);
-	const [hasSummaryLoaded, setHasSummaryLoaded] = useState(false);
+	const [summaryCount, setSummaryCount] = useState(
+		initialChanges?.totalCount ?? 0,
+	);
+	const [hasSummaryLoaded, setHasSummaryLoaded] = useState(
+		initialChanges !== null,
+	);
 	const [isReloading, setIsReloading] = useState(false);
-	const hasFreshChangesRef = useRef(false);
+	const hasFreshChangesRef = useRef(initialChanges !== null);
 	const reloadRequestRef = useRef<ReloadRequest | null>(null);
 	const previousRepositoryIdRef = useRef<string | null>(repositoryId);
 
 	useEffect(() => {
 		if (previousRepositoryIdRef.current !== repositoryId) {
+			const cachedChanges = repositoryId
+				? getCachedWorkingTreeChanges(repositoryId)
+				: null;
 			previousRepositoryIdRef.current = repositoryId;
 			reloadRequestRef.current = null;
-			setState({ status: "idle", changes: null });
+			setState(
+				cachedChanges
+					? { status: "loaded", changes: cachedChanges }
+					: { status: "idle", changes: null },
+			);
 			setIsDirty(false);
 			setIsReloading(false);
-			setSummaryCount(0);
-			setHasSummaryLoaded(false);
-			hasFreshChangesRef.current = false;
+			setSummaryCount(cachedChanges?.totalCount ?? 0);
+			setHasSummaryLoaded(cachedChanges !== null);
+			hasFreshChangesRef.current = cachedChanges !== null;
 		}
 
 		if (!repositoryId) {
@@ -79,6 +99,7 @@ export function useWorkingTreeChanges(
 					});
 					setSummaryCount(changes.totalCount);
 					cacheCompleteWorkingTreeSummary(repositoryId, changes.totalCount);
+					setCachedWorkingTreeChanges(repositoryId, changes);
 					setIsDirty(false);
 					setHasSummaryLoaded(true);
 					hasFreshChangesRef.current = true;
@@ -108,6 +129,7 @@ export function useWorkingTreeChanges(
 			"WorkingTreeChanged",
 			(event) => {
 				invalidateWorkingTreeSummary(repositoryId);
+				invalidateCachedWorkingTreeChanges(repositoryId);
 				hasFreshChangesRef.current = false;
 				setIsDirty(true);
 				const applyObserved = shouldApplyObservedWorkingTreeChanges(
@@ -183,6 +205,7 @@ export function useWorkingTreeChanges(
 					requestedRepositoryId,
 					changes.totalCount,
 				);
+				setCachedWorkingTreeChanges(requestedRepositoryId, changes);
 				setIsDirty(false);
 				setHasSummaryLoaded(true);
 				hasFreshChangesRef.current = true;

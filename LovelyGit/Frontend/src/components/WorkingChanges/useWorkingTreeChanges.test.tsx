@@ -12,6 +12,7 @@ import {
 	loadWorkingTreeChangeSummary,
 	loadWorkingTreeChanges,
 } from "./WorkingTreeChangesRequests";
+import { clearWorkingTreeChangesCache } from "./workingTreeChangesCache";
 import {
 	clearWorkingTreeSummaryCache,
 	setCachedWorkingTreeSummary,
@@ -35,6 +36,7 @@ let notifyWorkingTreeChanged: (event: {
 describe("useWorkingTreeChanges preload", () => {
 	beforeEach(() => {
 		clearWorkingTreeSummaryCache();
+		clearWorkingTreeChangesCache();
 		vi.clearAllMocks();
 		vi.mocked(subscribeToServerEvent).mockImplementation((_type, handler) => {
 			notifyWorkingTreeChanged = handler;
@@ -150,30 +152,25 @@ describe("useWorkingTreeChanges preload", () => {
 		await waitFor(() => expect(loadChanges).toHaveBeenCalledTimes(2));
 	});
 
-	it("loads only a count for repositories whose index is too wide to preload", async () => {
-		loadSummary
-			.mockResolvedValueOnce({
-				hasChanges: false,
-				isComplete: false,
-				shouldPreloadChanges: false,
-				totalCount: 0,
-			})
-			.mockResolvedValueOnce({
-				hasChanges: true,
-				isComplete: true,
-				shouldPreloadChanges: true,
-				totalCount: 8_000,
-			});
+	it("reuses a bounded background result for repositories with wide indexes", async () => {
+		loadSummary.mockResolvedValueOnce({
+			hasChanges: false,
+			isComplete: false,
+			shouldPreloadChanges: false,
+			totalCount: 0,
+		});
+		loadChanges.mockResolvedValue(response(0));
 		const { result } = renderHook(() =>
 			useWorkingTreeChanges("wide-repo", false),
 		);
 
 		await startBackgroundFullScan();
-		await waitFor(() => expect(loadSummary).toHaveBeenCalledTimes(2));
+		await waitFor(() => expect(result.current.status).toBe("loaded"));
 
-		expect(loadChanges).not.toHaveBeenCalled();
-		expect(result.current.totalCount).toBe(8_000);
-		expect(result.current.changes).toBeNull();
+		expect(loadSummary).toHaveBeenCalledOnce();
+		expect(loadChanges).toHaveBeenCalledOnce();
+		expect(result.current.totalCount).toBe(0);
+		expect(result.current.changes).not.toBeNull();
 	});
 
 	it("discards a preload invalidated while its full scan is running", async () => {

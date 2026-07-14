@@ -15,6 +15,7 @@ import {
 	loadWorkingTreeChanges,
 } from "./WorkingTreeChangesRequests";
 import type { WorkingTreeChangesState } from "./WorkingTreeChangesState";
+import { setCachedWorkingTreeChanges } from "./workingTreeChangesCache";
 import {
 	cacheCompleteWorkingTreeSummary,
 	getCachedWorkingTreeSummary,
@@ -22,7 +23,6 @@ import {
 	setCachedWorkingTreeSummary,
 } from "./workingTreeSummaryCache";
 
-const MAX_PRELOADED_CHANGES = 500;
 export const BACKGROUND_FULL_PRELOAD_DELAY_MS = 1_500;
 export const CACHED_SUMMARY_REFRESH_DELAY_MS = 500;
 
@@ -76,23 +76,6 @@ export function useWorkingTreePreload({
 						}
 						isLoading = true;
 						try {
-							if (!summary.shouldPreloadChanges) {
-								const exactSummary = await loadWorkingTreeChangeSummary(
-									repositoryId,
-								);
-								if (
-									previousRepositoryIdRef.current !== repositoryId ||
-									loadGeneration !== invalidationGeneration
-								) {
-									reloadAgain = true;
-									return;
-								}
-								setSummaryCount(exactSummary.totalCount);
-								setCachedWorkingTreeSummary(repositoryId, exactSummary);
-								setIsDirty(false);
-								setHasSummaryLoaded(true);
-								return;
-							}
 							const changes = await loadWorkingTreeChanges(repositoryId);
 							if (
 								previousRepositoryIdRef.current !== repositoryId ||
@@ -103,7 +86,7 @@ export function useWorkingTreePreload({
 							}
 							setSummaryCount(changes.totalCount);
 							cacheCompleteWorkingTreeSummary(repositoryId, changes.totalCount);
-							if (changes.totalCount <= MAX_PRELOADED_CHANGES) {
+							if (setCachedWorkingTreeChanges(repositoryId, changes)) {
 								setState({ status: "loaded", changes });
 								hasFreshChangesRef.current = true;
 							}
