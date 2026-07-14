@@ -5,6 +5,7 @@ import {
 	clearRepositoryRefsCache,
 	getCachedRepositoryRefs,
 	loadRepositoryRefs,
+	setCachedRepositoryRefs,
 } from "./repositoryRefsCache";
 
 vi.mock("@/lib/commands", () => ({ sendRequestWithResponse: vi.fn() }));
@@ -63,13 +64,38 @@ describe("repositoryRefsCache", () => {
 		await expect(loadRepositoryRefs("repo")).resolves.toEqual(refs("retry"));
 		expect(send).toHaveBeenCalledTimes(2);
 	});
+
+	it("retains refs for eight recently used repositories", () => {
+		for (const repositoryId of ["a", "b", "c", "d", "e", "f", "g", "h"]) {
+			setCachedRepositoryRefs(repositoryId, refs(repositoryId));
+		}
+
+		expect(getCachedRepositoryRefs("a")?.currentBranchName).toBe("a");
+		setCachedRepositoryRefs("i", refs("i"));
+
+		expect(getCachedRepositoryRefs("b")).toBeNull();
+		expect(getCachedRepositoryRefs("a")?.currentBranchName).toBe("a");
+	});
+
+	it("evicts old ref sets when their combined item weight is excessive", () => {
+		setCachedRepositoryRefs("old", refs("old", 2_500));
+		setCachedRepositoryRefs("new", refs("new", 2_500));
+
+		expect(getCachedRepositoryRefs("old")).toBeNull();
+		expect(getCachedRepositoryRefs("new")?.refs).toHaveLength(2_500);
+	});
 });
 
-function refs(branch: string): RepositoryRefsResponse {
+function refs(branch: string, refCount = 0): RepositoryRefsResponse {
 	return {
 		branchUpstreams: [],
 		currentBranchName: branch,
-		refs: [],
+		refs: Array.from({ length: refCount }, (_, index) => ({
+			commitHash: `${index}`,
+			kind: "Local",
+			name: `ref-${index}`,
+			remoteUrl: null,
+		})),
 		remotePrefixes: [],
 		stashes: [],
 		worktrees: [],

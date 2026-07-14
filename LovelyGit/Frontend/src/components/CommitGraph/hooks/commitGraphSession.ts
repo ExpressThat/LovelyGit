@@ -1,4 +1,5 @@
 import type { CommitGraphRow } from "@/generated/types";
+import { MAX_CACHED_REPOSITORIES } from "@/lib/repositoryCacheLimits";
 
 export type CommitGraphState = {
 	currentBranchName: string | null;
@@ -27,7 +28,6 @@ type GraphSession = {
 	totalRows: number;
 };
 
-const MAX_CACHED_REPOSITORIES = 4;
 export const MAX_CACHED_ROWS = 64;
 export const CACHED_REFRESH_DELAY_MS = 1_500;
 const cachedViews = new Map<string, CachedGraphView>();

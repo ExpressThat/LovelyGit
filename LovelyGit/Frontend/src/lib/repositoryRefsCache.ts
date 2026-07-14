@@ -1,8 +1,11 @@
 import type { RepositoryRefsResponse } from "@/generated/types";
 import { sendRequestWithResponse } from "@/lib/commands";
 import { NativeMessageType } from "@/lib/nativeMessaging";
+import {
+	MAX_CACHED_REFERENCE_ITEMS,
+	MAX_CACHED_REPOSITORIES,
+} from "@/lib/repositoryCacheLimits";
 
-const MAX_CACHED_REPOSITORIES = 4;
 const entries = new Map<string, CacheEntry>();
 
 export function loadRepositoryRefs(
@@ -44,8 +47,9 @@ export function setCachedRepositoryRefs(
 }
 
 export function getCachedRepositoryRefs(repositoryId: string) {
-	const response = entries.get(repositoryId)?.response;
-	if (response) setEntry(repositoryId, { response });
+	const entry = entries.get(repositoryId);
+	const response = entry?.response;
+	if (response && entry) setEntry(repositoryId, entry);
 	return response ?? null;
 }
 
@@ -58,16 +62,42 @@ export function invalidateRepositoryRefs(repositoryId: string) {
 }
 
 function setEntry(repositoryId: string, entry: CacheEntry) {
+	if (entry.response && entry.weight === undefined) {
+		entry.weight = referenceItemCount(entry.response);
+	}
 	entries.delete(repositoryId);
 	entries.set(repositoryId, entry);
-	while (entries.size > MAX_CACHED_REPOSITORIES) {
+	while (
+		entries.size > MAX_CACHED_REPOSITORIES ||
+		(entries.size > 1 &&
+			cachedReferenceItemCount() > MAX_CACHED_REFERENCE_ITEMS)
+	) {
 		const oldest = entries.keys().next().value;
 		if (oldest === undefined) break;
 		entries.delete(oldest);
 	}
 }
 
+function cachedReferenceItemCount() {
+	let count = 0;
+	for (const entry of entries.values()) {
+		count += entry.weight ?? 0;
+	}
+	return count;
+}
+
+function referenceItemCount(response: RepositoryRefsResponse) {
+	return (
+		(response.refs?.length ?? 0) +
+		(response.worktrees?.length ?? 0) +
+		(response.stashes?.length ?? 0) +
+		(response.branchUpstreams?.length ?? 0) +
+		(response.remotePrefixes?.length ?? 0)
+	);
+}
+
 type CacheEntry = {
 	pending?: Promise<RepositoryRefsResponse>;
 	response?: RepositoryRefsResponse;
+	weight?: number;
 };

@@ -18,11 +18,11 @@ describe("remoteSyncStatusCache", () => {
 	});
 
 	it("evicts the least recently used repository", () => {
-		for (const name of ["a", "b", "c", "d"]) {
+		for (const name of ["a", "b", "c", "d", "e", "f", "g", "h"]) {
 			setCachedRemoteSyncStatus(name, status(name));
 		}
 		expect(getCachedRemoteSyncStatus("a")?.branchName).toBe("a");
-		setCachedRemoteSyncStatus("e", status("e"));
+		setCachedRemoteSyncStatus("i", status("i"));
 
 		expect(getCachedRemoteSyncStatus("b")).toBeNull();
 		expect(getCachedRemoteSyncStatus("a")?.branchName).toBe("a");

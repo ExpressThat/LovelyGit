@@ -47,8 +47,18 @@ describe("commitGraphSession tab cache", () => {
 		vi.useRealTimers();
 	});
 
-	it("retains at most four inactive repository previews", () => {
-		for (const [index, repositoryId] of ["a", "b", "c", "d", "e"].entries()) {
+	it("retains eight inactive repository previews", () => {
+		for (const [index, repositoryId] of [
+			"a",
+			"b",
+			"c",
+			"d",
+			"e",
+			"f",
+			"g",
+			"h",
+			"i",
+		].entries()) {
 			activateCommitGraphSession(repositoryId);
 			session.rows = [null];
 			session.totalRows = index + 1;

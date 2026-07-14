@@ -1,6 +1,6 @@
 import type { WorkingTreeChangeSummaryResponse } from "@/generated/types";
+import { MAX_CACHED_REPOSITORIES } from "@/lib/repositoryCacheLimits";
 
-const MAX_CACHED_REPOSITORIES = 4;
 const entries = new Map<string, WorkingTreeChangeSummaryResponse>();
 
 export function getCachedWorkingTreeSummary(repositoryId: string) {

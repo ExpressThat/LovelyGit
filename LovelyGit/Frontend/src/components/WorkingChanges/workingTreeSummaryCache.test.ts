@@ -36,11 +36,20 @@ describe("workingTreeSummaryCache", () => {
 	});
 
 	it("evicts the least recently used repository", () => {
-		for (const [index, repositoryId] of ["a", "b", "c", "d"].entries()) {
+		for (const [index, repositoryId] of [
+			"a",
+			"b",
+			"c",
+			"d",
+			"e",
+			"f",
+			"g",
+			"h",
+		].entries()) {
 			cacheCompleteWorkingTreeSummary(repositoryId, index);
 		}
 		expect(getCachedWorkingTreeSummary("a")?.totalCount).toBe(0);
-		cacheCompleteWorkingTreeSummary("e", 5);
+		cacheCompleteWorkingTreeSummary("i", 9);
 
 		expect(getCachedWorkingTreeSummary("b")).toBeNull();
 		expect(getCachedWorkingTreeSummary("a")?.totalCount).toBe(0);

@@ -1,0 +1,3 @@
+export const MAX_CACHED_REPOSITORIES = 8;
+
+export const MAX_CACHED_REFERENCE_ITEMS = 4_000;
