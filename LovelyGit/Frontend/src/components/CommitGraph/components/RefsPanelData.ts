@@ -44,9 +44,24 @@ export function buildRefPanelSections({
 	rows: Array<CommitGraphRow | null>;
 }): RefPanelSection[] {
 	const itemsByKey = new Map<string, RefPanelItem>();
-	const rowsByHash = new Map(
-		rows.flatMap((row) => (row ? [[row.commit.hash, row] as const] : [])),
-	);
+	const rowsByHash = new Map<string, CommitGraphRow>();
+	const loadedRows: CommitGraphRow[] = [];
+	const referencedHashes =
+		refs && refs.length > 0
+			? new Set(refs.map((reference) => reference.commitHash))
+			: null;
+	if (refs == null || refs.length > 0) {
+		for (const row of rows) {
+			if (!row) continue;
+			if (referencedHashes) {
+				if (referencedHashes.has(row.commit.hash)) {
+					rowsByHash.set(row.commit.hash, row);
+				}
+			} else {
+				loadedRows.push(row);
+			}
+		}
+	}
 
 	for (const ref of refs ?? []) {
 		addRefItem(itemsByKey, {
@@ -58,31 +73,29 @@ export function buildRefPanelSections({
 		});
 	}
 
-	for (const row of rows) {
-		if (!row) {
-			continue;
-		}
+	if (refs == null) {
+		for (const row of loadedRows) {
+			for (const ref of rowRefs(row, remotePrefixes)) {
+				const key = refKey(ref.kind, ref.name, row.commit.hash);
+				const existing = itemsByKey.get(key);
+				if (existing) {
+					existing.row ??= row;
+					continue;
+				}
 
-		for (const ref of rowRefs(row, remotePrefixes)) {
-			const key = refKey(ref.kind, ref.name, row.commit.hash);
-			const existing = itemsByKey.get(key);
-			if (existing) {
-				existing.row ??= row;
-				continue;
-			}
-
-			addRefItem(itemsByKey, {
-				commitHash: row.commit.hash,
-				currentBranchName,
-				ref: {
+				addRefItem(itemsByKey, {
 					commitHash: row.commit.hash,
-					kind: ref.kind,
-					name: ref.name,
-					remoteUrl: ref.remoteUrl,
-				},
-				remotePrefixes,
-				row,
-			});
+					currentBranchName,
+					ref: {
+						commitHash: row.commit.hash,
+						kind: ref.kind,
+						name: ref.name,
+						remoteUrl: ref.remoteUrl,
+					},
+					remotePrefixes,
+					row,
+				});
+			}
 		}
 	}
 

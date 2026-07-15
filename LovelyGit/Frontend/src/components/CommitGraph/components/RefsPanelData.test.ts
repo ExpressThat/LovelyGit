@@ -104,6 +104,54 @@ describe("buildRefPanelSections", () => {
 			remoteUrl: "https://github.com/example/repo/releases/tag/v1",
 		});
 	});
+
+	it("treats loaded repository refs as authoritative over stale graph rows", () => {
+		const sections = buildRefPanelSections({
+			currentBranchName: "main",
+			refs: [repositoryRef("Local", "main", "new")],
+			remotePrefixes: ["origin"],
+			rows: [row("old", [ref("Local", "stale")])],
+		});
+
+		expect(sections[0]?.items.map((item) => item.name)).toEqual(["main"]);
+	});
+
+	it("does not resurrect graph refs when the authoritative list is empty", () => {
+		const sections = buildRefPanelSections({
+			currentBranchName: null,
+			refs: [],
+			remotePrefixes: [],
+			rows: [row("old", [ref("Local", "stale")])],
+		});
+
+		expect(sections).toEqual([]);
+	});
+
+	it("builds refs from a large sparse graph within the interaction budget", () => {
+		const rows = Array<CommitGraphRow | null>(500_000).fill(null);
+		const refs = Array.from({ length: 500 }, (_, index) =>
+			repositoryRef("Local", `branch/${index}`, `hash-${index}`),
+		);
+		for (let index = 0; index < 128; index++) {
+			rows[index * 3_000] = row(`hash-${index}`, [
+				ref("Local", `branch/${index}`),
+			]);
+		}
+		const startedAt = performance.now();
+
+		const sections = buildRefPanelSections({
+			currentBranchName: "branch/127",
+			refs,
+			remotePrefixes: ["origin"],
+			rows,
+		});
+		const elapsed = performance.now() - startedAt;
+		console.info(`Sparse 500k-row ref panel: ${elapsed.toFixed(2)} ms`);
+
+		expect(sections[0]?.items).toHaveLength(500);
+		expect(sections[0]?.items[0]?.name).toBe("branch/127");
+		expect(elapsed).toBeLessThan(18);
+	});
 });
 
 function row(hash: string, refs: CommitGraphRow["commit"]["refs"]) {
