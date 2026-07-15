@@ -1,4 +1,5 @@
-import { lazy, Suspense, useState } from "react";
+import { useState } from "react";
+import { DeferredPrimaryOverlay } from "@/AppPrimaryOverlays";
 import { SearchCode } from "@/components/icons/lovelyIcons";
 import {
 	Dialog,
@@ -8,13 +9,14 @@ import {
 	DialogTitle,
 	DialogTrigger,
 } from "@/components/ui/dialog";
+import { createDeferredLoader } from "@/lib/deferredLoader";
 import { motion } from "@/lib/motion";
 import { useBisectSession } from "./useBisectSession";
 
-const BisectSessionContent = lazy(() =>
-	import("./BisectSessionContent").then((module) => ({
-		default: module.BisectSessionContent,
-	})),
+const bisectSessionLoader = createDeferredLoader(() =>
+	import("./BisectSessionContent").then(
+		(module) => module.BisectSessionContent,
+	),
 );
 
 export function BisectControl({
@@ -63,18 +65,18 @@ export function BisectControl({
 					</DialogDescription>
 				</DialogHeader>
 				{open ? (
-					<Suspense
+					<DeferredPrimaryOverlay
 						fallback={
 							<div className="h-32 animate-pulse rounded-lg bg-muted" />
 						}
-					>
-						<BisectSessionContent
-							busyAction={session.busyAction}
-							isLoading={session.isLoading}
-							onRun={(action) => void session.run(action)}
-							state={session.state}
-						/>
-					</Suspense>
+						loader={bisectSessionLoader}
+						props={{
+							busyAction: session.busyAction,
+							isLoading: session.isLoading,
+							onRun: (action) => void session.run(action),
+							state: session.state,
+						}}
+					/>
 				) : null}
 			</DialogContent>
 		</Dialog>
