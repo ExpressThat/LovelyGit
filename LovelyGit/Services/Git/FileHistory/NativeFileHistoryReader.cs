@@ -48,7 +48,7 @@ internal static class NativeFileHistoryReader
             }
 
             var item = pending.Dequeue();
-            var header = await repository.GetCommitTraversalHeaderAsync(item.Hash, cancellationToken)
+            var header = await repository.GetCommitAncestryHeaderAsync(item.Hash, cancellationToken)
                 .ConfigureAwait(false);
             scanned++;
             var current = header.TreeHash == null
@@ -95,7 +95,7 @@ internal static class NativeFileHistoryReader
     private static async Task<FileChange?> InspectParentsAsync(
         LovelyGitRepository repository,
         HistoryWorkItem item,
-        GitCommitTraversalHeader header,
+        GitCommitAncestryHeader header,
         GitTreeFile? current,
         Queue<HistoryWorkItem> pending,
         HashSet<HistoryWorkItem> seen,
@@ -110,7 +110,7 @@ internal static class NativeFileHistoryReader
         for (var index = 0; index < header.ParentHashCount; index++)
         {
             var parentHash = header.GetParentHash(index);
-            var parentHeader = await repository.GetCommitTraversalHeaderAsync(parentHash, cancellationToken)
+            var parentHeader = await repository.GetCommitAncestryHeaderAsync(parentHash, cancellationToken)
                 .ConfigureAwait(false);
             var parent = parentHeader.TreeHash == null
                 ? null

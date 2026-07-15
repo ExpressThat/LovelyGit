@@ -119,7 +119,7 @@ internal static partial class NativeFileBlameReader
         GitObjectId parentHash,
         CancellationToken cancellationToken)
     {
-        var header = await repository.GetCommitTraversalHeaderAsync(parentHash, cancellationToken)
+        var header = await repository.GetCommitAncestryHeaderAsync(parentHash, cancellationToken)
             .ConfigureAwait(false);
         var file = await FindFileAsync(repository, header, current.Path, cancellationToken)
             .ConfigureAwait(false);

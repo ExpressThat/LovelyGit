@@ -23,7 +23,7 @@ internal static partial class NativeFileBlameReader
             .ConfigureAwait(false);
         var start = ResolveStart(repository, startCommitHash)
             ?? throw new InvalidDataException("Repository has no commits to blame.");
-        var header = await repository.GetCommitTraversalHeaderAsync(start, cancellationToken)
+        var header = await repository.GetCommitAncestryHeaderAsync(start, cancellationToken)
             .ConfigureAwait(false);
         var file = await FindFileAsync(repository, header, normalizedPath, cancellationToken)
             .ConfigureAwait(false)
@@ -63,7 +63,7 @@ internal static partial class NativeFileBlameReader
 
     private static async Task<GitTreeFile?> FindFileAsync(
         LovelyGitRepository repository,
-        GitCommitTraversalHeader header,
+        GitCommitAncestryHeader header,
         string path,
         CancellationToken cancellationToken) => header.TreeHash == null
         ? null
@@ -108,7 +108,7 @@ internal static partial class NativeFileBlameReader
     private readonly record struct BlameState(
         GitObjectId Hash,
         string Path,
-        GitCommitTraversalHeader Header,
+        GitCommitAncestryHeader Header,
         GitTreeFile File,
         BlameText Text);
     private readonly record struct BlameTraversalResult(int ScannedCommitCount, bool IsPartial);
