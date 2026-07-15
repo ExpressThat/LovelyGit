@@ -21,7 +21,8 @@ This is the durable inventory of LovelyGit performance work. Update it in the sa
 | Cold Settings / Command Palette | 321.5 ms / 315.4 ms | 46.0 ms / 19.7 ms | Chromium CMG click-to-dialog timing; immediate deferred reveal while preserving lazy chunks | `f017242` |
 | Cold Commit Search | 319.6 ms | 23.4 ms | Chromium CMG click-to-dialog timing; immediate deferred reveal while preserving lazy loading | `5378470` |
 | Cold Remote Manager | 307.6 ms | 16.5 ms | Chromium CMG click-to-dialog timing; immediate deferred reveal while preserving its 13.15 kB lazy chunk | `a4ac6fe` |
-| Cold Rename Branch | 314.4 ms | 24.8 ms | Chromium CMG context-menu-to-dialog timing; immediate deferred reveal while preserving its lazy chunk | This commit |
+| Cold Rename Branch | 314.4 ms | 24.8 ms | Chromium CMG context-menu-to-dialog timing; immediate deferred reveal while preserving its lazy chunk | `7cff88b` |
+| Cold Cherry-pick | 312.8 ms | 21.6 ms | Chromium CMG commit-context-menu-to-dialog timing; immediate deferred reveal while preserving its lazy chunk | This commit |
 | Complete backend test gate | Previously over one minute during early integration work | 55.89 s clean run; established baseline 30–36 s | `Invoke-LovelyGitTestGate.ps1`, 574 tests at this checkpoint | `021c0ee`, `089f559`, `3a4bcbd` |
 
 ## Completed Optimization Inventory
@@ -33,7 +34,8 @@ This is the durable inventory of LovelyGit performance work. Update it in the sa
 - Deferred Motion and the icon sprite, released closed overlays, and balanced overlay retention (`7068517`, `02b3c0e`, `2f58f61`).
 - Removed React Suspense's cold reveal delay from Settings, Command Palette, Commit Search, stash, history, and blame without eagerly loading those tools (`f017242`, `5378470`).
 - Removed the same cold reveal delay from create-branch, merge/rebase, and remote-management dialogs while preserving their separate lazy chunks (`a4ac6fe`).
-- Applied immediate deferred reveal to branch comparison, upstream, rename, and delete dialogs (this commit).
+- Applied immediate deferred reveal to branch comparison, upstream, rename, and delete dialogs (`7cff88b`).
+- Applied immediate deferred reveal to cherry-pick, revert, reset, detached checkout, and interactive-rebase dialogs (this commit).
 - Switched the desktop process to workstation GC and moved process-memory sampling off interaction paths (`b0d124b`, `c7241dc`).
 - Reduced native interaction metrics overhead (`efcd0a7`).
 

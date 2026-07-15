@@ -3,7 +3,15 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import type { CommitGraphRow } from "@/generated/types";
-import { LazyRevertDialog } from "./LazyCommitOperationDialogs";
+import {
+	LazyCherryPickDialog,
+	LazyRevertDialog,
+} from "./LazyCommitOperationDialogs";
+
+vi.mock("./CherryPickDialog", () => ({
+	CherryPickDialog: ({ commits }: { commits: CommitGraphRow[] | null }) =>
+		commits?.length ? <div>Cherry-pick dialog loaded</div> : null,
+}));
 
 vi.mock("./RevertDialog", () => ({
 	RevertDialog: ({ commits }: { commits: CommitGraphRow[] | null }) =>
@@ -26,5 +34,18 @@ describe("LazyCommitOperationDialogs", () => {
 			<LazyRevertDialog {...props} commits={[{} as CommitGraphRow]} />,
 		);
 		expect(await screen.findByText("Revert dialog loaded")).toBeVisible();
+	});
+
+	it("reveals cherry-pick after selecting commits", async () => {
+		const props = {
+			commits: [{} as CommitGraphRow],
+			currentBranchName: "main",
+			onOpenChange: vi.fn(),
+			onOpenWorkingChanges: vi.fn(),
+			onRepositoryChanged: vi.fn(),
+			repositoryId: "repo",
+		};
+		render(<LazyCherryPickDialog {...props} />);
+		expect(await screen.findByText("Cherry-pick dialog loaded")).toBeVisible();
 	});
 });

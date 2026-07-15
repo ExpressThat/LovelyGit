@@ -2,54 +2,40 @@ import { type ComponentProps, lazy, type ReactNode, Suspense } from "react";
 import { SurfaceLoading } from "@/AppLazySurfaces";
 import type { CheckoutCommitDialog } from "./CheckoutCommitDialog";
 import type { CherryPickDialog } from "./CherryPickDialog";
+import {
+	DeferredCheckoutCommitDialog,
+	DeferredCherryPickDialog,
+	DeferredInteractiveRebaseDialog,
+	DeferredResetCommitDialog,
+	DeferredRevertDialog,
+} from "./DeferredCommitOperationDialogs";
 import type { InteractiveRebaseDialog } from "./InteractiveRebaseDialog";
 import type { ReflogDialog } from "./ReflogDialog";
 import type { ReflogResetDialog } from "./ReflogResetDialog";
 import type { ResetCommitDialog } from "./ResetCommitDialog";
 import type { RevertDialog } from "./RevertDialog";
 
-const CherryPick = lazy(() =>
-	importDialog("CherryPickDialog", () => import("./CherryPickDialog")),
-);
-const CheckoutCommit = lazy(() =>
-	importDialog("CheckoutCommitDialog", () => import("./CheckoutCommitDialog")),
-);
-const InteractiveRebase = lazy(() =>
-	importDialog(
-		"InteractiveRebaseDialog",
-		() => import("./InteractiveRebaseDialog"),
-	),
-);
 const Reflog = lazy(() =>
 	importDialog("ReflogDialog", () => import("./ReflogDialog")),
 );
 const ReflogReset = lazy(() =>
 	importDialog("ReflogResetDialog", () => import("./ReflogResetDialog")),
 );
-const ResetCommit = lazy(() =>
-	importDialog("ResetCommitDialog", () => import("./ResetCommitDialog")),
-);
-const Revert = lazy(() =>
-	importDialog("RevertDialog", () => import("./RevertDialog")),
-);
-
 export function LazyCherryPickDialog(
 	props: ComponentProps<typeof CherryPickDialog>,
 ) {
-	return props.commits?.length ? (
-		<Boundary>{<CherryPick {...props} />}</Boundary>
-	) : null;
+	return props.commits?.length ? <DeferredCherryPickDialog {...props} /> : null;
 }
 export function LazyCheckoutCommitDialog(
 	props: ComponentProps<typeof CheckoutCommitDialog>,
 ) {
-	return <Boundary>{<CheckoutCommit {...props} />}</Boundary>;
+	return <DeferredCheckoutCommitDialog {...props} />;
 }
 export function LazyInteractiveRebaseDialog(
 	props: ComponentProps<typeof InteractiveRebaseDialog>,
 ) {
 	return props.baseCommit ? (
-		<Boundary>{<InteractiveRebase {...props} />}</Boundary>
+		<DeferredInteractiveRebaseDialog {...props} />
 	) : null;
 }
 export function LazyReflogDialog(props: ComponentProps<typeof ReflogDialog>) {
@@ -63,14 +49,10 @@ export function LazyReflogResetDialog(
 export function LazyResetCommitDialog(
 	props: ComponentProps<typeof ResetCommitDialog>,
 ) {
-	return props.commit ? (
-		<Boundary>{<ResetCommit {...props} />}</Boundary>
-	) : null;
+	return props.commit ? <DeferredResetCommitDialog {...props} /> : null;
 }
 export function LazyRevertDialog(props: ComponentProps<typeof RevertDialog>) {
-	return props.commits?.length ? (
-		<Boundary>{<Revert {...props} />}</Boundary>
-	) : null;
+	return props.commits?.length ? <DeferredRevertDialog {...props} /> : null;
 }
 
 function Boundary({ children }: { children: ReactNode }) {
