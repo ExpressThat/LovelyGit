@@ -67,6 +67,7 @@ public sealed class NativeBranchComparisonReaderTests
         await RunAsync(repository, "checkout", "master");
         await RunAsync(repository, "update-ref", "refs/remotes/origin/feature", remoteHash);
         await RunAsync(repository, "branch", "-D", "feature");
+        await RunAsync(repository, "pack-refs", "--all", "--prune");
 
         var comparison = await NativeBranchComparisonReader.ReadAsync(
             repository.Path, "origin/feature", CancellationToken.None);
@@ -82,6 +83,11 @@ public sealed class NativeBranchComparisonReaderTests
         using var repository = TemporaryGitRepository.Create();
         await Assert.ThrowsAsync<ArgumentException>(() => NativeBranchComparisonReader.ReadAsync(
             repository.Path, "missing", CancellationToken.None));
+        using var cancellation = new CancellationTokenSource();
+        cancellation.Cancel();
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+            NativeBranchComparisonReader.ReadAsync(
+                repository.Path, "master", cancellation.Token));
         await RunAsync(repository, "checkout", "--detach");
         await Assert.ThrowsAsync<InvalidOperationException>(() => NativeBranchComparisonReader.ReadAsync(
             repository.Path, "master", CancellationToken.None));

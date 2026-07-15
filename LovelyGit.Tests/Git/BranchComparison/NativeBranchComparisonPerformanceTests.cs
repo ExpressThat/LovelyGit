@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Text;
 using CliWrap;
 using ExpressThat.LovelyGit.Services.Git.BranchComparison;
+using LovelyGit.Tests.Git.Branches;
 using ExpressThat.LovelyGit.Services.Git.Cli;
 using ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser;
 using Xunit.Abstractions;
@@ -15,6 +16,29 @@ public sealed class NativeBranchComparisonPerformanceTests(ITestOutputHelper out
     private static readonly RepositoryTemplate<TemplateState> Template = new(
         "lovelygit-branch-comparison-template-",
         InitializeTemplate);
+
+    [Fact]
+    public async Task NamedBranchComparison_DoesNotScaleWithUnrelatedRefs()
+    {
+        using var repository = TemporaryGitRepository.Create();
+        await repository.GitCliService.ExecuteBufferedAsync(
+            ["branch", "feature"], repository.Path);
+        SeedUnrelatedRefs(repository.Path, repository.HeadCommitHash, 1_500);
+        GC.Collect();
+        var allocatedBefore = GC.GetTotalAllocatedBytes(precise: true);
+        var startedAt = Stopwatch.GetTimestamp();
+
+        var response = await NativeBranchComparisonReader.ReadAsync(
+            repository.Path, "feature", CancellationToken.None);
+
+        var elapsed = Stopwatch.GetElapsedTime(startedAt);
+        var allocated = GC.GetTotalAllocatedBytes(true) - allocatedBefore;
+        output.WriteLine($"ElapsedMs={elapsed.TotalMilliseconds:F2}; AllocatedBytes={allocated:N0}");
+        Assert.Equal(0, response.AheadCount);
+        Assert.Equal(0, response.BehindCount);
+        Assert.True(elapsed < TimeSpan.FromMilliseconds(100), $"Comparison took {elapsed}.");
+        Assert.True(allocated < 750_000, $"Comparison allocated {allocated:N0} bytes.");
+    }
 
     [Fact]
     public async Task DivergentTenThousandCommitHistory_RemainsBounded()

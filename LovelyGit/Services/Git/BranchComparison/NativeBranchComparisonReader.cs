@@ -1,4 +1,5 @@
 using ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser;
+using ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser.Refs;
 
 namespace ExpressThat.LovelyGit.Services.Git.BranchComparison;
 
@@ -13,28 +14,64 @@ internal static partial class NativeBranchComparisonReader
         string targetBranchName,
         CancellationToken cancellationToken)
     {
-        using var repository = await LovelyGitRepository.OpenAsync(repositoryPath, cancellationToken)
-            .ConfigureAwait(false);
-        var currentName = repository.CurrentBranchName ??
-            throw new InvalidOperationException("Check out a branch before comparing branches.");
-        var currentHash = repository.HeadTarget ??
-            throw new InvalidOperationException("The current branch does not have a commit.");
         var targetName = NormalizeBranchName(targetBranchName);
-        var target = repository.GetBranches().FirstOrDefault(reference =>
-            reference.Kind is GitRefKind.Head or GitRefKind.Remote &&
-            string.Equals(reference.Name, targetName, StringComparison.Ordinal));
+        var paths = await GitRepositoryDiscovery
+            .ResolveRepositoryPathsAsync(repositoryPath, cancellationToken)
+            .ConfigureAwait(false);
+        var objectFormat = await GitRepositoryDiscovery
+            .ReadObjectFormatAsync(paths.GitDirectory, cancellationToken)
+            .ConfigureAwait(false);
+        var head = await GitHeadReader.ReadAsync(
+                paths.WorktreeGitDirectory,
+                paths.GitDirectory,
+                objectFormat,
+                cancellationToken)
+            .ConfigureAwait(false);
+        var currentName = head.BranchName ??
+            throw new InvalidOperationException("Check out a branch before comparing branches.");
+        var currentHash = head.Target ??
+            throw new InvalidOperationException("The current branch does not have a commit.");
+        var target = await ResolveTargetAsync(
+                paths.GitDirectory,
+                targetName,
+                objectFormat,
+                cancellationToken)
+            .ConfigureAwait(false);
         if (target == null)
         {
             throw new ArgumentException("The target branch was not found.", nameof(targetBranchName));
         }
 
+        using var repository = await LovelyGitRepository
+            .OpenObjectDatabaseAsync(repositoryPath, cancellationToken)
+            .ConfigureAwait(false);
         return await BuildResponseAsync(
             repository,
             currentHash,
-            target.Target,
+            target.Value,
             currentName,
             targetName,
             cancellationToken).ConfigureAwait(false);
+    }
+
+    private static async Task<GitObjectId?> ResolveTargetAsync(
+        string gitDirectory,
+        string targetName,
+        GitObjectFormat objectFormat,
+        CancellationToken cancellationToken)
+    {
+        var local = await GitHeadReader.ResolveRefAsync(
+                gitDirectory,
+                $"refs/heads/{targetName}",
+                objectFormat,
+                cancellationToken)
+            .ConfigureAwait(false);
+        return local ?? await GitHeadReader.ResolveRefAsync(
+                gitDirectory,
+                $"refs/remotes/{targetName}",
+                objectFormat,
+                cancellationToken)
+            .ConfigureAwait(false);
     }
 
     private static string NormalizeBranchName(string branchName)
