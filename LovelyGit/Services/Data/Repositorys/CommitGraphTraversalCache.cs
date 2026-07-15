@@ -90,6 +90,8 @@ internal sealed class CommitGraphTraversalCache
         CommitGraphResponse response,
         CancellationToken cancellationToken)
     {
+        using var transaction = _gitRepoCache.BeginTransaction();
+        using var transactionRetention = BLiteTransactionRetention.Track(transaction);
         foreach (var row in response.Rows)
         {
             var id = CommitGraphCacheKeys.MakeRepositoryRowId(repositoryId, row.RowIndex);
@@ -103,15 +105,15 @@ internal sealed class CommitGraphTraversalCache
 
             if (await _gitRepoCache.CommitGraphCachedCommits.FindByIdAsync(id, cancellationToken).ConfigureAwait(false) == null)
             {
-                await _gitRepoCache.CommitGraphCachedCommits.InsertAsync(entry, cancellationToken).ConfigureAwait(false);
+                await _gitRepoCache.CommitGraphCachedCommits.InsertAsync(entry, transaction, cancellationToken).ConfigureAwait(false);
             }
             else
             {
-                await _gitRepoCache.CommitGraphCachedCommits.UpdateAsync(entry, cancellationToken).ConfigureAwait(false);
+                await _gitRepoCache.CommitGraphCachedCommits.UpdateAsync(entry, transaction, cancellationToken).ConfigureAwait(false);
             }
         }
 
-        await _gitRepoCache.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        await _gitRepoCache.SaveChangesAsync(transaction, cancellationToken).ConfigureAwait(false);
     }
 
     public async Task AddSeenAsync(
@@ -119,6 +121,8 @@ internal sealed class CommitGraphTraversalCache
         string hash,
         CancellationToken cancellationToken)
     {
+        using var transaction = _gitRepoCache.BeginTransaction();
+        using var transactionRetention = BLiteTransactionRetention.Track(transaction);
         await _gitRepoCache.CommitGraphSeen.InsertAsync(
             new CommitGraphSeenEntry
             {
@@ -126,7 +130,9 @@ internal sealed class CommitGraphTraversalCache
                 RepositoryId = repositoryId,
                 Hash = hash,
             },
+            transaction,
             cancellationToken).ConfigureAwait(false);
+        await _gitRepoCache.SaveChangesAsync(transaction, cancellationToken).ConfigureAwait(false);
     }
 
     public async Task AddFrontierAsync(
@@ -135,6 +141,8 @@ internal sealed class CommitGraphTraversalCache
         long seconds,
         CancellationToken cancellationToken)
     {
+        using var transaction = _gitRepoCache.BeginTransaction();
+        using var transactionRetention = BLiteTransactionRetention.Track(transaction);
         await _gitRepoCache.CommitGraphFrontier.InsertAsync(
             new CommitGraphFrontierEntry
             {
@@ -143,7 +151,9 @@ internal sealed class CommitGraphTraversalCache
                 Hash = hash,
                 Seconds = seconds,
             },
+            transaction,
             cancellationToken).ConfigureAwait(false);
+        await _gitRepoCache.SaveChangesAsync(transaction, cancellationToken).ConfigureAwait(false);
     }
 
     public async Task DeleteFrontierAsync(
@@ -151,9 +161,15 @@ internal sealed class CommitGraphTraversalCache
         string hash,
         CancellationToken cancellationToken)
     {
+        using var transaction = _gitRepoCache.BeginTransaction();
+        using var transactionRetention = BLiteTransactionRetention.Track(transaction);
         await _gitRepoCache.CommitGraphFrontier
-            .DeleteAsync(CommitGraphCacheKeys.MakeRepositoryHashId(repositoryId, hash), cancellationToken)
+            .DeleteAsync(
+                CommitGraphCacheKeys.MakeRepositoryHashId(repositoryId, hash),
+                transaction,
+                cancellationToken)
             .ConfigureAwait(false);
+        await _gitRepoCache.SaveChangesAsync(transaction, cancellationToken).ConfigureAwait(false);
     }
 
     public async Task SaveRepositoryStateAsync(
@@ -163,6 +179,8 @@ internal sealed class CommitGraphTraversalCache
         string lanes,
         CancellationToken cancellationToken)
     {
+        using var transaction = _gitRepoCache.BeginTransaction();
+        using var transactionRetention = BLiteTransactionRetention.Track(transaction);
         var state = new CommitGraphRepositoryState
         {
             Id = repositoryId,
@@ -174,38 +192,40 @@ internal sealed class CommitGraphTraversalCache
 
         if (await GetRepositoryStateAsync(repositoryId, cancellationToken).ConfigureAwait(false) == null)
         {
-            await _gitRepoCache.CommitGraphStates.InsertAsync(state, cancellationToken).ConfigureAwait(false);
+            await _gitRepoCache.CommitGraphStates.InsertAsync(state, transaction, cancellationToken).ConfigureAwait(false);
         }
         else
         {
-            await _gitRepoCache.CommitGraphStates.UpdateAsync(state, cancellationToken).ConfigureAwait(false);
+            await _gitRepoCache.CommitGraphStates.UpdateAsync(state, transaction, cancellationToken).ConfigureAwait(false);
         }
 
-        await _gitRepoCache.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        await _gitRepoCache.SaveChangesAsync(transaction, cancellationToken).ConfigureAwait(false);
     }
 
     public async Task DeleteTraversalEntriesAsync(Guid repositoryId, CancellationToken cancellationToken)
     {
-        await _gitRepoCache.CommitGraphStates.DeleteAsync(repositoryId, cancellationToken).ConfigureAwait(false);
+        using var transaction = _gitRepoCache.BeginTransaction();
+        using var transactionRetention = BLiteTransactionRetention.Track(transaction);
+        await _gitRepoCache.CommitGraphStates.DeleteAsync(repositoryId, transaction, cancellationToken).ConfigureAwait(false);
 
         await foreach (var entry in GetFrontierAsync(repositoryId).ConfigureAwait(false))
         {
             cancellationToken.ThrowIfCancellationRequested();
-            await _gitRepoCache.CommitGraphFrontier.DeleteAsync(entry.Id, cancellationToken).ConfigureAwait(false);
+            await _gitRepoCache.CommitGraphFrontier.DeleteAsync(entry.Id, transaction, cancellationToken).ConfigureAwait(false);
         }
 
         await foreach (var entry in GetSeenAsync(repositoryId).ConfigureAwait(false))
         {
             cancellationToken.ThrowIfCancellationRequested();
-            await _gitRepoCache.CommitGraphSeen.DeleteAsync(entry.Id, cancellationToken).ConfigureAwait(false);
+            await _gitRepoCache.CommitGraphSeen.DeleteAsync(entry.Id, transaction, cancellationToken).ConfigureAwait(false);
         }
 
         await foreach (var entry in GetCachedCommitEntriesAsync(repositoryId).ConfigureAwait(false))
         {
             cancellationToken.ThrowIfCancellationRequested();
-            await _gitRepoCache.CommitGraphCachedCommits.DeleteAsync(entry.Id, cancellationToken).ConfigureAwait(false);
+            await _gitRepoCache.CommitGraphCachedCommits.DeleteAsync(entry.Id, transaction, cancellationToken).ConfigureAwait(false);
         }
 
-        await _gitRepoCache.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        await _gitRepoCache.SaveChangesAsync(transaction, cancellationToken).ConfigureAwait(false);
     }
 }

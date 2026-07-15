@@ -109,6 +109,7 @@ internal sealed partial class CommitFileDiffCacheRepository
 
             using (var metadataDeleteTransaction = _gitRepoCache.BeginTransaction())
             {
+                using var transactionRetention = BLiteTransactionRetention.Track(metadataDeleteTransaction);
                 await DeleteDiffEntryAsync(
                         repositoryId,
                         hash,
@@ -157,6 +158,7 @@ internal sealed partial class CommitFileDiffCacheRepository
             }
 
             using var metadataInsertTransaction = _gitRepoCache.BeginTransaction();
+            using var metadataInsertRetention = BLiteTransactionRetention.Track(metadataInsertTransaction);
             await _gitRepoCache.CommitFileDiffs
                 .InsertAsync(entry, metadataInsertTransaction, cancellationToken)
                 .ConfigureAwait(false);

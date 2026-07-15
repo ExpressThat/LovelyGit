@@ -13,6 +13,7 @@ internal sealed partial class CommitFileDiffCacheRepository
         CancellationToken cancellationToken)
     {
         using var transaction = _gitRepoCache.BeginTransaction();
+        using var transactionRetention = BLiteTransactionRetention.Track(transaction);
         foreach (var lineEntry in lineEntries)
         {
             await _gitRepoCache.CommitFileDiffLines
@@ -36,6 +37,7 @@ internal sealed partial class CommitFileDiffCacheRepository
 
         using (var transaction = _gitRepoCache.BeginTransaction())
         {
+            using var transactionRetention = BLiteTransactionRetention.Track(transaction);
             foreach (var entry in entries)
             {
                 await _gitRepoCache.CommitFileDiffs.DeleteAsync(entry.Id, transaction, cancellationToken).ConfigureAwait(false);
@@ -72,6 +74,7 @@ internal sealed partial class CommitFileDiffCacheRepository
 
             using (var transaction = _gitRepoCache.BeginTransaction())
             {
+                using var transactionRetention = BLiteTransactionRetention.Track(transaction);
                 await _gitRepoCache.CommitFileDiffs
                     .DeleteAsync(id, transaction, cancellationToken)
                     .ConfigureAwait(false);
@@ -103,6 +106,7 @@ internal sealed partial class CommitFileDiffCacheRepository
         for (var offset = 0; offset < lineCount; offset += LineTransactionBatchSize)
         {
             using var transaction = _gitRepoCache.BeginTransaction();
+            using var transactionRetention = BLiteTransactionRetention.Track(transaction);
             var end = Math.Min(offset + LineTransactionBatchSize, lineCount);
             for (var index = offset; index < end; index++)
             {
@@ -122,6 +126,7 @@ internal sealed partial class CommitFileDiffCacheRepository
         for (var offset = 0; offset < lineEntries.Count; offset += LineTransactionBatchSize)
         {
             using var transaction = _gitRepoCache.BeginTransaction();
+            using var transactionRetention = BLiteTransactionRetention.Track(transaction);
             var end = Math.Min(offset + LineTransactionBatchSize, lineEntries.Count);
             for (var index = offset; index < end; index++)
             {

@@ -43,17 +43,19 @@ namespace ExpressThat.LovelyGit.Services.Settings
                 ValueJson = JsonSerializer.Serialize(typedValue, setting.JsonTypeInfo),
             };
 
+            using var transaction = _appDbContext.BeginTransaction();
+            using var transactionRetention = BLiteTransactionRetention.Track(transaction);
             var existing = await _appDbContext.Settings.FindByIdAsync(setting.Name);
             if (existing == null)
             {
-                await _appDbContext.Settings.InsertAsync(model);
+                await _appDbContext.Settings.InsertAsync(model, transaction);
             }
             else
             {
-                await _appDbContext.Settings.UpdateAsync(model);
+                await _appDbContext.Settings.UpdateAsync(model, transaction);
             }
 
-            await _appDbContext.SaveChangesAsync();
+            await _appDbContext.SaveChangesAsync(transaction);
         }
 
         public async Task SetSetting<T>(SettingDefinition<T> setting, T value)
@@ -64,17 +66,19 @@ namespace ExpressThat.LovelyGit.Services.Settings
                 ValueJson = JsonSerializer.Serialize(value, setting.JsonTypeInfo),
             };
 
+            using var transaction = _appDbContext.BeginTransaction();
+            using var transactionRetention = BLiteTransactionRetention.Track(transaction);
             var existing = await _appDbContext.Settings.FindByIdAsync(setting.Name);
             if (existing == null)
             {
-                await _appDbContext.Settings.InsertAsync(model);
+                await _appDbContext.Settings.InsertAsync(model, transaction);
             }
             else
             {
-                await _appDbContext.Settings.UpdateAsync(model);
+                await _appDbContext.Settings.UpdateAsync(model, transaction);
             }
 
-            await _appDbContext.SaveChangesAsync();
+            await _appDbContext.SaveChangesAsync(transaction);
         }
     }
 }

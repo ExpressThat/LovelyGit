@@ -127,6 +127,9 @@ This is the durable inventory of LovelyGit performance work. Update it in the sa
 - Verified Settings, Bisect, and Force Push overlays plateau after warm-up rather than retaining linearly; a second 60-interaction pass added only 0.22 MB post-GC with no DOM growth (this commit).
 - Verified Working Changes open/close cycles plateau after the status/cache warm-up; the second ten-cycle pass added only 0.08 MB post-GC with no DOM growth (this commit).
 - Verified repeated native bisect-state reads do not leak process handles, and recorded the warmed four-tab host/WebView2 footprint as the next memory-reduction baseline (this commit).
+- Diagnosed the warmed host with a managed heap dump: 74,804 BLite transactions were retained by the dependency registry, accounting for 14.96 MB of transaction, change-list, and dictionary-node objects plus a 1.86 MB expanded bucket table.
+- Added an exact, concurrency-safe BLite transaction retention boundary to every application and cache write. Successful, failed, abandoned, and no-op operations now unregister only their own transaction; regression coverage proves the registry returns to zero (`this commit`).
+- Batched each commit-graph page cache write into one caller-owned transaction instead of opening one auto-commit transaction per row (`this commit`).
 
 ## Rejected or Deferred Experiments
 

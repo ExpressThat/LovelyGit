@@ -24,8 +24,10 @@ namespace ExpressThat.LovelyGit.Services.Data.Repositorys
 
         public async Task<KnownGitRepository> AddAsync(KnownGitRepository repository)
         {
-            await _appDbContext.KnownGitRepositorys.InsertAsync(repository);
-            await _appDbContext.SaveChangesAsync();
+            using var transaction = _appDbContext.BeginTransaction();
+            using var transactionRetention = BLiteTransactionRetention.Track(transaction);
+            await _appDbContext.KnownGitRepositorys.InsertAsync(repository, transaction);
+            await _appDbContext.SaveChangesAsync(transaction);
             await _orderRepository.AppendRepositoryAsync(repository.Id);
 
             return repository;
@@ -33,8 +35,10 @@ namespace ExpressThat.LovelyGit.Services.Data.Repositorys
 
         public async Task RemoveAsync(Guid repositoryId)
         {
-            await _appDbContext.KnownGitRepositorys.DeleteAsync(repositoryId);
-            await _appDbContext.SaveChangesAsync();
+            using var transaction = _appDbContext.BeginTransaction();
+            using var transactionRetention = BLiteTransactionRetention.Track(transaction);
+            await _appDbContext.KnownGitRepositorys.DeleteAsync(repositoryId, transaction);
+            await _appDbContext.SaveChangesAsync(transaction);
             await _orderRepository.RemoveRepositoryAsync(repositoryId);
         }
 

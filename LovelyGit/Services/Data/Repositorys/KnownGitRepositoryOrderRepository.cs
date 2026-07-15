@@ -27,17 +27,19 @@ namespace ExpressThat.LovelyGit.Services.Data.Repositorys
                 RepositoryIds = Deduplicate(repositoryIds),
             };
 
+            using var transaction = _appDbContext.BeginTransaction();
+            using var transactionRetention = BLiteTransactionRetention.Track(transaction);
             var existing = await _appDbContext.KnownGitRepositoryOrders.FindByIdAsync(DefaultOrderId);
             if (existing == null)
             {
-                await _appDbContext.KnownGitRepositoryOrders.InsertAsync(model);
+                await _appDbContext.KnownGitRepositoryOrders.InsertAsync(model, transaction);
             }
             else
             {
-                await _appDbContext.KnownGitRepositoryOrders.UpdateAsync(model);
+                await _appDbContext.KnownGitRepositoryOrders.UpdateAsync(model, transaction);
             }
 
-            await _appDbContext.SaveChangesAsync();
+            await _appDbContext.SaveChangesAsync(transaction);
         }
 
         public async Task<List<KnownGitRepository>> ApplyOrderAsync(IReadOnlyList<KnownGitRepository> repositories)

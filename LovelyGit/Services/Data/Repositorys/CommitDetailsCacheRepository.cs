@@ -97,6 +97,7 @@ internal sealed partial class CommitDetailsCacheRepository
                 .ConfigureAwait(false);
 
             using var transaction = _gitRepoCache.BeginTransaction();
+            using var transactionRetention = BLiteTransactionRetention.Track(transaction);
 
             if (existingFileEntries.Count > 0)
             {
