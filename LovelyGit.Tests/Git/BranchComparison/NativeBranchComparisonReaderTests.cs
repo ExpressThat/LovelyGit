@@ -132,6 +132,28 @@ public sealed class NativeBranchComparisonReaderTests
         }
     }
 
+    [Fact]
+    public async Task ReadCommitsAsync_MissingCommitAndCancellationDoNotMutateRepository()
+    {
+        using var repository = TemporaryGitRepository.Create();
+        await CommitFilesAsync(repository, "Base", ("sentinel.txt", "unchanged"));
+        var head = await HeadAsync(repository);
+        var missing = new string('0', 40);
+
+        await Assert.ThrowsAsync<FileNotFoundException>(() =>
+            NativeBranchComparisonReader.ReadCommitsAsync(
+                repository.Path, head, missing, CancellationToken.None));
+        using var cancellation = new CancellationTokenSource();
+        cancellation.Cancel();
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+            NativeBranchComparisonReader.ReadCommitsAsync(
+                repository.Path, head, head, cancellation.Token));
+
+        Assert.Equal(head, await HeadAsync(repository));
+        Assert.Equal("unchanged", await File.ReadAllTextAsync(
+            Path.Combine(repository.Path, "sentinel.txt")));
+    }
+
     private static async Task CommitFilesAsync(
         TemporaryGitRepository repository,
         string subject,

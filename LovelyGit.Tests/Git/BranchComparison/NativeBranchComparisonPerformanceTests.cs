@@ -75,6 +75,38 @@ public sealed class NativeBranchComparisonPerformanceTests(ITestOutputHelper out
         }
     }
 
+    [Fact]
+    public async Task DirectCommitComparison_DoesNotLoadUnrelatedRefs()
+    {
+        var (directory, state) = Template.CreateCopy("lovelygit-direct-comparison-");
+        try
+        {
+            SeedUnrelatedRefs(directory.FullName, state.MainHash, 1_500);
+            GC.Collect();
+            var allocatedBefore = GC.GetTotalAllocatedBytes(precise: true);
+            var startedAt = Stopwatch.GetTimestamp();
+
+            var response = await NativeBranchComparisonReader.ReadCommitsAsync(
+                directory.FullName,
+                state.MainHash,
+                state.FeatureHash,
+                CancellationToken.None);
+
+            var elapsed = Stopwatch.GetElapsedTime(startedAt);
+            var allocated = GC.GetTotalAllocatedBytes(true) - allocatedBefore;
+            output.WriteLine(
+                $"Direct comparison: {elapsed.TotalMilliseconds:F2} ms; {allocated:N0} bytes");
+            Assert.Equal(CommitsPerSide, response.AheadCount);
+            Assert.Equal(CommitsPerSide, response.BehindCount);
+            Assert.True(elapsed < TimeSpan.FromMilliseconds(1_100), $"Comparison took {elapsed}.");
+            Assert.True(allocated < 68_000_000, $"Comparison allocated {allocated:N0} bytes.");
+        }
+        finally
+        {
+            DeleteDirectory(directory);
+        }
+    }
+
     private static TemplateState InitializeTemplate(DirectoryInfo directory)
     {
         var git = new GitCliService();
@@ -85,7 +117,9 @@ public sealed class NativeBranchComparisonPerformanceTests(ITestOutputHelper out
         Run(git, directory, ["gc", "--prune=now"]);
         return new TemplateState(
             CommitsPerSide * 2,
-            Run(git, directory, ["rev-parse", "feature~2500"]).Trim());
+            Run(git, directory, ["rev-parse", "feature~2500"]).Trim(),
+            Run(git, directory, ["rev-parse", "main"]).Trim(),
+            Run(git, directory, ["rev-parse", "feature"]).Trim());
     }
 
     private static string BuildFastImport()
@@ -152,5 +186,19 @@ public sealed class NativeBranchComparisonPerformanceTests(ITestOutputHelper out
         directory.Delete(true);
     }
 
-    private sealed record TemplateState(int CommitCount, string DeepHistoryHash);
+    private static void SeedUnrelatedRefs(string repositoryPath, string commit, int count)
+    {
+        var heads = Directory.CreateDirectory(
+            Path.Combine(repositoryPath, ".git", "refs", "heads", "perf"));
+        for (var index = 0; index < count; index++)
+        {
+            File.WriteAllText(Path.Combine(heads.FullName, $"branch-{index:D4}"), commit + "\n");
+        }
+    }
+
+    private sealed record TemplateState(
+        int CommitCount,
+        string DeepHistoryHash,
+        string MainHash,
+        string FeatureHash);
 }

@@ -12,7 +12,8 @@ internal static partial class NativeBranchComparisonReader
     {
         var normalizedCurrent = NormalizeCommitHash(currentCommitHash, nameof(currentCommitHash));
         var normalizedTarget = NormalizeCommitHash(targetCommitHash, nameof(targetCommitHash));
-        using var repository = await LovelyGitRepository.OpenAsync(repositoryPath, cancellationToken)
+        using var repository = await LovelyGitRepository
+            .OpenObjectDatabaseAsync(repositoryPath, cancellationToken)
             .ConfigureAwait(false);
         var current = ParseCommitId(repository, normalizedCurrent, nameof(currentCommitHash));
         var target = ParseCommitId(repository, normalizedTarget, nameof(targetCommitHash));
