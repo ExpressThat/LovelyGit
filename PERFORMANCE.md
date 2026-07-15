@@ -66,6 +66,7 @@ This is the durable inventory of LovelyGit performance work. Update it in the sa
 | Large stash reflog refresh | 147.65 ms and 69.30 MB allocated for 100,000 stash entries | 81.03 ms and 28.18 MB allocated with pooled block parsing and in-place newest-first ordering | Disposable reflog fixture; 45.12% lower latency and 59.34% fewer allocated bytes with malformed-entry, long-line, CRLF, SHA-256, cancellation, and real stash-workflow coverage | `f2d0af1b` |
 | Large Git LFS attributes scan | 95.63 ms and 47.91 MB allocated while scanning 300,000 mixed lines for 10,000 LFS patterns | 61.57 ms and 1.91 MB allocated with a bounded pooled block reader | Disposable attributes fixture; 35.62% lower latency and 96.01% fewer allocated bytes with quoted/escaped pattern, BOM, long-line, cancellation, limit, and real track/untrack coverage | `145b479` |
 | Active bisect session refresh | 1,732.13 ms and 9.67 MB allocated for five reads in a 1,500-ref repository | 23.84 ms and 0.55 MB allocated with direct HEAD/object reads and targeted per-worktree bisect refs | Disposable active-session fixture; 98.62% lower latency and 94.31% fewer allocated bytes, plus linked-worktree correctness, malformed-ref, cancellation, and full bisect-workflow coverage | `ff73534` |
+| Maximum interactive-rebase plan | 333.91 ms and 3.02 MB allocated for 100 commits in a 1,500-ref repository | 36.97 ms and 0.77 MB allocated with direct HEAD/object reads and one parse per commit | Deterministic packed disposable history; 88.93% lower latency and 74.50% fewer allocated bytes with maximum-limit, ancestry, merge, detached/unborn HEAD, cancellation, no-mutation, and real rebase-workflow coverage | `9434fa4` |
 | Real remote clone | Not previously recorded | 4.91 s; 42.5 MiB checkout; 34.99 MiB pack; +21.7 MB observed desktop private memory | Full `sharkdp/bat` clone through CMG; 20,693 objects with monotonic overall and phase progress | `d795e85` |
 | Complete backend test gate | Previously over one minute during early integration work | 55.89 s clean run; established baseline 30–36 s | `Invoke-LovelyGitTestGate.ps1`, 574 tests at this checkpoint | `021c0ee`, `089f559`, `3a4bcbd` |
 
@@ -122,6 +123,7 @@ Measured through the same Git commands LovelyGit uses, in a disposable 2,001-fil
 - Accelerated packed commit reads, shared a bounded object cache, and supported alternate object stores (`a3ecfc4`, `c8e17b4`, `bedf3b6`).
 - Avoided opening object stores without upstreams and avoided search pollution of the object cache (`93dde92`, `f4c3080`).
 - Read active bisect state from direct HEAD/object data and the worktree-scoped `refs/bisect` directory instead of loading every repository ref twice (`ff73534`).
+- Built interactive-rebase plans from direct HEAD and uncached commit-object reads, parsing each commit once without materializing the repository's complete ref model (`9434fa4`).
 - Resolved abbreviated hashes from indexes and reduced native graph parsing allocations (`8aad229`, `89d0a34`).
 - Eliminated per-index-entry scan allocations and reused compiled ignore matchers (`353786e`, `dbc5386`).
 - Added a packed-graph performance regression gate (`81514be`).
