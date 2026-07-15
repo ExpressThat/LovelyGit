@@ -1,9 +1,13 @@
-import { lazy, Suspense } from "react";
-import { SurfaceLoading } from "./AppLazySurfaces";
 import {
 	PrimaryCommandPalette,
 	PrimarySettingsDialog,
 } from "./AppPrimaryOverlays";
+import {
+	DeferredCommitSearchDialog,
+	DeferredFileBlameDialog,
+	DeferredFileHistoryDialog,
+	DeferredStashDialog,
+} from "./AppSecondaryOverlays";
 import type { FileBlameTarget } from "./components/FileBlame/FileBlameDialog";
 import type { FileHistoryTarget } from "./components/FileHistory/FileHistoryDialog";
 import {
@@ -12,27 +16,6 @@ import {
 } from "./components/TopNavBar/components/LazyRepositoryDialogs";
 import { Toaster } from "./components/ui/sonner";
 import { useRetainedSurface } from "./useRetainedSurface";
-
-const CommitSearchDialog = lazy(() =>
-	import("./components/CommitSearch/CommitSearchDialog").then((module) => ({
-		default: module.CommitSearchDialog,
-	})),
-);
-const FileHistoryDialog = lazy(() =>
-	import("./components/FileHistory/FileHistoryDialog").then((module) => ({
-		default: module.FileHistoryDialog,
-	})),
-);
-const FileBlameDialog = lazy(() =>
-	import("./components/FileBlame/FileBlameDialog").then((module) => ({
-		default: module.FileBlameDialog,
-	})),
-);
-const StashDialog = lazy(() =>
-	import("./components/WorkingChanges/StashDialog").then((module) => ({
-		default: module.StashDialog,
-	})),
-);
 
 export function AppOverlays({
 	fileHistoryTarget,
@@ -108,62 +91,60 @@ export function AppOverlays({
 				open={remoteManagerOpen}
 				repositoryId={repositoryId}
 			/>
-			<Suspense fallback={<SurfaceLoading label="Opening tool" overlay />}>
-				{retainSettings ? (
-					<PrimarySettingsDialog
-						onOpenChange={onSettingsOpenChange}
-						open={settingsOpen}
-						showTrigger={false}
-					/>
-				) : null}
-				{retainStash && repositoryId ? (
-					<StashDialog
-						canCreate={canCreateStash}
-						onOpenChange={onStashOpenChange}
-						onRepositoryChanged={onRepositoryChanged}
-						open={stashOpen}
-						repositoryId={repositoryId}
-						showTrigger={false}
-					/>
-				) : null}
-				{retainPalette ? (
-					<PrimaryCommandPalette
-						onCreateBranch={() => onCreateBranchOpenChange(true)}
-						onManageRemotes={() => onRemoteManagerOpenChange(true)}
-						onManageStashes={() => onStashOpenChange(true)}
-						onOpenChange={onCommandPaletteOpenChange}
-						onOpenCommitSearch={() => onSearchOpenChange(true)}
-						onOpenSettings={onOpenSettings}
-						onOpenWorkingChanges={onOpenWorkingChanges}
-						onRefreshRepository={onRefreshRepository}
-						open={isCommandPaletteOpen}
-					/>
-				) : null}
-				{retainSearch ? (
-					<CommitSearchDialog
-						onOpenChange={onSearchOpenChange}
-						onSelectCommit={onSelectCommit}
-						open={isCommitSearchOpen && Boolean(repositoryId)}
-						repositoryId={repositoryId}
-					/>
-				) : null}
-				{retainHistory ? (
-					<FileHistoryDialog
-						onOpenChange={onFileHistoryOpenChange}
-						onSelectCommit={onSelectCommit}
-						repositoryId={repositoryId}
-						target={fileHistoryTarget}
-					/>
-				) : null}
-				{retainBlame ? (
-					<FileBlameDialog
-						onOpenChange={onFileBlameOpenChange}
-						onSelectCommit={onSelectCommit}
-						repositoryId={repositoryId}
-						target={fileBlameTarget}
-					/>
-				) : null}
-			</Suspense>
+			{retainSettings ? (
+				<PrimarySettingsDialog
+					onOpenChange={onSettingsOpenChange}
+					open={settingsOpen}
+					showTrigger={false}
+				/>
+			) : null}
+			{retainStash && repositoryId ? (
+				<DeferredStashDialog
+					canCreate={canCreateStash}
+					onOpenChange={onStashOpenChange}
+					onRepositoryChanged={onRepositoryChanged}
+					open={stashOpen}
+					repositoryId={repositoryId}
+					showTrigger={false}
+				/>
+			) : null}
+			{retainPalette ? (
+				<PrimaryCommandPalette
+					onCreateBranch={() => onCreateBranchOpenChange(true)}
+					onManageRemotes={() => onRemoteManagerOpenChange(true)}
+					onManageStashes={() => onStashOpenChange(true)}
+					onOpenChange={onCommandPaletteOpenChange}
+					onOpenCommitSearch={() => onSearchOpenChange(true)}
+					onOpenSettings={onOpenSettings}
+					onOpenWorkingChanges={onOpenWorkingChanges}
+					onRefreshRepository={onRefreshRepository}
+					open={isCommandPaletteOpen}
+				/>
+			) : null}
+			{retainSearch ? (
+				<DeferredCommitSearchDialog
+					onOpenChange={onSearchOpenChange}
+					onSelectCommit={onSelectCommit}
+					open={isCommitSearchOpen && Boolean(repositoryId)}
+					repositoryId={repositoryId}
+				/>
+			) : null}
+			{retainHistory ? (
+				<DeferredFileHistoryDialog
+					onOpenChange={onFileHistoryOpenChange}
+					onSelectCommit={onSelectCommit}
+					repositoryId={repositoryId}
+					target={fileHistoryTarget}
+				/>
+			) : null}
+			{retainBlame ? (
+				<DeferredFileBlameDialog
+					onOpenChange={onFileBlameOpenChange}
+					onSelectCommit={onSelectCommit}
+					repositoryId={repositoryId}
+					target={fileBlameTarget}
+				/>
+			) : null}
 			<Toaster />
 		</>
 	);

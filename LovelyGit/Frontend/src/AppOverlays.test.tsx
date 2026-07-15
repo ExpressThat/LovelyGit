@@ -96,4 +96,26 @@ describe("AppOverlays", () => {
 		view.rerender(<AppOverlays {...defaultProps} isCommandPaletteOpen />);
 		expect(await screen.findByText("Command palette loaded")).toBeVisible();
 	});
+
+	it("loads file history and blame only when targeted", async () => {
+		const view = render(<AppOverlays {...defaultProps} />);
+		expect(screen.queryByText("History loaded")).not.toBeInTheDocument();
+		expect(screen.queryByText("Blame loaded")).not.toBeInTheDocument();
+
+		view.rerender(
+			<AppOverlays
+				{...defaultProps}
+				fileHistoryTarget={{ path: "file.ts", startCommitHash: null }}
+			/>,
+		);
+		expect(await screen.findByText("History loaded")).toBeVisible();
+
+		view.rerender(
+			<AppOverlays
+				{...defaultProps}
+				fileBlameTarget={{ path: "file.ts", startCommitHash: null }}
+			/>,
+		);
+		expect(await screen.findByText("Blame loaded")).toBeVisible();
+	});
 });
