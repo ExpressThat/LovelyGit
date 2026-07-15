@@ -50,6 +50,7 @@ This ledger records shipped performance work by feature area. Update it in the s
 - Reused native commit-graph ancestry in deep file-history and blame walks while preserving authoritative tree, blob, author, rename, and attribution reads (`3ca172f`).
 - Opened history and blame against the object database alone and resolved only the worktree-scoped HEAD when no explicit start was supplied, so unrelated refs no longer affect either interaction (`391cd62`).
 - Read submodule status from the parent HEAD/tree plus each initialized submodule's worktree-aware HEAD, avoiding complete parent and nested ref models (`7c4539a`).
+- Read pull/push sync status from the worktree-aware HEAD and exact configured upstream ref, then traverse only the object database; unrelated refs no longer affect toolbar refresh latency or allocations (`0f6f3ea`).
 - Resolved abbreviated hashes from indexes and reduced native graph parsing allocations (`8aad229`, `89d0a34`).
 - Eliminated per-index-entry scan allocations and reused compiled ignore matchers (`353786e`, `dbc5386`).
 - Added a packed-graph performance regression gate (`81514be`).
