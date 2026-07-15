@@ -1,13 +1,8 @@
-import { lazy, Suspense, useState } from "react";
-import { SurfaceLoading } from "@/AppLazySurfaces";
+import { useState } from "react";
 import { Boxes } from "@/components/icons/lovelyIcons";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 
-const SubmoduleManagerContent = lazy(() =>
-	import("./SubmoduleManagerContent").then((module) => ({
-		default: module.SubmoduleManagerContent,
-	})),
-);
+import { DeferredSubmoduleManagerContent } from "./DeferredRepositoryManagerContent";
 
 export function SubmoduleManager({
 	repositoryId,
@@ -31,11 +26,7 @@ export function SubmoduleManager({
 				<Boxes aria-hidden="true" className="size-5" />
 			</DialogTrigger>
 			{open && repositoryId ? (
-				<Suspense
-					fallback={<SurfaceLoading label="Opening submodules" overlay />}
-				>
-					<SubmoduleManagerContent repositoryId={repositoryId} />
-				</Suspense>
+				<DeferredSubmoduleManagerContent repositoryId={repositoryId} />
 			) : null}
 		</Dialog>
 	);

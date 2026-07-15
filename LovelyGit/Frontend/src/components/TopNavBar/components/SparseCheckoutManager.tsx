@@ -1,13 +1,8 @@
-import { lazy, Suspense, useState } from "react";
-import { SurfaceLoading } from "@/AppLazySurfaces";
+import { useState } from "react";
 import { FolderGit2 } from "@/components/icons/lovelyIcons";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 
-const SparseCheckoutManagerContent = lazy(() =>
-	import("./SparseCheckoutManagerContent").then((module) => ({
-		default: module.SparseCheckoutManagerContent,
-	})),
-);
+import { DeferredSparseCheckoutManagerContent } from "./DeferredRepositoryManagerContent";
 
 export function SparseCheckoutManager({
 	repositoryId,
@@ -31,11 +26,7 @@ export function SparseCheckoutManager({
 				<FolderGit2 aria-hidden="true" className="size-5" />
 			</DialogTrigger>
 			{open && repositoryId ? (
-				<Suspense
-					fallback={<SurfaceLoading label="Opening sparse checkout" overlay />}
-				>
-					<SparseCheckoutManagerContent repositoryId={repositoryId} />
-				</Suspense>
+				<DeferredSparseCheckoutManagerContent repositoryId={repositoryId} />
 			) : null}
 		</Dialog>
 	);

@@ -25,7 +25,8 @@ This is the durable inventory of LovelyGit performance work. Update it in the sa
 | Cold Cherry-pick | 312.8 ms | 21.6 ms | Chromium CMG commit-context-menu-to-dialog timing; immediate deferred reveal while preserving its lazy chunk | `5729cad` |
 | Cold Delete Tag | 314.7 ms | 22.4 ms | Chromium CMG tag-context-menu-to-confirmation timing; immediate deferred reveal while preserving its lazy chunk | `cfc2122` |
 | Cold Create Worktree | 316.2 ms | 20.6 ms | Chromium CMG branch-context-menu-to-dialog timing; immediate deferred reveal while preserving its lazy chunk | `fd2142a` |
-| Cold Reflog | 312.4 ms | 21.2 ms | Chromium CMG branch-context-menu-to-dialog timing; immediate deferred reveal while preserving its 9.27 kB lazy chunk | This commit |
+| Cold Reflog | 312.4 ms | 21.2 ms | Chromium CMG branch-context-menu-to-dialog timing; immediate deferred reveal while preserving its 9.27 kB lazy chunk | `a0dcf12` |
+| Cold Git LFS Manager | 304.6 ms | 14.5 ms | Chromium CMG toolbar-click-to-dialog timing; shared immediate deferred reveal preserving independent manager chunks | This commit |
 | Complete backend test gate | Previously over one minute during early integration work | 55.89 s clean run; established baseline 30–36 s | `Invoke-LovelyGitTestGate.ps1`, 574 tests at this checkpoint | `021c0ee`, `089f559`, `3a4bcbd` |
 
 ## Completed Optimization Inventory
@@ -41,7 +42,8 @@ This is the durable inventory of LovelyGit performance work. Update it in the sa
 - Applied immediate deferred reveal to cherry-pick, revert, reset, detached checkout, and interactive-rebase dialogs (`5729cad`).
 - Applied immediate deferred reveal to create-tag, checkout-tag, and local-tag deletion dialogs (`cfc2122`).
 - Applied immediate deferred reveal to create, lock, and remove-worktree dialogs while retaining their separate lazy chunks (`fd2142a`).
-- Applied immediate deferred reveal to reflog browsing and its nested reset confirmation while preserving separate lazy chunks (this commit).
+- Applied immediate deferred reveal to reflog browsing and its nested reset confirmation while preserving separate lazy chunks (`a0dcf12`).
+- Applied immediate deferred reveal to Git LFS, sparse-checkout, and submodule managers while preserving their independent chunks (this commit).
 - Switched the desktop process to workstation GC and moved process-memory sampling off interaction paths (`b0d124b`, `c7241dc`).
 - Reduced native interaction metrics overhead (`efcd0a7`).
 

@@ -1,13 +1,8 @@
-import { lazy, Suspense, useState } from "react";
-import { SurfaceLoading } from "@/AppLazySurfaces";
+import { useState } from "react";
 import { HardDriveDownload } from "@/components/icons/lovelyIcons";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 
-const LfsManagerContent = lazy(() =>
-	import("./LfsManagerContent").then((module) => ({
-		default: module.LfsManagerContent,
-	})),
-);
+import { DeferredLfsManagerContent } from "./DeferredRepositoryManagerContent";
 
 export function LfsManager({ repositoryId }: { repositoryId: string | null }) {
 	const [open, setOpen] = useState(false);
@@ -27,9 +22,7 @@ export function LfsManager({ repositoryId }: { repositoryId: string | null }) {
 				<HardDriveDownload aria-hidden="true" className="size-5" />
 			</DialogTrigger>
 			{open && repositoryId ? (
-				<Suspense fallback={<SurfaceLoading label="Opening Git LFS" overlay />}>
-					<LfsManagerContent repositoryId={repositoryId} />
-				</Suspense>
+				<DeferredLfsManagerContent repositoryId={repositoryId} />
 			) : null}
 		</Dialog>
 	);
