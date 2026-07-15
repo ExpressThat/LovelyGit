@@ -9,7 +9,7 @@ vi.mock("./components/NewTab/NewTab", () => ({
 }));
 
 describe("NewTabSurface", () => {
-	it("loads repository onboarding through its route boundary", async () => {
+	it("loads repository onboarding without a suspense throttle", async () => {
 		render(<NewTabSurface />);
 		expect(
 			await screen.findByText("Repository onboarding loaded"),

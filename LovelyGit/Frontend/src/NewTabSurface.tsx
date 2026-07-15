@@ -1,16 +1,17 @@
-import { lazy, Suspense } from "react";
 import { SurfaceLoading } from "./AppLazySurfaces";
+import { DeferredPrimaryOverlay } from "./AppPrimaryOverlays";
+import { createDeferredLoader } from "./lib/deferredLoader";
 
-const NewTab = lazy(() =>
-	import("./components/NewTab/NewTab").then((module) => ({
-		default: module.NewTab,
-	})),
+const newTabLoader = createDeferredLoader(() =>
+	import("./components/NewTab/NewTab").then((module) => module.NewTab),
 );
 
 export function NewTabSurface() {
 	return (
-		<Suspense fallback={<SurfaceLoading label="Opening repositories" />}>
-			<NewTab />
-		</Suspense>
+		<DeferredPrimaryOverlay
+			fallback={<SurfaceLoading label="Opening repositories" />}
+			loader={newTabLoader}
+			props={{}}
+		/>
 	);
 }
