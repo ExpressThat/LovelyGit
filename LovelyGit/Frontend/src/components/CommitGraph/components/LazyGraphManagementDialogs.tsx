@@ -12,6 +12,11 @@ import {
 	DeferredDeleteBranchDialog,
 	DeferredRenameBranchDialog,
 } from "./DeferredGraphManagementDialogs";
+import {
+	DeferredCheckoutTagDialog,
+	DeferredCreateTagDialog,
+	DeferredDeleteTagDialog,
+} from "./DeferredTagManagementDialogs";
 import type { DeleteBranchDialog } from "./DeleteBranchDialog";
 import type { DeleteRemoteTagDialog } from "./DeleteRemoteTagDialog";
 import type { DeleteTagDialog } from "./DeleteTagDialog";
@@ -25,12 +30,6 @@ const CommitComparison = lazy(() =>
 		() => import("./CommitComparisonDialog"),
 	),
 );
-const CheckoutTag = lazy(() =>
-	importDialog("CheckoutTagDialog", () => import("./CheckoutTagDialog")),
-);
-const CreateTag = lazy(() =>
-	importDialog("CreateTagDialog", () => import("./CreateTagDialog")),
-);
 const CreateWorktree = lazy(() =>
 	importDialog("CreateWorktreeDialog", () => import("./CreateWorktreeDialog")),
 );
@@ -39,9 +38,6 @@ const DeleteRemoteTag = lazy(() =>
 		"DeleteRemoteTagDialog",
 		() => import("./DeleteRemoteTagDialog"),
 	),
-);
-const DeleteTag = lazy(() =>
-	importDialog("DeleteTagDialog", () => import("./DeleteTagDialog")),
 );
 const LockWorktree = lazy(() =>
 	importDialog("LockWorktreeDialog", () => import("./LockWorktreeDialog")),
@@ -70,12 +66,12 @@ export function LazyCommitComparisonDialog(
 export function LazyCheckoutTagDialog(
 	props: ComponentProps<typeof CheckoutTagDialog>,
 ) {
-	return <Boundary>{<CheckoutTag {...props} />}</Boundary>;
+	return <DeferredCheckoutTagDialog {...props} />;
 }
 export function LazyCreateTagDialog(
 	props: ComponentProps<typeof CreateTagDialog>,
 ) {
-	return <Boundary>{<CreateTag {...props} />}</Boundary>;
+	return <DeferredCreateTagDialog {...props} />;
 }
 export function LazyCreateWorktreeDialog(
 	props: ComponentProps<typeof CreateWorktreeDialog>,
@@ -99,7 +95,7 @@ export function LazyDeleteRemoteTagDialog(
 export function LazyDeleteTagDialog(
 	props: ComponentProps<typeof DeleteTagDialog>,
 ) {
-	return props.tagName ? <Boundary>{<DeleteTag {...props} />}</Boundary> : null;
+	return props.tagName ? <DeferredDeleteTagDialog {...props} /> : null;
 }
 export function LazyLockWorktreeDialog(
 	props: ComponentProps<typeof LockWorktreeDialog>,

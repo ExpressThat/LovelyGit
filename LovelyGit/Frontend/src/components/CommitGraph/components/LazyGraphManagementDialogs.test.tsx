@@ -3,6 +3,7 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import {
+	LazyCheckoutTagDialog,
 	LazyDeleteTagDialog,
 	LazyRenameBranchDialog,
 } from "./LazyGraphManagementDialogs";
@@ -10,6 +11,11 @@ import {
 vi.mock("./DeleteTagDialog", () => ({
 	DeleteTagDialog: ({ tagName }: { tagName: string | null }) =>
 		tagName ? <div>Delete tag dialog loaded</div> : null,
+}));
+vi.mock("./CheckoutTagDialog", () => ({
+	CheckoutTagDialog: ({ tagName }: { tagName: string }) => (
+		<div>Checkout {tagName} loaded</div>
+	),
 }));
 vi.mock("./RenameBranchDialog", () => ({
 	RenameBranchDialog: ({ branchName }: { branchName: string }) => (
@@ -43,5 +49,17 @@ describe("LazyGraphManagementDialogs", () => {
 		};
 		render(<LazyRenameBranchDialog {...props} />);
 		expect(await screen.findByText("Rename topic loaded")).toBeVisible();
+	});
+
+	it("reveals checkout after selecting a tag", async () => {
+		render(
+			<LazyCheckoutTagDialog
+				onClose={vi.fn()}
+				onRepositoryChanged={vi.fn()}
+				repositoryId="repo"
+				tagName="v1.0.0"
+			/>,
+		);
+		expect(await screen.findByText("Checkout v1.0.0 loaded")).toBeVisible();
 	});
 });
