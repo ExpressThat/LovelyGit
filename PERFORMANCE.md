@@ -74,6 +74,7 @@ This is the durable inventory of LovelyGit performance work. Update it in the sa
 | Primary remote URL refresh | 60.79 ms and 44.11 MB allocated for five reads of a 10,001-remote config | 16.36 ms and 0.35 MB allocated with a pooled purpose-built scanner | Disposable large-config fixture; 73.09% lower latency and 99.20% fewer allocated bytes while preserving duplicate-origin last-value, first-fallback, quoted URL, BOM, long-line, cancellation, and full-manager behavior | `1c2629b` |
 | Detached commit checkout | 362.59 ms and 2.77 MB allocated in a 1,501-ref repository | 78.23 ms and 0.48 MB allocated by validating the target through a direct uncached object read before Git switch | Disposable large-ref fixture; 78.42% lower latency and 82.64% fewer allocated bytes with invalid, missing, non-commit, cancellation, conflict, and no-mutation coverage | `de7c3b4` |
 | Commit patch export | 477.57 ms and 2.35 MB allocated for one small patch in a 1,501-ref repository | 3.94 ms and 0.27 MB allocated with an object-database-only repository session | Disposable two-commit fixture; 99.18% lower latency and 88.50% fewer allocated bytes, with applicable output, binary, missing-object, cancellation, cancelled-export, and no-write-on-failure coverage | `9b71ea5` |
+| Binary object-ID conversion | 2.08 MB allocated for 10,000 SHA-1 conversions | 1.04 MB allocated with a stack character buffer and only the required result string | Deterministic synchronous benchmark; 50.00% fewer allocated bytes with exact SHA-1 and SHA-256 identity coverage | `bb89ffc` |
 | Real remote clone | Not previously recorded | 4.91 s; 42.5 MiB checkout; 34.99 MiB pack; +21.7 MB observed desktop private memory | Full `sharkdp/bat` clone through CMG; 20,693 objects with monotonic overall and phase progress | `d795e85` |
 | Complete backend test gate | Previously over one minute during early integration work | 55.89 s clean run; established baseline 30–36 s | `Invoke-LovelyGitTestGate.ps1`, 574 tests at this checkpoint | `021c0ee`, `089f559`, `3a4bcbd` |
 
@@ -136,6 +137,7 @@ Measured through the same Git commands LovelyGit uses, in a disposable 2,001-fil
 - Built interactive-rebase plans from direct HEAD and uncached commit-object reads, parsing each commit once without materializing the repository's complete ref model (`9434fa4`).
 - Validated detached checkout targets through the direct commit-existence reader instead of opening the complete repository/ref model (`de7c3b4`).
 - Compared authoritative commit pairs through an object-database-only repository session, keeping unrelated refs out of deep-history comparisons (`44344c2`).
+- Converted binary SHA-1/SHA-256 identities through a stack character buffer instead of allocating an intermediate `char[]` before the result string (`bb89ffc`).
 - Resolved abbreviated hashes from indexes and reduced native graph parsing allocations (`8aad229`, `89d0a34`).
 - Eliminated per-index-entry scan allocations and reused compiled ignore matchers (`353786e`, `dbc5386`).
 - Added a packed-graph performance regression gate (`81514be`).
@@ -219,6 +221,7 @@ Measured through the same Git commands LovelyGit uses, in a disposable 2,001-fil
 | Replace standard stash push with `--quiet` or create/store/reset | None; warmed standard was 1.33 s, quiet 1.37 s, custom 1.47 s | Standard Git semantics were both fastest and safest, so the alternatives were rejected. |
 | Batch submodule HEAD tree lookups with a path trie | Allocations fell from 2.53 MB to 2.18 MB for 1,000 definitions, but latency moved from 59.29 ms to 60.18 ms | Path normalization and worktree state checks dominate the manager read; the extra parser complexity did not improve interaction latency, so it was removed. |
 | Replace async worktree fan-out with synchronous `Parallel.For` | Allocations remained about 43.5 MB and ten-read latency regressed from 304.30 ms to 325.15 ms in the intermediate small-file experiment | The existing bounded async scheduler was retained; allocation was subsequently addressed at the small-file buffer layer instead. |
+| Keep only the top 100 painted branch-comparison commits during traversal | Repeated 10,000-commit runs remained at 65.85-65.99 MB and latency varied within the prior range | Sorting the displayed subset is not the bottleneck; packed commit decoding dominates, so the more complex bounded selector was removed. |
 
 ## Next Measurement Areas
 
