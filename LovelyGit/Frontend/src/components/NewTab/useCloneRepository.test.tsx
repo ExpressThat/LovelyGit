@@ -153,6 +153,34 @@ describe("useCloneRepository", () => {
 		});
 		expect(toast.error).toHaveBeenCalledWith("Network failed");
 	});
+
+	it("surfaces a partial-destination cleanup failure after cancellation", async () => {
+		const clone = deferred<never>();
+		send.mockImplementationOnce(() => clone.promise);
+		const { result } = renderHook(() => useCloneRepository());
+		populateForm(result.current);
+		let cloneRequest!: Promise<void>;
+		act(() => {
+			cloneRequest = result.current.cloneRepository();
+		});
+		await waitFor(() => expect(result.current.status).toBe("cloning"));
+
+		send.mockResolvedValueOnce(undefined);
+		await act(() => result.current.cancelClone());
+		await act(async () => {
+			clone.reject(
+				new Error(
+					"The partial destination could not be removed: C:\\temp\\repo",
+				),
+			);
+			await cloneRequest;
+		});
+
+		expect(toast.info).not.toHaveBeenCalled();
+		expect(toast.error).toHaveBeenCalledWith(
+			"The partial destination could not be removed: C:\\temp\\repo",
+		);
+	});
 });
 
 function populateForm(result: ReturnType<typeof useCloneRepository>) {

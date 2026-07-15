@@ -110,8 +110,9 @@ export function useCloneRepository() {
 			toast.success(`Cloned ${repository.name || directoryName.trim()}`);
 			resetForm();
 		} catch (error) {
-			if (cancelRequestedRef.current) toast.info("Clone canceled");
-			else {
+			if (cancelRequestedRef.current && !isCleanupFailure(error)) {
+				toast.info("Clone canceled");
+			} else {
 				toast.error(
 					error instanceof Error ? error.message : "Repository clone failed.",
 				);
@@ -168,4 +169,11 @@ export function useCloneRepository() {
 		updateDirectoryName,
 		updateRemoteUrl,
 	};
+}
+
+function isCleanupFailure(error: unknown) {
+	return (
+		error instanceof Error &&
+		error.message.includes("partial destination could not be removed")
+	);
 }

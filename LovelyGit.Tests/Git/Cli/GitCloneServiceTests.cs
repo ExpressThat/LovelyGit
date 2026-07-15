@@ -123,6 +123,27 @@ public sealed class GitCloneServiceTests
     }
 
     [Fact]
+    public async Task DeletePartialDestinationAsync_RetriesFilesReleasedByGit()
+    {
+        using var parent = TemporaryDirectory.Create("lovelygit-clone-cleanup-");
+        var destination = Directory.CreateDirectory(
+            System.IO.Path.Combine(parent.Path, "partial")).FullName;
+        var packPath = System.IO.Path.Combine(destination, "temporary.pack");
+        await File.WriteAllTextAsync(packPath, "partial pack");
+        await using var pack = new FileStream(
+            packPath, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
+
+        var cleanup = GitCloneService.DeletePartialDestinationAsync(
+            destination,
+            new OperationCanceledException());
+        await Task.Delay(125);
+        await pack.DisposeAsync();
+        await cleanup;
+
+        Assert.False(Directory.Exists(destination));
+    }
+
+    [Fact]
     public async Task CloneAsync_RequiresOperationIdBeforeMutation()
     {
         using var parent = TemporaryDirectory.Create("lovelygit-clone-operation-");

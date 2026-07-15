@@ -73,9 +73,10 @@ internal sealed partial class GitCloneService
             progress.Report(new GitCloneProgress("Complete", "Clone complete", 100), force: true);
             return destinationPath;
         }
-        catch
+        catch (Exception cloneFailure)
         {
-            TryDeletePartialDestination(destinationPath);
+            await DeletePartialDestinationAsync(destinationPath, cloneFailure)
+                .ConfigureAwait(false);
             throw;
         }
         finally
@@ -179,20 +180,6 @@ internal sealed partial class GitCloneService
         }
 
         return destinationPath;
-    }
-
-    private static void TryDeletePartialDestination(string destinationPath)
-    {
-        try
-        {
-            if (Directory.Exists(destinationPath))
-            {
-                Directory.Delete(destinationPath, recursive: true);
-            }
-        }
-        catch
-        {
-        }
     }
 
     private sealed partial class CloneProgressReporter

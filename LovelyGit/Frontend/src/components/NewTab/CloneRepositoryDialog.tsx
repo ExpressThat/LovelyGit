@@ -119,6 +119,9 @@ export function CloneRepositoryDialog() {
 							onChange={(event) =>
 								updateDirectoryName(event.currentTarget.value)
 							}
+							onInput={(event) =>
+								updateDirectoryName(event.currentTarget.value)
+							}
 							placeholder="repository"
 							spellCheck={false}
 							value={directoryName}
