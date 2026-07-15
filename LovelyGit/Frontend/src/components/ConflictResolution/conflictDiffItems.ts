@@ -4,6 +4,7 @@ import type {
 	CommitFileDiffSyntaxSpan,
 	ConflictHunk,
 } from "@/generated/types";
+import { createConflictHunkLookup } from "./conflictHunkLookup";
 
 export type ConflictSide = "ours" | "theirs";
 
@@ -30,9 +31,10 @@ export function buildConflictDiffItems(
 	const expanded = lines.flatMap(expandLine);
 	const items: ConflictDiffItem[] = [];
 	const shownHunks = new Set<number>();
+	const lookup = createConflictHunkLookup(hunks, side);
 
 	for (const row of expanded) {
-		const hunk = findHunk(row.baseLine, row.sourceLine, hunks, side);
+		const hunk = lookup.find(row.baseLine, row.sourceLine);
 		if (hunk && !shownHunks.has(hunk.id)) {
 			items.push({ kind: "hunk", hunk });
 			shownHunks.add(hunk.id);
@@ -123,24 +125,6 @@ function newRow(
 		changeSpans:
 			line.newChangeSpans.length > 0 ? line.newChangeSpans : line.changeSpans,
 	};
-}
-
-function findHunk(
-	baseLine: number | null,
-	sourceLine: number | null,
-	hunks: ConflictHunk[],
-	side: ConflictSide,
-) {
-	return hunks.find((hunk) => {
-		const sourceStart =
-			side === "ours" ? hunk.currentStartLine : hunk.incomingStartLine;
-		const sourceCount =
-			side === "ours" ? hunk.currentLineCount : hunk.incomingLineCount;
-		return (
-			inRange(baseLine, hunk.baseStartLine, hunk.baseLineCount) ||
-			inRange(sourceLine, sourceStart, sourceCount)
-		);
-	});
 }
 
 function candidateIndex(

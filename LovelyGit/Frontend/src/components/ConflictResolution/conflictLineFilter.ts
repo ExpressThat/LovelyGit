@@ -1,5 +1,9 @@
 import type { CommitFileDiffLine, ConflictHunk } from "@/generated/types";
 import type { ConflictSide } from "./conflictDiffItems";
+import {
+	type ConflictHunkLookup,
+	createConflictHunkLookup,
+} from "./conflictHunkLookup";
 
 export function filterConflictLines(
 	lines: CommitFileDiffLine[],
@@ -8,8 +12,9 @@ export function filterConflictLines(
 	contextLines: number,
 ) {
 	const keep = new Set<number>();
+	const lookup = createConflictHunkLookup(hunks, side);
 	for (let index = 0; index < lines.length; index++) {
-		if (!isRelevant(lines[index], hunks, side)) continue;
+		if (!isRelevant(lines[index], lookup)) continue;
 		const first = Math.max(0, index - contextLines);
 		const last = Math.min(lines.length - 1, index + contextLines);
 		for (let candidate = first; candidate <= last; candidate++)
@@ -18,24 +23,7 @@ export function filterConflictLines(
 	return lines.filter((_, index) => keep.has(index));
 }
 
-function isRelevant(
-	line: CommitFileDiffLine,
-	hunks: ConflictHunk[],
-	side: ConflictSide,
-) {
+function isRelevant(line: CommitFileDiffLine, lookup: ConflictHunkLookup) {
 	if (line.changeType !== "Unchanged") return true;
-	return hunks.some((hunk) => {
-		const sourceStart =
-			side === "ours" ? hunk.currentStartLine : hunk.incomingStartLine;
-		const sourceCount =
-			side === "ours" ? hunk.currentLineCount : hunk.incomingLineCount;
-		return (
-			inRange(line.oldLineNumber, hunk.baseStartLine, hunk.baseLineCount) ||
-			inRange(line.newLineNumber, sourceStart, sourceCount)
-		);
-	});
-}
-
-function inRange(value: number | null, start: number, count: number) {
-	return value != null && count > 0 && value >= start && value < start + count;
+	return lookup.find(line.oldLineNumber, line.newLineNumber) !== undefined;
 }
