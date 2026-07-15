@@ -1,4 +1,5 @@
 using ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser;
+using ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser.Refs;
 
 namespace ExpressThat.LovelyGit.Services.Git.Submodules;
 
@@ -14,10 +15,11 @@ internal sealed class NativeSubmoduleReader
         if (definitions.Count == 0) return [];
 
         using var repository = await LovelyGitRepository
-            .OpenAsync(repositoryPath, cancellationToken)
+            .OpenObjectDatabaseAsync(repositoryPath, cancellationToken)
             .ConfigureAwait(false);
-        GitCommit? head = repository.HeadTarget.HasValue
-            ? await repository.GetCommitAsync(repository.HeadTarget.Value, cancellationToken)
+        var headId = await repository.ResolveHeadAsync(cancellationToken).ConfigureAwait(false);
+        GitCommit? head = headId.HasValue
+            ? await repository.GetCommitAsync(headId.Value, cancellationToken)
                 .ConfigureAwait(false)
             : null;
         var results = new List<GitSubmodule>(definitions.Count);
@@ -62,9 +64,18 @@ internal sealed class NativeSubmoduleReader
 
         try
         {
-            using var repository = await LovelyGitRepository.OpenAsync(path, cancellationToken)
+            var paths = await GitRepositoryDiscovery
+                .ResolveRepositoryPathsAsync(path, cancellationToken)
                 .ConfigureAwait(false);
-            return repository.HeadTarget?.ToString();
+            var objectFormat = await GitRepositoryDiscovery
+                .ReadObjectFormatAsync(paths.GitDirectory, cancellationToken)
+                .ConfigureAwait(false);
+            return (await GitHeadReader.ResolveAsync(
+                    paths.WorktreeGitDirectory,
+                    paths.GitDirectory,
+                    objectFormat,
+                    cancellationToken)
+                .ConfigureAwait(false))?.ToString();
         }
         catch (Exception exception) when (exception is
             InvalidOperationException or IOException or UnauthorizedAccessException)
