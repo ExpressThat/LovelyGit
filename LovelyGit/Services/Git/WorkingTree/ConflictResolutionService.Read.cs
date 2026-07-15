@@ -1,6 +1,7 @@
 using ExpressThat.LovelyGit.Services.Git.CommitGraph.Models;
 using ExpressThat.LovelyGit.Services.Git.Diffing;
 using ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser;
+using ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser.Refs;
 using ExpressThat.LovelyGit.Services.Git.WorkingTree.Models;
 
 namespace ExpressThat.LovelyGit.Services.Git.WorkingTree;
@@ -33,19 +34,24 @@ internal sealed partial class ConflictResolutionService
             .ResolveRepositoryPathsAsync(repositoryPath, cancellationToken)
             .ConfigureAwait(false);
         readTrace.Mark("repository-paths");
-        using var repository = await LovelyGitRepository.OpenAsync(repositoryPath, cancellationToken)
+        var objectFormat = await GitRepositoryDiscovery
+            .ReadObjectFormatAsync(repositoryPaths.GitDirectory, cancellationToken)
             .ConfigureAwait(false);
-        readTrace.Mark("repository-open");
-        var entries = await ReadConflictEntriesAsync(repository, path, cancellationToken).ConfigureAwait(false);
+        var entriesTask = ReadConflictEntriesAsync(
+            repositoryPaths.WorktreeGitDirectory,
+            objectFormat,
+            path,
+            cancellationToken);
+        var resultPath = WorkingTreePath.Resolve(repositoryPaths.WorkTreeDirectory, path);
+        var resultSnapshotTask = ConflictWorktreeSnapshotReader.ReadAsync(
+            resultPath, MaxTextBytes, cancellationToken);
+        var entries = await entriesTask.ConfigureAwait(false);
         readTrace.Mark("index-entry");
-        var resultPath = WorkingTreePath.Resolve(repository.WorkTreeDirectory, path);
-        var resultSnapshot = await ConflictWorktreeSnapshotReader
-            .ReadAsync(resultPath, MaxTextBytes, cancellationToken)
-            .ConfigureAwait(false);
+        var resultSnapshot = await resultSnapshotTask.ConfigureAwait(false);
         var fingerprint = ConflictFingerprint(resultSnapshot.Fingerprint, entries);
         readTrace.Mark("fingerprint");
         var cacheStamp = ConflictResolutionCacheStamp.Capture(
-            Path.Combine(repository.GitDirectory, "index"),
+            Path.Combine(repositoryPaths.WorktreeGitDirectory, "index"),
             resultPath,
             resultSnapshot.Stamp);
         _responseCache.RemoveStale(repositoryPath, path, fingerprint);
@@ -80,20 +86,34 @@ internal sealed partial class ConflictResolutionService
             return variant;
         }
 
-        var baseVersion = await ReadVersionAsync(repository, entries.GetValueOrDefault(1), cancellationToken)
+        using var objectStore = new GitObjectStore(repositoryPaths.GitDirectory, objectFormat);
+        var headTask = GitHeadReader.ReadAsync(
+            repositoryPaths.WorktreeGitDirectory,
+            repositoryPaths.GitDirectory,
+            objectFormat,
+            cancellationToken);
+        var baseTask = ReadVersionAsync(
+            objectStore, entries.GetValueOrDefault(1), cancellationToken);
+        var oursTask = ReadVersionAsync(
+            objectStore, entries.GetValueOrDefault(2), cancellationToken);
+        var theirsTask = ReadVersionAsync(
+            objectStore, entries.GetValueOrDefault(3), cancellationToken);
+        var incomingSourceTask = CreateIncomingSourceAsync(
+            repositoryPaths.GitDirectory,
+            repositoryPaths.WorktreeGitDirectory,
+            objectFormat,
+            entries.GetValueOrDefault(3),
+            cancellationToken);
+        await Task.WhenAll(baseTask, oursTask, theirsTask, incomingSourceTask)
             .ConfigureAwait(false);
-        var ours = await ReadVersionAsync(repository, entries.GetValueOrDefault(2), cancellationToken)
-            .ConfigureAwait(false);
-        var theirs = await ReadVersionAsync(repository, entries.GetValueOrDefault(3), cancellationToken)
-            .ConfigureAwait(false);
+        var baseVersion = await baseTask.ConfigureAwait(false);
+        var ours = await oursTask.ConfigureAwait(false);
+        var theirs = await theirsTask.ConfigureAwait(false);
         var result = CreateWorktreeVersion(resultSnapshot);
         readTrace.Mark("read-versions");
-        var currentSource = CreateCurrentSource(repository, entries.GetValueOrDefault(2));
-        var incomingSource = await CreateIncomingSourceAsync(
-            repository,
-            repositoryPaths.WorktreeGitDirectory,
-            entries.GetValueOrDefault(3),
-            cancellationToken).ConfigureAwait(false);
+        var currentSource = CreateCurrentSource(
+            await headTask.ConfigureAwait(false), entries.GetValueOrDefault(2));
+        var incomingSource = await incomingSourceTask.ConfigureAwait(false);
         readTrace.Mark("source-metadata");
         var canBuildTextMerge = baseVersion.Text != null &&
             ours.Text != null &&
@@ -164,10 +184,22 @@ internal sealed partial class ConflictResolutionService
     private static async Task<Dictionary<int, GitIndexEntry>> ReadConflictEntriesAsync(
         LovelyGitRepository repository,
         string path,
+        CancellationToken cancellationToken) =>
+        await ReadConflictEntriesAsync(
+                repository.WorktreeGitDirectory,
+                repository.ObjectFormat,
+                path,
+                cancellationToken)
+            .ConfigureAwait(false);
+
+    private static async Task<Dictionary<int, GitIndexEntry>> ReadConflictEntriesAsync(
+        string worktreeGitDirectory,
+        GitObjectFormat objectFormat,
+        string path,
         CancellationToken cancellationToken)
     {
         var entries = await new GitIndexReader()
-            .ReadEntriesForPathAsync(repository.GitDirectory, repository.ObjectFormat, path, cancellationToken)
+            .ReadEntriesForPathAsync(worktreeGitDirectory, objectFormat, path, cancellationToken)
             .ConfigureAwait(false);
         var conflict = entries
             .Where(entry => entry.Stage is >= 1 and <= 3)

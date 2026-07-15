@@ -7,33 +7,33 @@ namespace ExpressThat.LovelyGit.Services.Git.WorkingTree;
 internal sealed partial class ConflictResolutionService
 {
     private static ConflictSourceMetadata CreateCurrentSource(
-        LovelyGitRepository repository,
+        GitHeadState head,
         GitIndexEntry? currentEntry) => new()
     {
         Label = "Current",
-        RefName = repository.CurrentBranchName,
-        ObjectId = repository.HeadTarget?.ToString() ?? currentEntry?.ObjectId.ToString(),
+        RefName = head.BranchName,
+        ObjectId = head.Target?.ToString() ?? currentEntry?.ObjectId.ToString(),
     };
 
     private static async Task<ConflictSourceMetadata> CreateIncomingSourceAsync(
-        LovelyGitRepository repository,
+        string gitDirectory,
         string worktreeGitDirectory,
+        GitObjectFormat objectFormat,
         GitIndexEntry? incomingEntry,
         CancellationToken cancellationToken)
     {
         var target = await ReadOperationTargetAsync(
             worktreeGitDirectory,
-            repository.ObjectFormat,
+            objectFormat,
             cancellationToken).ConfigureAwait(false);
         var matchingRef = target == null
             ? null
-            : repository.GetBranches()
-                .OrderBy(reference => reference.Kind == GitRefKind.Head ? 0 : 1)
-                .FirstOrDefault(reference => reference.Target == target.Value);
+            : await GitRefTargetNameReader.FindBranchNameAsync(
+                gitDirectory, objectFormat, target.Value, cancellationToken).ConfigureAwait(false);
         return new ConflictSourceMetadata
         {
             Label = "Incoming",
-            RefName = matchingRef?.Name,
+            RefName = matchingRef,
             ObjectId = target?.ToString() ?? incomingEntry?.ObjectId.ToString(),
         };
     }

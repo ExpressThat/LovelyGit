@@ -9,7 +9,7 @@ internal sealed partial class ConflictResolutionService
     private static readonly UTF8Encoding StrictUtf8 = new(false, true);
 
     private static async Task<ConflictFileVersion> ReadVersionAsync(
-        LovelyGitRepository repository,
+        GitObjectStore objectStore,
         GitIndexEntry? entry,
         CancellationToken cancellationToken)
     {
@@ -24,10 +24,14 @@ internal sealed partial class ConflictResolutionService
             };
         }
 
-        var bytes = await repository
-            .ReadBlobWithoutCachingAsync(entry.ObjectId, cancellationToken)
+        var data = await objectStore
+            .ReadObjectWithoutCachingAsync(entry.ObjectId, cancellationToken)
             .ConfigureAwait(false);
-        return CreateVersion(bytes);
+        if (data.Kind != GitObjectKind.Blob)
+        {
+            throw new InvalidDataException($"Object is not a blob: {entry.ObjectId}");
+        }
+        return CreateVersion(data.Data);
     }
 
     private static ConflictFileVersion CreateWorktreeVersion(ConflictWorktreeSnapshot snapshot)
