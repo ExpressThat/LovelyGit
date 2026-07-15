@@ -13,36 +13,59 @@ internal static class GitHeadReader
         string headGitDirectory,
         string commonGitDirectory,
         GitObjectFormat objectFormat,
+        CancellationToken cancellationToken) =>
+        (await ReadAsync(
+                headGitDirectory,
+                commonGitDirectory,
+                objectFormat,
+                cancellationToken)
+            .ConfigureAwait(false)).Target;
+
+    public static async Task<GitHeadState> ReadAsync(
+        string headGitDirectory,
+        string commonGitDirectory,
+        GitObjectFormat objectFormat,
         CancellationToken cancellationToken)
     {
         var headPath = Path.Combine(headGitDirectory, "HEAD");
         if (!File.Exists(headPath))
         {
-            return null;
+            return default;
         }
 
         var head = (await File.ReadAllTextAsync(headPath, cancellationToken).ConfigureAwait(false)).AsSpan().Trim();
         const string RefPrefix = "ref:";
         if (!head.StartsWith(RefPrefix, StringComparison.OrdinalIgnoreCase))
         {
-            return GitObjectId.TryParse(head, objectFormat, out var detachedId) ? detachedId : null;
+            return new GitHeadState(
+                null,
+                GitObjectId.TryParse(head, objectFormat, out var detachedId) ? detachedId : null);
         }
 
         var refName = head[RefPrefix.Length..].Trim().ToString();
+        const string HeadPrefix = "refs/heads/";
+        var branchName = refName.StartsWith(HeadPrefix, StringComparison.Ordinal)
+            ? refName[HeadPrefix.Length..]
+            : null;
         var looseRefPath = Path.Combine(commonGitDirectory, refName.Replace('/', Path.DirectorySeparatorChar));
         if (File.Exists(looseRefPath))
         {
-            var value = (await File.ReadAllTextAsync(looseRefPath, cancellationToken).ConfigureAwait(false))
-                .AsSpan()
-                .Trim();
-            return GitObjectId.TryParse(value, objectFormat, out var looseId) ? looseId : null;
+            cancellationToken.ThrowIfCancellationRequested();
+            return new GitHeadState(
+                branchName,
+                GitLooseRefReader.TryReadObjectId(looseRefPath, objectFormat, out var looseId)
+                    ? looseId
+                    : null);
         }
 
-        return await ResolvePackedRefAsync(
-            commonGitDirectory,
-            refName,
-            objectFormat,
-            cancellationToken).ConfigureAwait(false);
+        return new GitHeadState(
+            branchName,
+            await ResolvePackedRefAsync(
+                    commonGitDirectory,
+                    refName,
+                    objectFormat,
+                    cancellationToken)
+                .ConfigureAwait(false));
     }
 
     private static async Task<GitObjectId?> ResolvePackedRefAsync(
@@ -87,3 +110,5 @@ internal static class GitHeadReader
         return null;
     }
 }
+
+internal readonly record struct GitHeadState(string? BranchName, GitObjectId? Target);

@@ -17,16 +17,15 @@ internal static class NativeRemoteSyncStatusReader
         var objectFormat = await GitRepositoryDiscovery
             .ReadObjectFormatAsync(paths.GitDirectory, cancellationToken)
             .ConfigureAwait(false);
-        var branchName = await GitRefReader
-            .ResolveHeadBranchNameAsync(paths.WorktreeGitDirectory, cancellationToken)
-            .ConfigureAwait(false);
-        var localHash = await GitHeadReader
-            .ResolveAsync(
+        var head = await GitHeadReader
+            .ReadAsync(
                 paths.WorktreeGitDirectory,
                 paths.GitDirectory,
                 objectFormat,
                 cancellationToken)
             .ConfigureAwait(false);
+        var branchName = head.BranchName;
+        var localHash = head.Target;
         if (branchName == null || localHash == null)
         {
             return Calm(branchName, localHash);
