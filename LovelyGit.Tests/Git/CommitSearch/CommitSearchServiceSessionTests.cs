@@ -16,22 +16,26 @@ public sealed class CommitSearchServiceSessionTests
         }
         using var service = new CommitSearchService(TimeSpan.FromMilliseconds(100));
         var repositoryId = Guid.NewGuid();
+        Assert.False(service.ExpirationScheduled);
 
         var initial = await SearchAsync(service, repositoryId, repository, deep: false);
 
         Assert.True(initial.IsPartial);
         Assert.Equal(64, initial.ScannedCommitCount);
         Assert.Equal(1, service.RetainedSessionCount);
+        Assert.True(service.ExpirationScheduled);
 
         var deep = await SearchAsync(service, repositoryId, repository, deep: true);
 
         Assert.False(deep.IsPartial);
         Assert.Equal(66, deep.ScannedCommitCount);
         Assert.Equal(0, service.RetainedSessionCount);
+        Assert.False(service.ExpirationScheduled);
 
         await SearchAsync(service, repositoryId, repository, deep: false);
         await WaitForNoRetainedSessionsAsync(service);
         Assert.Equal(0, service.RetainedSessionCount);
+        Assert.False(service.ExpirationScheduled);
     }
 
     private static Task<CommitSearchResponse> SearchAsync(

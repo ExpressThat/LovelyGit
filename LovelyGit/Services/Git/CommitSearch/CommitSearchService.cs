@@ -25,14 +25,16 @@ internal sealed class CommitSearchService : IDisposable
         _expirationTimer = new Timer(
             static state => ((CommitSearchService)state!).ExpireSessions(),
             this,
-            _sessionRetention,
-            _sessionRetention);
+            Timeout.InfiniteTimeSpan,
+            Timeout.InfiniteTimeSpan);
     }
 
     internal int RetainedSessionCount
     {
         get { lock (_gate) return _retainedSessions.Count; }
     }
+
+    internal bool ExpirationScheduled { get; private set; }
 
     public async Task<CommitSearchResponse> SearchAsync(
         Guid repositoryId,
@@ -71,6 +73,8 @@ internal sealed class CommitSearchService : IDisposable
                 {
                     discardedSession = retained.Session;
                 }
+
+                ScheduleExpirationLocked();
             }
         }
 
@@ -125,6 +129,7 @@ internal sealed class CommitSearchService : IDisposable
             _activeSearches.Clear();
             sessions = _retainedSessions.Values.Select(value => value.Session).ToList();
             _retainedSessions.Clear();
+            ExpirationScheduled = false;
         }
 
         _expirationTimer.Dispose();
@@ -160,6 +165,7 @@ internal sealed class CommitSearchService : IDisposable
                 evicted = oldest.Value.Session;
             }
             _retainedSessions[repositoryId] = new(session, Stopwatch.GetTimestamp());
+            ScheduleExpirationLocked();
         }
         evicted?.Dispose();
         return true;
@@ -167,18 +173,40 @@ internal sealed class CommitSearchService : IDisposable
 
     private void ExpireSessions()
     {
-        List<NativeCommitSearchSession> expired = [];
+        List<NativeCommitSearchSession>? expired = null;
         lock (_gate)
         {
             if (_disposed) return;
-            foreach (var (repositoryId, retained) in _retainedSessions.ToArray())
+            foreach (var (repositoryId, retained) in _retainedSessions)
             {
                 if (Stopwatch.GetElapsedTime(retained.RetainedAt) < _sessionRetention) continue;
                 _retainedSessions.Remove(repositoryId);
-                expired.Add(retained.Session);
+                (expired ??= []).Add(retained.Session);
             }
+
+            ScheduleExpirationLocked();
         }
-        foreach (var session in expired) session.Dispose();
+
+        if (expired is not null)
+        {
+            foreach (var session in expired) session.Dispose();
+        }
+    }
+
+    private void ScheduleExpirationLocked()
+    {
+        if (_retainedSessions.Count == 0)
+        {
+            ExpirationScheduled = false;
+            _expirationTimer.Change(Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
+            return;
+        }
+
+        var oldest = _retainedSessions.MinBy(pair => pair.Value.RetainedAt).Value;
+        var dueTime = _sessionRetention - Stopwatch.GetElapsedTime(oldest.RetainedAt);
+        if (dueTime <= TimeSpan.Zero) dueTime = TimeSpan.FromMilliseconds(1);
+        ExpirationScheduled = true;
+        _expirationTimer.Change(dueTime, Timeout.InfiniteTimeSpan);
     }
 
     private sealed record RetainedSearchSession(
