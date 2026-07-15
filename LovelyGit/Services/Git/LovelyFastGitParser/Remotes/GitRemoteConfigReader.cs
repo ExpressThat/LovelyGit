@@ -14,11 +14,8 @@ internal static class GitRemoteConfigReader
     public static async Task<string?> ReadPrimaryRemoteUrlAsync(
         string gitDirectory,
         CancellationToken cancellationToken)
-    {
-        var remotes = await ReadRemoteConfigAsync(gitDirectory, cancellationToken).ConfigureAwait(false);
-        return remotes.Find(remote => remote.Name.Equals("origin", StringComparison.Ordinal))?.Url
-            ?? remotes.FirstOrDefault()?.Url;
-    }
+        => await GitPrimaryRemoteUrlReader.ReadAsync(gitDirectory, cancellationToken)
+            .ConfigureAwait(false);
 
     private static async Task<List<GitRemote>> ReadRemoteConfigAsync(
         string gitDirectory,
@@ -32,13 +29,7 @@ internal static class GitRemoteConfigReader
         }
 
         string? remoteName = null;
-        await using var stream = new FileStream(
-            configPath,
-            FileMode.Open,
-            FileAccess.Read,
-            FileShare.ReadWrite | FileShare.Delete,
-            bufferSize: 4096,
-            FileOptions.Asynchronous | FileOptions.SequentialScan);
+        await using var stream = OpenConfig(configPath);
         using var reader = new StreamReader(stream);
         while (await reader.ReadLineAsync(cancellationToken).ConfigureAwait(false) is { } rawLine)
         {
@@ -85,18 +76,34 @@ internal static class GitRemoteConfigReader
 
     private static bool TryReadRemoteSection(ReadOnlySpan<char> line, out string name)
     {
+        if (TryReadRemoteSectionName(line, out var value))
+        {
+            name = value.ToString();
+            return true;
+        }
         name = string.Empty;
+        return false;
+    }
+
+    internal static bool TryReadRemoteSectionName(
+        ReadOnlySpan<char> line,
+        out ReadOnlySpan<char> name)
+    {
         const string prefix = "[remote \"";
         if (!line.StartsWith(prefix, StringComparison.Ordinal) || !line.EndsWith("\"]", StringComparison.Ordinal))
         {
+            name = default;
             return false;
         }
 
-        name = line[prefix.Length..^2].ToString();
-        return name.Length > 0;
+        name = line[prefix.Length..^2];
+        return !name.IsEmpty;
     }
 
-    private static bool TryReadConfigValue(ReadOnlySpan<char> line, string expectedKey, out string value)
+    internal static bool TryReadConfigValue(
+        ReadOnlySpan<char> line,
+        string expectedKey,
+        out string value)
     {
         value = string.Empty;
         var separator = line.IndexOf('=');
@@ -114,4 +121,12 @@ internal static class GitRemoteConfigReader
         value = line[(separator + 1)..].Trim().Trim('"').ToString();
         return value.Length > 0;
     }
+
+    private static FileStream OpenConfig(string path) => new(
+        path,
+        FileMode.Open,
+        FileAccess.Read,
+        FileShare.ReadWrite | FileShare.Delete,
+        bufferSize: 4096,
+        FileOptions.Asynchronous | FileOptions.SequentialScan);
 }

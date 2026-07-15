@@ -1,3 +1,4 @@
+using System.Text;
 using ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser.Remotes;
 
 namespace LovelyGit.Tests.Git.LovelyFastGitParser;
@@ -30,6 +31,8 @@ public sealed class GitRemoteConfigReaderTests
             """
             [remote "upstream"]
                 url = git@gitlab.com:example/upstream.git
+            [remote "backup"]
+                url = https://example.invalid/backup.git
             """);
 
         var url = await GitRemoteConfigReader.ReadPrimaryRemoteUrlAsync(
@@ -37,6 +40,40 @@ public sealed class GitRemoteConfigReaderTests
             CancellationToken.None);
 
         Assert.Equal("git@gitlab.com:example/upstream.git", url);
+    }
+
+    [Fact]
+    public async Task ReadPrimaryRemoteUrlAsync_PreservesDuplicateAndFallbackSemantics()
+    {
+        using var directory = TemporaryGitDirectory.Create(
+            "[remote \"first\"]\r\n\turl = https://example.invalid/first.git\r\n" +
+            "[remote \"second\"]\r\n\turl = https://example.invalid/second.git\r\n" +
+            "[remote \"origin\"]\r\n\turl = https://example.invalid/old.git\r\n" +
+            $"[core]\r\n\tcomment = {new string('x', 20_000)}\r\n" +
+            "[remote \"origin\"]\r\n\turl = \"https://example.invalid/new.git\"",
+            new UTF8Encoding(encoderShouldEmitUTF8Identifier: true));
+
+        var url = await GitRemoteConfigReader.ReadPrimaryRemoteUrlAsync(
+            directory.Path,
+            CancellationToken.None);
+
+        Assert.Equal("https://example.invalid/new.git", url);
+    }
+
+    [Fact]
+    public async Task ReadPrimaryRemoteUrlAsync_WhenCancelled_DoesNotChangeConfig()
+    {
+        using var directory = TemporaryGitDirectory.Create(
+            "[remote \"origin\"]\n\turl = https://example.invalid/origin.git\n");
+        var path = Path.Combine(directory.Path, "config");
+        var before = await File.ReadAllBytesAsync(path);
+        using var cancellation = new CancellationTokenSource();
+        cancellation.Cancel();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+            GitRemoteConfigReader.ReadPrimaryRemoteUrlAsync(directory.Path, cancellation.Token));
+
+        Assert.Equal(before, await File.ReadAllBytesAsync(path));
     }
 
     [Fact]
@@ -101,10 +138,13 @@ public sealed class GitRemoteConfigReaderTests
 
         public string Path { get; }
 
-        public static TemporaryGitDirectory Create(string configText)
+        public static TemporaryGitDirectory Create(string configText, Encoding? encoding = null)
         {
             var directory = Directory.CreateTempSubdirectory("lovelygit-remote-config-");
-            File.WriteAllText(System.IO.Path.Combine(directory.FullName, "config"), configText);
+            File.WriteAllText(
+                System.IO.Path.Combine(directory.FullName, "config"),
+                configText,
+                encoding ?? new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
             return new TemporaryGitDirectory(directory);
         }
 
