@@ -1,3 +1,4 @@
+using System.Text;
 using ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser;
 using ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser.Worktrees;
 using LovelyGit.Tests.Git.WorkingTree;
@@ -50,5 +51,29 @@ public sealed class GitWorktreeReaderTests
                 Assert.Equal(linkedPath, worktree.Path);
                 Assert.Equal("feature/worktree", worktree.BranchName);
             });
+
+        var admin = Assert.Single(Directory.GetDirectories(Path.Combine(paths.GitDirectory, "worktrees")));
+        var longReason = "Portable " + new string('é', 5_000);
+        var lockPath = Path.Combine(admin, "locked");
+        await File.WriteAllTextAsync(
+            lockPath,
+            $"  {longReason}\r\n",
+            new UTF8Encoding(encoderShouldEmitUTF8Identifier: true));
+        Directory.CreateDirectory(Path.Combine(paths.GitDirectory, "worktrees", "malformed"));
+
+        worktrees = await GitWorktreeReader.ReadAsync(
+            paths.GitDirectory,
+            paths.WorkTreeDirectory,
+            CancellationToken.None);
+
+        var linked = Assert.Single(worktrees, item => !item.IsCurrent);
+        Assert.True(linked.IsLocked);
+        Assert.Equal(longReason, linked.LockReason);
+        var before = await File.ReadAllBytesAsync(lockPath);
+        using var cancellation = new CancellationTokenSource();
+        cancellation.Cancel();
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => GitWorktreeReader.ReadAsync(
+            paths.GitDirectory, paths.WorkTreeDirectory, cancellation.Token));
+        Assert.Equal(before, await File.ReadAllBytesAsync(lockPath));
     }
 }

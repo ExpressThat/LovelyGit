@@ -1,4 +1,4 @@
-using ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser.Refs;
+using System.Text;
 
 namespace ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser.Worktrees;
 
@@ -13,13 +13,12 @@ internal static class GitWorktreeReader
             .ConfigureAwait(false);
         var worktrees = new List<GitWorktree>
         {
-            await ReadWorktreeAsync(
-                    gitDirectory,
-                    currentWorkTreeDirectory,
-                    currentWorkTreeDirectory,
-                    isCurrent: true,
-                    cancellationToken)
-                .ConfigureAwait(false),
+            ReadWorktree(
+                gitDirectory,
+                currentWorkTreeDirectory,
+                currentWorkTreeDirectory,
+                isCurrent: true,
+                cancellationToken),
         };
 
         var worktreesDirectory = Path.Combine(commonGitDirectory, "worktrees");
@@ -30,9 +29,8 @@ internal static class GitWorktreeReader
             {
                 foreach (var adminDirectory in adminDirectories)
                 {
-                    var linked = await ReadLinkedWorktreeAsync(
-                            adminDirectory, currentWorkTreeDirectory, cancellationToken)
-                        .ConfigureAwait(false);
+                    var linked = ReadLinkedWorktree(
+                        adminDirectory, currentWorkTreeDirectory, cancellationToken);
                     if (linked != null)
                     {
                         worktrees.Add(linked);
@@ -50,11 +48,11 @@ internal static class GitWorktreeReader
                         CancellationToken = cancellationToken,
                         MaxDegreeOfParallelism = 8,
                     },
-                    async (index, token) =>
+                    (index, token) =>
                     {
-                        linked[index] = await ReadLinkedWorktreeAsync(
-                                adminDirectories[index], currentWorkTreeDirectory, token)
-                            .ConfigureAwait(false);
+                        linked[index] = ReadLinkedWorktree(
+                            adminDirectories[index], currentWorkTreeDirectory, token);
+                        return ValueTask.CompletedTask;
                     }).ConfigureAwait(false);
                 foreach (var worktree in linked)
                 {
@@ -72,43 +70,41 @@ internal static class GitWorktreeReader
             .ToArray();
     }
 
-    private static async Task<GitWorktree?> ReadLinkedWorktreeAsync(
+    private static GitWorktree? ReadLinkedWorktree(
         string adminDirectory,
         string currentWorkTreeDirectory,
         CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        var worktreePath = await ReadWorktreePathAsync(adminDirectory, cancellationToken)
-            .ConfigureAwait(false);
+        var worktreePath = ReadWorktreePath(adminDirectory, cancellationToken);
         if (string.IsNullOrWhiteSpace(worktreePath) ||
             IsSamePath(worktreePath, currentWorkTreeDirectory))
         {
             return null;
         }
 
-        return await ReadWorktreeAsync(
-                adminDirectory,
-                worktreePath,
-                currentWorkTreeDirectory,
-                isCurrent: false,
-                cancellationToken)
-            .ConfigureAwait(false);
+        return ReadWorktree(
+            adminDirectory,
+            worktreePath,
+            currentWorkTreeDirectory,
+            isCurrent: false,
+            cancellationToken);
     }
 
-    private static async Task<GitWorktree> ReadWorktreeAsync(
+    private static GitWorktree ReadWorktree(
         string gitDirectory,
         string worktreePath,
         string currentWorkTreeDirectory,
         bool isCurrent,
         CancellationToken cancellationToken)
     {
-        var branchName = await GitRefReader
-            .ResolveHeadBranchNameAsync(gitDirectory, cancellationToken)
-            .ConfigureAwait(false);
+        var head = ReadTrimmed(Path.Combine(gitDirectory, "HEAD"), cancellationToken);
+        const string HeadPrefix = "ref: refs/heads/";
+        var branchName = head.StartsWith(HeadPrefix, StringComparison.Ordinal)
+            ? head[HeadPrefix.Length..]
+            : null;
         var lockPath = Path.Combine(gitDirectory, "locked");
-        var lockReason = File.Exists(lockPath)
-            ? (await File.ReadAllTextAsync(lockPath, cancellationToken).ConfigureAwait(false)).Trim()
-            : string.Empty;
+        var lockReason = ReadTrimmed(lockPath, cancellationToken);
 
         return new GitWorktree(
             Path.GetFullPath(worktreePath),
@@ -133,7 +129,7 @@ internal static class GitWorktreeReader
         return Path.GetFullPath(Path.IsPathRooted(text) ? text : Path.Combine(gitDirectory, text));
     }
 
-    private static async Task<string> ReadWorktreePathAsync(
+    private static string ReadWorktreePath(
         string adminDirectory,
         CancellationToken cancellationToken)
     {
@@ -143,10 +139,47 @@ internal static class GitWorktreeReader
             return string.Empty;
         }
 
-        var gitFilePath = (await File.ReadAllTextAsync(gitDirPath, cancellationToken).ConfigureAwait(false))
-            .Trim();
+        var gitFilePath = ReadTrimmed(gitDirPath, cancellationToken);
         return Path.GetDirectoryName(gitFilePath) ?? string.Empty;
     }
+
+    private static string ReadTrimmed(string path, CancellationToken cancellationToken)
+    {
+        if (!File.Exists(path)) return string.Empty;
+        cancellationToken.ThrowIfCancellationRequested();
+        Span<byte> buffer = stackalloc byte[4 * 1024];
+        using var handle = File.OpenHandle(
+            path,
+            FileMode.Open,
+            FileAccess.Read,
+            FileShare.ReadWrite | FileShare.Delete,
+            FileOptions.SequentialScan);
+        var length = RandomAccess.Read(handle, buffer, 0);
+        Span<byte> overflow = stackalloc byte[1];
+        if (length == buffer.Length && RandomAccess.Read(handle, overflow, length) != 0)
+        {
+            var text = File.ReadAllText(path).Trim();
+            cancellationToken.ThrowIfCancellationRequested();
+            return text;
+        }
+        return Encoding.UTF8.GetString(TrimUtf8(buffer[..length]));
+    }
+
+    private static ReadOnlySpan<byte> TrimUtf8(ReadOnlySpan<byte> value)
+    {
+        if (value.Length >= 3 && value[0] == 0xef && value[1] == 0xbb && value[2] == 0xbf)
+        {
+            value = value[3..];
+        }
+        var start = 0;
+        while (start < value.Length && IsAsciiWhitespace(value[start])) start++;
+        var end = value.Length;
+        while (end > start && IsAsciiWhitespace(value[end - 1])) end--;
+        return value[start..end];
+    }
+
+    private static bool IsAsciiWhitespace(byte value) =>
+        value is (byte)' ' or (byte)'\t' or (byte)'\r' or (byte)'\n' or 0x0b or 0x0c;
 
     private static bool IsSamePath(string left, string right) =>
         Path.GetFullPath(left).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)

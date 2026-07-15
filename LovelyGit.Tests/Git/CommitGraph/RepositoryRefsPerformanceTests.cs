@@ -1,6 +1,8 @@
 using System.Diagnostics;
 using ExpressThat.LovelyGit.Services.Git.Cli;
 using ExpressThat.LovelyGit.Services.Git.CommitGraph;
+using ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser;
+using ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser.Worktrees;
 using Xunit.Abstractions;
 
 namespace LovelyGit.Tests.Git.CommitGraph;
@@ -40,6 +42,41 @@ public sealed class RepositoryRefsPerformanceTests(ITestOutputHelper output)
             output.WriteLine($"AllocatedBytes={allocated:N0}");
             Assert.True(elapsed < TimeSpan.FromMilliseconds(1_200), $"Refreshes took {elapsed}.");
             Assert.True(allocated < 60_000_000, $"Refreshes allocated {allocated:N0} bytes.");
+        }
+        finally
+        {
+            DeleteDirectory(directory);
+        }
+    }
+
+    [Fact]
+    public async Task LargeWorktreeMetadataRead_RemainsResponsive()
+    {
+        var (directory, _) = Template.CreateCopy("lovelygit-worktree-read-");
+        try
+        {
+            var paths = await GitRepositoryDiscovery.ResolveRepositoryPathsAsync(
+                directory.FullName, CancellationToken.None);
+            await GitWorktreeReader.ReadAsync(
+                paths.WorktreeGitDirectory, paths.WorkTreeDirectory, CancellationToken.None);
+            var allocatedBefore = GC.GetTotalAllocatedBytes(precise: true);
+            var startedAt = Stopwatch.GetTimestamp();
+
+            IReadOnlyList<GitWorktree>? worktrees = null;
+            for (var iteration = 0; iteration < 10; iteration++)
+            {
+                worktrees = await GitWorktreeReader.ReadAsync(
+                    paths.WorktreeGitDirectory, paths.WorkTreeDirectory, CancellationToken.None);
+            }
+
+            var elapsed = Stopwatch.GetElapsedTime(startedAt);
+            var allocated = GC.GetTotalAllocatedBytes(true) - allocatedBefore;
+            output.WriteLine($"WorktreesElapsedMs={elapsed.TotalMilliseconds:F2}");
+            output.WriteLine($"WorktreesAllocatedBytes={allocated:N0}");
+            Assert.Equal(WorktreeCount + 1, worktrees!.Count);
+            Assert.Equal(WorktreeCount / 2, worktrees.Count(item => item.IsLocked));
+            Assert.True(elapsed < TimeSpan.FromMilliseconds(600), $"Reads took {elapsed}.");
+            Assert.True(allocated < 5_000_000, $"Reads allocated {allocated:N0} bytes.");
         }
         finally
         {
