@@ -63,6 +63,7 @@ This is the durable inventory of LovelyGit performance work. Update it in the sa
 | Conflict Changes / Full-file switching | 258.44 ms for five Changes and five Full-file preparations over 20,000 lines and 500 conflicts | 33.33 ms using an ordered base/source interval index | Pure frontend benchmark; 87.10% lower synchronous preparation latency with overlap, precedence, and empty-side regression coverage | `42fc630` |
 | Large patch preview | 68.90 ms and 76.97 MB allocated for a roughly 10 MB, 600,000-change-line patch | 50.98 ms and 0.41 MB allocated with pooled block parsing | Disposable patch fixture; 26.01% lower latency and 99.47% fewer allocated bytes with BOM, CRLF, long-line, cancellation, and real apply/preflight coverage | `dfe357d` |
 | Large sparse-checkout manager read | 33.15 ms and 18.50 MB allocated for 100,000 patterns | 20.48 ms and 15.39 MB allocated with a single streaming collector | Disposable sparse repository; 38.22% lower latency and 16.81% fewer allocated bytes while retaining all returned patterns, cone semantics, order, cancellation, and no-mutation coverage | `d70f301` |
+| Large stash reflog refresh | 147.65 ms and 69.30 MB allocated for 100,000 stash entries | 81.03 ms and 28.18 MB allocated with pooled block parsing and in-place newest-first ordering | Disposable reflog fixture; 45.12% lower latency and 59.34% fewer allocated bytes with malformed-entry, long-line, CRLF, SHA-256, cancellation, and real stash-workflow coverage | `f2d0af1b` |
 | Real remote clone | Not previously recorded | 4.91 s; 42.5 MiB checkout; 34.99 MiB pack; +21.7 MB observed desktop private memory | Full `sharkdp/bat` clone through CMG; 20,693 objects with monotonic overall and phase progress | `d795e85` |
 | Complete backend test gate | Previously over one minute during early integration work | 55.89 s clean run; established baseline 30–36 s | `Invoke-LovelyGitTestGate.ps1`, 574 tests at this checkpoint | `021c0ee`, `089f559`, `3a4bcbd` |
 
@@ -111,6 +112,7 @@ Measured through the same Git commands LovelyGit uses, in a disposable 2,001-fil
 - Kept active traversal warm, cached bounded tab previews, preserved caches across reloads, and disposed idle sessions (`2ee809d`, `4e6d8d3`, `cd6124a`, `6275027`).
 - Reduced initial paging/retention, cancelled abandoned refreshes, and coalesced warm activation (`9a1856b`, `30547fd`, `4d29e3d`, `aec7cd9`, `e207118`).
 - Cached bounded ref snapshots, streamed peeled refs, reused refs across controls, and reduced loose-ref loading (`24806de`, `5ad6053`, `4e2ad7c`, `ede92d7`, `4c47c80`).
+- Streamed large stash reflogs from a pooled buffer and assigned newest-first selectors in place instead of retaining a second full raw-line representation (`f2d0af1b`).
 - Reset scroll on tab switches and reduced virtualized graph overscan (`6b0fcf6`, `ca11dfd`, `7180d47`).
 
 ### Native Git Parser and Object Storage
