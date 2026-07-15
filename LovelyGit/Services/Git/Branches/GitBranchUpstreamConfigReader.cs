@@ -76,7 +76,10 @@ internal static class GitBranchUpstreamConfigReader
 
         var trackedBranch = mergeRef[HeadsPrefix.Length..];
         var upstreamName = remoteName == "." ? trackedBranch : $"{remoteName}/{trackedBranch}";
-        results.Add(new GitBranchUpstream(branchName, upstreamName));
+        var refName = remoteName == "."
+            ? mergeRef
+            : $"refs/remotes/{remoteName}/{trackedBranch}";
+        results.Add(new GitBranchUpstream(branchName, upstreamName, refName));
     }
 
     private static bool TryReadBranchName(ReadOnlySpan<char> line, out string name)
@@ -108,4 +111,7 @@ internal static class GitBranchUpstreamConfigReader
     }
 }
 
-internal sealed record GitBranchUpstream(string BranchName, string UpstreamName);
+internal sealed record GitBranchUpstream(
+    string BranchName,
+    string UpstreamName,
+    string RefName);

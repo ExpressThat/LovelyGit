@@ -27,8 +27,12 @@ public sealed class GitBranchUpstreamConfigReaderTests
 
         Assert.Collection(
             upstreams,
-            upstream => Assert.Equal(new("main", "origin/main"), upstream),
-            upstream => Assert.Equal(new("zebra", "local-base"), upstream));
+            upstream => Assert.Equal(
+                new("main", "origin/main", "refs/remotes/origin/main"),
+                upstream),
+            upstream => Assert.Equal(
+                new("zebra", "local-base", "refs/heads/local-base"),
+                upstream));
     }
 
     [Fact]

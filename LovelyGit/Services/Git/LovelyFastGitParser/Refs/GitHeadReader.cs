@@ -47,25 +47,70 @@ internal static class GitHeadReader
         var branchName = refName.StartsWith(HeadPrefix, StringComparison.Ordinal)
             ? refName[HeadPrefix.Length..]
             : null;
-        var looseRefPath = Path.Combine(commonGitDirectory, refName.Replace('/', Path.DirectorySeparatorChar));
-        if (File.Exists(looseRefPath))
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            return new GitHeadState(
-                branchName,
-                GitLooseRefReader.TryReadObjectId(looseRefPath, objectFormat, out var looseId)
-                    ? looseId
-                    : null);
-        }
-
         return new GitHeadState(
             branchName,
-            await ResolvePackedRefAsync(
+            await ResolveRefAsync(
                     commonGitDirectory,
                     refName,
                     objectFormat,
                     cancellationToken)
                 .ConfigureAwait(false));
+    }
+
+    public static async Task<GitObjectId?> ResolveRefAsync(
+        string gitDirectory,
+        string refName,
+        GitObjectFormat objectFormat,
+        CancellationToken cancellationToken)
+    {
+        if (!TryGetLooseRefPath(gitDirectory, refName, out var looseRefPath))
+        {
+            return null;
+        }
+
+        if (File.Exists(looseRefPath))
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            return GitLooseRefReader.TryReadObjectId(looseRefPath, objectFormat, out var looseId)
+                ? looseId
+                : null;
+        }
+
+        return await ResolvePackedRefAsync(
+                gitDirectory,
+                refName,
+                objectFormat,
+                cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    private static bool TryGetLooseRefPath(
+        string gitDirectory,
+        string refName,
+        out string path)
+    {
+        path = string.Empty;
+        if (!refName.StartsWith("refs/", StringComparison.Ordinal) || refName.Contains('\0'))
+        {
+            return false;
+        }
+
+        try
+        {
+            var root = Path.GetFullPath(gitDirectory) + Path.DirectorySeparatorChar;
+            path = Path.GetFullPath(Path.Combine(
+                root,
+                refName.Replace('/', Path.DirectorySeparatorChar)));
+            var comparison = OperatingSystem.IsWindows()
+                ? StringComparison.OrdinalIgnoreCase
+                : StringComparison.Ordinal;
+            return path.StartsWith(root, comparison);
+        }
+        catch (Exception exception) when (
+            exception is ArgumentException or NotSupportedException or PathTooLongException)
+        {
+            return false;
+        }
     }
 
     private static async Task<GitObjectId?> ResolvePackedRefAsync(

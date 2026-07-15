@@ -62,6 +62,51 @@ public sealed class NativeRemoteSyncStatusReaderTests
     }
 
     [Fact]
+    public async Task ReadAsync_ResolvesPackedRemoteUpstreamWithoutLooseRefs()
+    {
+        using var repository = TemporaryRemoteGitRepository.Create();
+        repository.RunGit(repository.ClonePath, ["pack-refs", "--all", "--prune"]);
+
+        var status = await ReadAsync(repository.ClonePath);
+
+        Assert.True(status.HasUpstream);
+        Assert.True(status.IsUpstreamAvailable);
+        Assert.Equal("origin/master", status.UpstreamName);
+        Assert.Equal(status.LocalHash, status.UpstreamHash);
+    }
+
+    [Fact]
+    public async Task ReadAsync_ResolvesLocalBranchUpstreamContainingSlash()
+    {
+        using var repository = TemporaryGitRepository.Create();
+        await RunAsync(repository, "branch", "feature/base");
+        await RunAsync(repository, "config", "branch.master.remote", ".");
+        await RunAsync(repository, "config", "branch.master.merge", "refs/heads/feature/base");
+
+        var status = await ReadAsync(repository.Path);
+
+        Assert.True(status.HasUpstream);
+        Assert.True(status.IsUpstreamAvailable);
+        Assert.Equal("feature/base", status.UpstreamName);
+        Assert.Equal(status.LocalHash, status.UpstreamHash);
+    }
+
+    [Fact]
+    public async Task ReadAsync_DoesNotResolveAnUpstreamOutsideTheGitDirectory()
+    {
+        using var repository = TemporaryGitRepository.Create();
+        await RunAsync(repository, "config", "branch.master.remote", ".");
+        await RunAsync(repository, "config", "branch.master.merge", "refs/heads/../../outside");
+
+        var status = await ReadAsync(repository.Path);
+
+        Assert.True(status.HasUpstream);
+        Assert.False(status.IsUpstreamAvailable);
+        Assert.Equal("../../outside", status.UpstreamName);
+        Assert.Null(status.UpstreamHash);
+    }
+
+    [Fact]
     public async Task ReadAsync_HonorsCancellationOnTheLightweightPath()
     {
         using var repository = TemporaryGitRepository.Create();

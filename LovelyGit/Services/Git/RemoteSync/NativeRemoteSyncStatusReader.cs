@@ -34,48 +34,43 @@ internal static class NativeRemoteSyncStatusReader
         var upstreams = await GitBranchUpstreamConfigReader
             .ReadAsync(paths.GitDirectory, cancellationToken)
             .ConfigureAwait(false);
-        if (FindUpstream(upstreams, branchName) == null)
+        var upstream = FindUpstream(upstreams, branchName);
+        if (upstream == null)
         {
             return Calm(branchName, localHash);
         }
 
-        using var repository = await LovelyGitRepository.OpenAsync(repositoryPath, cancellationToken)
+        var upstreamTarget = await GitHeadReader.ResolveRefAsync(
+                paths.GitDirectory,
+                upstream.RefName,
+                objectFormat,
+                cancellationToken)
             .ConfigureAwait(false);
-        branchName = repository.CurrentBranchName;
-        localHash = repository.HeadTarget;
-        if (branchName == null || localHash == null)
-        {
-            return Calm(branchName, localHash);
-        }
-
-        var upstreamName = FindUpstream(upstreams, branchName);
-        if (upstreamName == null)
-        {
-            return Calm(branchName, localHash);
-        }
-
-        if (!repository.TryGetBranch(upstreamName, out var upstream) || upstream == null)
+        if (upstreamTarget == null)
         {
             return new RemoteSyncStatusResponse
             {
                 BranchName = branchName,
                 LocalHash = localHash.Value.ToString(),
-                UpstreamName = upstreamName,
+                UpstreamName = upstream.UpstreamName,
                 HasUpstream = true,
             };
         }
 
+        using var repository = await LovelyGitRepository
+            .OpenObjectDatabaseAsync(repositoryPath, cancellationToken)
+            .ConfigureAwait(false);
         var counts = await NativeBranchComparisonReader.CountHistoryAsync(
             repository,
             localHash.Value,
-            upstream.Target,
+            upstreamTarget.Value,
             cancellationToken).ConfigureAwait(false);
         return new RemoteSyncStatusResponse
         {
             BranchName = branchName,
-            UpstreamName = upstreamName,
+            UpstreamName = upstream.UpstreamName,
             LocalHash = localHash.Value.ToString(),
-            UpstreamHash = upstream.Target.ToString(),
+            UpstreamHash = upstreamTarget.Value.ToString(),
             AheadCount = counts.AheadCount,
             BehindCount = counts.BehindCount,
             HasUpstream = true,
@@ -84,13 +79,13 @@ internal static class NativeRemoteSyncStatusReader
         };
     }
 
-    private static string? FindUpstream(
+    private static GitBranchUpstream? FindUpstream(
         IEnumerable<GitBranchUpstream> upstreams,
         string branchName) =>
         upstreams.FirstOrDefault(upstream => string.Equals(
             upstream.BranchName,
             branchName,
-            StringComparison.Ordinal))?.UpstreamName;
+            StringComparison.Ordinal));
 
     private static RemoteSyncStatusResponse Calm(string? branchName, GitObjectId? localHash) =>
         new()
