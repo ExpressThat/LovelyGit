@@ -1,23 +1,15 @@
-import { lazy, Suspense } from "react";
 import type { BranchIntegrationMode } from "@/components/TopNavBar/components/BranchIntegrationDialog";
 import type { BranchMutationController } from "../hooks/useBranchMutations";
+import {
+	DeferredCheckoutRemoteBranchDialog,
+	DeferredDeleteRemoteBranchDialog,
+} from "./DeferredRemoteBranchDialogs";
 import {
 	LazyBranchComparisonDialog,
 	LazyBranchUpstreamDialog,
 	LazyDeleteBranchDialog,
 	LazyRenameBranchDialog,
 } from "./LazyGraphManagementDialogs";
-
-const CheckoutRemoteBranchDialog = lazy(() =>
-	import("./RemoteBranchDialogs").then((module) => ({
-		default: module.CheckoutRemoteBranchDialog,
-	})),
-);
-const DeleteRemoteBranchDialog = lazy(() =>
-	import("./RemoteBranchDialogs").then((module) => ({
-		default: module.DeleteRemoteBranchDialog,
-	})),
-);
 
 export function BranchManagementDialogs({
 	branchNames,
@@ -77,25 +69,21 @@ export function BranchManagementDialogs({
 				/>
 			) : null}
 			{controller.checkoutRemoteBranchName ? (
-				<Suspense fallback={null}>
-					<CheckoutRemoteBranchDialog
-						existingBranchNames={branchNames}
-						isBusy={controller.busyBranch !== null}
-						onConfirm={(name) => void controller.checkoutRemoteBranch(name)}
-						onOpenChange={controller.setCheckoutRemoteBranchName}
-						remoteBranchName={controller.checkoutRemoteBranchName}
-					/>
-				</Suspense>
+				<DeferredCheckoutRemoteBranchDialog
+					existingBranchNames={branchNames}
+					isBusy={controller.busyBranch !== null}
+					onConfirm={(name) => void controller.checkoutRemoteBranch(name)}
+					onOpenChange={controller.setCheckoutRemoteBranchName}
+					remoteBranchName={controller.checkoutRemoteBranchName}
+				/>
 			) : null}
 			{controller.deleteRemoteBranchName ? (
-				<Suspense fallback={null}>
-					<DeleteRemoteBranchDialog
-						isBusy={controller.busyBranch !== null}
-						onConfirm={() => void controller.deleteRemoteBranch()}
-						onOpenChange={controller.setDeleteRemoteBranchName}
-						remoteBranchName={controller.deleteRemoteBranchName}
-					/>
-				</Suspense>
+				<DeferredDeleteRemoteBranchDialog
+					isBusy={controller.busyBranch !== null}
+					onConfirm={() => void controller.deleteRemoteBranch()}
+					onOpenChange={controller.setDeleteRemoteBranchName}
+					remoteBranchName={controller.deleteRemoteBranchName}
+				/>
 			) : null}
 		</>
 	);
