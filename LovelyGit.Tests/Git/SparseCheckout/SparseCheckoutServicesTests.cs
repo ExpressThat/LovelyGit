@@ -151,6 +151,37 @@ public sealed class SparseCheckoutServicesTests
         Assert.Equal(["docs", "src/feature"], patterns);
     }
 
+    [Fact]
+    public void PatternParser_TrimsPatternsAndIgnoresComments()
+    {
+        var patterns = NativeSparseCheckoutReader.ReadPatterns(
+            [" # comment", "  /src/**  ", "", "\t!/generated/**"],
+            coneMode: false);
+
+        Assert.Equal(["/src/**", "!/generated/**"], patterns);
+    }
+
+    [Fact]
+    public async Task CancelledRead_DoesNotChangeSparseSpecification()
+    {
+        using var repository = SparseRepository.Create();
+        await CreateService().ExecuteAsync(
+            repository.Path,
+            SparseCheckoutAction.Set,
+            false,
+            ["/*", "!/src/other/"],
+            CancellationToken.None);
+        var specification = Path.Combine(repository.Path, ".git", "info", "sparse-checkout");
+        var before = await File.ReadAllBytesAsync(specification);
+        using var cancellation = new CancellationTokenSource();
+        cancellation.Cancel();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+            new NativeSparseCheckoutReader().ReadAsync(repository.Path, cancellation.Token));
+
+        Assert.Equal(before, await File.ReadAllBytesAsync(specification));
+    }
+
     private static GitSparseCheckoutCommandService CreateService(GitCliService? git = null)
     {
         var reader = new NativeSparseCheckoutReader();
