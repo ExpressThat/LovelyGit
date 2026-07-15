@@ -13,24 +13,58 @@ export function applyObservedWorkingTreeChanges(
 		return current;
 	}
 
-	const next = cloneChanges(current);
+	const paths = new Set(observedChanges.map((change) => change.path));
+	const { latest, next } = partitionObservedPaths(current, paths);
 	for (const change of observedChanges) {
-		if (
-			change.status === "Deleted" &&
-			removeUntrackedAddition(next, change.path)
-		) {
-			continue;
+		if (change.status === "Deleted") {
+			const existing = latest.get(change.path) ?? [];
+			const withoutUntrackedAddition = existing.filter(
+				(file) => file.group !== "Untracked" || file.status !== "Added",
+			);
+			if (withoutUntrackedAddition.length !== existing.length) {
+				latest.set(change.path, withoutUntrackedAddition);
+				continue;
+			}
 		}
 
-		removePath(next, change.path);
-		targetGroup(next, change).push(change);
+		latest.set(change.path, [change]);
+	}
+	const changedGroups = new Set<WorkingTreeChangedFile[]>();
+	for (const changes of latest.values()) {
+		for (const change of changes) {
+			const group = targetGroup(next, change);
+			group.push(change);
+			changedGroups.add(group);
+		}
 	}
 
-	sortGroup(next.staged);
-	sortGroup(next.unstaged);
-	sortGroup(next.untracked);
-	sortGroup(next.unmerged);
+	for (const group of changedGroups) sortGroup(group);
 	return withTotalCount(next);
+}
+
+function partitionObservedPaths(
+	current: WorkingTreeChangesResponse | null,
+	paths: Set<string>,
+) {
+	const latest = new Map<string, WorkingTreeChangedFile[]>();
+	const retainUnobserved = (file: WorkingTreeChangedFile) => {
+		if (!paths.has(file.path)) return true;
+		const files = latest.get(file.path);
+		if (files) files.push(file);
+		else latest.set(file.path, [file]);
+		return false;
+	};
+	return {
+		latest,
+		next: {
+			isComplete: current?.isComplete ?? true,
+			staged: (current?.staged ?? []).filter(retainUnobserved),
+			unstaged: (current?.unstaged ?? []).filter(retainUnobserved),
+			untracked: (current?.untracked ?? []).filter(retainUnobserved),
+			unmerged: (current?.unmerged ?? []).filter(retainUnobserved),
+			totalCount: current?.totalCount ?? 0,
+		},
+	};
 }
 
 export function shouldApplyObservedWorkingTreeChanges(
@@ -62,39 +96,14 @@ export function countObservedNewPaths(
 		return 0;
 	}
 
-	const existing = new Set(allFiles(current).map((file) => file.path));
+	const existing = new Set<string>();
+	if (current) {
+		for (const file of current.staged) existing.add(file.path);
+		for (const file of current.unstaged) existing.add(file.path);
+		for (const file of current.untracked) existing.add(file.path);
+		for (const file of current.unmerged) existing.add(file.path);
+	}
 	return observedChanges.filter((file) => !existing.has(file.path)).length;
-}
-
-function cloneChanges(
-	current: WorkingTreeChangesResponse | null,
-): WorkingTreeChangesResponse {
-	return {
-		isComplete: current?.isComplete ?? true,
-		staged: [...(current?.staged ?? [])],
-		unstaged: [...(current?.unstaged ?? [])],
-		untracked: [...(current?.untracked ?? [])],
-		unmerged: [...(current?.unmerged ?? [])],
-		totalCount: current?.totalCount ?? 0,
-	};
-}
-
-function removePath(changes: WorkingTreeChangesResponse, path: string) {
-	changes.staged = changes.staged.filter((file) => file.path !== path);
-	changes.unstaged = changes.unstaged.filter((file) => file.path !== path);
-	changes.untracked = changes.untracked.filter((file) => file.path !== path);
-	changes.unmerged = changes.unmerged.filter((file) => file.path !== path);
-}
-
-function removeUntrackedAddition(
-	changes: WorkingTreeChangesResponse,
-	path: string,
-) {
-	const previousLength = changes.untracked.length;
-	changes.untracked = changes.untracked.filter(
-		(file) => file.path !== path || file.status !== "Added",
-	);
-	return changes.untracked.length !== previousLength;
 }
 
 function targetGroup(
@@ -118,17 +127,12 @@ function withTotalCount(
 ): WorkingTreeChangesResponse {
 	return {
 		...changes,
-		totalCount: allFiles(changes).length,
+		totalCount:
+			changes.staged.length +
+			changes.unstaged.length +
+			changes.untracked.length +
+			changes.unmerged.length,
 	};
-}
-
-function allFiles(changes: WorkingTreeChangesResponse | null) {
-	return [
-		...(changes?.staged ?? []),
-		...(changes?.unstaged ?? []),
-		...(changes?.untracked ?? []),
-		...(changes?.unmerged ?? []),
-	];
 }
 
 function sortGroup(files: WorkingTreeChangedFile[]) {

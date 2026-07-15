@@ -42,6 +42,47 @@ describe("applyObservedWorkingTreeChanges", () => {
 		expect(next?.unstaged).toEqual([]);
 		expect(next?.totalCount).toBe(0);
 	});
+
+	it("removes only an untracked addition when another state shares its path", () => {
+		const shared = file("partial.txt", "Added", "Untracked");
+		const current = response([shared]);
+		current.staged = [file("partial.txt", "Modified", "Staged")];
+		current.totalCount = 2;
+
+		const next = applyObservedWorkingTreeChanges(current, [
+			file("partial.txt", "Deleted", "Unstaged"),
+		]);
+
+		expect(next?.staged).toHaveLength(1);
+		expect(next?.untracked).toEqual([]);
+		expect(next?.unstaged).toEqual([]);
+	});
+
+	it("applies a maximum-sized event burst without repeated full-list scans", () => {
+		const current = response(
+			Array.from({ length: 20_000 }, (_, index) =>
+				file(
+					`src/${index.toString().padStart(5, "0")}.ts`,
+					"Added",
+					"Untracked",
+				),
+			),
+		);
+		const observed = current.untracked.slice(-25).map((entry) => ({
+			...entry,
+			group: "Unstaged" as const,
+			status: "Modified",
+		}));
+		const startedAt = performance.now();
+
+		const next = applyObservedWorkingTreeChanges(current, observed);
+		const elapsed = performance.now() - startedAt;
+		console.info(`Observed 25-of-20k burst: ${elapsed.toFixed(2)} ms`);
+
+		expect(next?.unstaged).toHaveLength(25);
+		expect(next?.untracked).toHaveLength(19_975);
+		expect(elapsed).toBeLessThan(12);
+	});
 });
 
 describe("countObservedNewPaths", () => {
