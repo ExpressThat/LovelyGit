@@ -2,11 +2,19 @@
 
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { LazyDeleteTagDialog } from "./LazyGraphManagementDialogs";
+import {
+	LazyDeleteTagDialog,
+	LazyRenameBranchDialog,
+} from "./LazyGraphManagementDialogs";
 
 vi.mock("./DeleteTagDialog", () => ({
 	DeleteTagDialog: ({ tagName }: { tagName: string | null }) =>
 		tagName ? <div>Delete tag dialog loaded</div> : null,
+}));
+vi.mock("./RenameBranchDialog", () => ({
+	RenameBranchDialog: ({ branchName }: { branchName: string }) => (
+		<div>Rename {branchName} loaded</div>
+	),
 }));
 
 describe("LazyGraphManagementDialogs", () => {
@@ -23,5 +31,17 @@ describe("LazyGraphManagementDialogs", () => {
 		).not.toBeInTheDocument();
 		view.rerender(<LazyDeleteTagDialog {...props} tagName="v1.0.0" />);
 		expect(await screen.findByText("Delete tag dialog loaded")).toBeVisible();
+	});
+
+	it("reveals the rename dialog after selecting a branch", async () => {
+		const props = {
+			branchName: "topic",
+			existingBranchNames: ["main", "topic"],
+			isBusy: false,
+			onConfirm: vi.fn(),
+			onOpenChange: vi.fn(),
+		};
+		render(<LazyRenameBranchDialog {...props} />);
+		expect(await screen.findByText("Rename topic loaded")).toBeVisible();
 	});
 });

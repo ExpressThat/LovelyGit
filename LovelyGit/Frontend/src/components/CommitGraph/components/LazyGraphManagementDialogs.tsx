@@ -6,6 +6,12 @@ import type { CheckoutTagDialog } from "./CheckoutTagDialog";
 import type { CommitComparisonDialog } from "./CommitComparisonDialog";
 import type { CreateTagDialog } from "./CreateTagDialog";
 import type { CreateWorktreeDialog } from "./CreateWorktreeDialog";
+import {
+	DeferredBranchComparisonDialog,
+	DeferredBranchUpstreamDialog,
+	DeferredDeleteBranchDialog,
+	DeferredRenameBranchDialog,
+} from "./DeferredGraphManagementDialogs";
 import type { DeleteBranchDialog } from "./DeleteBranchDialog";
 import type { DeleteRemoteTagDialog } from "./DeleteRemoteTagDialog";
 import type { DeleteTagDialog } from "./DeleteTagDialog";
@@ -13,15 +19,6 @@ import type { LockWorktreeDialog } from "./LockWorktreeDialog";
 import type { RemoveWorktreeDialog } from "./RemoveWorktreeDialog";
 import type { RenameBranchDialog } from "./RenameBranchDialog";
 
-const BranchComparison = lazy(() =>
-	importDialog(
-		"BranchComparisonDialog",
-		() => import("./BranchComparisonDialog"),
-	),
-);
-const BranchUpstream = lazy(() =>
-	importDialog("BranchUpstreamDialog", () => import("./BranchUpstreamDialog")),
-);
 const CommitComparison = lazy(() =>
 	importDialog(
 		"CommitComparisonDialog",
@@ -36,9 +33,6 @@ const CreateTag = lazy(() =>
 );
 const CreateWorktree = lazy(() =>
 	importDialog("CreateWorktreeDialog", () => import("./CreateWorktreeDialog")),
-);
-const DeleteBranch = lazy(() =>
-	importDialog("DeleteBranchDialog", () => import("./DeleteBranchDialog")),
 );
 const DeleteRemoteTag = lazy(() =>
 	importDialog(
@@ -55,23 +49,18 @@ const LockWorktree = lazy(() =>
 const RemoveWorktree = lazy(() =>
 	importDialog("RemoveWorktreeDialog", () => import("./RemoveWorktreeDialog")),
 );
-const RenameBranch = lazy(() =>
-	importDialog("RenameBranchDialog", () => import("./RenameBranchDialog")),
-);
 
 export function LazyBranchComparisonDialog(
 	props: ComponentProps<typeof BranchComparisonDialog>,
 ) {
 	return props.targetBranchName ? (
-		<Boundary>{<BranchComparison {...props} />}</Boundary>
+		<DeferredBranchComparisonDialog {...props} />
 	) : null;
 }
 export function LazyBranchUpstreamDialog(
 	props: ComponentProps<typeof BranchUpstreamDialog>,
 ) {
-	return props.branchName ? (
-		<Boundary>{<BranchUpstream {...props} />}</Boundary>
-	) : null;
+	return props.branchName ? <DeferredBranchUpstreamDialog {...props} /> : null;
 }
 export function LazyCommitComparisonDialog(
 	props: ComponentProps<typeof CommitComparisonDialog>,
@@ -98,9 +87,7 @@ export function LazyCreateWorktreeDialog(
 export function LazyDeleteBranchDialog(
 	props: ComponentProps<typeof DeleteBranchDialog>,
 ) {
-	return props.branchName ? (
-		<Boundary>{<DeleteBranch {...props} />}</Boundary>
-	) : null;
+	return props.branchName ? <DeferredDeleteBranchDialog {...props} /> : null;
 }
 export function LazyDeleteRemoteTagDialog(
 	props: ComponentProps<typeof DeleteRemoteTagDialog>,
@@ -127,9 +114,7 @@ export function LazyRemoveWorktreeDialog(
 export function LazyRenameBranchDialog(
 	props: ComponentProps<typeof RenameBranchDialog>,
 ) {
-	return props.branchName ? (
-		<Boundary>{<RenameBranch {...props} />}</Boundary>
-	) : null;
+	return props.branchName ? <DeferredRenameBranchDialog {...props} /> : null;
 }
 
 function Boundary({ children }: { children: ReactNode }) {
