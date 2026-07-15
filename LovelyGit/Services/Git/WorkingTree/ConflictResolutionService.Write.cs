@@ -24,10 +24,14 @@ internal sealed partial class ConflictResolutionService
         CancellationToken cancellationToken)
     {
         path = WorkingTreePath.NormalizeRelative(path);
-        using var repository = await LovelyGitRepository.OpenAsync(repositoryPath, cancellationToken)
+        var paths = await GitRepositoryDiscovery.ResolveRepositoryPathsAsync(
+            repositoryPath, cancellationToken).ConfigureAwait(false);
+        var objectFormat = await GitRepositoryDiscovery.ReadObjectFormatAsync(
+            paths.GitDirectory, cancellationToken)
             .ConfigureAwait(false);
-        var entries = await ReadConflictEntriesAsync(repository, path, cancellationToken).ConfigureAwait(false);
-        var targetPath = WorkingTreePath.Resolve(repository.WorkTreeDirectory, path);
+        var entries = await ReadConflictEntriesAsync(
+            paths.WorktreeGitDirectory, objectFormat, path, cancellationToken).ConfigureAwait(false);
+        var targetPath = WorkingTreePath.Resolve(paths.WorkTreeDirectory, path);
         if (File.Exists(targetPath) && File.GetAttributes(targetPath).HasFlag(FileAttributes.ReparsePoint))
         {
             throw new InvalidOperationException("Symbolic-link conflicts are not supported yet.");
@@ -41,8 +45,14 @@ internal sealed partial class ConflictResolutionService
             throw new InvalidOperationException("The result changed after the resolver opened. Reload it before resolving.");
         }
 
-        var bytes = await SelectResultAsync(repository, entries, resultText, source, deleteResult, cancellationToken)
-            .ConfigureAwait(false);
+        var bytes = await SelectResultAsync(
+            paths.GitDirectory,
+            objectFormat,
+            entries,
+            resultText,
+            source,
+            deleteResult,
+            cancellationToken).ConfigureAwait(false);
         var backupPath = targetPath + $".lovelygit-backup-{Guid.NewGuid():N}";
         var temporaryPath = targetPath + $".lovelygit-result-{Guid.NewGuid():N}";
         var hadOriginal = File.Exists(targetPath);
@@ -89,7 +99,8 @@ internal sealed partial class ConflictResolutionService
     }
 
     private static async Task<byte[]?> SelectResultAsync(
-        LovelyGitRepository repository,
+        string gitDirectory,
+        GitObjectFormat objectFormat,
         IReadOnlyDictionary<int, GitIndexEntry> entries,
         string? resultText,
         ConflictResolutionSource? source,
@@ -124,9 +135,20 @@ internal sealed partial class ConflictResolutionService
             ConflictResolutionSource.Theirs => 3,
             _ => throw new InvalidOperationException("A conflict result is required."),
         };
-        return entries.TryGetValue(stage, out var entry)
-            ? await repository.ReadBlobAsync(entry.ObjectId, cancellationToken).ConfigureAwait(false)
-            : null;
+        if (!entries.TryGetValue(stage, out var entry))
+        {
+            return null;
+        }
+
+        using var objectStore = new GitObjectStore(gitDirectory, objectFormat);
+        var data = await objectStore
+            .ReadObjectWithoutCachingAsync(entry.ObjectId, cancellationToken)
+            .ConfigureAwait(false);
+        if (data.Kind != GitObjectKind.Blob)
+        {
+            throw new InvalidDataException($"Object is not a blob: {entry.ObjectId}");
+        }
+        return data.Data;
     }
 
     internal static bool ContainsConflictMarkers(ReadOnlySpan<char> text)

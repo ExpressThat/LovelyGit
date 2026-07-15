@@ -79,6 +79,53 @@ public sealed class ConflictResolutionReadPerformanceTests(ITestOutputHelper out
         }
     }
 
+    [Fact]
+    public async Task LargeConflict_ManualSaveDoesNotLoadRepositoryRefs()
+    {
+        var (directory, _) = Template.CreateCopy("lovelygit-conflict-save-");
+        try
+        {
+            var git = new GitCliService();
+            var service = new ConflictResolutionService(new WorkingTreeIndexService(git));
+            var opened = await service.ReadAsync(
+                directory.FullName,
+                "shared.txt",
+                CommitDiffViewMode.SideBySide,
+                ignoreWhitespace: false,
+                CancellationToken.None);
+            var resolved = BuildText("resolved");
+            GC.Collect();
+            var allocatedBefore = GC.GetTotalAllocatedBytes(precise: true);
+            var startedAt = Stopwatch.GetTimestamp();
+
+            await service.ResolveAsync(
+                directory.FullName,
+                "shared.txt",
+                opened.WorktreeFingerprint,
+                resolved,
+                source: null,
+                deleteResult: false,
+                CancellationToken.None);
+            var elapsed = Stopwatch.GetElapsedTime(startedAt);
+            var allocated = GC.GetTotalAllocatedBytes(true) - allocatedBefore;
+
+            output.WriteLine($"SaveMs={elapsed.TotalMilliseconds:F2}; SaveAllocated={allocated:N0}");
+            var unmerged = await git.ExecuteBufferedAsync(
+                ["ls-files", "--unmerged"],
+                directory.FullName,
+                cancellationToken: CancellationToken.None);
+            Assert.Empty(unmerged.StandardOutput);
+            Assert.Equal(resolved, await File.ReadAllTextAsync(
+                Path.Combine(directory.FullName, "shared.txt")));
+            Assert.True(elapsed < TimeSpan.FromMilliseconds(200), $"Save took {elapsed}.");
+            Assert.True(allocated < 1_000_000, $"Save allocated {allocated:N0} bytes.");
+        }
+        finally
+        {
+            DeleteDirectory(directory);
+        }
+    }
+
     private static bool InitializeTemplate(DirectoryInfo directory)
     {
         InitializedRepositoryTemplate.CopyInto(directory);
