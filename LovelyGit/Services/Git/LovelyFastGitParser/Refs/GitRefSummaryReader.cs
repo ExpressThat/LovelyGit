@@ -19,9 +19,8 @@ internal static class GitRefSummaryReader
             seenFullNames,
             remotePrefixes,
             maxTags,
-            tagCount,
+            ref tagCount,
             cancellationToken);
-        tagCount = refs.Count(reference => reference.Kind == GitRefKind.Tag);
         await ReadPackedRefsAsync(gitDirectory, objectFormat, refs, seenFullNames, remotePrefixes, maxTags, tagCount, cancellationToken)
             .ConfigureAwait(false);
         await ReadStashRefAsync(gitDirectory, objectFormat, refs, cancellationToken).ConfigureAwait(false);
@@ -41,7 +40,7 @@ internal static class GitRefSummaryReader
         HashSet<string> seenFullNames,
         HashSet<string> remotePrefixes,
         int maxTags,
-        int tagCount,
+        ref int tagCount,
         CancellationToken cancellationToken)
     {
         var refsDirectory = Path.Combine(gitDirectory, "refs");
@@ -54,13 +53,50 @@ internal static class GitRefSummaryReader
         {
             cancellationToken.ThrowIfCancellationRequested();
             var fullName = Path.GetRelativePath(gitDirectory, file).Replace('\\', '/');
-            var text = File.ReadAllText(file).AsSpan().Trim();
-            if (GitObjectId.TryParse(text, objectFormat, out var id))
+            if (TryReadLooseRef(file, objectFormat, out var id))
             {
                 AddRef(refs, seenFullNames, remotePrefixes, fullName, id, maxTags, ref tagCount);
             }
         }
     }
+
+    private static bool TryReadLooseRef(
+        string path,
+        GitObjectFormat objectFormat,
+        out GitObjectId id)
+    {
+        Span<byte> buffer = stackalloc byte[128];
+        using var handle = File.OpenHandle(
+            path,
+            FileMode.Open,
+            FileAccess.Read,
+            FileShare.ReadWrite | FileShare.Delete,
+            FileOptions.SequentialScan);
+        var length = RandomAccess.Read(handle, buffer, 0);
+        Span<byte> overflow = stackalloc byte[1];
+        if (length == buffer.Length && RandomAccess.Read(handle, overflow, length) != 0)
+        {
+            return GitObjectId.TryParse(
+                File.ReadAllText(path).AsSpan().Trim(),
+                objectFormat,
+                out id);
+        }
+
+        var value = TrimAsciiWhitespace(buffer[..length]);
+        return GitObjectId.TryParseAscii(value, objectFormat, out id);
+    }
+
+    private static ReadOnlySpan<byte> TrimAsciiWhitespace(ReadOnlySpan<byte> value)
+    {
+        var start = 0;
+        while (start < value.Length && IsAsciiWhitespace(value[start])) start++;
+        var end = value.Length;
+        while (end > start && IsAsciiWhitespace(value[end - 1])) end--;
+        return value[start..end];
+    }
+
+    private static bool IsAsciiWhitespace(byte value) =>
+        value is (byte)' ' or (byte)'\t' or (byte)'\r' or (byte)'\n' or 0x0b or 0x0c;
 
     private static async Task ReadPackedRefsAsync(
         string gitDirectory,
