@@ -132,6 +132,8 @@ This is the durable inventory of LovelyGit performance work. Update it in the sa
 - Batched each commit-graph page cache write into one caller-owned transaction instead of opening one auto-commit transaction per row (`this commit`).
 - Verified 120 real WebView2 tab activations between the Chromium-scale repository and a disposable repository: small-repository content was ready in about 16 ms, Chromium was typically ready in 22-28 ms, and the worst sample was 37.6 ms.
 - Verified multi-repository switching does not retain linearly: post-GC JavaScript heap increased only 0.36 MB across 120 activations while the active DOM count stayed constant; the on-disk app/cache databases remained bounded at 3 MiB and 5 MiB.
+- Measured local-remote transport through the real WebView2 UI with an isolated bare remote: Fetch All and Pull (fast-forward only) each reflected in about 104 ms, and Push completed in about 96 ms.
+- Verified fetch, pull, and push disable the transport toolbar during mutation, restore it afterward, refresh refs and ahead/behind state, and leave no page or console errors. Existing integration coverage protects diverged fast-forward rejection, force-with-lease safety, cancellation, and remote no-mutation on failure.
 
 ## Rejected or Deferred Experiments
 
@@ -146,5 +148,5 @@ This is the durable inventory of LovelyGit performance work. Update it in the sa
 
 - Branch, tag, remote, stash, worktree, submodule, LFS, sparse checkout, bisect, rebase, merge, cherry-pick, revert, reset, and patch workflows.
 - App startup, repository activation, tab switching, settings, command palette, dialogs, and every lazy overlay.
-- Clone/fetch/pull/push progress, authentication hand-off, cancellation, and large transfer memory.
+- Clone progress, authentication hand-off, cancellation, and large-transfer memory; repeat fetch/pull/push against a representative network remote where network variance can be isolated.
 - Cold/warm cache invalidation cost and long-session resource scaling beyond the measured overlay, tab, handle, and transaction baselines.
