@@ -29,6 +29,7 @@ internal sealed partial class WorkingTreeWatcherService : IDisposable
     private readonly List<WorkingTreeChangedFile> _pendingObservedChanges = new();
     private readonly Dictionary<string, RecentObservedChange> _recentObservedChanges =
         new(StringComparer.Ordinal);
+    private readonly Timer _recentObservedChangesCleanupTimer;
     private Guid? _activeRepositoryId;
     private string? _activeRepositoryPath;
     private string? _activeGitDirectory;
@@ -48,6 +49,11 @@ internal sealed partial class WorkingTreeWatcherService : IDisposable
     {
         _nativeMessaging = nativeMessaging;
         _knownGitRepositorysRepository = knownGitRepositorysRepository;
+        _recentObservedChangesCleanupTimer = new Timer(
+            static state => ((WorkingTreeWatcherService)state!).ExpireRecentObservedChanges(),
+            this,
+            Timeout.InfiniteTimeSpan,
+            Timeout.InfiniteTimeSpan);
     }
 
     public async Task SwitchActiveRepositoryAsync(Guid? repositoryId)
@@ -157,6 +163,8 @@ internal sealed partial class WorkingTreeWatcherService : IDisposable
             _disposed = true;
             StopActiveWatchersCore();
         }
+
+        _recentObservedChangesCleanupTimer.Dispose();
     }
 
 }

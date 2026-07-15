@@ -66,8 +66,7 @@ internal sealed partial class WorkingTreeWatcherService : IDisposable
             var timestamp = Stopwatch.GetTimestamp();
             foreach (var change in _pendingObservedChanges)
             {
-                _recentObservedChanges[change.Path] = new RecentObservedChange(
-                    change.Status, timestamp);
+                RememberRecentObservedChange(change, timestamp);
             }
             _pendingObservedChanges.Clear();
         }
@@ -225,6 +224,9 @@ internal sealed partial class WorkingTreeWatcherService : IDisposable
         _workTreeSnapshot = null;
         _pendingObservedChanges.Clear();
         _recentObservedChanges.Clear();
+        _recentObservedChangesCleanupTimer.Change(
+            Timeout.InfiniteTimeSpan,
+            Timeout.InfiniteTimeSpan);
     }
 
 }
