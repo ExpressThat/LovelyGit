@@ -1,6 +1,11 @@
 # LovelyGit Performance Ledger
 
-This is the durable inventory of LovelyGit performance work. Update it in the same commit as every performance change. Record the user-visible path, the optimization, evidence, memory effect, and commit. Keep rejected experiments so future work does not repeat them.
+This is the durable index of LovelyGit performance work. Update the linked ledgers in the same commit as every performance change. Record the user-visible path, the optimization, evidence, memory effect, and commit. Keep rejected experiments so future work does not repeat them.
+
+## Detailed Ledgers
+
+- [Verified performance results](docs/performance/verified-results.md)
+- [Completed optimization inventory](docs/performance/optimization-inventory.md)
 
 ## Measurement Rules
 
@@ -9,81 +14,6 @@ This is the durable inventory of LovelyGit performance work. Update it in the sa
 - Report cold and warm behavior when caches materially affect the result.
 - Treat latency, allocations, retained memory, payload size, process count, and test duration as separate budgets.
 - Do not claim a win without a before/after measurement or a focused regression benchmark.
-
-## Verified Results
-
-| Area | Before | After | Fixture and evidence | Commit |
-| --- | ---: | ---: | --- | --- |
-| Commit graph random scroll | 24.5 ms average; 2,305 DOM nodes | 13.9 ms average; 1,676 DOM nodes | Chromium CMG scroll journey; virtual overscan 36 to 8 | `7180d47` |
-| Large worktree status | 596 ms | 75.7 ms | 10,000-file disposable repository; choose Git status above the native scan threshold | `0a8d9e1` |
-| Large checkout / worktree creation | 1.69-1.82 s / 2.21-2.28 s | 0.97-1.03 s / 1.28-1.36 s | Roughly 1,000 changed paths / 2,001-file worktree; bounded four-worker checkout above 100 paths | `db9ea3b` |
-| No-match commit search | 1,698 ms | 536 ms | Chromium CMG search journey; bounded first result budget | `dc5b68c` |
-| Chromium working changes | 1.49 s with no useful intermediate result | 1.07 s tracked result; 1.62 s complete result | CMG refresh; concurrent tracked-only and complete scans | `3a4bcbd` |
-| Cold Settings / Command Palette | 321.5 ms / 315.4 ms | 46.0 ms / 19.7 ms | Chromium CMG click-to-dialog timing; immediate deferred reveal while preserving lazy chunks | `f017242` |
-| Cold Commit Search | 319.6 ms | 23.4 ms | Chromium CMG click-to-dialog timing; immediate deferred reveal while preserving lazy loading | `5378470` |
-| Cold Remote Manager | 307.6 ms | 16.5 ms | Chromium CMG click-to-dialog timing; immediate deferred reveal while preserving its 13.15 kB lazy chunk | `a4ac6fe` |
-| Cold Rename Branch | 314.4 ms | 24.8 ms | Chromium CMG context-menu-to-dialog timing; immediate deferred reveal while preserving its lazy chunk | `7cff88b` |
-| Cold Cherry-pick | 312.8 ms | 21.6 ms | Chromium CMG commit-context-menu-to-dialog timing; immediate deferred reveal while preserving its lazy chunk | `5729cad` |
-| Cold Delete Tag | 314.7 ms | 22.4 ms | Chromium CMG tag-context-menu-to-confirmation timing; immediate deferred reveal while preserving its lazy chunk | `cfc2122` |
-| Cold Create Worktree | 316.2 ms | 20.6 ms | Chromium CMG branch-context-menu-to-dialog timing; immediate deferred reveal while preserving its lazy chunk | `fd2142a` |
-| Cold Reflog | 312.4 ms | 21.2 ms | Chromium CMG branch-context-menu-to-dialog timing; immediate deferred reveal while preserving its 9.27 kB lazy chunk | `a0dcf12` |
-| Cold Git LFS Manager | 304.6 ms | 14.5 ms | Chromium CMG toolbar-click-to-dialog timing; shared immediate deferred reveal preserving independent manager chunks | `b1fc2e6` |
-| Cold Commit Identity | 310.1 ms | 34.5 ms | Chromium CMG working-changes-click-to-dialog timing; immediate deferred reveal preserving its lazy dialog chunk | `74f068a` |
-| Cold Remote Branch Checkout | 311.4 ms | 17.5 ms | Disposable-remote CMG context-menu-to-dialog timing; immediate deferred reveal preserving the combined remote-dialog chunk | `a2648d6` |
-| Warm Working Changes Content | 310.5 ms | 44.2 ms | Chromium CMG toolbar-click-to-meaningful-content timing; immediate deferred reveal preserving the 43.45 kB lazy chunk | `3cb31fa` |
-| Cold New Tab | 309.0 ms | 27.2 ms | Chromium CMG plus-click-to-onboarding timing; immediate deferred reveal preserving the separate New Tab chunk | `88b7b26` |
-| Cold Stash File Diff | 314.1 ms | 15.6 ms | Disposable-stash CMG file-click-to-diff timing; immediate deferred reveal preserving the 6.68 kB commit-diff chunk | `95b00d5` |
-| Cold Bisect Session Content | 304.0 ms | 13.5 ms | Chromium CMG toolbar-click-to-meaningful-content timing; immediate deferred reveal preserving the 5.77 kB session chunk | `79a6057` |
-| Cold Force Push Confirmation | 318.2 ms | 13.4 ms | Chromium CMG menu-item-to-safety-dialog timing; immediate deferred reveal preserving the 2.14 kB confirmation chunk | `1f749da` |
-| Repeated overlay retention | 10.88 MB post-GC heap | 13.61 MB after 60 opens; 13.83 MB after 120 | Chromium CMG Settings/Bisect/Force Push cycles; second pass +0.22 MB and zero live-DOM growth | `9913036` |
-| Working Changes retention | 13.97 MB warmed post-GC heap | 15.31 MB after 20+ opens; 15.39 MB after 10 more | Chromium CMG panel cycles; second pass +0.08 MB and live DOM stable at 1,687 nodes | `9913036` |
-| Bisect handle retention | 1,065 host handles | 1,059 after 30 additional reads and 2 s settle | Chromium CMG read-only session loads; no linear native handle growth | `9913036` |
-| Warm four-tab desktop footprint | Not previously recorded | 517.9 MB private; 825.3 MB working set; 4,420 handles | LovelyGit host plus owned WebView2 tree after broad Chromium audit; host itself was 121.1 MB private | `9913036` |
-| Repeated fetch/repack pack handles | One pack and index handle retained per obsolete pack generation until repository disposal | Only the current generation remains; in-flight old readers release their exact handles on completion | Disposable packed repository repacked with `gc --prune=now`; native parser resource regression | `986719d` |
-| Working-tree watcher path retention | Every uniquely observed path remained in the duplicate-suppression dictionary until repository switch | Entries expire after the 500 ms suppression horizon; one reusable timer and no per-event cleanup queue | Real `FileSystemWatcher` regression verifies publication, temporary retention, and automatic release | `fc63548` |
-| Commit-search retention timer | Periodic 30-second wake-up and collection snapshot for the entire app lifetime, including while idle | One-shot timer exists only while a partial native search session is retained; idle searches perform no timer work | Session lifecycle regression verifies idle, retained, consumed, and expired scheduling states | `f1f97be` |
-| Resize-drag listener ownership | Four resize surfaces depended on a future pointer-up to release global listeners | Shared lifecycle-owned drag hook releases on pointer-up, pointer cancellation, window blur, replacement, and component unmount | Frontend regression exercises completion, cancellation, and mid-drag unmount | `029e30b` |
-| Native bridge send failure | A synchronous host-send failure retained its pending request and timeout for 10 seconds | Send failure immediately clears both before rejecting; late responses cannot record false timing | Transport regression asserts zero timers and no late-response performance event after failure | `fff3f59` |
-| Loose repository-ref refresh | 188.61 ms and 21.60 MB allocated for five reads of 500 loose refs | 160.15 ms and 1.84 MB allocated; normal ref files parse from a stack buffer and tag counting stays single-pass | Isolated disposable 500-ref benchmark; 14.95% faster and 91.48% fewer allocated bytes | `dcb5d89` |
-| Native repository loose-ref load | 625.47 ms and 22.44 MB allocated for five cold-cache loads of 500 loose refs | 615.16 ms and 2.68 MB allocated; shares the stack-buffer reader with repository-ref refresh | Isolated disposable multi-directory benchmark; latency effectively unchanged and allocated bytes reduced 88.06% | `c609410` |
-| Optimistic bulk unstage | 118.97 ms for 10,000 partially staged files due to repeated linear working-file lookup | 3.49 ms using one path index for the bulk mutation | Pure frontend large-list benchmark; 97.07% lower synchronous interaction latency with a 50 ms regression budget | `1a8771d` |
-| Observed working-tree burst | 14.49 ms to apply 25 observed paths to a 20,000-file state with one full-list filter per path | 6.21 ms using a single partition pass while preserving multi-group path state | Pure frontend maximum optimistic-burst benchmark; 57.14% lower latency with a 12 ms regression budget | `8443d36` |
-| Sparse graph refs-panel preparation | 15.10 ms for 500 refs across a 500,000-slot sparse graph, including per-slot temporary arrays and a second full scan | 11.06 ms with a single allocation-light scan, bounded row lookup, and authoritative repository refs | Pure frontend large-graph benchmark; 26.75% lower latency with an 18 ms noise-tolerant regression budget | `af33902` |
-| Dense commit ref grouping | Not previously recorded | 42.04 ms for 100 preparations of 500 mixed refs (0.42 ms each) | Pure frontend grouping baseline with local/remote pairing and current-branch ordering | `af33902` |
-| Native blame of alternating large edit | 178.00 ms and 9.18 MB allocated for a 20,000-line alternating edit | 81.71 ms and 9.07 MB allocated with linear in-place active-line partitioning | Disposable real-Git two-commit fixture; 54.10% lower latency with exact alternating attribution checks | `47e8ba4` |
-| Remote sync without an upstream | 87.36 ms and 5.10 MB allocated for 100 refreshes | 68.26 ms and 3.23 MB allocated by sharing one parsed `HEAD` snapshot | Disposable real-Git repository; 21.86% lower latency and 36.52% fewer allocated bytes with a permanent regression budget | `c8dc3cd` |
-| Divergent branch comparison | 630.99 ms and 53.71 MB allocated for 10,000 divergent commits; traversal objects entered the process-wide cache | 613.03 ms and 51.34 MB allocated; traversal cache is repository-scoped and released after comparison | Deterministic packed real-Git fixture; exact 5,000-ahead/5,000-behind checks plus a shared-cache retention assertion | `8dceece` |
-| Direct commit comparison | 1,352.26 ms and 69.20 MB allocated for 10,000 divergent commits plus 1,500 unrelated refs | 994.16 ms and 65.81 MB allocated with an object-database-only comparison session | Deterministic packed real-Git fixture; 26.48% lower latency and 4.91% fewer allocated bytes with exact divergence, missing-object, cancellation, and no-mutation coverage | `44344c2` |
-| Native commit-graph ancestry | 994.16 ms and 65.81 MB allocated for the ref-independent 10,000-commit comparison | 142.11 ms and 12.83 MB allocated by demand-reading Git's monolithic/split commit-graph | Deterministic packed real-Git fixture; 85.70% lower latency and 80.51% fewer allocated bytes with SHA-1/SHA-256, split-base, octopus, corruption fallback, history-override, cancellation, and laziness coverage | `dfb379a` |
-| Chromium split commit-graph walk | Packed-object traversal was the prior path | 114.08 ms and 7.48 MB allocated for 10,000 first-parent reads from a copied 125.22 MB two-layer graph | Read-only copy of Chromium graph metadata; proves demand reads without loading the complete graph or touching the user repository | `dfb379a` |
-| Deep unchanged-path file history | 1,170.28 ms and 62.20 MB allocated across 5,001 commits | 466.44 ms and 28.30 MB allocated by using commit-graph ancestry while retaining exact tree and author reads | Deterministic packed disposable history; 60.15% lower latency and 54.50% fewer allocated bytes with addition, modification, deletion, rename, merge, cancellation, and partial-result coverage | `3ca172f` |
-| Deep unchanged-file blame | 673.03 ms and 48.36 MB allocated across 5,001 commits | 355.72 ms and 24.16 MB allocated by using commit-graph ancestry while retaining exact blob and attribution reads | Deterministic packed disposable history; 47.15% lower latency and 50.04% fewer allocated bytes with line attribution, edits, rename, merge, cancellation, and partial-result coverage | `3ca172f` |
-| Ref-heavy deep file history | 857.78 ms and 30.27 MB allocated across 5,001 commits plus 1,500 unrelated refs | 477.46 ms and 28.23 MB allocated with an object-database-only session and targeted worktree HEAD resolution | Deterministic packed disposable history; 44.34% lower latency and 6.74% fewer allocated bytes with explicit-start and linked-worktree-HEAD coverage | `391cd62` |
-| Ref-heavy deep file blame | 631.48 ms and 25.04 MB allocated across 5,001 commits plus 1,500 unrelated refs | 425.05 ms and 22.99 MB allocated with an object-database-only session and targeted worktree HEAD resolution | Deterministic packed disposable history; 32.69% lower latency and 8.19% fewer allocated bytes with explicit-start and linked-worktree-HEAD coverage | `391cd62` |
-| Ref-heavy submodule manager read | 432.49 ms and 2.51 MB allocated for one initialized submodule plus 1,500 unrelated parent refs | 26.37 ms and 0.41 MB allocated with targeted parent tree and worktree-aware submodule HEAD reads | Disposable real-submodule fixture; 93.90% lower latency and 83.52% fewer allocated bytes with initialized, deinitialized, reinitialized, path-boundary, cancellation, and command-workflow coverage | `7c4539a` |
-| Repository metadata refresh | 2,250.74 ms and 55.80 MB allocated for ten reads of 601 refs and 201 worktrees | 700.41 ms and 56.36 MB allocated with concurrent independent reads and bounded eight-way worktree metadata I/O | Deterministic disposable repository fixture; 68.88% lower latency with exact ref, worktree, branch, and lock-state checks | `ba02fb2` |
-| Worktree metadata allocations | 319.43 ms and 51.40 MB allocated for ten reads of 201 worktrees | 323.81 ms and 3.76 MB allocated with stack-buffered small admin-file reads | Deterministic disposable worktree fixture; latency remains neutral while allocated bytes fall 92.68%, with UTF-8/BOM, long lock-reason fallback, malformed-admin, cancellation, and real create/lock/unlock/remove coverage | `48a56ad` |
-| Repository metadata allocation follow-up | 700.41 ms and 56.36 MB allocated for ten reads of 601 refs and 201 worktrees | 732.69 ms and 9.56 MB allocated after worktree small-file and primary-remote specialization | Same deterministic fixture; latency remains within the established budget while allocated bytes fall 83.04% | `48a56ad`, `1c2629b` |
-| Tag target validation | 1,481.29 ms and 9.97 MB allocated for ten validations in a 1,501-ref repository | 7.09 ms and 0.45 MB allocated with a direct uncached native commit-object read | Deterministic disposable repository fixture; 99.52% lower latency and 95.47% fewer allocated bytes, with missing target, non-commit target, cancellation, and no-mutation coverage | `9910c5a` |
-| Large untracked diff view switching | 833.72 ms Combined plus 750.15 ms Side-by-Side, allocating 23.18 MB across ten 20,000-line renders in a 1,501-ref repository | 6.88 ms Combined plus 7.61 ms Side-by-Side, allocating 13.23 MB by reading the worktree directly without loading refs | Deterministic disposable repository fixture; 99.09% lower latency and 42.94% fewer allocated bytes with exact view-mode and virtual-line checks | `c5e11ab` |
-| Large unstaged diff view switching | 897.15 ms Combined plus 837.26 ms Side-by-Side, allocating 91.23 MB across ten 20,000-line renders in a 1,501-ref repository | 133.83 ms Combined plus 101.66 ms Side-by-Side, allocating 81.46 MB with a lightweight repository session and path-targeted index read | Deterministic disposable repository fixture; 86.42% lower latency and 10.71% fewer allocated bytes; linked-worktree regression also proves staged and unstaged views read the correct index | `07e0d95` |
-| Large staged diff view switching | 571.56 ms Combined plus 546.42 ms Side-by-Side, allocating 83.64 MB across six 20,000-line renders from a 10,001-file commit | 63.80 ms Combined plus 67.98 ms Side-by-Side, allocating 41.90 MB with direct `HEAD`, index-path, and tree-path lookup | Deterministic packed disposable repository fixture; 88.21% lower latency and 49.91% fewer allocated bytes without materializing the full HEAD tree | `70182cf` |
-| Large conflict opening | 380.02 ms and 10.46 MB allocated for a 20,000-line conflict in a 1,501-ref repository | 112.43 ms and 8.85 MB allocated with path-targeted index reads, concurrent native blob reads, lightweight `HEAD`, and allocation-light incoming-ref lookup | Deterministic disposable merge-conflict fixture; 70.41% lower latency and 15.32% fewer allocated bytes; whitespace switching remains 6.73 ms and linked-worktree conflict indexes are now correct | `fbfa80f` |
-| Large conflict Save & stage | 350.21 ms and 2.45 MB allocated for a manual 20,000-line result in a 1,501-ref repository | 94.65 ms and 0.42 MB allocated with lightweight fingerprint/index validation and no full ref model | Deterministic disposable merge-conflict fixture; 72.97% lower latency and 82.96% fewer allocated bytes with exact saved text, staged-index, rollback, cancellation, stale-result, and whole-side coverage | `d9dd7f3` |
-| Conflict Changes / Full-file switching | 258.44 ms for five Changes and five Full-file preparations over 20,000 lines and 500 conflicts | 33.33 ms using an ordered base/source interval index | Pure frontend benchmark; 87.10% lower synchronous preparation latency with overlap, precedence, and empty-side regression coverage | `42fc630` |
-| Large patch preview | 68.90 ms and 76.97 MB allocated for a roughly 10 MB, 600,000-change-line patch | 50.98 ms and 0.41 MB allocated with pooled block parsing | Disposable patch fixture; 26.01% lower latency and 99.47% fewer allocated bytes with BOM, CRLF, long-line, cancellation, and real apply/preflight coverage | `dfe357d` |
-| Large sparse-checkout manager read | 33.15 ms and 18.50 MB allocated for 100,000 patterns | 20.48 ms and 15.39 MB allocated with a single streaming collector | Disposable sparse repository; 38.22% lower latency and 16.81% fewer allocated bytes while retaining all returned patterns, cone semantics, order, cancellation, and no-mutation coverage | `d70f301` |
-| Large stash reflog refresh | 147.65 ms and 69.30 MB allocated for 100,000 stash entries | 81.03 ms and 28.18 MB allocated with pooled block parsing and in-place newest-first ordering | Disposable reflog fixture; 45.12% lower latency and 59.34% fewer allocated bytes with malformed-entry, long-line, CRLF, SHA-256, cancellation, and real stash-workflow coverage | `f2d0af1b` |
-| Large Git LFS attributes scan | 95.63 ms and 47.91 MB allocated while scanning 300,000 mixed lines for 10,000 LFS patterns | 61.57 ms and 1.91 MB allocated with a bounded pooled block reader | Disposable attributes fixture; 35.62% lower latency and 96.01% fewer allocated bytes with quoted/escaped pattern, BOM, long-line, cancellation, limit, and real track/untrack coverage | `145b479` |
-| Active bisect session refresh | 1,732.13 ms and 9.67 MB allocated for five reads in a 1,500-ref repository | 23.84 ms and 0.55 MB allocated with direct HEAD/object reads and targeted per-worktree bisect refs | Disposable active-session fixture; 98.62% lower latency and 94.31% fewer allocated bytes, plus linked-worktree correctness, malformed-ref, cancellation, and full bisect-workflow coverage | `ff73534` |
-| Bisect session start | 508.00 ms and 2.75 MB allocated in a 1,500-ref repository | 115.27 ms and 0.70 MB allocated with direct worktree-aware HEAD and selected-object validation | Disposable two-commit fixture; 77.31% lower latency and 74.39% fewer allocated bytes, with same-HEAD, missing/non-commit target, cancellation, no-mutation, and full-workflow coverage | `037f147` |
-| Maximum interactive-rebase plan | 333.91 ms and 3.02 MB allocated for 100 commits in a 1,500-ref repository | 36.97 ms and 0.77 MB allocated with direct HEAD/object reads and one parse per commit | Deterministic packed disposable history; 88.93% lower latency and 74.50% fewer allocated bytes with maximum-limit, ancestry, merge, detached/unborn HEAD, cancellation, no-mutation, and real rebase-workflow coverage | `9434fa4` |
-| Primary remote URL refresh | 60.79 ms and 44.11 MB allocated for five reads of a 10,001-remote config | 16.36 ms and 0.35 MB allocated with a pooled purpose-built scanner | Disposable large-config fixture; 73.09% lower latency and 99.20% fewer allocated bytes while preserving duplicate-origin last-value, first-fallback, quoted URL, BOM, long-line, cancellation, and full-manager behavior | `1c2629b` |
-| Detached commit checkout | 362.59 ms and 2.77 MB allocated in a 1,501-ref repository | 78.23 ms and 0.48 MB allocated by validating the target through a direct uncached object read before Git switch | Disposable large-ref fixture; 78.42% lower latency and 82.64% fewer allocated bytes with invalid, missing, non-commit, cancellation, conflict, and no-mutation coverage | `de7c3b4` |
-| Commit patch export | 477.57 ms and 2.35 MB allocated for one small patch in a 1,501-ref repository | 3.94 ms and 0.27 MB allocated with an object-database-only repository session | Disposable two-commit fixture; 99.18% lower latency and 88.50% fewer allocated bytes, with applicable output, binary, missing-object, cancellation, cancelled-export, and no-write-on-failure coverage | `9b71ea5` |
-| Binary object-ID conversion | 2.08 MB allocated for 10,000 SHA-1 conversions | 1.04 MB allocated with a stack character buffer and only the required result string | Deterministic synchronous benchmark; 50.00% fewer allocated bytes with exact SHA-1 and SHA-256 identity coverage | `bb89ffc` |
-| Real remote clone | Not previously recorded | 4.91 s; 42.5 MiB checkout; 34.99 MiB pack; +21.7 MB observed desktop private memory | Full `sharkdp/bat` clone through CMG; 20,693 objects with monotonic overall and phase progress | `d795e85` |
-| Complete backend test gate | Previously over one minute during early integration work | 55.89 s clean run; established baseline 30–36 s | `Invoke-LovelyGitTestGate.ps1`, 574 tests at this checkpoint | `021c0ee`, `089f559`, `3a4bcbd` |
 
 ## Mutation Workflow Baselines
 
@@ -99,127 +29,6 @@ Measured through the same Git commands LovelyGit uses, in a disposable 2,001-fil
 | Cherry-pick/revert 100 changed files | 251 ms / 183 ms |
 | Merge 500 changed files | 1.02 s |
 | Rebase 100 changed files | 894 ms |
-
-## Completed Optimization Inventory
-
-### Startup, Bundles, and Desktop Runtime
-
-- Moved update downloads off startup and removed unused startup credential access (`ead5b51`, `c28cd5b`).
-- Lazy-loaded settings, repository onboarding, graph operations, management dialogs, and toolbar workflows (`b0ddbf0`, `5ab026e`, `e63b974`, `350b9af`, `bd256d1`, `509e26c`).
-- Deferred Motion and the icon sprite, released closed overlays, and balanced overlay retention (`7068517`, `02b3c0e`, `2f58f61`).
-- Removed React Suspense's cold reveal delay from Settings, Command Palette, Commit Search, stash, history, and blame without eagerly loading those tools (`f017242`, `5378470`).
-- Removed the same cold reveal delay from create-branch, merge/rebase, and remote-management dialogs while preserving their separate lazy chunks (`a4ac6fe`).
-- Applied immediate deferred reveal to branch comparison, upstream, rename, and delete dialogs (`7cff88b`).
-- Applied immediate deferred reveal to cherry-pick, revert, reset, detached checkout, and interactive-rebase dialogs (`5729cad`).
-- Applied immediate deferred reveal to create-tag, checkout-tag, and local-tag deletion dialogs (`cfc2122`).
-- Applied immediate deferred reveal to create, lock, and remove-worktree dialogs while retaining their separate lazy chunks (`fd2142a`).
-- Applied immediate deferred reveal to reflog browsing and its nested reset confirmation while preserving separate lazy chunks (`a0dcf12`).
-- Applied immediate deferred reveal to Git LFS, sparse-checkout, and submodule managers while preserving their independent chunks (`b1fc2e6`).
-- Applied immediate deferred reveal to commit-identity editing while preserving its separate dialog chunk (`74f068a`).
-- Applied immediate deferred reveal to remote-branch checkout and deletion confirmations while preserving their shared chunk (`a2648d6`).
-- Applied immediate deferred reveal to repository onboarding/New Tab while preserving its separate lazy chunk (`88b7b26`).
-- Applied immediate deferred reveal to meaningful bisect-session content while preserving its separate session chunk (`79a6057`).
-- Applied immediate deferred reveal to force-with-lease confirmation while preserving its separate safety-dialog chunk (`1f749da`).
-- Switched the desktop process to workstation GC and moved process-memory sampling off interaction paths (`b0d124b`, `c7241dc`).
-- Reduced native interaction metrics overhead (`efcd0a7`).
-
-### Commit Graph, Refs, and Tabs
-
-- Compacted graph payloads by removing unused parents, flags, signatures, duplicate ref indexes, and page copies (`6379222`, `398f54f`, `6a88ce5`, `944408d`, `233b298`, `d0973d3`, `4a5a87f`).
-- Reduced graph render and lane allocations and skipped unnecessary ref grouping (`6adc6b9`, `528d103`, `0f4b7d9`, `adac8bc`, `5367bef`).
-- Kept active traversal warm, cached bounded tab previews, preserved caches across reloads, and disposed idle sessions (`2ee809d`, `4e6d8d3`, `cd6124a`, `6275027`).
-- Reduced initial paging/retention, cancelled abandoned refreshes, and coalesced warm activation (`9a1856b`, `30547fd`, `4d29e3d`, `aec7cd9`, `e207118`).
-- Cached bounded ref snapshots, streamed peeled refs, reused refs across controls, and reduced loose-ref loading (`24806de`, `5ad6053`, `4e2ad7c`, `ede92d7`, `4c47c80`).
-- Streamed large stash reflogs from a pooled buffer and assigned newest-first selectors in place instead of retaining a second full raw-line representation (`f2d0af1b`).
-- Scanned primary remote URLs with a pooled purpose-built reader instead of constructing the complete remote model during repository refreshes (`1c2629b`).
-- Read tiny worktree `HEAD`, `gitdir`, and lock files through stack buffers while preserving the existing bounded concurrency (`48a56ad`).
-- Reset scroll on tab switches and reduced virtualized graph overscan (`6b0fcf6`, `ca11dfd`, `7180d47`).
-
-### Native Git Parser and Object Storage
-
-- Accelerated packed commit reads, shared a bounded object cache, and supported alternate object stores (`a3ecfc4`, `c8e17b4`, `bedf3b6`).
-- Avoided opening object stores without upstreams and avoided search pollution of the object cache (`93dde92`, `f4c3080`).
-- Read active bisect state from direct HEAD/object data and the worktree-scoped `refs/bisect` directory instead of loading every repository ref twice (`ff73534`).
-- Started bisect by resolving only the worktree-aware HEAD and selected known-good commit object instead of materializing the complete repository/ref model (`037f147`).
-- Built interactive-rebase plans from direct HEAD and uncached commit-object reads, parsing each commit once without materializing the repository's complete ref model (`9434fa4`).
-- Validated detached checkout targets through the direct commit-existence reader instead of opening the complete repository/ref model (`de7c3b4`).
-- Compared authoritative commit pairs through an object-database-only repository session, keeping unrelated refs out of deep-history comparisons (`44344c2`).
-- Converted binary SHA-1/SHA-256 identities through a stack character buffer instead of allocating an intermediate `char[]` before the result string (`bb89ffc`).
-- Demand-read native monolithic and split commit-graph chains for ancestry painting instead of inflating every packed commit; the reader stays unopened for unrelated repository features and safely falls back for missing, corrupt, shallow, grafted, replaced, or disabled histories (`dfb379a`).
-- Reused native commit-graph ancestry in deep file-history and blame walks while preserving authoritative tree, blob, author, rename, and attribution reads (`3ca172f`).
-- Opened history and blame against the object database alone and resolved only the worktree-scoped HEAD when no explicit start was supplied, so unrelated refs no longer affect either interaction (`391cd62`).
-- Read submodule status from the parent HEAD/tree plus each initialized submodule's worktree-aware HEAD, avoiding complete parent and nested ref models (`7c4539a`).
-- Resolved abbreviated hashes from indexes and reduced native graph parsing allocations (`8aad229`, `89d0a34`).
-- Eliminated per-index-entry scan allocations and reused compiled ignore matchers (`353786e`, `dbc5386`).
-- Added a packed-graph performance regression gate (`81514be`).
-
-### Commit Search and Details
-
-- Returned recent matches quickly, resumed deep searches, scoped search to refs, and added native author/date/text search (`89341fc`, `1af01ab`, `932d835`, `20871c7`, `66917ba`, `dc5b68c`).
-- Removed duplicate graph work during search and bounded ref suggestions (`f4c3080`, `c03ac25`).
-- Prefetched details on hover intent and rendered prefetched details without suspense (`e346227`, `bda6b62`, `2cd7423`).
-- Moved details parsing/persistence off click paths, bulked cache writes, and reduced blob/parser allocations (`c03064b`, `7ce891c`, `ddc34cd`, `021b3dd`, `d461dc6`).
-
-### Working Tree, Staging, and Status
-
-- Removed the Suspense reveal delay from Working Changes and working-tree diffs while preserving their separate lazy chunks; the disposable diff opened in 53.1 ms and its display controls responded in 0.5–2.1 ms (`3cb31fa`).
-- Removed the nested Suspense reveal delay from stashed-file inspection while preserving the commit-diff chunk; its diff controls and add/remove colors remain shared with the verified diff surface (`95b00d5`).
-- Added immediate optimistic stage/unstage previews and kept them stable during refresh (`7db0b3d`, `15ebece`).
-- Accelerated single-file index updates and avoided duplicate staged/index scans (`c1dc63e`, `67f1d6a`, `f662e04`).
-- Coalesced notifications and reconciliation scans and reused background scans (`3c47512`, `7ccc7c8`, `69cc4e1`, `e6bf212`).
-- Added preliminary summaries, bounded preload, deferred heavy background preloads, and trusted complete cached summaries (`4032430`, `5824b04`, `1d6fbfa`, `f370993`).
-- Bounded wide-repository background memory and skipped oversized native scans (`8a2fd98`, `b580871`, `0a8d9e1`).
-- Added progressive tracked-first working changes with explicit completeness and disabled mutation controls until complete (`3a4bcbd`).
-- Enabled command-local, four-worker parallel checkout above 100 paths for switch, clone, worktree, reset, merge, rebase, cherry-pick, and revert operations. This avoids persistent repository configuration and daemon memory while bounding transient worker cost (`db9ea3b`).
-- Streamed sparse-checkout specifications directly into the response collector instead of retaining a duplicate raw-line array (`d70f301`).
-- Streamed large `.gitattributes` files through a pooled parser so non-LFS lines do not become managed strings while retaining the existing bounded result (`145b479`).
-
-### Diff Engine and File Diffs
-
-- Replaced DiffPlex with the single low-allocation diff engine (`a1625fc`).
-- Trimmed unchanged edges, vectorized line preparation, reduced line splitting/context allocations, and accelerated ignored-whitespace diffs (`91de674`, `5ca8e3e`, `9ee5854`, `470bc1c`, `5890323`).
-- Virtualized and bounded large/long-line rendering and halved side-by-side row work (`30404a9`, `4dd7b33`, `6c4a42b`, `4429b34`, `df83dfe`).
-- Compacted, compressed, referenced, and reused large colored diff payloads across layouts (`b55def8`, `f4f6d53`, `46af1fd`, `80d6769`, `ac7fb8a`, `df0c41b`, `d10ac7b`).
-- Bounded decoded/source/result cache weight and skipped uncacheable prewarming (`15ce59d`, `9f613ed`, `c4e610c`, `70eecfd`).
-- Moved diff persistence off click paths and cached open variants (`b074af7`, `dc120ec`, `54cb0c7`, `3726952`).
-- Streamed patch previews through a pooled character buffer so large Apply Patch files no longer allocate one string per content line (`dfe357d`).
-- Opened commit and series patch export against the object database alone, avoiding unrelated branch, remote, tag, and stash enumeration (`9b71ea5`).
-
-### Conflict Resolution
-
-- Virtualized large outputs/gutters and accelerated display changes (`c921509`, `0a25e71`, `d955b50`, `13635ca`).
-- Reused worktree snapshots, source lines, prepared models, view variants, and unchanged text (`a204ebf`, `cf67ef4`, `0cdb614`, `1880b11`, `11e8732`).
-- Reduced hunk mapping, line mapping, and variant allocations (`9ab0d65`, `e37260c`, `95c77a5`, `9d708cb`).
-- Streamed/compacted conflict text and payload encoding/decoding while bounding retained memory (`583b14b`, `b71a162`, `0fa5802`, `357a04d`, `4b5962d`, `aeb5cc1`).
-- Avoided caching stage blobs, reused validated caches, and opened the resolver without suspense (`75cb386`, `10c7e85`, `f5cf4c4`, `2e993ea`).
-- Replaced repeated line-by-hunk scans during Changes/Full-file switching with a precedence-preserving interval index (`42fc630`).
-
-### Test and Verification Throughput
-
-- Reused isolated Git repository templates and reduced repeated integration setup (`34f8447`, `eda24d1`).
-- Added bounded process ownership, cancellation, and session-health gates (`74c0f12`, `089f559`).
-- Kept the official backend suite below one minute without weakening assertions (`021c0ee`).
-- Added application dependency-graph validation without launching the desktop host (`525a3c2`).
-
-### Runtime Memory and Resource Lifetime
-
-- Verified Settings, Bisect, and Force Push overlays plateau after warm-up rather than retaining linearly; a second 60-interaction pass added only 0.22 MB post-GC with no DOM growth (this commit).
-- Verified Working Changes open/close cycles plateau after the status/cache warm-up; the second ten-cycle pass added only 0.08 MB post-GC with no DOM growth (this commit).
-- Verified repeated native bisect-state reads do not leak process handles, and recorded the warmed four-tab host/WebView2 footprint as the next memory-reduction baseline (this commit).
-- Diagnosed the warmed host with a managed heap dump: 74,804 BLite transactions were retained by the dependency registry, accounting for 14.96 MB of transaction, change-list, and dictionary-node objects plus a 1.86 MB expanded bucket table.
-- Added an exact, concurrency-safe BLite transaction retention boundary to every application and cache write. Successful, failed, abandoned, and no-op operations now unregister only their own transaction; regression coverage proves the registry returns to zero (`this commit`).
-- Batched each commit-graph page cache write into one caller-owned transaction instead of opening one auto-commit transaction per row (`this commit`).
-- Verified 120 real WebView2 tab activations between the Chromium-scale repository and a disposable repository: small-repository content was ready in about 16 ms, Chromium was typically ready in 22-28 ms, and the worst sample was 37.6 ms.
-- Verified multi-repository switching does not retain linearly: post-GC JavaScript heap increased only 0.36 MB across 120 activations while the active DOM count stayed constant; the on-disk app/cache databases remained bounded at 3 MiB and 5 MiB.
-- Measured local-remote transport through the real WebView2 UI with an isolated bare remote: Fetch All and Pull (fast-forward only) each reflected in about 104 ms, and Push completed in about 96 ms.
-- Verified fetch, pull, and push disable the transport toolbar during mutation, restore it afterward, refresh refs and ahead/behind state, and leave no page or console errors. Existing integration coverage protects diverged fast-forward rejection, force-with-lease safety, cancellation, and remote no-mutation on failure.
-- Replaced lifetime-long retired pack-index and pack-file retention with generation-aware read leases. Fetch/repack can now replace native pack snapshots without interrupting active reads, while obsolete handles close after their final reader instead of accumulating until repository disposal (`986719d`).
-
-### Clone and Remote Transport
-
-- Verified a full public-network clone reports separate monotonic overall and current-phase progress through enumeration, counting, compression, receive, delta resolution, checkout, and completion; the 20,693-object fixture opened in 4.91 seconds.
-- Verified active cancellation against an 824,255-object public remote reaches the canceling state in 6.2 seconds without freezing the WebView. The journey exposed a locked temporary pack that survived the old one-shot cleanup.
-- Retry partial-clone cleanup after Git releases locked files, remove read-only files when required, and surface a specific error if the destination still cannot be reclaimed. The folder-name field now handles direct WebView input consistently with the URL and destination fields (`d795e85`).
 
 ## Rejected or Deferred Experiments
 
