@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Text;
 using ExpressThat.LovelyGit.Services.Git.RemoteSync;
 using LovelyGit.Tests.Git.Branches;
 using LovelyGit.Tests.Git.Cli;
@@ -9,6 +10,39 @@ namespace LovelyGit.Tests.Git.RemoteSync;
 [Collection(PerformanceTestCollection.Name)]
 public sealed class NativeRemoteSyncPerformanceTests(ITestOutputHelper output)
 {
+    [Fact]
+    public async Task UpstreamRefresh_DoesNotMaterializeUnrelatedBranchConfiguration()
+    {
+        using var repository = TemporaryGitRepository.Create();
+        var configPath = Path.Combine(repository.Path, ".git", "config");
+        var config = new StringBuilder(await File.ReadAllTextAsync(configPath));
+        for (var index = 0; index < 10_000; index++)
+        {
+            config.Append("\n[branch \"perf-").Append(index.ToString("D5"))
+                .Append("\"]\n\tremote = origin\n\tmerge = refs/heads/perf-")
+                .Append(index.ToString("D5")).Append('\n');
+        }
+        config.Append("\n[branch \"master\"]\n\tremote = origin\n\tmerge = refs/heads/master\n");
+        await File.WriteAllTextAsync(configPath, config.ToString());
+        Directory.CreateDirectory(Path.Combine(repository.Path, ".git", "refs", "remotes", "origin"));
+        await File.WriteAllTextAsync(
+            Path.Combine(repository.Path, ".git", "refs", "remotes", "origin", "master"),
+            repository.HeadCommitHash + "\n");
+        GC.Collect();
+        var allocatedBefore = GC.GetTotalAllocatedBytes(precise: true);
+        var startedAt = Stopwatch.GetTimestamp();
+
+        var response = await NativeRemoteSyncStatusReader.ReadAsync(
+            repository.Path, CancellationToken.None);
+
+        var elapsed = Stopwatch.GetElapsedTime(startedAt);
+        var allocated = GC.GetTotalAllocatedBytes(true) - allocatedBefore;
+        output.WriteLine($"ElapsedMs={elapsed.TotalMilliseconds:F2}; AllocatedBytes={allocated:N0}");
+        Assert.True(response.IsUpstreamAvailable);
+        Assert.True(elapsed < TimeSpan.FromSeconds(2), $"Refresh took {elapsed}.");
+        Assert.True(allocated < 1_000_000, $"Refresh allocated {allocated:N0} bytes.");
+    }
+
     [Fact]
     public async Task UpstreamRefresh_DoesNotScaleWithUnrelatedRefs()
     {

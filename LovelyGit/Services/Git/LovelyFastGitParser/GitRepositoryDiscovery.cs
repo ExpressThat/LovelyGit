@@ -1,3 +1,5 @@
+using System.Text;
+
 namespace ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser;
 
 internal static class GitRepositoryDiscovery
@@ -90,59 +92,88 @@ internal static class GitRepositoryDiscovery
             return GitObjectFormat.Sha1;
         }
 
-        var section = string.Empty;
-        foreach (var rawLine in await File.ReadAllLinesAsync(configPath, cancellationToken).ConfigureAwait(false))
+        if (TryReadSmallObjectFormat(configPath, cancellationToken, out var smallFormat))
         {
-            var line = rawLine.AsSpan().Trim();
-            if (line.Length == 0 || line[0] is '#' or ';')
-            {
-                continue;
-            }
-
-            if (line[0] == '[' && line[^1] == ']')
-            {
-                section = line[1..^1].Trim().Trim('"').ToString().ToLowerInvariant();
-                continue;
-            }
-
-            if (!section.Equals("extensions", StringComparison.Ordinal) ||
-                !TryReadConfigKeyValue(line, out var key, out var value) ||
-                !key.Equals("objectformat", StringComparison.OrdinalIgnoreCase))
-            {
-                continue;
-            }
-
-            var objectFormat = value.AsSpan().Trim();
-            if (objectFormat.Equals("sha1", StringComparison.OrdinalIgnoreCase))
-            {
-                return GitObjectFormat.Sha1;
-            }
-
-            if (objectFormat.Equals("sha256", StringComparison.OrdinalIgnoreCase))
-            {
-                return GitObjectFormat.Sha256;
-            }
-
-            throw new NotSupportedException($"Unsupported Git object format: {value}");
+            return smallFormat;
         }
 
-        return GitObjectFormat.Sha1;
+        var state = new ObjectFormatParseState();
+        await GitConfigLineReader.ReadAsync(
+                configPath,
+                state,
+                static (line, parseState) => parseState.ProcessLine(line),
+                cancellationToken)
+            .ConfigureAwait(false);
+        return state.Format ?? GitObjectFormat.Sha1;
     }
 
-    private static bool TryReadConfigKeyValue(ReadOnlySpan<char> line, out string key, out string value)
+    private static bool TryReadSmallObjectFormat(
+        string path,
+        CancellationToken cancellationToken,
+        out GitObjectFormat format)
     {
-        key = string.Empty;
-        value = string.Empty;
-
-        var separator = line.IndexOf('=');
-        if (separator <= 0)
+        const int maximumBytes = 8 * 1024;
+        cancellationToken.ThrowIfCancellationRequested();
+        Span<byte> bytes = stackalloc byte[maximumBytes];
+        using var handle = File.OpenHandle(
+            path, FileMode.Open, FileAccess.Read,
+            FileShare.ReadWrite | FileShare.Delete, FileOptions.SequentialScan);
+        var length = 0;
+        while (length < bytes.Length)
         {
+            var read = RandomAccess.Read(handle, bytes[length..], length);
+            if (read == 0) break;
+            length += read;
+        }
+        Span<byte> overflow = stackalloc byte[1];
+        if (length == bytes.Length && RandomAccess.Read(handle, overflow, length) != 0)
+        {
+            format = default;
             return false;
         }
 
-        key = line[..separator].Trim().ToString();
-        value = line[(separator + 1)..].Trim().Trim('"').ToString();
-        return key.Length > 0;
+        var state = new ObjectFormatParseState();
+        var text = Encoding.UTF8.GetString(bytes[..length]);
+        var remaining = text.AsSpan().TrimStart('\uFEFF');
+        while (true)
+        {
+            var newline = remaining.IndexOf('\n');
+            if (newline < 0) break;
+            state.ProcessLine(remaining[..newline]);
+            remaining = remaining[(newline + 1)..];
+        }
+        if (!remaining.IsEmpty) state.ProcessLine(remaining);
+        format = state.Format ?? GitObjectFormat.Sha1;
+        return true;
+    }
+
+    private sealed class ObjectFormatParseState
+    {
+        private bool _inExtensions;
+        public GitObjectFormat? Format { get; private set; }
+
+        public void ProcessLine(ReadOnlySpan<char> rawLine)
+        {
+            if (Format != null) return;
+            var line = rawLine.Trim();
+            if (line.IsEmpty || line[0] is '#' or ';') return;
+            if (line[0] == '[' && line[^1] == ']')
+            {
+                _inExtensions = line[1..^1].Trim().Trim('"')
+                    .Equals("extensions", StringComparison.OrdinalIgnoreCase);
+                return;
+            }
+            if (!_inExtensions) return;
+            var separator = line.IndexOf('=');
+            if (separator <= 0 || !line[..separator].Trim()
+                    .Equals("objectformat", StringComparison.OrdinalIgnoreCase)) return;
+            var value = line[(separator + 1)..].Trim().Trim('"');
+            Format = value.Equals("sha1", StringComparison.OrdinalIgnoreCase)
+                ? GitObjectFormat.Sha1
+                : value.Equals("sha256", StringComparison.OrdinalIgnoreCase)
+                    ? GitObjectFormat.Sha256
+                    : throw new NotSupportedException($"Unsupported Git object format: {value.ToString()}");
+        }
     }
 }
 

@@ -31,10 +31,9 @@ internal static class NativeRemoteSyncStatusReader
             return Calm(branchName, localHash);
         }
 
-        var upstreams = await GitBranchUpstreamConfigReader
-            .ReadAsync(paths.GitDirectory, cancellationToken)
+        var upstream = await GitBranchUpstreamConfigReader
+            .ReadForBranchAsync(paths.GitDirectory, branchName, cancellationToken)
             .ConfigureAwait(false);
-        var upstream = FindUpstream(upstreams, branchName);
         if (upstream == null)
         {
             return Calm(branchName, localHash);
@@ -78,14 +77,6 @@ internal static class NativeRemoteSyncStatusReader
             IsHistoryPartial = counts.IsPartial,
         };
     }
-
-    private static GitBranchUpstream? FindUpstream(
-        IEnumerable<GitBranchUpstream> upstreams,
-        string branchName) =>
-        upstreams.FirstOrDefault(upstream => string.Equals(
-            upstream.BranchName,
-            branchName,
-            StringComparison.Ordinal));
 
     private static RemoteSyncStatusResponse Calm(string? branchName, GitObjectId? localHash) =>
         new()

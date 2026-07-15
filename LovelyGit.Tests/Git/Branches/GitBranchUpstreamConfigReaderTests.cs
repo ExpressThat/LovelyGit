@@ -71,6 +71,34 @@ public sealed class GitBranchUpstreamConfigReaderTests
         Assert.Empty(upstreams);
     }
 
+    [Fact]
+    public async Task ReadForBranchAsync_ReturnsOnlyTheRequestedCompleteUpstream()
+    {
+        using var directory = new TemporaryDirectory();
+        await File.WriteAllTextAsync(
+            Path.Combine(directory.Path, "config"),
+            """
+            [branch "other"]
+                remote = ignored
+                merge = refs/heads/other
+            [branch "feature/local"]
+                remote = .
+                merge = refs/heads/base/with-slash
+            [branch "later"]
+                remote = ignored
+                merge = refs/heads/later
+            """);
+
+        var upstream = await GitBranchUpstreamConfigReader.ReadForBranchAsync(
+            directory.Path, "feature/local", CancellationToken.None);
+
+        Assert.Equal(
+            new("feature/local", "base/with-slash", "refs/heads/base/with-slash"),
+            upstream);
+        Assert.Null(await GitBranchUpstreamConfigReader.ReadForBranchAsync(
+            directory.Path, "missing", CancellationToken.None));
+    }
+
     private sealed class TemporaryDirectory : IDisposable
     {
         public TemporaryDirectory()
