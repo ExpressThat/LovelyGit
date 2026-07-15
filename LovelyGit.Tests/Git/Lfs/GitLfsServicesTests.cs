@@ -35,6 +35,40 @@ public sealed class GitLfsServicesTests
         Assert.Empty(patterns);
     }
 
+    [Fact]
+    public async Task NativeReader_HandlesBomCrLfLongLinesAndNoFinalNewline()
+    {
+        using var directory = new TemporaryDirectory();
+        var longUnrelatedPattern = new string('x', 20_000);
+        var contents = $"{longUnrelatedPattern} text\r\n\"large files/**\" filter=lfs -text";
+        await File.WriteAllTextAsync(
+            Path.Combine(directory.Path, ".gitattributes"),
+            contents,
+            new System.Text.UTF8Encoding(encoderShouldEmitUTF8Identifier: true));
+
+        var patterns = await NativeGitLfsStateReader.ReadPatternsAsync(
+            directory.Path,
+            CancellationToken.None);
+
+        Assert.Equal(["large files/**"], patterns);
+    }
+
+    [Fact]
+    public async Task NativeReader_WhenCancelled_DoesNotChangeAttributesFile()
+    {
+        using var directory = new TemporaryDirectory();
+        var path = Path.Combine(directory.Path, ".gitattributes");
+        await File.WriteAllTextAsync(path, "*.zip filter=lfs\n");
+        var before = await File.ReadAllBytesAsync(path);
+        using var cancellation = new CancellationTokenSource();
+        cancellation.Cancel();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+            NativeGitLfsStateReader.ReadPatternsAsync(directory.Path, cancellation.Token));
+
+        Assert.Equal(before, await File.ReadAllBytesAsync(path));
+    }
+
     [Theory]
     [InlineData(null)]
     [InlineData("")]
