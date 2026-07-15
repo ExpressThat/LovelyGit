@@ -1,3 +1,4 @@
+using ExpressThat.LovelyGit.Services.Git.Cli;
 using ExpressThat.LovelyGit.Services.Git.Rebase;
 using LovelyGit.Tests.Git.Branches;
 
@@ -61,6 +62,78 @@ public sealed class NativeInteractiveRebasePlanReaderTests
                 CancellationToken.None));
 
         Assert.Contains("merge commit", exception.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task ReadAsync_RejectsDetachedHeadAndEmptyRange()
+    {
+        using var repository = TemporaryGitRepository.Create();
+        await CommitAsync(repository, "Change");
+        var head = await HeadAsync(repository);
+
+        var empty = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            NativeInteractiveRebasePlanReader.ReadAsync(
+                repository.Path, head, CancellationToken.None));
+        Assert.Contains("before HEAD", empty.Message);
+
+        await RunAsync(repository, "checkout", "--detach");
+        var detached = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            NativeInteractiveRebasePlanReader.ReadAsync(
+                repository.Path, repository.HeadCommitHash, CancellationToken.None));
+        Assert.Contains("Check out a branch", detached.Message);
+    }
+
+    [Fact]
+    public async Task ReadAsync_RejectsInvalidHashWithoutChangingHead()
+    {
+        using var repository = TemporaryGitRepository.Create();
+        var head = await HeadAsync(repository);
+
+        await Assert.ThrowsAsync<ArgumentException>(() =>
+            NativeInteractiveRebasePlanReader.ReadAsync(
+                repository.Path, "not-an-object-id", CancellationToken.None));
+
+        Assert.Equal(head, await HeadAsync(repository));
+    }
+
+    [Fact]
+    public async Task ReadAsync_WhenCancelled_DoesNotChangeRepository()
+    {
+        using var repository = TemporaryGitRepository.Create();
+        await CommitAsync(repository, "Change");
+        var head = await HeadAsync(repository);
+        var status = await RunAsync(repository, "status", "--short");
+        using var cancellation = new CancellationTokenSource();
+        cancellation.Cancel();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+            NativeInteractiveRebasePlanReader.ReadAsync(
+                repository.Path, repository.HeadCommitHash, cancellation.Token));
+
+        Assert.Equal(head, await HeadAsync(repository));
+        Assert.Equal(status, await RunAsync(repository, "status", "--short"));
+    }
+
+    [Fact]
+    public async Task ReadAsync_RejectsRepositoryWithoutHeadCommit()
+    {
+        var directory = Directory.CreateTempSubdirectory("lovelygit-rebase-unborn-");
+        try
+        {
+            await new GitCliService().ExecuteBufferedAsync(["init"], directory.FullName);
+
+            var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+                NativeInteractiveRebasePlanReader.ReadAsync(
+                    directory.FullName, new string('0', 40), CancellationToken.None));
+
+            Assert.Contains("does not have a HEAD", exception.Message);
+        }
+        finally
+        {
+            foreach (var file in directory.EnumerateFiles("*", SearchOption.AllDirectories))
+                file.Attributes = FileAttributes.Normal;
+            directory.Delete(recursive: true);
+        }
     }
 
     private static Task CommitAsync(TemporaryGitRepository repository, string subject) =>

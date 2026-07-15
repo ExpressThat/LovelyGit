@@ -1,4 +1,5 @@
 using ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser;
+using ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser.Refs;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Rebase;
 
 namespace ExpressThat.LovelyGit.Services.Git.Rebase;
@@ -12,23 +13,34 @@ internal static class NativeInteractiveRebasePlanReader
         string baseCommitHash,
         CancellationToken cancellationToken)
     {
-        using var repository = await LovelyGitRepository.OpenAsync(repositoryPath, cancellationToken)
+        var paths = await GitRepositoryDiscovery.ResolveRepositoryPathsAsync(
+                repositoryPath, cancellationToken)
             .ConfigureAwait(false);
-        if (repository.HeadTarget is not { } head)
+        var objectFormat = await GitRepositoryDiscovery.ReadObjectFormatAsync(
+                paths.GitDirectory, cancellationToken)
+            .ConfigureAwait(false);
+        var headState = await GitHeadReader.ReadAsync(
+                paths.WorktreeGitDirectory,
+                paths.GitDirectory,
+                objectFormat,
+                cancellationToken)
+            .ConfigureAwait(false);
+        if (headState.Target is not { } head)
         {
             throw new InvalidOperationException("The repository does not have a HEAD commit.");
         }
 
-        if (string.IsNullOrWhiteSpace(repository.CurrentBranchName))
+        if (string.IsNullOrWhiteSpace(headState.BranchName))
         {
             throw new InvalidOperationException("Check out a branch before starting an interactive rebase.");
         }
 
-        if (!GitObjectId.TryParse(baseCommitHash.Trim(), repository.ObjectFormat, out var baseCommit))
+        if (!GitObjectId.TryParse(baseCommitHash.Trim(), objectFormat, out var baseCommit))
         {
             throw new ArgumentException("The base commit hash is invalid.", nameof(baseCommitHash));
         }
 
+        using var objectStore = new GitObjectStore(paths.GitDirectory, objectFormat);
         var commits = new List<InteractiveRebaseCommit>();
         var current = head;
         while (current != baseCommit)
@@ -40,15 +52,20 @@ internal static class NativeInteractiveRebasePlanReader
                     $"Interactive rebase is limited to {MaximumCommitCount} commits at a time.");
             }
 
-            var header = await repository.GetCommitTraversalHeaderAsync(current, cancellationToken)
+            var data = await objectStore.ReadObjectAsync(
+                    current, cacheObject: false, cancellationToken)
                 .ConfigureAwait(false);
-            if (header.ParentHashCount > 1)
+            if (data.Kind != GitObjectKind.Commit)
+            {
+                throw new InvalidDataException($"Object is not a commit: {current}");
+            }
+            var commit = GitObjectParsers.ParseCommit(current, data.Data);
+            if (commit.ParentHashCount > 1)
             {
                 throw new InvalidOperationException(
                     "This range contains a merge commit. Merge-preserving interactive rebase is not supported yet.");
             }
 
-            var commit = await repository.GetCommitAsync(current, cancellationToken).ConfigureAwait(false);
             commits.Add(new InteractiveRebaseCommit
             {
                 Hash = current.ToString(),
@@ -57,13 +74,13 @@ internal static class NativeInteractiveRebasePlanReader
                 AuthorUnixSeconds = commit.AuthorUnixSeconds,
             });
 
-            if (header.ParentHashCount == 0)
+            if (commit.ParentHashCount == 0)
             {
                 throw new InvalidOperationException(
                     "The selected base is not an ancestor of the checked-out branch.");
             }
 
-            current = header.GetParentHash(0);
+            current = commit.GetParentHash(0);
         }
 
         if (commits.Count == 0)
@@ -75,7 +92,7 @@ internal static class NativeInteractiveRebasePlanReader
         return new InteractiveRebasePlanResponse
         {
             BaseCommitHash = baseCommit.ToString(),
-            CurrentBranchName = repository.CurrentBranchName,
+            CurrentBranchName = headState.BranchName,
             Commits = commits,
         };
     }
