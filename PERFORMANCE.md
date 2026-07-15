@@ -60,6 +60,7 @@ This is the durable inventory of LovelyGit performance work. Update it in the sa
 | Large staged diff view switching | 571.56 ms Combined plus 546.42 ms Side-by-Side, allocating 83.64 MB across six 20,000-line renders from a 10,001-file commit | 63.80 ms Combined plus 67.98 ms Side-by-Side, allocating 41.90 MB with direct `HEAD`, index-path, and tree-path lookup | Deterministic packed disposable repository fixture; 88.21% lower latency and 49.91% fewer allocated bytes without materializing the full HEAD tree | `70182cf` |
 | Large conflict opening | 380.02 ms and 10.46 MB allocated for a 20,000-line conflict in a 1,501-ref repository | 112.43 ms and 8.85 MB allocated with path-targeted index reads, concurrent native blob reads, lightweight `HEAD`, and allocation-light incoming-ref lookup | Deterministic disposable merge-conflict fixture; 70.41% lower latency and 15.32% fewer allocated bytes; whitespace switching remains 6.73 ms and linked-worktree conflict indexes are now correct | `fbfa80f` |
 | Large conflict Save & stage | 350.21 ms and 2.45 MB allocated for a manual 20,000-line result in a 1,501-ref repository | 94.65 ms and 0.42 MB allocated with lightweight fingerprint/index validation and no full ref model | Deterministic disposable merge-conflict fixture; 72.97% lower latency and 82.96% fewer allocated bytes with exact saved text, staged-index, rollback, cancellation, stale-result, and whole-side coverage | `d9dd7f3` |
+| Conflict Changes / Full-file switching | 258.44 ms for five Changes and five Full-file preparations over 20,000 lines and 500 conflicts | 33.33 ms using an ordered base/source interval index | Pure frontend benchmark; 87.10% lower synchronous preparation latency with overlap, precedence, and empty-side regression coverage | `42fc630` |
 | Real remote clone | Not previously recorded | 4.91 s; 42.5 MiB checkout; 34.99 MiB pack; +21.7 MB observed desktop private memory | Full `sharkdp/bat` clone through CMG; 20,693 objects with monotonic overall and phase progress | `d795e85` |
 | Complete backend test gate | Previously over one minute during early integration work | 55.89 s clean run; established baseline 30–36 s | `Invoke-LovelyGitTestGate.ps1`, 574 tests at this checkpoint | `021c0ee`, `089f559`, `3a4bcbd` |
 
@@ -153,6 +154,7 @@ Measured through the same Git commands LovelyGit uses, in a disposable 2,001-fil
 - Reduced hunk mapping, line mapping, and variant allocations (`9ab0d65`, `e37260c`, `95c77a5`, `9d708cb`).
 - Streamed/compacted conflict text and payload encoding/decoding while bounding retained memory (`583b14b`, `b71a162`, `0fa5802`, `357a04d`, `4b5962d`, `aeb5cc1`).
 - Avoided caching stage blobs, reused validated caches, and opened the resolver without suspense (`75cb386`, `10c7e85`, `f5cf4c4`, `2e993ea`).
+- Replaced repeated line-by-hunk scans during Changes/Full-file switching with a precedence-preserving interval index (`42fc630`).
 
 ### Test and Verification Throughput
 
