@@ -16,7 +16,7 @@ This is the durable inventory of LovelyGit performance work. Update it in the sa
 | --- | ---: | ---: | --- | --- |
 | Commit graph random scroll | 24.5 ms average; 2,305 DOM nodes | 13.9 ms average; 1,676 DOM nodes | Chromium CMG scroll journey; virtual overscan 36 to 8 | `7180d47` |
 | Large worktree status | 596 ms | 75.7 ms | 10,000-file disposable repository; choose Git status above the native scan threshold | `0a8d9e1` |
-| Large checkout / worktree creation | 1.69-1.82 s / 2.21-2.28 s | 0.97-1.03 s / 1.28-1.36 s | 2,001-file disposable repository; bounded four-worker checkout above 100 paths | `db9ea3b` |
+| Large checkout / worktree creation | 1.69-1.82 s / 2.21-2.28 s | 0.97-1.03 s / 1.28-1.36 s | Roughly 1,000 changed paths / 2,001-file worktree; bounded four-worker checkout above 100 paths | `db9ea3b` |
 | No-match commit search | 1,698 ms | 536 ms | Chromium CMG search journey; bounded first result budget | `dc5b68c` |
 | Chromium working changes | 1.49 s with no useful intermediate result | 1.07 s tracked result; 1.62 s complete result | CMG refresh; concurrent tracked-only and complete scans | `3a4bcbd` |
 | Cold Settings / Command Palette | 321.5 ms / 315.4 ms | 46.0 ms / 19.7 ms | Chromium CMG click-to-dialog timing; immediate deferred reveal while preserving lazy chunks | `f017242` |
@@ -41,6 +41,21 @@ This is the durable inventory of LovelyGit performance work. Update it in the sa
 | Warm four-tab desktop footprint | Not previously recorded | 517.9 MB private; 825.3 MB working set; 4,420 handles | LovelyGit host plus owned WebView2 tree after broad Chromium audit; host itself was 121.1 MB private | This commit |
 | Real remote clone | Not previously recorded | 4.91 s; 42.5 MiB checkout; 34.99 MiB pack; +21.7 MB observed desktop private memory | Full `sharkdp/bat` clone through CMG; 20,693 objects with monotonic overall and phase progress | `d795e85` |
 | Complete backend test gate | Previously over one minute during early integration work | 55.89 s clean run; established baseline 30–36 s | `Invoke-LovelyGitTestGate.ps1`, 574 tests at this checkpoint | `021c0ee`, `089f559`, `3a4bcbd` |
+
+## Mutation Workflow Baselines
+
+Measured through the same Git commands LovelyGit uses, in a disposable 2,001-file repository with an 8 MiB file. These are investigation baselines, not all optimization claims.
+
+| Workflow | Observed latency |
+| --- | ---: |
+| Create/delete branch or tag | 44-50 ms |
+| Checkout roughly 1,000 changed paths | 0.97-1.03 s after bounded parallelization |
+| Stash 501 changed files | 3.83 s cold; 1.33-1.39 s warm |
+| Restore 501-file stash | 1.06 s |
+| Create/remove 2,001-file worktree | 1.28-1.36 s / 586 ms after bounded parallelization |
+| Cherry-pick/revert 100 changed files | 251 ms / 183 ms |
+| Merge 500 changed files | 1.02 s |
+| Rebase 100 changed files | 894 ms |
 
 ## Completed Optimization Inventory
 
@@ -152,6 +167,7 @@ This is the durable inventory of LovelyGit performance work. Update it in the sa
 | Enable Git untracked cache automatically | Warm status reached about 0.41–0.44 s | Initial warm-up was about 3.6 s and mutating user repository configuration was not justified. |
 | Suppress working-tree watchers during checkout | No repeatable improvement | Added lifecycle complexity without measurable value; reverted. |
 | Swap Git executable path for checkout | No repeatable improvement | Nested app-process launch cost remained; reverted. |
+| Replace standard stash push with `--quiet` or create/store/reset | None; warmed standard was 1.33 s, quiet 1.37 s, custom 1.47 s | Standard Git semantics were both fastest and safest, so the alternatives were rejected. |
 
 ## Next Measurement Areas
 
