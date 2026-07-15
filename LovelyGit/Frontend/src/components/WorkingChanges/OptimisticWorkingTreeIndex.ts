@@ -18,7 +18,10 @@ export function applyOptimisticIndexMutation(
 		return applySinglePathMutation(current, command, selected[0]);
 	}
 
-	const paths = new Set(selected.map((file) => file.path));
+	const paths = new Set<string>();
+	for (const file of selected) paths.add(file.path);
+	const workingByPath =
+		command === "unstage" ? indexWorkingFiles(current) : undefined;
 	const next = {
 		isComplete: current.isComplete,
 		staged: current.staged.filter((file) => !paths.has(file.path)),
@@ -33,7 +36,7 @@ export function applyOptimisticIndexMutation(
 			continue;
 		}
 
-		const existingWorking = findWorkingFile(current, file.path);
+		const existingWorking = workingByPath?.get(file.path);
 		if (file.status === "Added") {
 			next.untracked.push({ ...file, group: "Untracked", status: "Added" });
 		} else {
@@ -132,7 +135,16 @@ function allCandidates(
 }
 
 function uniqueByPath(files: WorkingTreeChangedFile[]) {
-	return [...new Map(files.map((file) => [file.path, file])).values()];
+	const byPath = new Map<string, WorkingTreeChangedFile>();
+	for (const file of files) byPath.set(file.path, file);
+	return [...byPath.values()];
+}
+
+function indexWorkingFiles(current: WorkingTreeChangesResponse) {
+	const byPath = new Map<string, WorkingTreeChangedFile>();
+	for (const file of current.untracked) byPath.set(file.path, file);
+	for (const file of current.unstaged) byPath.set(file.path, file);
+	return byPath;
 }
 
 function findWorkingFile(current: WorkingTreeChangesResponse, path: string) {

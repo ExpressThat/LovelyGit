@@ -99,6 +99,28 @@ describe("optimistic working-tree index changes", () => {
 		expect(next.staged[20_000]?.path).toBe(target.path);
 		expect(next.unstaged).toEqual([]);
 	});
+
+	it("unstages a large partially-staged selection without quadratic lookup work", () => {
+		const staged = Array.from({ length: 10_000 }, (_, index) =>
+			file(`src/${index.toString().padStart(5, "0")}.ts`, "Staged", "Modified"),
+		);
+		const unstaged = staged.map((entry) => ({
+			...entry,
+			additions: 1,
+			group: "Unstaged" as const,
+		}));
+		const changes = response({ staged, unstaged });
+		const startedAt = performance.now();
+
+		const next = applyOptimisticIndexMutation(changes, "unstage", [], true);
+		const elapsed = performance.now() - startedAt;
+		console.info(`Large optimistic unstage: ${elapsed.toFixed(2)} ms`);
+
+		expect(next.staged).toEqual([]);
+		expect(next.unstaged).toHaveLength(10_000);
+		expect(next.unstaged[5_000]?.additions).toBe(1);
+		expect(elapsed).toBeLessThan(50);
+	});
 });
 
 function response(
