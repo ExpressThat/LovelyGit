@@ -61,6 +61,7 @@ This is the durable inventory of LovelyGit performance work. Update it in the sa
 | Large conflict opening | 380.02 ms and 10.46 MB allocated for a 20,000-line conflict in a 1,501-ref repository | 112.43 ms and 8.85 MB allocated with path-targeted index reads, concurrent native blob reads, lightweight `HEAD`, and allocation-light incoming-ref lookup | Deterministic disposable merge-conflict fixture; 70.41% lower latency and 15.32% fewer allocated bytes; whitespace switching remains 6.73 ms and linked-worktree conflict indexes are now correct | `fbfa80f` |
 | Large conflict Save & stage | 350.21 ms and 2.45 MB allocated for a manual 20,000-line result in a 1,501-ref repository | 94.65 ms and 0.42 MB allocated with lightweight fingerprint/index validation and no full ref model | Deterministic disposable merge-conflict fixture; 72.97% lower latency and 82.96% fewer allocated bytes with exact saved text, staged-index, rollback, cancellation, stale-result, and whole-side coverage | `d9dd7f3` |
 | Conflict Changes / Full-file switching | 258.44 ms for five Changes and five Full-file preparations over 20,000 lines and 500 conflicts | 33.33 ms using an ordered base/source interval index | Pure frontend benchmark; 87.10% lower synchronous preparation latency with overlap, precedence, and empty-side regression coverage | `42fc630` |
+| Large patch preview | 68.90 ms and 76.97 MB allocated for a roughly 10 MB, 600,000-change-line patch | 50.98 ms and 0.41 MB allocated with pooled block parsing | Disposable patch fixture; 26.01% lower latency and 99.47% fewer allocated bytes with BOM, CRLF, long-line, cancellation, and real apply/preflight coverage | `dfe357d` |
 | Real remote clone | Not previously recorded | 4.91 s; 42.5 MiB checkout; 34.99 MiB pack; +21.7 MB observed desktop private memory | Full `sharkdp/bat` clone through CMG; 20,693 objects with monotonic overall and phase progress | `d795e85` |
 | Complete backend test gate | Previously over one minute during early integration work | 55.89 s clean run; established baseline 30–36 s | `Invoke-LovelyGitTestGate.ps1`, 574 tests at this checkpoint | `021c0ee`, `089f559`, `3a4bcbd` |
 
@@ -146,6 +147,7 @@ Measured through the same Git commands LovelyGit uses, in a disposable 2,001-fil
 - Compacted, compressed, referenced, and reused large colored diff payloads across layouts (`b55def8`, `f4f6d53`, `46af1fd`, `80d6769`, `ac7fb8a`, `df0c41b`, `d10ac7b`).
 - Bounded decoded/source/result cache weight and skipped uncacheable prewarming (`15ce59d`, `9f613ed`, `c4e610c`, `70eecfd`).
 - Moved diff persistence off click paths and cached open variants (`b074af7`, `dc120ec`, `54cb0c7`, `3726952`).
+- Streamed patch previews through a pooled character buffer so large Apply Patch files no longer allocate one string per content line (`dfe357d`).
 
 ### Conflict Resolution
 
