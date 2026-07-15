@@ -90,21 +90,26 @@ internal static partial class NativeFileBlameReader
     {
         var mapping = BlameLineMapper.MapNewLinesToOld(
             parent.Text.Content, current.Text.Content, current.Text.LineCount);
-        var carried = new List<ActiveLine>();
-        for (var index = remaining.Count - 1; index >= 0; index--)
+        var carried = new List<ActiveLine>(remaining.Count);
+        var remainingCount = 0;
+        for (var index = 0; index < remaining.Count; index++)
         {
             var line = remaining[index];
             var parentLine = line.CurrentLine < mapping.Length ? mapping[line.CurrentLine] : -1;
             if (parentLine < 0)
             {
+                remaining[remainingCount++] = line;
                 continue;
             }
 
             carried.Add(line with { CurrentLine = parentLine });
-            remaining.RemoveAt(index);
         }
 
-        carried.Reverse();
+        if (remainingCount < remaining.Count)
+        {
+            remaining.RemoveRange(remainingCount, remaining.Count - remainingCount);
+        }
+
         return carried;
     }
 
