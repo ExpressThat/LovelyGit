@@ -33,9 +33,13 @@ public sealed class CommitFileDiffPerformanceTests(ITestOutputHelper output)
         var repositoryId = Guid.NewGuid();
         try
         {
+            SeedUnrelatedRefs(directory.FullName, commitId.ToString(), 1_500);
+            GC.Collect();
+            var allocatedBefore = GC.GetTotalAllocatedBytes(precise: true);
             var startedAt = Stopwatch.GetTimestamp();
             var side = await ReadAsync(service, repositoryId, directory, commitId, CommitDiffViewMode.SideBySide);
             var sideElapsed = Stopwatch.GetElapsedTime(startedAt);
+            var openAllocated = GC.GetTotalAllocatedBytes(true) - allocatedBefore;
             startedAt = Stopwatch.GetTimestamp();
             var combined = await ReadAsync(service, repositoryId, directory, commitId, CommitDiffViewMode.Combined);
             var switchElapsed = Stopwatch.GetElapsedTime(startedAt);
@@ -52,7 +56,8 @@ public sealed class CommitFileDiffPerformanceTests(ITestOutputHelper output)
             output.WriteLine(
                 $"{LineCount:N0}-line file: open {sideElapsed.TotalMilliseconds:N1} ms; " +
                 $"side-to-combined {switchElapsed.TotalMilliseconds:N1} ms; " +
-                $"repeat {repeatedElapsed.TotalMilliseconds:N1} ms");
+                $"repeat {repeatedElapsed.TotalMilliseconds:N1} ms; " +
+                $"open allocated {openAllocated:N0} bytes");
 
             Assert.True(side.HasDifferences);
             Assert.True(combined.HasDifferences);
@@ -65,9 +70,10 @@ public sealed class CommitFileDiffPerformanceTests(ITestOutputHelper output)
             Assert.Equal(side.CompactLineCount, repeated.CompactLineCount);
             Assert.Equal(side.CompactLinesGzipBase64, repeated.CompactLinesGzipBase64);
             Assert.Equal(side.Lines, repeated.Lines);
-            Assert.True(sideElapsed < TimeSpan.FromSeconds(1));
+            Assert.True(sideElapsed < TimeSpan.FromMilliseconds(600));
             Assert.True(switchElapsed < TimeSpan.FromMilliseconds(500));
             Assert.True(repeatedElapsed < TimeSpan.FromMilliseconds(100));
+            Assert.True(openAllocated < 8_500_000);
         }
         finally
         {
@@ -174,5 +180,15 @@ public sealed class CommitFileDiffPerformanceTests(ITestOutputHelper output)
         foreach (var file in directory.EnumerateFiles("*", SearchOption.AllDirectories))
             file.Attributes = FileAttributes.Normal;
         directory.Delete(true);
+    }
+
+    private static void SeedUnrelatedRefs(string repositoryPath, string commit, int count)
+    {
+        var heads = Directory.CreateDirectory(
+            Path.Combine(repositoryPath, ".git", "refs", "heads", "perf"));
+        for (var index = 0; index < count; index++)
+        {
+            File.WriteAllText(Path.Combine(heads.FullName, $"branch-{index:D4}"), commit + "\n");
+        }
     }
 }

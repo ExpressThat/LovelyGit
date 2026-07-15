@@ -51,7 +51,8 @@ internal sealed partial class CommitFileDiffService : IDisposable
             throw new InvalidDataException("CommitHash is invalid.");
         }
 
-        using var repository = await LovelyGitRepository.OpenAsync(repositoryPath, cancellationToken)
+        using var repository = await LovelyGitRepository
+            .OpenObjectDatabaseAsync(repositoryPath, cancellationToken)
             .ConfigureAwait(false);
         var commit = await repository.GetCommitAsync(commitId, cancellationToken).ConfigureAwait(false);
         var comparisonParent = await ResolveComparisonCommitAsync(
