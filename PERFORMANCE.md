@@ -32,7 +32,8 @@ This is the durable inventory of LovelyGit performance work. Update it in the sa
 | Warm Working Changes Content | 310.5 ms | 44.2 ms | Chromium CMG toolbar-click-to-meaningful-content timing; immediate deferred reveal preserving the 43.45 kB lazy chunk | `3cb31fa` |
 | Cold New Tab | 309.0 ms | 27.2 ms | Chromium CMG plus-click-to-onboarding timing; immediate deferred reveal preserving the separate New Tab chunk | `88b7b26` |
 | Cold Stash File Diff | 314.1 ms | 15.6 ms | Disposable-stash CMG file-click-to-diff timing; immediate deferred reveal preserving the 6.68 kB commit-diff chunk | `95b00d5` |
-| Cold Bisect Session Content | 304.0 ms | 13.5 ms | Chromium CMG toolbar-click-to-meaningful-content timing; immediate deferred reveal preserving the 5.77 kB session chunk | This commit |
+| Cold Bisect Session Content | 304.0 ms | 13.5 ms | Chromium CMG toolbar-click-to-meaningful-content timing; immediate deferred reveal preserving the 5.77 kB session chunk | `79a6057` |
+| Cold Force Push Confirmation | 318.2 ms | 13.4 ms | Chromium CMG menu-item-to-safety-dialog timing; immediate deferred reveal preserving the 2.14 kB confirmation chunk | This commit |
 | Complete backend test gate | Previously over one minute during early integration work | 55.89 s clean run; established baseline 30–36 s | `Invoke-LovelyGitTestGate.ps1`, 574 tests at this checkpoint | `021c0ee`, `089f559`, `3a4bcbd` |
 
 ## Completed Optimization Inventory
@@ -53,7 +54,8 @@ This is the durable inventory of LovelyGit performance work. Update it in the sa
 - Applied immediate deferred reveal to commit-identity editing while preserving its separate dialog chunk (`74f068a`).
 - Applied immediate deferred reveal to remote-branch checkout and deletion confirmations while preserving their shared chunk (`a2648d6`).
 - Applied immediate deferred reveal to repository onboarding/New Tab while preserving its separate lazy chunk (`88b7b26`).
-- Applied immediate deferred reveal to meaningful bisect-session content while preserving its separate session chunk (this commit).
+- Applied immediate deferred reveal to meaningful bisect-session content while preserving its separate session chunk (`79a6057`).
+- Applied immediate deferred reveal to force-with-lease confirmation while preserving its separate safety-dialog chunk (this commit).
 - Switched the desktop process to workstation GC and moved process-memory sampling off interaction paths (`b0d124b`, `c7241dc`).
 - Reduced native interaction metrics overhead (`efcd0a7`).
 

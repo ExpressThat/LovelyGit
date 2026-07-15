@@ -1,4 +1,5 @@
-import { lazy, Suspense, useState } from "react";
+import { useState } from "react";
+import { DeferredPrimaryOverlay } from "@/AppPrimaryOverlays";
 import {
 	ChevronDown,
 	ShieldAlert,
@@ -12,12 +13,11 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import type { GitPushMode } from "@/generated/types";
+import { createDeferredLoader } from "@/lib/deferredLoader";
 import { SyncCountBadge, syncActionLabel } from "./SyncCountBadge";
 
-const LazyForcePushDialog = lazy(() =>
-	import("./ForcePushDialog").then((module) => ({
-		default: module.ForcePushDialog,
-	})),
+const forcePushDialogLoader = createDeferredLoader(() =>
+	import("./ForcePushDialog").then((module) => module.ForcePushDialog),
 );
 
 export function PushActionsControl({
@@ -101,21 +101,23 @@ export function PushActionsControl({
 				</DropdownMenu>
 			</div>
 			{forcePushOpen ? (
-				<Suspense fallback={null}>
-					<LazyForcePushDialog
-						branchName={currentBranchName}
-						isBusy={isBusy}
-						onConfirm={() => {
+				<DeferredPrimaryOverlay
+					fallback={null}
+					loader={forcePushDialogLoader}
+					props={{
+						branchName: currentBranchName,
+						isBusy,
+						onConfirm: () => {
 							void onPush("ForceWithLease").then((completed) => {
 								if (completed) setForcePushOpen(false);
 							});
-						}}
-						onOpenChange={(open) => {
+						},
+						onOpenChange: (open) => {
 							if (!isBusy) setForcePushOpen(open);
-						}}
-						open
-					/>
-				</Suspense>
+						},
+						open: true,
+					}}
+				/>
 			) : null}
 		</>
 	);
