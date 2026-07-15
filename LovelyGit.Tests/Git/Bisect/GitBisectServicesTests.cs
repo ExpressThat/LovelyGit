@@ -1,5 +1,6 @@
 using ExpressThat.LovelyGit.Services.Git.Bisect;
 using ExpressThat.LovelyGit.Services.Git.Cli;
+using ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser;
 using LovelyGit.Tests.Git.WorkingTree;
 
 namespace LovelyGit.Tests.Git.Bisect;
@@ -89,6 +90,53 @@ public sealed class GitBisectServicesTests
             GitBisectAction.Reset,
             goodCommit: null,
             CancellationToken.None);
+    }
+
+    [Fact]
+    public async Task Reader_UsesLinkedWorktreeBisectRefsInsteadOfCommonRefs()
+    {
+        using var repository = CreateRepository();
+        var worktreePath = Path.Combine(Path.GetTempPath(), $"lovelygit-bisect-linked-{Guid.NewGuid():N}");
+        try
+        {
+            await GitTestProcess.RunAsync(
+                repository.Path, "worktree", "add", "-b", "linked-bisect", worktreePath, "main");
+            var paths = await GitRepositoryDiscovery.ResolveRepositoryPathsAsync(
+                worktreePath, CancellationToken.None);
+            SeedBisectRefs(paths.WorktreeGitDirectory, repository.Commits[1], repository.Commits[0]);
+            var commonRefs = Directory.CreateDirectory(
+                Path.Combine(paths.GitDirectory, "refs", "bisect"));
+            await File.WriteAllTextAsync(
+                Path.Combine(commonRefs.FullName, "bad"), repository.Commits[^1] + "\n");
+
+            var state = await new NativeGitBisectStateReader().ReadAsync(
+                worktreePath, CancellationToken.None);
+
+            Assert.True(state.IsActive);
+            Assert.Equal(repository.Commits[1], state.BadCommit);
+            Assert.Equal([repository.Commits[0]], state.GoodCommits);
+            var startPath = Path.Combine(paths.WorktreeGitDirectory, "BISECT_START");
+            var startBefore = await File.ReadAllBytesAsync(startPath);
+            using var cancellation = new CancellationTokenSource();
+            cancellation.Cancel();
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+                new NativeGitBisectStateReader().ReadAsync(worktreePath, cancellation.Token));
+            Assert.Equal(startBefore, await File.ReadAllBytesAsync(startPath));
+        }
+        finally
+        {
+            await GitTestProcess.RunAsync(repository.Path, "worktree", "remove", "--force", worktreePath);
+            if (Directory.Exists(worktreePath)) Directory.Delete(worktreePath, recursive: true);
+        }
+    }
+
+    private static void SeedBisectRefs(string gitDirectory, string bad, string good)
+    {
+        var refs = Directory.CreateDirectory(Path.Combine(gitDirectory, "refs", "bisect"));
+        File.WriteAllText(Path.Combine(refs.FullName, "bad"), bad + "\n");
+        File.WriteAllText(Path.Combine(refs.FullName, $"good-{good}"), good + "\n");
+        File.WriteAllText(Path.Combine(refs.FullName, "good-malformed"), "not-an-object-id\n");
+        File.WriteAllText(Path.Combine(gitDirectory, "BISECT_START"), "linked-bisect\n");
     }
 
     private static GitBisectCommandService CreateService(NativeGitBisectStateReader reader) =>
