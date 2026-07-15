@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using ExpressThat.LovelyGit.Services.Git.WorkingTree;
 using LovelyGit.Tests.Git.RepositoryOperations;
 
@@ -112,6 +113,30 @@ public sealed class ConflictExternalMergeToolServiceTests
         Assert.NotEmpty(await ReadUnmergedAsync(second));
     }
 
+    [Fact]
+    public async Task OpenAsync_PreflightDoesNotScaleWithUnrelatedRefs()
+    {
+        using var repository = await CreateConflictAsync();
+        var head = (await repository.Git.ExecuteBufferedAsync(
+            ["rev-parse", "HEAD"], repository.Path)).StandardOutput.Trim();
+        SeedUnrelatedRefs(repository.Path, head, 1_500);
+        var service = new ConflictExternalMergeToolService(StubRunner((_, _, _) =>
+            Task.FromResult(new ConflictMergeToolResult(1, string.Empty, "expected failure"))));
+        GC.Collect();
+        var allocatedBefore = GC.GetTotalAllocatedBytes(precise: true);
+        var startedAt = Stopwatch.GetTimestamp();
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            service.OpenAsync(repository.Path, "shared.txt", CancellationToken.None));
+
+        var elapsed = Stopwatch.GetElapsedTime(startedAt);
+        var allocated = GC.GetTotalAllocatedBytes(true) - allocatedBefore;
+        Console.WriteLine(
+            $"ElapsedMs={elapsed.TotalMilliseconds:F2}; AllocatedBytes={allocated:N0}");
+        Assert.True(elapsed < TimeSpan.FromMilliseconds(100), $"Preflight took {elapsed}.");
+        Assert.True(allocated < 500_000, $"Preflight allocated {allocated:N0} bytes.");
+    }
+
     private static ConflictExternalMergeToolService CreateService(TestRepository repository) =>
         new(repository.Git);
 
@@ -152,6 +177,16 @@ public sealed class ConflictExternalMergeToolServiceTests
     private static async Task<string> ReadUnmergedAsync(TestRepository repository) =>
         (await repository.Git.ExecuteBufferedAsync(
             ["ls-files", "--unmerged"], repository.Path)).StandardOutput;
+
+    private static void SeedUnrelatedRefs(string repositoryPath, string commit, int count)
+    {
+        var heads = Directory.CreateDirectory(
+            Path.Combine(repositoryPath, ".git", "refs", "heads", "perf"));
+        for (var index = 0; index < count; index++)
+        {
+            File.WriteAllText(Path.Combine(heads.FullName, $"branch-{index:D4}"), commit + "\n");
+        }
+    }
 
     private sealed class StubConflictMergeToolRunner(
         Func<string, string, CancellationToken, Task<ConflictMergeToolResult>> run)

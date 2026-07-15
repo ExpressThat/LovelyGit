@@ -27,7 +27,11 @@ internal sealed class ConflictExternalMergeToolService
             .ConfigureAwait(false);
         var targetPath = WorkingTreePath.Resolve(paths.WorkTreeDirectory, path);
         var indexPath = Path.Combine(paths.WorktreeGitDirectory, "index");
-        await EnsureUnmergedAsync(paths.WorkTreeDirectory, paths.GitDirectory, path, cancellationToken)
+        await EnsureUnmergedAsync(
+                paths.WorktreeGitDirectory,
+                paths.GitDirectory,
+                path,
+                cancellationToken)
             .ConfigureAwait(false);
 
         var snapshot = await ConflictToolSnapshot.CreateAsync(targetPath, indexPath, cancellationToken)
@@ -43,7 +47,11 @@ internal sealed class ConflictExternalMergeToolService
                 throw new InvalidOperationException(BuildFailureMessage(result.StandardError, result.StandardOutput));
             }
 
-            if (await IsUnmergedAsync(paths.WorkTreeDirectory, paths.GitDirectory, path, cancellationToken)
+            if (await IsUnmergedAsync(
+                    paths.WorktreeGitDirectory,
+                    paths.GitDirectory,
+                    path,
+                    cancellationToken)
                 .ConfigureAwait(false))
             {
                 throw new InvalidOperationException(
@@ -68,29 +76,39 @@ internal sealed class ConflictExternalMergeToolService
     }
 
     private static async Task EnsureUnmergedAsync(
-        string workTreeDirectory,
+        string worktreeGitDirectory,
         string gitDirectory,
         string path,
         CancellationToken cancellationToken)
     {
-        if (!await IsUnmergedAsync(workTreeDirectory, gitDirectory, path, cancellationToken).ConfigureAwait(false))
+        if (!await IsUnmergedAsync(
+                worktreeGitDirectory,
+                gitDirectory,
+                path,
+                cancellationToken)
+            .ConfigureAwait(false))
         {
             throw new InvalidOperationException("This file no longer has an unresolved conflict.");
         }
     }
 
     private static async Task<bool> IsUnmergedAsync(
-        string workTreeDirectory,
+        string worktreeGitDirectory,
         string gitDirectory,
         string path,
         CancellationToken cancellationToken)
     {
-        using var repository = await LovelyGitRepository.OpenAsync(workTreeDirectory, cancellationToken)
+        var objectFormat = await GitRepositoryDiscovery
+            .ReadObjectFormatAsync(gitDirectory, cancellationToken)
             .ConfigureAwait(false);
         var entries = await new GitIndexReader()
-            .ReadAsync(gitDirectory, repository.ObjectFormat, cancellationToken)
+            .ReadEntriesForPathAsync(
+                worktreeGitDirectory,
+                objectFormat,
+                path,
+                cancellationToken)
             .ConfigureAwait(false);
-        return entries.Any(entry => entry.Path == path && entry.Stage is >= 1 and <= 3);
+        return entries.Any(entry => entry.Stage is >= 1 and <= 3);
     }
 
     private static string BuildFailureMessage(string standardError, string standardOutput)
