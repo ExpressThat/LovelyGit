@@ -78,11 +78,13 @@ internal sealed partial class WorkingTreeChangeService
             "working-tree.file-diff",
             $"{group} {viewMode} {path}");
         path = NormalizePath(path);
-        using var repository = await LovelyGitRepository.OpenAsync(repositoryPath, cancellationToken).ConfigureAwait(false);
         if (group == WorkingTreeChangeGroup.Untracked)
         {
+            var paths = await GitRepositoryDiscovery
+                .ResolveRepositoryPathsAsync(repositoryPath, cancellationToken)
+                .ConfigureAwait(false);
             return await BuildUntrackedFileDiffAsync(
-                    repository.WorkTreeDirectory,
+                    paths.WorkTreeDirectory,
                     path,
                     viewMode,
                     ignoreWhitespace,
@@ -90,6 +92,8 @@ internal sealed partial class WorkingTreeChangeService
                 .ConfigureAwait(false);
         }
 
+        using var repository = await LovelyGitRepository.OpenAsync(repositoryPath, cancellationToken)
+            .ConfigureAwait(false);
         var indexEntries = await new GitIndexReader()
             .ReadAsync(repository.GitDirectory, repository.ObjectFormat, cancellationToken)
             .ConfigureAwait(false);
