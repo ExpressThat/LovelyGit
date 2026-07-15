@@ -64,6 +64,7 @@ This is the durable inventory of LovelyGit performance work. Update it in the sa
 | Large patch preview | 68.90 ms and 76.97 MB allocated for a roughly 10 MB, 600,000-change-line patch | 50.98 ms and 0.41 MB allocated with pooled block parsing | Disposable patch fixture; 26.01% lower latency and 99.47% fewer allocated bytes with BOM, CRLF, long-line, cancellation, and real apply/preflight coverage | `dfe357d` |
 | Large sparse-checkout manager read | 33.15 ms and 18.50 MB allocated for 100,000 patterns | 20.48 ms and 15.39 MB allocated with a single streaming collector | Disposable sparse repository; 38.22% lower latency and 16.81% fewer allocated bytes while retaining all returned patterns, cone semantics, order, cancellation, and no-mutation coverage | `d70f301` |
 | Large stash reflog refresh | 147.65 ms and 69.30 MB allocated for 100,000 stash entries | 81.03 ms and 28.18 MB allocated with pooled block parsing and in-place newest-first ordering | Disposable reflog fixture; 45.12% lower latency and 59.34% fewer allocated bytes with malformed-entry, long-line, CRLF, SHA-256, cancellation, and real stash-workflow coverage | `f2d0af1b` |
+| Large Git LFS attributes scan | 95.63 ms and 47.91 MB allocated while scanning 300,000 mixed lines for 10,000 LFS patterns | 61.57 ms and 1.91 MB allocated with a bounded pooled block reader | Disposable attributes fixture; 35.62% lower latency and 96.01% fewer allocated bytes with quoted/escaped pattern, BOM, long-line, cancellation, limit, and real track/untrack coverage | `145b479` |
 | Real remote clone | Not previously recorded | 4.91 s; 42.5 MiB checkout; 34.99 MiB pack; +21.7 MB observed desktop private memory | Full `sharkdp/bat` clone through CMG; 20,693 objects with monotonic overall and phase progress | `d795e85` |
 | Complete backend test gate | Previously over one minute during early integration work | 55.89 s clean run; established baseline 30–36 s | `Invoke-LovelyGitTestGate.ps1`, 574 tests at this checkpoint | `021c0ee`, `089f559`, `3a4bcbd` |
 
@@ -142,6 +143,7 @@ Measured through the same Git commands LovelyGit uses, in a disposable 2,001-fil
 - Added progressive tracked-first working changes with explicit completeness and disabled mutation controls until complete (`3a4bcbd`).
 - Enabled command-local, four-worker parallel checkout above 100 paths for switch, clone, worktree, reset, merge, rebase, cherry-pick, and revert operations. This avoids persistent repository configuration and daemon memory while bounding transient worker cost (`db9ea3b`).
 - Streamed sparse-checkout specifications directly into the response collector instead of retaining a duplicate raw-line array (`d70f301`).
+- Streamed large `.gitattributes` files through a pooled parser so non-LFS lines do not become managed strings while retaining the existing bounded result (`145b479`).
 
 ### Diff Engine and File Diffs
 
