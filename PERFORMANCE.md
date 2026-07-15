@@ -194,6 +194,7 @@ Measured through the same Git commands LovelyGit uses, in a disposable 2,001-fil
 | Suppress working-tree watchers during checkout | No repeatable improvement | Added lifecycle complexity without measurable value; reverted. |
 | Swap Git executable path for checkout | No repeatable improvement | Nested app-process launch cost remained; reverted. |
 | Replace standard stash push with `--quiet` or create/store/reset | None; warmed standard was 1.33 s, quiet 1.37 s, custom 1.47 s | Standard Git semantics were both fastest and safest, so the alternatives were rejected. |
+| Batch submodule HEAD tree lookups with a path trie | Allocations fell from 2.53 MB to 2.18 MB for 1,000 definitions, but latency moved from 59.29 ms to 60.18 ms | Path normalization and worktree state checks dominate the manager read; the extra parser complexity did not improve interaction latency, so it was removed. |
 
 ## Next Measurement Areas
 
