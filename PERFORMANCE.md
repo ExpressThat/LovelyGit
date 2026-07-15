@@ -33,7 +33,11 @@ This is the durable inventory of LovelyGit performance work. Update it in the sa
 | Cold New Tab | 309.0 ms | 27.2 ms | Chromium CMG plus-click-to-onboarding timing; immediate deferred reveal preserving the separate New Tab chunk | `88b7b26` |
 | Cold Stash File Diff | 314.1 ms | 15.6 ms | Disposable-stash CMG file-click-to-diff timing; immediate deferred reveal preserving the 6.68 kB commit-diff chunk | `95b00d5` |
 | Cold Bisect Session Content | 304.0 ms | 13.5 ms | Chromium CMG toolbar-click-to-meaningful-content timing; immediate deferred reveal preserving the 5.77 kB session chunk | `79a6057` |
-| Cold Force Push Confirmation | 318.2 ms | 13.4 ms | Chromium CMG menu-item-to-safety-dialog timing; immediate deferred reveal preserving the 2.14 kB confirmation chunk | This commit |
+| Cold Force Push Confirmation | 318.2 ms | 13.4 ms | Chromium CMG menu-item-to-safety-dialog timing; immediate deferred reveal preserving the 2.14 kB confirmation chunk | `1f749da` |
+| Repeated overlay retention | 10.88 MB post-GC heap | 13.61 MB after 60 opens; 13.83 MB after 120 | Chromium CMG Settings/Bisect/Force Push cycles; second pass +0.22 MB and zero live-DOM growth | This commit |
+| Working Changes retention | 13.97 MB warmed post-GC heap | 15.31 MB after 20+ opens; 15.39 MB after 10 more | Chromium CMG panel cycles; second pass +0.08 MB and live DOM stable at 1,687 nodes | This commit |
+| Bisect handle retention | 1,065 host handles | 1,059 after 30 additional reads and 2 s settle | Chromium CMG read-only session loads; no linear native handle growth | This commit |
+| Warm four-tab desktop footprint | Not previously recorded | 517.9 MB private; 825.3 MB working set; 4,420 handles | LovelyGit host plus owned WebView2 tree after broad Chromium audit; host itself was 121.1 MB private | This commit |
 | Complete backend test gate | Previously over one minute during early integration work | 55.89 s clean run; established baseline 30–36 s | `Invoke-LovelyGitTestGate.ps1`, 574 tests at this checkpoint | `021c0ee`, `089f559`, `3a4bcbd` |
 
 ## Completed Optimization Inventory
@@ -55,7 +59,7 @@ This is the durable inventory of LovelyGit performance work. Update it in the sa
 - Applied immediate deferred reveal to remote-branch checkout and deletion confirmations while preserving their shared chunk (`a2648d6`).
 - Applied immediate deferred reveal to repository onboarding/New Tab while preserving its separate lazy chunk (`88b7b26`).
 - Applied immediate deferred reveal to meaningful bisect-session content while preserving its separate session chunk (`79a6057`).
-- Applied immediate deferred reveal to force-with-lease confirmation while preserving its separate safety-dialog chunk (this commit).
+- Applied immediate deferred reveal to force-with-lease confirmation while preserving its separate safety-dialog chunk (`1f749da`).
 - Switched the desktop process to workstation GC and moved process-memory sampling off interaction paths (`b0d124b`, `c7241dc`).
 - Reduced native interaction metrics overhead (`efcd0a7`).
 
@@ -117,6 +121,12 @@ This is the durable inventory of LovelyGit performance work. Update it in the sa
 - Added bounded process ownership, cancellation, and session-health gates (`74c0f12`, `089f559`).
 - Kept the official backend suite below one minute without weakening assertions (`021c0ee`).
 - Added application dependency-graph validation without launching the desktop host (`525a3c2`).
+
+### Runtime Memory and Resource Lifetime
+
+- Verified Settings, Bisect, and Force Push overlays plateau after warm-up rather than retaining linearly; a second 60-interaction pass added only 0.22 MB post-GC with no DOM growth (this commit).
+- Verified Working Changes open/close cycles plateau after the status/cache warm-up; the second ten-cycle pass added only 0.08 MB post-GC with no DOM growth (this commit).
+- Verified repeated native bisect-state reads do not leak process handles, and recorded the warmed four-tab host/WebView2 footprint as the next memory-reduction baseline (this commit).
 
 ## Rejected or Deferred Experiments
 
