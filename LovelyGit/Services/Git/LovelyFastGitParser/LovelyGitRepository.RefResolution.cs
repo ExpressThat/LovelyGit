@@ -2,6 +2,14 @@ namespace ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser;
 
 internal sealed partial class LovelyGitRepository
 {
+    public async Task<GitObjectId?> ResolveHeadAsync(CancellationToken cancellationToken) =>
+        await Refs.GitHeadReader.ResolveAsync(
+                WorktreeGitDirectory,
+                GitDirectory,
+                ObjectFormat,
+                cancellationToken)
+            .ConfigureAwait(false);
+
     public bool TryResolveRefTarget(string name, out GitObjectId target)
     {
         var normalized = name.Trim();

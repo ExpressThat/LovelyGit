@@ -22,9 +22,11 @@ internal static class NativeFileHistoryReader
         CancellationToken cancellationToken)
     {
         var normalizedPath = FileHistoryPath.Normalize(path);
-        using var repository = await LovelyGitRepository.OpenAsync(repositoryPath, cancellationToken)
+        using var repository = await LovelyGitRepository
+            .OpenObjectDatabaseAsync(repositoryPath, cancellationToken)
             .ConfigureAwait(false);
-        var start = ResolveStart(repository, startCommitHash);
+        var start = await ResolveStartAsync(repository, startCommitHash, cancellationToken)
+            .ConfigureAwait(false);
         if (start == null)
         {
             return new FileHistoryResponse { Path = normalizedPath };
@@ -80,11 +82,14 @@ internal static class NativeFileHistoryReader
         };
     }
 
-    private static GitObjectId? ResolveStart(LovelyGitRepository repository, string? hash)
+    private static async Task<GitObjectId?> ResolveStartAsync(
+        LovelyGitRepository repository,
+        string? hash,
+        CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(hash))
         {
-            return repository.HeadTarget;
+            return await repository.ResolveHeadAsync(cancellationToken).ConfigureAwait(false);
         }
 
         return GitObjectId.TryParse(hash.Trim(), repository.ObjectFormat, out var id)

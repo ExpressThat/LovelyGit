@@ -19,9 +19,11 @@ internal static partial class NativeFileBlameReader
         CancellationToken cancellationToken)
     {
         var normalizedPath = FileHistoryPath.Normalize(path);
-        using var repository = await LovelyGitRepository.OpenAsync(repositoryPath, cancellationToken)
+        using var repository = await LovelyGitRepository
+            .OpenObjectDatabaseAsync(repositoryPath, cancellationToken)
             .ConfigureAwait(false);
-        var start = ResolveStart(repository, startCommitHash)
+        var start = await ResolveStartAsync(repository, startCommitHash, cancellationToken)
+            .ConfigureAwait(false)
             ?? throw new InvalidDataException("Repository has no commits to blame.");
         var header = await repository.GetCommitAncestryHeaderAsync(start, cancellationToken)
             .ConfigureAwait(false);
@@ -70,9 +72,13 @@ internal static partial class NativeFileBlameReader
         : await repository.TryGetTreeFileAsync(header.TreeHash.Value, path, cancellationToken)
             .ConfigureAwait(false);
 
-    private static GitObjectId? ResolveStart(LovelyGitRepository repository, string? hash)
+    private static async Task<GitObjectId?> ResolveStartAsync(
+        LovelyGitRepository repository,
+        string? hash,
+        CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(hash)) return repository.HeadTarget;
+        if (string.IsNullOrWhiteSpace(hash))
+            return await repository.ResolveHeadAsync(cancellationToken).ConfigureAwait(false);
         return GitObjectId.TryParse(hash.Trim(), repository.ObjectFormat, out var id)
             ? id
             : throw new ArgumentException("The starting commit hash is invalid.", nameof(hash));

@@ -22,6 +22,7 @@ public sealed class NativeAncestryWorkflowPerformanceTests(ITestOutputHelper out
         var (directory, head) = Template.CreateCopy("lovelygit-file-history-performance-");
         try
         {
+            SeedUnrelatedRefs(directory.FullName, head, 1_500);
             GC.Collect();
             var allocatedBefore = GC.GetTotalAllocatedBytes(precise: true);
             var startedAt = Stopwatch.GetTimestamp();
@@ -55,6 +56,7 @@ public sealed class NativeAncestryWorkflowPerformanceTests(ITestOutputHelper out
         var (directory, head) = Template.CreateCopy("lovelygit-file-blame-performance-");
         try
         {
+            SeedUnrelatedRefs(directory.FullName, head, 1_500);
             GC.Collect();
             var allocatedBefore = GC.GetTotalAllocatedBytes(precise: true);
             var startedAt = Stopwatch.GetTimestamp();
@@ -129,6 +131,14 @@ public sealed class NativeAncestryWorkflowPerformanceTests(ITestOutputHelper out
         DirectoryInfo directory,
         IReadOnlyList<string> arguments) => git.ExecuteBufferedAsync(
             arguments, directory.FullName).GetAwaiter().GetResult().StandardOutput;
+
+    private static void SeedUnrelatedRefs(string repositoryPath, string commit, int count)
+    {
+        var heads = Directory.CreateDirectory(
+            Path.Combine(repositoryPath, ".git", "refs", "heads", "perf"));
+        for (var index = 0; index < count; index++)
+            File.WriteAllText(Path.Combine(heads.FullName, $"branch-{index:D4}"), commit + "\n");
+    }
 
     private static void DeleteDirectory(DirectoryInfo directory)
     {
