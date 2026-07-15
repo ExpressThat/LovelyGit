@@ -19,7 +19,8 @@ internal sealed partial class GitObjectStore
 
         var matches = new HashSet<GitObjectId>();
         AddLooseMatches(normalized, matches, maximumResults: 2);
-        foreach (var index in await GetPackIndexesAsync(cancellationToken).ConfigureAwait(false))
+        using var indexes = await AcquirePackIndexesAsync(cancellationToken).ConfigureAwait(false);
+        foreach (var index in indexes.Indexes)
         {
             index.AddIdsWithPrefix(normalized, _objectFormat, matches, 2, cancellationToken);
             if (matches.Count > 1) return null;

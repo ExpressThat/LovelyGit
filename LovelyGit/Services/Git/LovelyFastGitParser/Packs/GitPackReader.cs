@@ -10,9 +10,6 @@ internal sealed partial class GitPackReader : IDisposable
     private readonly GitObjectFormat _objectFormat;
     private readonly LruCache<PackObjectKey, GitObjectData> _packOffsetCache =
         new(PackOffsetCacheSize, PackOffsetCacheBytes, ObjectWeight);
-    private readonly object _packFilesGate = new();
-    private readonly Dictionary<string, FileStream> _packFiles = new(StringComparer.Ordinal);
-
     public GitPackReader(GitObjectFormat objectFormat)
     {
         _objectFormat = objectFormat;
@@ -31,7 +28,8 @@ internal sealed partial class GitPackReader : IDisposable
             return cached;
         }
 
-        using var file = new RandomAccessPackStream(GetPackFile(packPath).SafeFileHandle, offset);
+        using var packFile = AcquirePackFile(packPath);
+        using var file = new RandomAccessPackStream(packFile.Handle, offset);
 
         var first = file.ReadByte();
         if (first < 0)
@@ -100,44 +98,9 @@ internal sealed partial class GitPackReader : IDisposable
         _packOffsetCache.Clear();
     }
 
-    public void ClearPackFiles()
-    {
-        ClearObjectCache();
-        lock (_packFilesGate)
-        {
-            foreach (var file in _packFiles.Values)
-            {
-                file.Dispose();
-            }
-
-            _packFiles.Clear();
-        }
-    }
-
     public void Dispose()
     {
-        ClearPackFiles();
-    }
-
-    private FileStream GetPackFile(string packPath)
-    {
-        lock (_packFilesGate)
-        {
-            if (_packFiles.TryGetValue(packPath, out var file))
-            {
-                return file;
-            }
-
-            file = new FileStream(
-                packPath,
-                FileMode.Open,
-                FileAccess.Read,
-                FileShare.ReadWrite | FileShare.Delete,
-                bufferSize: 1,
-                FileOptions.RandomAccess);
-            _packFiles.Add(packPath, file);
-            return file;
-        }
+        DisposePackFiles();
     }
 
     private static ulong ReadVariableSize(Stream stream, int first)

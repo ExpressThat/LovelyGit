@@ -39,6 +39,7 @@ This is the durable inventory of LovelyGit performance work. Update it in the sa
 | Working Changes retention | 13.97 MB warmed post-GC heap | 15.31 MB after 20+ opens; 15.39 MB after 10 more | Chromium CMG panel cycles; second pass +0.08 MB and live DOM stable at 1,687 nodes | This commit |
 | Bisect handle retention | 1,065 host handles | 1,059 after 30 additional reads and 2 s settle | Chromium CMG read-only session loads; no linear native handle growth | This commit |
 | Warm four-tab desktop footprint | Not previously recorded | 517.9 MB private; 825.3 MB working set; 4,420 handles | LovelyGit host plus owned WebView2 tree after broad Chromium audit; host itself was 121.1 MB private | This commit |
+| Repeated fetch/repack pack handles | One pack and index handle retained per obsolete pack generation until repository disposal | Only the current generation remains; in-flight old readers release their exact handles on completion | Disposable packed repository repacked with `gc --prune=now`; native parser resource regression | This commit |
 | Real remote clone | Not previously recorded | 4.91 s; 42.5 MiB checkout; 34.99 MiB pack; +21.7 MB observed desktop private memory | Full `sharkdp/bat` clone through CMG; 20,693 objects with monotonic overall and phase progress | `d795e85` |
 | Complete backend test gate | Previously over one minute during early integration work | 55.89 s clean run; established baseline 30–36 s | `Invoke-LovelyGitTestGate.ps1`, 574 tests at this checkpoint | `021c0ee`, `089f559`, `3a4bcbd` |
 
@@ -152,6 +153,7 @@ Measured through the same Git commands LovelyGit uses, in a disposable 2,001-fil
 - Verified multi-repository switching does not retain linearly: post-GC JavaScript heap increased only 0.36 MB across 120 activations while the active DOM count stayed constant; the on-disk app/cache databases remained bounded at 3 MiB and 5 MiB.
 - Measured local-remote transport through the real WebView2 UI with an isolated bare remote: Fetch All and Pull (fast-forward only) each reflected in about 104 ms, and Push completed in about 96 ms.
 - Verified fetch, pull, and push disable the transport toolbar during mutation, restore it afterward, refresh refs and ahead/behind state, and leave no page or console errors. Existing integration coverage protects diverged fast-forward rejection, force-with-lease safety, cancellation, and remote no-mutation on failure.
+- Replaced lifetime-long retired pack-index and pack-file retention with generation-aware read leases. Fetch/repack can now replace native pack snapshots without interrupting active reads, while obsolete handles close after their final reader instead of accumulating until repository disposal (`this commit`).
 
 ### Clone and Remote Transport
 

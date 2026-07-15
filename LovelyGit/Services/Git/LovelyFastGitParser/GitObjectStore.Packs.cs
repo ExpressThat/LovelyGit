@@ -23,7 +23,8 @@ internal sealed partial class GitObjectStore
                 return null;
             }
 
-            await ReloadPackIndexesAsync(cancellationToken).ConfigureAwait(false);
+            await ReloadPackIndexesAsync(result.PackIndexGeneration, cancellationToken)
+                .ConfigureAwait(false);
         }
 
         return null;
@@ -34,7 +35,8 @@ internal sealed partial class GitObjectStore
         bool cacheObject,
         CancellationToken cancellationToken)
     {
-        foreach (var index in await GetPackIndexesAsync(cancellationToken).ConfigureAwait(false))
+        using var indexes = await AcquirePackIndexesAsync(cancellationToken).ConfigureAwait(false);
+        foreach (var index in indexes.Indexes)
         {
             var offset = index.TryFindOffset(id, cancellationToken);
             if (offset == null)
@@ -44,7 +46,10 @@ internal sealed partial class GitObjectStore
 
             if (!File.Exists(index.PackPath))
             {
-                return new PackedObjectReadResult(null, PackIndexesStale: true);
+                return new PackedObjectReadResult(
+                    null,
+                    PackIndexesStale: true,
+                    indexes.Generation);
             }
 
             var objectData = await _packReader
@@ -57,57 +62,89 @@ internal sealed partial class GitObjectStore
                     cacheObject,
                     cancellationToken)
                 .ConfigureAwait(false);
-            return new PackedObjectReadResult(objectData, PackIndexesStale: false);
+            return new PackedObjectReadResult(
+                objectData,
+                PackIndexesStale: false,
+                indexes.Generation);
         }
 
-        return new PackedObjectReadResult(null, PackIndexesStale: false);
+        return new PackedObjectReadResult(null, PackIndexesStale: false, indexes.Generation);
     }
 
-    private async ValueTask<IReadOnlyList<GitPackIndex>> GetPackIndexesAsync(
+    private async ValueTask<PackIndexLease> AcquirePackIndexesAsync(
         CancellationToken cancellationToken)
     {
-        var cachedIndexes = Volatile.Read(ref _packIndexes);
-        if (cachedIndexes != null)
+        while (true)
         {
-            return cachedIndexes;
-        }
+            var cachedIndexes = Volatile.Read(ref _packIndexes);
+            if (cachedIndexes == null)
+            {
+                await LoadPackIndexesAsync(cancellationToken).ConfigureAwait(false);
+                continue;
+            }
 
+            lock (_packIndexSnapshotsGate)
+            {
+                if (ReferenceEquals(cachedIndexes, Volatile.Read(ref _packIndexes)) &&
+                    !cachedIndexes.Retired)
+                {
+                    cachedIndexes.ActiveReaders++;
+                    return new PackIndexLease(this, cachedIndexes);
+                }
+            }
+        }
+    }
+
+    private async Task LoadPackIndexesAsync(CancellationToken cancellationToken)
+    {
         await _packIndexesLock.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            cachedIndexes = Volatile.Read(ref _packIndexes);
-            if (cachedIndexes != null)
+            if (Volatile.Read(ref _packIndexes) != null)
             {
-                return cachedIndexes;
+                return;
             }
 
             var indexes = new List<GitPackIndex>();
-            foreach (var objectDirectory in _objectDirectories)
+            try
             {
-                var packDirectory = Path.Combine(objectDirectory, "pack");
-                if (!Directory.Exists(packDirectory))
+                foreach (var objectDirectory in _objectDirectories)
                 {
-                    continue;
-                }
-
-                foreach (var indexPath in Directory.EnumerateFiles(packDirectory, "*.idx"))
-                {
-                    cancellationToken.ThrowIfCancellationRequested();
-                    if (!File.Exists(indexPath) ||
-                        !File.Exists(Path.ChangeExtension(indexPath, ".pack")))
+                    var packDirectory = Path.Combine(objectDirectory, "pack");
+                    if (!Directory.Exists(packDirectory))
                     {
                         continue;
                     }
 
-                    indexes.Add(
-                        await GitPackIndex
-                            .OpenAsync(indexPath, _objectFormat, cancellationToken)
-                            .ConfigureAwait(false));
+                    foreach (var indexPath in Directory.EnumerateFiles(packDirectory, "*.idx"))
+                    {
+                        cancellationToken.ThrowIfCancellationRequested();
+                        if (!File.Exists(indexPath) ||
+                            !File.Exists(Path.ChangeExtension(indexPath, ".pack")))
+                        {
+                            continue;
+                        }
+
+                        indexes.Add(
+                            await GitPackIndex
+                                .OpenAsync(indexPath, _objectFormat, cancellationToken)
+                                .ConfigureAwait(false));
+                    }
                 }
             }
+            catch
+            {
+                foreach (var index in indexes) index.Dispose();
+                throw;
+            }
 
-            Volatile.Write(ref _packIndexes, indexes);
-            return indexes;
+            lock (_packIndexSnapshotsGate)
+            {
+                Interlocked.Add(ref _openPackIndexCount, indexes.Count);
+                Volatile.Write(ref _packIndexes, new PackIndexSnapshot(
+                    Interlocked.Increment(ref _nextPackIndexGeneration),
+                    indexes));
+            }
         }
         finally
         {
@@ -115,18 +152,24 @@ internal sealed partial class GitObjectStore
         }
     }
 
-    private async Task ReloadPackIndexesAsync(CancellationToken cancellationToken)
+    private async Task ReloadPackIndexesAsync(
+        long staleGeneration,
+        CancellationToken cancellationToken)
     {
         await _packIndexesLock.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            if (Volatile.Read(ref _packIndexes) is { } indexes)
+            lock (_packIndexSnapshotsGate)
             {
-                _retiredPackIndexes.AddRange(indexes);
-            }
+                if (Volatile.Read(ref _packIndexes) is not { } indexes ||
+                    indexes.Generation != staleGeneration)
+                {
+                    return;
+                }
 
-            _packReader.ClearObjectCache();
-            Volatile.Write(ref _packIndexes, null);
+                Volatile.Write(ref _packIndexes, null);
+                RetirePackIndexesCore(indexes);
+            }
         }
         finally
         {
@@ -136,5 +179,6 @@ internal sealed partial class GitObjectStore
 
     private readonly record struct PackedObjectReadResult(
         GitObjectData? ObjectData,
-        bool PackIndexesStale);
+        bool PackIndexesStale,
+        long PackIndexGeneration);
 }

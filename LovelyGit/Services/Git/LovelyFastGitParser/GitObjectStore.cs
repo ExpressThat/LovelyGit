@@ -14,9 +14,9 @@ internal sealed partial class GitObjectStore : IDisposable
     private static readonly LruCache<GitObjectId, GitObjectData> SharedObjectCache =
         new(SharedObjectCacheSize, ObjectCacheBytes, ObjectWeight);
     private readonly SemaphoreSlim _packIndexesLock = new(1, 1);
+    private readonly object _packIndexSnapshotsGate = new();
     private readonly object _looseObjectIndexGate = new();
-    private List<GitPackIndex>? _packIndexes;
-    private readonly List<GitPackIndex> _retiredPackIndexes = [];
+    private PackIndexSnapshot? _packIndexes;
     private HashSet<string>? _looseObjectIds;
     private bool _looseObjectIndexLoaded;
     private bool _looseObjectIndexTooLarge;
@@ -121,6 +121,8 @@ internal sealed partial class GitObjectStore : IDisposable
 
     internal long PackObjectCacheBytes => _packReader.CachedObjectBytes;
 
+    internal int OpenPackFileCount => _packReader.OpenPackFileCount;
+
     private async Task<GitObjectData?> TryReadLooseObjectAsync(GitObjectId id, CancellationToken cancellationToken)
     {
         var value = id.Value;
@@ -207,21 +209,14 @@ internal sealed partial class GitObjectStore : IDisposable
 
     public void Dispose()
     {
-        if (Volatile.Read(ref _packIndexes) is { } indexes)
+        lock (_packIndexSnapshotsGate)
         {
-            foreach (var index in indexes)
+            if (Volatile.Read(ref _packIndexes) is { } indexes)
             {
-                index.Dispose();
+                Volatile.Write(ref _packIndexes, null);
+                RetirePackIndexesCore(indexes);
             }
         }
-
-        foreach (var index in _retiredPackIndexes)
-        {
-            index.Dispose();
-        }
-
-        _retiredPackIndexes.Clear();
-        Volatile.Write(ref _packIndexes, null);
         _packIndexesLock.Dispose();
         _packReader.Dispose();
     }

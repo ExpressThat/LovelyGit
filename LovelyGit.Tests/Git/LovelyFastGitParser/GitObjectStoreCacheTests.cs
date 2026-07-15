@@ -90,4 +90,34 @@ public sealed class GitObjectStoreCacheTests
         Assert.False(GitObjectStore.IsSharedObjectCached(id));
         Assert.InRange(store.PackObjectCacheBytes, 1, 8 * 1024 * 1024);
     }
+
+    [Fact]
+    public async Task Repack_RetiresStalePackFileHandlesAfterTheLastRead()
+    {
+        using var directory = TemporaryDirectory.Create("lovelygit-pack-retirement-");
+        await GitTestProcess.RunAsync(directory.Path, "init");
+        await GitTestProcess.RunAsync(directory.Path, "config", "user.email", "test@example.com");
+        await GitTestProcess.RunAsync(directory.Path, "config", "user.name", "Test User");
+        await File.WriteAllTextAsync(Path.Combine(directory.Path, "packed.txt"), "first");
+        await GitTestProcess.RunAsync(directory.Path, "add", ".");
+        await GitTestProcess.RunAsync(directory.Path, "commit", "-m", "first pack");
+        var firstCommit = GitObjectId.Parse(
+            (await GitTestProcess.RunAsync(directory.Path, "rev-parse", "HEAD")).Trim());
+        await GitTestProcess.RunAsync(directory.Path, "gc", "--prune=now");
+        var gitDirectory = Path.Combine(directory.Path, ".git");
+        using var store = new GitObjectStore(gitDirectory, GitObjectFormat.Sha1);
+
+        await store.ReadObjectWithoutCachingAsync(firstCommit, CancellationToken.None);
+        Assert.Equal(1, store.OpenPackFileCount);
+        Assert.Equal(1, store.OpenPackIndexCount);
+
+        await File.WriteAllTextAsync(Path.Combine(directory.Path, "second.txt"), "second");
+        await GitTestProcess.RunAsync(directory.Path, "add", ".");
+        await GitTestProcess.RunAsync(directory.Path, "commit", "-m", "second pack");
+        await GitTestProcess.RunAsync(directory.Path, "gc", "--prune=now");
+        await store.ReadObjectWithoutCachingAsync(firstCommit, CancellationToken.None);
+
+        Assert.Equal(1, store.OpenPackFileCount);
+        Assert.Equal(1, store.OpenPackIndexCount);
+    }
 }
