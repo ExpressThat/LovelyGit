@@ -61,7 +61,7 @@ const changedFile: CommitChangedFile = {
 describe("StashInspectionDialog", () => {
 	beforeEach(() => vi.clearAllMocks());
 
-	it("opens a selected tracked file in the full commit diff surface", async () => {
+	it("opens a selected tracked file without a suspense throttle", async () => {
 		const user = userEvent.setup();
 		inspect.mockReturnValue({
 			retry,

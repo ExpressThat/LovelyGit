@@ -1,4 +1,5 @@
-import { lazy, Suspense, useState } from "react";
+import { useState } from "react";
+import { DeferredPrimaryOverlay } from "@/AppPrimaryOverlays";
 import { Archive, FileSearch } from "@/components/icons/lovelyIcons";
 import { Button } from "@/components/ui/button";
 import {
@@ -9,6 +10,7 @@ import {
 	DialogTitle,
 } from "@/components/ui/dialog";
 import type { RepositoryStashItem } from "@/generated/types";
+import { createDeferredLoader } from "@/lib/deferredLoader";
 import { AnimatePresence, motion, useReducedMotion } from "@/lib/motion";
 import { StashInspectionFileList } from "./StashInspectionFileList";
 import {
@@ -16,10 +18,10 @@ import {
 	useStashInspection,
 } from "./useStashInspection";
 
-const LazyCommitFileDiff = lazy(() =>
-	import("../CommitFileDiff/CommitFileDiffView").then((module) => ({
-		default: module.CommitFileDiffView,
-	})),
+const commitFileDiffLoader = createDeferredLoader(() =>
+	import("../CommitFileDiff/CommitFileDiffView").then(
+		(module) => module.CommitFileDiffView,
+	),
 );
 
 type StashInspectionDialogProps = {
@@ -93,15 +95,17 @@ function StashInspectionDialogContent({
 									key={`${selected.commitHash}:${selected.file.path}`}
 									transition={{ duration: reduceMotion ? 0 : 0.16 }}
 								>
-									<Suspense fallback={<DiffLoading />}>
-										<LazyCommitFileDiff
-											commitHash={selected.commitHash}
-											file={selected.file}
-											onClose={() => setSelected(null)}
-											parentIndex={0}
-											repositoryId={repositoryId}
-										/>
-									</Suspense>
+									<DeferredPrimaryOverlay
+										fallback={<DiffLoading />}
+										loader={commitFileDiffLoader}
+										props={{
+											commitHash: selected.commitHash,
+											file: selected.file,
+											onClose: () => setSelected(null),
+											parentIndex: 0,
+											repositoryId,
+										}}
+									/>
 								</motion.div>
 							) : (
 								<EmptyInspection key="empty" />
