@@ -1,4 +1,4 @@
-import { lazy, Suspense, useState } from "react";
+import { useState } from "react";
 import {
 	AlertTriangle,
 	LoaderCircle,
@@ -11,13 +11,8 @@ import type {
 	GitIdentityValueSource,
 } from "@/generated/types";
 import { AnimatePresence, motion, useReducedMotion } from "@/lib/motion";
+import { DeferredCommitIdentityDialog } from "./DeferredCommitIdentityDialog";
 import { useCommitIdentity } from "./useCommitIdentity";
-
-const CommitIdentityDialog = lazy(() =>
-	import("./CommitIdentityDialog").then((module) => ({
-		default: module.CommitIdentityDialog,
-	})),
-);
 
 export function CommitIdentityControl({
 	disabled,
@@ -90,17 +85,15 @@ export function CommitIdentityControl({
 				</Button>
 			</div>
 			{open ? (
-				<Suspense fallback={null}>
-					<CommitIdentityDialog
-						error={identity.error}
-						identity={identity.identity}
-						isSaving={identity.isSaving}
-						onClear={identity.clear}
-						onOpenChange={setOpen}
-						onSave={identity.save}
-						open={open}
-					/>
-				</Suspense>
+				<DeferredCommitIdentityDialog
+					error={identity.error}
+					identity={identity.identity}
+					isSaving={identity.isSaving}
+					onClear={identity.clear}
+					onOpenChange={setOpen}
+					onSave={identity.save}
+					open={open}
+				/>
 			) : null}
 		</>
 	);
