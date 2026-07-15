@@ -72,6 +72,7 @@ This is the durable inventory of LovelyGit performance work. Update it in the sa
 | Maximum interactive-rebase plan | 333.91 ms and 3.02 MB allocated for 100 commits in a 1,500-ref repository | 36.97 ms and 0.77 MB allocated with direct HEAD/object reads and one parse per commit | Deterministic packed disposable history; 88.93% lower latency and 74.50% fewer allocated bytes with maximum-limit, ancestry, merge, detached/unborn HEAD, cancellation, no-mutation, and real rebase-workflow coverage | `9434fa4` |
 | Primary remote URL refresh | 60.79 ms and 44.11 MB allocated for five reads of a 10,001-remote config | 16.36 ms and 0.35 MB allocated with a pooled purpose-built scanner | Disposable large-config fixture; 73.09% lower latency and 99.20% fewer allocated bytes while preserving duplicate-origin last-value, first-fallback, quoted URL, BOM, long-line, cancellation, and full-manager behavior | `1c2629b` |
 | Detached commit checkout | 362.59 ms and 2.77 MB allocated in a 1,501-ref repository | 78.23 ms and 0.48 MB allocated by validating the target through a direct uncached object read before Git switch | Disposable large-ref fixture; 78.42% lower latency and 82.64% fewer allocated bytes with invalid, missing, non-commit, cancellation, conflict, and no-mutation coverage | `de7c3b4` |
+| Commit patch export | 477.57 ms and 2.35 MB allocated for one small patch in a 1,501-ref repository | 3.94 ms and 0.27 MB allocated with an object-database-only repository session | Disposable two-commit fixture; 99.18% lower latency and 88.50% fewer allocated bytes, with applicable output, binary, missing-object, cancellation, cancelled-export, and no-write-on-failure coverage | `9b71ea5` |
 | Real remote clone | Not previously recorded | 4.91 s; 42.5 MiB checkout; 34.99 MiB pack; +21.7 MB observed desktop private memory | Full `sharkdp/bat` clone through CMG; 20,693 objects with monotonic overall and phase progress | `d795e85` |
 | Complete backend test gate | Previously over one minute during early integration work | 55.89 s clean run; established baseline 30–36 s | `Invoke-LovelyGitTestGate.ps1`, 574 tests at this checkpoint | `021c0ee`, `089f559`, `3a4bcbd` |
 
@@ -167,6 +168,7 @@ Measured through the same Git commands LovelyGit uses, in a disposable 2,001-fil
 - Bounded decoded/source/result cache weight and skipped uncacheable prewarming (`15ce59d`, `9f613ed`, `c4e610c`, `70eecfd`).
 - Moved diff persistence off click paths and cached open variants (`b074af7`, `dc120ec`, `54cb0c7`, `3726952`).
 - Streamed patch previews through a pooled character buffer so large Apply Patch files no longer allocate one string per content line (`dfe357d`).
+- Opened commit and series patch export against the object database alone, avoiding unrelated branch, remote, tag, and stash enumeration (`9b71ea5`).
 
 ### Conflict Resolution
 
