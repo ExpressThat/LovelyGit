@@ -75,6 +75,8 @@ public sealed class GitCheckoutCommitCommandServiceTests
     {
         using var repository = TemporaryGitRepository.Create();
         var service = new GitBranchCommandService(repository.GitCliService);
+        var head = await OutputAsync(repository, "rev-parse", "HEAD");
+        var status = await OutputAsync(repository, "status", "--short");
         using var cancellation = new CancellationTokenSource();
         cancellation.Cancel();
 
@@ -84,6 +86,39 @@ public sealed class GitCheckoutCommitCommandServiceTests
                 repository.HeadCommitHash,
                 cancellation.Token));
 
+        Assert.NotEqual(string.Empty, await OutputAsync(repository, "branch", "--show-current"));
+        Assert.Equal(head, await OutputAsync(repository, "rev-parse", "HEAD"));
+        Assert.Equal(status, await OutputAsync(repository, "status", "--short"));
+    }
+
+    [Fact]
+    public async Task CheckoutCommitAsync_MissingCommitDoesNotMoveHead()
+    {
+        using var repository = TemporaryGitRepository.Create();
+        var head = await OutputAsync(repository, "rev-parse", "HEAD");
+
+        await Assert.ThrowsAsync<ArgumentException>(() =>
+            new GitBranchCommandService(repository.GitCliService).CheckoutCommitAsync(
+                repository.Path, new string('f', 40), CancellationToken.None));
+
+        Assert.Equal(head, await OutputAsync(repository, "rev-parse", "HEAD"));
+        Assert.NotEqual(string.Empty, await OutputAsync(repository, "branch", "--show-current"));
+    }
+
+    [Fact]
+    public async Task CheckoutCommitAsync_NonCommitObjectDoesNotMoveHead()
+    {
+        using var repository = TemporaryGitRepository.Create();
+        var head = await OutputAsync(repository, "rev-parse", "HEAD");
+        var blobPath = Path.Combine(repository.Path, "blob.txt");
+        await File.WriteAllTextAsync(blobPath, "not a commit");
+        var blob = await OutputAsync(repository, "hash-object", "-w", "--", blobPath);
+
+        await Assert.ThrowsAsync<InvalidDataException>(() =>
+            new GitBranchCommandService(repository.GitCliService).CheckoutCommitAsync(
+                repository.Path, blob, CancellationToken.None));
+
+        Assert.Equal(head, await OutputAsync(repository, "rev-parse", "HEAD"));
         Assert.NotEqual(string.Empty, await OutputAsync(repository, "branch", "--show-current"));
     }
 
