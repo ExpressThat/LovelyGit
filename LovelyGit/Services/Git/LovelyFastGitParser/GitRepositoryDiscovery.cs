@@ -98,7 +98,7 @@ internal static class GitRepositoryDiscovery
         }
 
         var state = new ObjectFormatParseState();
-        await GitConfigLineReader.ReadAsync(
+        await PooledTextLineReader.ReadAsync(
                 configPath,
                 state,
                 static (line, parseState) => parseState.ProcessLine(line),

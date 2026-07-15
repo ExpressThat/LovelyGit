@@ -3,7 +3,7 @@ using System.Text;
 
 namespace ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser;
 
-internal static class GitConfigLineReader
+internal static class PooledTextLineReader
 {
     private const int BufferSize = 16 * 1024;
 
@@ -40,7 +40,11 @@ internal static class GitConfigLineReader
                     pending.Append(remaining);
                 }
             }
-            if (pending is { Length: > 0 }) processLine(pending.ToString(), state);
+            if (pending is { Length: > 0 })
+            {
+                var line = pending.ToString();
+                processLine(TrimCarriageReturn(line), state);
+            }
         }
         finally
         {
@@ -56,11 +60,15 @@ internal static class GitConfigLineReader
     {
         if (pending == null)
         {
-            processLine(segment, state);
+            processLine(TrimCarriageReturn(segment), state);
             return;
         }
         pending.Append(segment);
-        processLine(pending.ToString(), state);
+        var line = pending.ToString();
+        processLine(TrimCarriageReturn(line), state);
         pending = null;
     }
+
+    private static ReadOnlySpan<char> TrimCarriageReturn(ReadOnlySpan<char> line) =>
+        !line.IsEmpty && line[^1] == '\r' ? line[..^1] : line;
 }

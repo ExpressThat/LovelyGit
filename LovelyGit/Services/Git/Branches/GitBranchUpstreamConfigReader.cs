@@ -12,7 +12,7 @@ internal static class GitBranchUpstreamConfigReader
         var path = Path.Combine(gitDirectory, "config");
         if (!File.Exists(path)) return null;
         var state = new TargetParseState(targetBranchName);
-        await GitConfigLineReader.ReadAsync(
+        await PooledTextLineReader.ReadAsync(
                 path,
                 state,
                 static (line, parseState) => parseState.ProcessLine(line),

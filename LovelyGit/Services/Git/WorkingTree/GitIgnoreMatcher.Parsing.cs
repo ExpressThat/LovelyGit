@@ -1,5 +1,4 @@
-using System.Text;
-using System.Text.RegularExpressions;
+using ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser;
 
 namespace ExpressThat.LovelyGit.Services.Git.WorkingTree;
 
@@ -11,19 +10,16 @@ internal sealed partial class GitIgnoreMatcher
         List<GitIgnoreRule> rules,
         CancellationToken cancellationToken)
     {
-        foreach (var rawLine in await File.ReadAllLinesAsync(path, cancellationToken).ConfigureAwait(false))
-        {
-            var parsed = ParsePattern(rawLine);
-            if (parsed == null)
-            {
-                continue;
-            }
-
-            rules.Add(GitIgnoreRule.Create(parsed.Value.Pattern, baseDirectory, parsed.Value.IsNegation));
-        }
+        var state = new RuleParseState(baseDirectory, rules);
+        await PooledTextLineReader.ReadAsync(
+                path,
+                state,
+                static (line, parseState) => parseState.ProcessLine(line),
+                cancellationToken)
+            .ConfigureAwait(false);
     }
 
-    private static (string Pattern, bool IsNegation)? ParsePattern(string line)
+    private static (string Pattern, bool IsNegation)? ParsePattern(ReadOnlySpan<char> line)
     {
         if (line.Length == 0)
         {
@@ -52,10 +48,10 @@ internal sealed partial class GitIgnoreMatcher
             line = line[1..];
         }
 
-        return (line, isNegation);
+        return (line.ToString().Replace("\\ ", " ", StringComparison.Ordinal), isNegation);
     }
 
-    private static string TrimUnescapedTrailingSpaces(string line)
+    private static ReadOnlySpan<char> TrimUnescapedTrailingSpaces(ReadOnlySpan<char> line)
     {
         var end = line.Length;
         while (end > 0 && line[end - 1] == ' ')
@@ -74,7 +70,20 @@ internal sealed partial class GitIgnoreMatcher
             end--;
         }
 
-        return line[..end].Replace("\\ ", " ", StringComparison.Ordinal);
+        return line[..end];
+    }
+
+    private sealed class RuleParseState(
+        string baseDirectory,
+        List<GitIgnoreRule> rules)
+    {
+        public void ProcessLine(ReadOnlySpan<char> line)
+        {
+            var parsed = ParsePattern(line);
+            if (parsed == null) return;
+            rules.Add(GitIgnoreRule.Create(
+                parsed.Value.Pattern, baseDirectory, parsed.Value.IsNegation));
+        }
     }
 
     private static string ExpandPath(string path)

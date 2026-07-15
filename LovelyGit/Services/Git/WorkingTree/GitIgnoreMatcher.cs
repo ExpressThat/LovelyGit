@@ -1,6 +1,3 @@
-using System.Text;
-using System.Text.RegularExpressions;
-
 namespace ExpressThat.LovelyGit.Services.Git.WorkingTree;
 
 internal sealed partial class GitIgnoreMatcher
@@ -173,41 +170,7 @@ internal sealed partial class GitIgnoreMatcher
         string sectionName,
         string keyName,
         CancellationToken cancellationToken)
-    {
-        if (!File.Exists(path))
-        {
-            return null;
-        }
-
-        var section = string.Empty;
-        foreach (var rawLine in await File.ReadAllLinesAsync(path, cancellationToken).ConfigureAwait(false))
-        {
-            var line = rawLine.AsSpan().Trim();
-            if (line.Length == 0 || line[0] is '#' or ';')
-            {
-                continue;
-            }
-
-            if (line[0] == '[' && line[^1] == ']')
-            {
-                section = line[1..^1].Trim().Trim('"').ToString();
-                continue;
-            }
-
-            var separator = line.IndexOf('=');
-            if (!section.Equals(sectionName, StringComparison.OrdinalIgnoreCase) || separator <= 0)
-            {
-                continue;
-            }
-
-            var key = line[..separator].Trim();
-            if (key.Equals(keyName, StringComparison.OrdinalIgnoreCase))
-            {
-                return line[(separator + 1)..].Trim().Trim('"').ToString();
-            }
-        }
-
-        return null;
-    }
+        => await GitIgnoreConfigValueReader.ReadAsync(
+            path, sectionName, keyName, cancellationToken).ConfigureAwait(false);
 
 }

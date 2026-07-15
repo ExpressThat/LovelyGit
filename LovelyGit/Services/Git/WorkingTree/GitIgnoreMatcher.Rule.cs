@@ -7,12 +7,24 @@ internal sealed partial class GitIgnoreMatcher
 {
     private sealed class GitIgnoreRule
     {
-        private readonly Regex _regex;
+        private readonly Regex? _regex;
+        private readonly string? _literal;
+        private readonly string _basePrefix;
+        private readonly bool _anchored;
         private readonly bool _directoryOnly;
 
-        private GitIgnoreRule(Regex regex, bool isNegation, bool directoryOnly)
+        private GitIgnoreRule(
+            Regex? regex,
+            string? literal,
+            string basePrefix,
+            bool anchored,
+            bool isNegation,
+            bool directoryOnly)
         {
             _regex = regex;
+            _literal = literal;
+            _basePrefix = basePrefix;
+            _anchored = anchored;
             IsNegation = isNegation;
             _directoryOnly = directoryOnly;
         }
@@ -26,6 +38,15 @@ internal sealed partial class GitIgnoreMatcher
             var anchored = pattern.StartsWith("/", StringComparison.Ordinal) ||
                 pattern.Contains('/', StringComparison.Ordinal);
             pattern = pattern.TrimStart('/');
+            var normalizedBase = baseDirectory.Trim('/');
+            var basePrefix = normalizedBase.Length == 0 ? string.Empty : normalizedBase + "/";
+
+            if (pattern.IndexOf('*') < 0 && pattern.IndexOf('?') < 0 &&
+                pattern.IndexOf('[') < 0 && pattern.IndexOf('\\') < 0)
+            {
+                return new GitIgnoreRule(
+                    null, pattern, basePrefix, anchored, isNegation, directoryOnly);
+            }
 
             var prefix = string.IsNullOrEmpty(baseDirectory)
                 ? string.Empty
@@ -37,13 +58,46 @@ internal sealed partial class GitIgnoreMatcher
             regexPattern += "(?:/.*)?$";
             return new GitIgnoreRule(
                 new Regex(regexPattern, RegexOptions.CultureInvariant | RegexOptions.Compiled),
+                null,
+                basePrefix,
+                anchored,
                 isNegation,
                 directoryOnly);
         }
 
         public bool IsMatch(string relativePath, bool isDirectory)
         {
-            return (!_directoryOnly || isDirectory) && _regex.IsMatch(relativePath);
+            if (_directoryOnly && !isDirectory) return false;
+            return _literal == null
+                ? _regex!.IsMatch(relativePath)
+                : IsLiteralMatch(relativePath.AsSpan());
+        }
+
+        private bool IsLiteralMatch(ReadOnlySpan<char> path)
+        {
+            if (_basePrefix.Length > 0)
+            {
+                if (!path.StartsWith(_basePrefix, StringComparison.Ordinal)) return false;
+                path = path[_basePrefix.Length..];
+            }
+            if (_anchored) return MatchesAt(path, 0);
+            var start = 0;
+            while (true)
+            {
+                if (MatchesAt(path, start)) return true;
+                var separator = path[start..].IndexOf('/');
+                if (separator < 0) return false;
+                start += separator + 1;
+            }
+        }
+
+        private bool MatchesAt(ReadOnlySpan<char> path, int start)
+        {
+            var literal = _literal.AsSpan();
+            if (start + literal.Length > path.Length ||
+                !path.Slice(start, literal.Length).SequenceEqual(literal)) return false;
+            var end = start + literal.Length;
+            return end == path.Length || path[end] == '/';
         }
 
         private static string ConvertGlob(string pattern)
