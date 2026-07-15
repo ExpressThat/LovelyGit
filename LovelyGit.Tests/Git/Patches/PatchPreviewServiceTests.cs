@@ -1,3 +1,4 @@
+using System.Text;
 using ExpressThat.LovelyGit.Services.Git.Patches;
 
 namespace LovelyGit.Tests.Git.Patches;
@@ -52,6 +53,48 @@ public sealed class PatchPreviewServiceTests
                 () => PatchPreviewService.ReadAsync(path, CancellationToken.None));
 
             Assert.Contains("unified Git patch", exception.Message);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public async Task ReadAsync_HandlesBomCrLfLongLinesAndNoFinalNewline()
+    {
+        var path = Path.GetTempFileName();
+        try
+        {
+            var longMetadata = new string('x', 20_000);
+            var patch = $"metadata {longMetadata}\r\n--- a/file.txt\r\n+++ b/file.txt\r\n-old\r\n+new";
+            await File.WriteAllTextAsync(path, patch, Encoding.Unicode);
+
+            var preview = await PatchPreviewService.ReadAsync(path, CancellationToken.None);
+
+            var file = Assert.Single(preview.Files);
+            Assert.Equal("file.txt", file.Path);
+            Assert.Equal(1, file.Additions);
+            Assert.Equal(1, file.Deletions);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public async Task ReadAsync_WhenCancelled_StopsWithoutReturningPartialPreview()
+    {
+        var path = Path.GetTempFileName();
+        try
+        {
+            await File.WriteAllTextAsync(path, PatchText);
+            using var cancellation = new CancellationTokenSource();
+            cancellation.Cancel();
+
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(
+                () => PatchPreviewService.ReadAsync(path, cancellation.Token));
         }
         finally
         {
