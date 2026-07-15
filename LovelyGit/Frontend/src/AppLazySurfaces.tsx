@@ -1,11 +1,10 @@
 import {
 	type ComponentProps,
 	type ComponentType,
-	lazy,
-	Suspense,
 	useEffect,
 	useState,
 } from "react";
+import { DeferredPrimaryOverlay } from "@/AppPrimaryOverlays";
 import { LoaderCircle } from "@/components/icons/lovelyIcons";
 import { Button } from "@/components/ui/button";
 import { createDeferredLoader } from "@/lib/deferredLoader";
@@ -21,14 +20,14 @@ const commitFileDiffLoader = createDeferredLoader(() =>
 		(module) => module.CommitFileDiffView,
 	),
 );
-const LazyWorkingChanges = lazy(() =>
-	import("./components/WorkingChanges/WorkingChangesPanel").then((module) => ({
-		default: module.WorkingChangesPanel,
-	})),
+const workingChangesLoader = createDeferredLoader(() =>
+	import("./components/WorkingChanges/WorkingChangesPanel").then(
+		(module) => module.WorkingChangesPanel,
+	),
 );
-const LazyWorkingTreeDiff = lazy(() =>
+const workingTreeDiffLoader = createDeferredLoader(() =>
 	import("./components/WorkingChanges/WorkingTreeFileDiffView").then(
-		(module) => ({ default: module.WorkingTreeFileDiffView }),
+		(module) => module.WorkingTreeFileDiffView,
 	),
 );
 type ConflictResolutionProps = ComponentProps<
@@ -101,9 +100,11 @@ export function WorkingChangesSurface(
 	props: ComponentProps<typeof WorkingChangesComponent>,
 ) {
 	return (
-		<Suspense fallback={<SurfaceLoading label="Loading working changes" />}>
-			<LazyWorkingChanges {...props} />
-		</Suspense>
+		<DeferredPrimaryOverlay
+			fallback={<SurfaceLoading label="Loading working changes" />}
+			loader={workingChangesLoader}
+			props={props}
+		/>
 	);
 }
 
@@ -116,9 +117,11 @@ export function WorkingTreeDiffSurface(
 		);
 	}
 	return (
-		<Suspense fallback={<SurfaceLoading label="Preparing working diff" fill />}>
-			<LazyWorkingTreeDiff {...props} />
-		</Suspense>
+		<DeferredPrimaryOverlay
+			fallback={<SurfaceLoading label="Preparing working diff" fill />}
+			loader={workingTreeDiffLoader}
+			props={props}
+		/>
 	);
 }
 

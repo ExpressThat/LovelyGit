@@ -5,6 +5,7 @@ import {
 	CommitDetailsSurface,
 	CommitFileDiffSurface,
 	preloadCommitFileDiffSurface,
+	WorkingChangesSurface,
 	WorkingTreeDiffSurface,
 } from "./AppLazySurfaces";
 
@@ -16,6 +17,12 @@ vi.mock("./components/ConflictResolution/ConflictResolutionView", () => ({
 }));
 vi.mock("./components/CommitFileDiff/CommitFileDiffView", () => ({
 	CommitFileDiffView: () => <div>Loaded commit diff</div>,
+}));
+vi.mock("./components/WorkingChanges/WorkingChangesPanel", () => ({
+	WorkingChangesPanel: () => <div>Loaded working changes</div>,
+}));
+vi.mock("./components/WorkingChanges/WorkingTreeFileDiffView", () => ({
+	WorkingTreeFileDiffView: () => <div>Loaded working diff</div>,
 }));
 
 describe("AppLazySurfaces", () => {
@@ -54,6 +61,43 @@ describe("AppLazySurfaces", () => {
 		);
 
 		expect(await screen.findByText("Loaded conflict resolver")).toBeVisible();
+	});
+
+	it("loads working changes without a suspense throttle", async () => {
+		render(
+			<WorkingChangesSurface
+				changes={null}
+				error={null}
+				isLoading
+				onCommitSuccess={vi.fn()}
+				onOpenFileBlame={vi.fn()}
+				onOpenFileHistory={vi.fn()}
+				onRefresh={vi.fn()}
+				onSelectFile={vi.fn()}
+				repositoryId="repo"
+				totalCount={0}
+			/>,
+		);
+		expect(await screen.findByText("Loaded working changes")).toBeVisible();
+	});
+
+	it("loads a working-tree diff without a suspense throttle", async () => {
+		render(
+			<WorkingTreeDiffSurface
+				file={{
+					additions: 1,
+					deletions: 0,
+					group: "Unstaged",
+					isBinary: false,
+					oldPath: null,
+					path: "changed.txt",
+					status: "Modified",
+				}}
+				onClose={vi.fn()}
+				repositoryId="repo"
+			/>,
+		);
+		expect(await screen.findByText("Loaded working diff")).toBeVisible();
 	});
 
 	it("can preload the commit diff surface before a file is selected", async () => {
