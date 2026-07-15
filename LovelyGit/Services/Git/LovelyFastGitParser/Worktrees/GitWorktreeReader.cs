@@ -25,24 +25,44 @@ internal static class GitWorktreeReader
         var worktreesDirectory = Path.Combine(commonGitDirectory, "worktrees");
         if (Directory.Exists(worktreesDirectory))
         {
-            foreach (var adminDirectory in Directory.EnumerateDirectories(worktreesDirectory))
+            var adminDirectories = Directory.GetDirectories(worktreesDirectory);
+            if (adminDirectories.Length < 4)
             {
-                cancellationToken.ThrowIfCancellationRequested();
-                var worktreePath = await ReadWorktreePathAsync(adminDirectory, cancellationToken)
-                    .ConfigureAwait(false);
-                if (string.IsNullOrWhiteSpace(worktreePath) ||
-                    IsSamePath(worktreePath, currentWorkTreeDirectory))
+                foreach (var adminDirectory in adminDirectories)
                 {
-                    continue;
+                    var linked = await ReadLinkedWorktreeAsync(
+                            adminDirectory, currentWorkTreeDirectory, cancellationToken)
+                        .ConfigureAwait(false);
+                    if (linked != null)
+                    {
+                        worktrees.Add(linked);
+                    }
                 }
-
-                worktrees.Add(await ReadWorktreeAsync(
-                        adminDirectory,
-                        worktreePath,
-                        currentWorkTreeDirectory,
-                        isCurrent: false,
-                        cancellationToken)
-                    .ConfigureAwait(false));
+            }
+            else
+            {
+                var linked = new GitWorktree?[adminDirectories.Length];
+                await Parallel.ForAsync(
+                    0,
+                    adminDirectories.Length,
+                    new ParallelOptions
+                    {
+                        CancellationToken = cancellationToken,
+                        MaxDegreeOfParallelism = 8,
+                    },
+                    async (index, token) =>
+                    {
+                        linked[index] = await ReadLinkedWorktreeAsync(
+                                adminDirectories[index], currentWorkTreeDirectory, token)
+                            .ConfigureAwait(false);
+                    }).ConfigureAwait(false);
+                foreach (var worktree in linked)
+                {
+                    if (worktree != null)
+                    {
+                        worktrees.Add(worktree);
+                    }
+                }
             }
         }
 
@@ -50,6 +70,29 @@ internal static class GitWorktreeReader
             .OrderByDescending(worktree => worktree.IsCurrent)
             .ThenBy(worktree => worktree.Path, StringComparer.OrdinalIgnoreCase)
             .ToArray();
+    }
+
+    private static async Task<GitWorktree?> ReadLinkedWorktreeAsync(
+        string adminDirectory,
+        string currentWorkTreeDirectory,
+        CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        var worktreePath = await ReadWorktreePathAsync(adminDirectory, cancellationToken)
+            .ConfigureAwait(false);
+        if (string.IsNullOrWhiteSpace(worktreePath) ||
+            IsSamePath(worktreePath, currentWorkTreeDirectory))
+        {
+            return null;
+        }
+
+        return await ReadWorktreeAsync(
+                adminDirectory,
+                worktreePath,
+                currentWorkTreeDirectory,
+                isCurrent: false,
+                cancellationToken)
+            .ConfigureAwait(false);
     }
 
     private static async Task<GitWorktree> ReadWorktreeAsync(

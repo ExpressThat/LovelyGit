@@ -28,30 +28,42 @@ internal sealed class RepositoryRefsService
             return null;
         }
 
+        return await ReadAsync(knownRepository.Path, cancellationToken).ConfigureAwait(false);
+    }
+
+    internal static async Task<RepositoryRefsResponse> ReadAsync(
+        string repositoryPath,
+        CancellationToken cancellationToken)
+    {
         var paths = await GitRepositoryDiscovery
-            .ResolveRepositoryPathsAsync(knownRepository.Path, cancellationToken)
+            .ResolveRepositoryPathsAsync(repositoryPath, cancellationToken)
             .ConfigureAwait(false);
         var objectFormat = await GitRepositoryDiscovery
             .ReadObjectFormatAsync(paths.GitDirectory, cancellationToken)
             .ConfigureAwait(false);
-        var summary = await GitRefSummaryReader
-            .ReadAsync(paths.GitDirectory, objectFormat, GitRefReader.DefaultTagLimit, cancellationToken)
+        var summaryTask = GitRefSummaryReader.ReadAsync(
+            paths.GitDirectory, objectFormat, GitRefReader.DefaultTagLimit, cancellationToken);
+        var remoteUrlTask = GitRemoteConfigReader.ReadPrimaryRemoteUrlAsync(
+            paths.GitDirectory, cancellationToken);
+        var worktreesTask = GitWorktreeReader.ReadAsync(
+            paths.WorktreeGitDirectory, paths.WorkTreeDirectory, cancellationToken);
+        var stashesTask = GitStashReader.ReadAsync(
+            paths.GitDirectory, objectFormat, cancellationToken);
+        var upstreamsTask = GitBranchUpstreamConfigReader.ReadAsync(
+            paths.GitDirectory, cancellationToken);
+        await Task.WhenAll(
+                summaryTask,
+                remoteUrlTask,
+                worktreesTask,
+                stashesTask,
+                upstreamsTask)
             .ConfigureAwait(false);
-        var currentBranchName = await GitRefReader
-            .ResolveHeadBranchNameAsync(paths.WorktreeGitDirectory, cancellationToken)
-            .ConfigureAwait(false);
-        var remoteUrl = await GitRemoteConfigReader
-            .ReadPrimaryRemoteUrlAsync(paths.GitDirectory, cancellationToken)
-            .ConfigureAwait(false);
-        var worktrees = await GitWorktreeReader
-            .ReadAsync(paths.WorktreeGitDirectory, paths.WorkTreeDirectory, cancellationToken)
-            .ConfigureAwait(false);
-        var stashes = await GitStashReader
-            .ReadAsync(paths.GitDirectory, objectFormat, cancellationToken)
-            .ConfigureAwait(false);
-        var upstreams = await GitBranchUpstreamConfigReader
-            .ReadAsync(paths.GitDirectory, cancellationToken)
-            .ConfigureAwait(false);
+        var summary = await summaryTask.ConfigureAwait(false);
+        var remoteUrl = await remoteUrlTask.ConfigureAwait(false);
+        var worktrees = await worktreesTask.ConfigureAwait(false);
+        var stashes = await stashesTask.ConfigureAwait(false);
+        var upstreams = await upstreamsTask.ConfigureAwait(false);
+        var currentBranchName = worktrees.First(worktree => worktree.IsCurrent).BranchName;
 
         return new RepositoryRefsResponse
         {
