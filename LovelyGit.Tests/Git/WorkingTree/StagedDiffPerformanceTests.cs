@@ -1,0 +1,167 @@
+using System.Diagnostics;
+using System.Text;
+using CliWrap;
+using ExpressThat.LovelyGit.Services.Git.Cli;
+using ExpressThat.LovelyGit.Services.Git.CommitGraph.Models;
+using ExpressThat.LovelyGit.Services.Git.WorkingTree;
+using ExpressThat.LovelyGit.Services.Git.WorkingTree.Models;
+using Xunit.Abstractions;
+
+namespace LovelyGit.Tests.Git.WorkingTree;
+
+[Collection(PerformanceTestCollection.Name)]
+public sealed class StagedDiffPerformanceTests(ITestOutputHelper output)
+{
+    private const int OtherFileCount = 10_000;
+    private const int LineCount = 20_000;
+    private const int RefCountPerKind = 500;
+    private static readonly RepositoryTemplate<bool> Template = new(
+        "lovelygit-staged-diff-template-",
+        InitializeTemplate);
+
+    [Fact]
+    public async Task AlternatingLargeDiffViews_DoNotMaterializeTheWholeHeadTree()
+    {
+        var (directory, _) = Template.CreateCopy("lovelygit-staged-diff-");
+        try
+        {
+            var service = new WorkingTreeChangeService();
+            await ReadAsync(service, directory, CommitDiffViewMode.Combined);
+            GC.Collect();
+            var allocatedBefore = GC.GetTotalAllocatedBytes(precise: true);
+            var combinedTicks = 0L;
+            var sideBySideTicks = 0L;
+            for (var iteration = 0; iteration < 3; iteration++)
+            {
+                combinedTicks += await MeasureAsync(
+                    service, directory, CommitDiffViewMode.Combined);
+                sideBySideTicks += await MeasureAsync(
+                    service, directory, CommitDiffViewMode.SideBySide);
+            }
+
+            var allocated = GC.GetTotalAllocatedBytes(true) - allocatedBefore;
+            var combined = Stopwatch.GetElapsedTime(0, combinedTicks);
+            var sideBySide = Stopwatch.GetElapsedTime(0, sideBySideTicks);
+            output.WriteLine($"CombinedMs={combined.TotalMilliseconds:F2}");
+            output.WriteLine($"SideBySideMs={sideBySide.TotalMilliseconds:F2}");
+            output.WriteLine($"AllocatedBytes={allocated:N0}");
+            Assert.True(
+                combined < TimeSpan.FromMilliseconds(150),
+                $"Combined view switches took {combined}.");
+            Assert.True(
+                sideBySide < TimeSpan.FromMilliseconds(150),
+                $"Side-by-side view switches took {sideBySide}.");
+            Assert.True(allocated < 45_000_000, $"View switches allocated {allocated:N0} bytes.");
+        }
+        finally
+        {
+            DeleteDirectory(directory);
+        }
+    }
+
+    private static async Task<long> MeasureAsync(
+        WorkingTreeChangeService service,
+        DirectoryInfo directory,
+        CommitDiffViewMode viewMode)
+    {
+        var startedAt = Stopwatch.GetTimestamp();
+        var response = await ReadAsync(service, directory, viewMode);
+        var elapsed = Stopwatch.GetTimestamp() - startedAt;
+        Assert.Equal(viewMode, response.ViewMode);
+        Assert.Equal("Modified", response.Status);
+        Assert.True(response.HasDifferences);
+        return elapsed;
+    }
+
+    private static Task<CommitFileDiffResponse> ReadAsync(
+        WorkingTreeChangeService service,
+        DirectoryInfo directory,
+        CommitDiffViewMode viewMode) =>
+        service.GetFileDiffAsync(
+            directory.FullName,
+            "large.txt",
+            WorkingTreeChangeGroup.Staged,
+            viewMode,
+            ignoreWhitespace: false,
+            CancellationToken.None);
+
+    private static bool InitializeTemplate(DirectoryInfo directory)
+    {
+        var git = new GitCliService();
+        Run(git, directory, ["init", "--initial-branch", "main"]);
+        git.CreateCommand(["fast-import", "--quiet"], directory.FullName)
+            .WithStandardInputPipe(PipeSource.FromString(BuildFastImport(), Encoding.UTF8))
+            .ExecuteAsync().GetAwaiter().GetResult();
+        Run(git, directory, ["reset", "--mixed", "HEAD"]);
+        File.WriteAllText(Path.Combine(directory.FullName, "large.txt"), BuildLargeText(modified: true));
+        Run(git, directory, ["add", "large.txt"]);
+        Run(git, directory, ["gc", "--prune=now"]);
+        var head = Run(git, directory, ["rev-parse", "HEAD"]).Trim();
+        var gitDirectory = Path.Combine(directory.FullName, ".git");
+        for (var index = 0; index < RefCountPerKind; index++)
+        {
+            WriteRef(gitDirectory, $"refs/heads/branch-{index}", head);
+            WriteRef(gitDirectory, $"refs/remotes/origin/branch-{index}", head);
+            WriteRef(gitDirectory, $"refs/tags/tag-{index}", head);
+        }
+        return true;
+    }
+
+    private static string BuildFastImport()
+    {
+        const string Subject = "large staged fixture";
+        var import = new StringBuilder(2_000_000)
+            .AppendLine("commit refs/heads/main")
+            .AppendLine("mark :1")
+            .AppendLine("author LovelyGit Test <test@example.invalid> 1700000000 +0000")
+            .AppendLine("committer LovelyGit Test <test@example.invalid> 1700000000 +0000")
+            .Append("data ").AppendLine(Subject.Length.ToString()).AppendLine(Subject);
+        for (var index = 0; index < OtherFileCount; index++)
+        {
+            var content = $"value-{index}\n";
+            import.Append("M 100644 inline files/file-").Append(index).AppendLine(".txt")
+                .Append("data ").AppendLine(Encoding.UTF8.GetByteCount(content).ToString())
+                .Append(content);
+        }
+
+        var large = BuildLargeText(modified: false);
+        import.AppendLine("M 100644 inline large.txt")
+            .Append("data ").AppendLine(Encoding.UTF8.GetByteCount(large).ToString())
+            .Append(large);
+        return import.AppendLine("done").ToString().ReplaceLineEndings("\n");
+    }
+
+    private static string BuildLargeText(bool modified)
+    {
+        var text = new StringBuilder(400_000);
+        for (var index = 0; index < LineCount; index++)
+        {
+            text.Append(modified && index % 100 == 0 ? "changed line " : "staged line ")
+                .Append(index).Append('\n');
+        }
+        return text.ToString();
+    }
+
+    private static string Run(
+        GitCliService git,
+        DirectoryInfo directory,
+        IReadOnlyList<string> arguments) =>
+        git.ExecuteBufferedAsync(arguments, directory.FullName)
+            .GetAwaiter().GetResult().StandardOutput;
+
+    private static void WriteRef(string gitDirectory, string name, string hash)
+    {
+        var path = Path.Combine(gitDirectory, name.Replace('/', Path.DirectorySeparatorChar));
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        File.WriteAllText(path, hash + "\n");
+    }
+
+    private static void DeleteDirectory(DirectoryInfo directory)
+    {
+        foreach (var file in directory.EnumerateFiles("*", SearchOption.AllDirectories))
+        {
+            file.Attributes = FileAttributes.Normal;
+        }
+        directory.Delete(true);
+    }
+}

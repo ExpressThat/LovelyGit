@@ -6,6 +6,7 @@ using ColorCode.Parsing;
 using ExpressThat.LovelyGit.Services.Diagnostics;
 using ExpressThat.LovelyGit.Services.Git.CommitGraph.Models;
 using ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser;
+using ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser.Refs;
 using ExpressThat.LovelyGit.Services.Git.WorkingTree.Models;
 
 namespace ExpressThat.LovelyGit.Services.Git.WorkingTree;
@@ -102,27 +103,62 @@ internal sealed partial class WorkingTreeChangeService
             throw new InvalidOperationException("Unmerged file diffs are not available yet.");
         }
 
-        using var repository = await LovelyGitRepository.OpenAsync(repositoryPath, cancellationToken)
+        return await BuildStagedFileDiffAsync(
+                repositoryPath, path, viewMode, ignoreWhitespace, cancellationToken)
             .ConfigureAwait(false);
-        var indexEntries = await new GitIndexReader().ReadEntriesForPathAsync(
-                repository.WorktreeGitDirectory,
-                repository.ObjectFormat,
-                path,
-                cancellationToken)
-            .ConfigureAwait(false);
-        var indexEntry = indexEntries.FirstOrDefault(entry => entry.Stage == 0);
+    }
 
-        var headFiles = await ReadHeadFilesAsync(repository, cancellationToken).ConfigureAwait(false);
-        headFiles.TryGetValue(path, out var headFile);
+    private static async Task<CommitFileDiffResponse> BuildStagedFileDiffAsync(
+        string repositoryPath,
+        string path,
+        CommitDiffViewMode viewMode,
+        bool ignoreWhitespace,
+        CancellationToken cancellationToken)
+    {
+        var paths = await GitRepositoryDiscovery.ResolveRepositoryPathsAsync(
+            repositoryPath, cancellationToken).ConfigureAwait(false);
+        var objectFormat = await GitRepositoryDiscovery.ReadObjectFormatAsync(
+            paths.GitDirectory, cancellationToken).ConfigureAwait(false);
+        var entries = await new GitIndexReader().ReadEntriesForPathAsync(
+            paths.WorktreeGitDirectory, objectFormat, path, cancellationToken).ConfigureAwait(false);
+        var indexEntry = entries.FirstOrDefault(entry => entry.Stage == 0);
+        var head = await GitHeadReader.ReadAsync(
+            paths.WorktreeGitDirectory, paths.GitDirectory, objectFormat, cancellationToken)
+            .ConfigureAwait(false);
+        using var objectStore = new GitObjectStore(paths.GitDirectory, objectFormat);
+        GitTreeFile? headFile = null;
+        if (head.Target is { } headTarget)
+        {
+            var commitData = await objectStore.ReadObjectAsync(headTarget, cancellationToken)
+                .ConfigureAwait(false);
+            if (commitData.Kind != GitObjectKind.Commit)
+            {
+                throw new InvalidDataException($"Object is not a commit: {headTarget}");
+            }
+
+            var treeId = GitObjectParsers
+                .ParseCommitTraversalHeader(headTarget, commitData.Data)
+                .TreeHash;
+            if (treeId is { } value)
+            {
+                headFile = await objectStore.TryGetTreeFileAsync(value, path, cancellationToken)
+                    .ConfigureAwait(false);
+            }
+        }
+
         var oldBytes = headFile == null
             ? Array.Empty<byte>()
-            : await TryReadBlobBytesAsync(repository, headFile.ObjectId, headFile.Mode, cancellationToken).ConfigureAwait(false) ?? Array.Empty<byte>();
+            : await TryReadBlobBytesAsync(
+                objectStore, headFile.ObjectId, headFile.Mode, cancellationToken).ConfigureAwait(false)
+                ?? Array.Empty<byte>();
         var newBytes = indexEntry == null
             ? Array.Empty<byte>()
-            : await TryReadBlobBytesAsync(repository, indexEntry.ObjectId, indexEntry.Mode, cancellationToken).ConfigureAwait(false) ?? Array.Empty<byte>();
+            : await TryReadBlobBytesAsync(
+                objectStore, indexEntry.ObjectId, indexEntry.Mode, cancellationToken).ConfigureAwait(false)
+                ?? Array.Empty<byte>();
         var status = headFile == null ? "Added" : indexEntry == null ? "Deleted" : "Modified";
-
-        return BuildDiffResponse("WORKTREE", path, status, viewMode, ignoreWhitespace, oldBytes, newBytes);
+        return BuildDiffResponse(
+            "WORKTREE", path, status, viewMode, ignoreWhitespace, oldBytes, newBytes);
     }
 
     private static async Task<CommitFileDiffResponse> BuildUnstagedFileDiffAsync(
