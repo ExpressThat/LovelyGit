@@ -7,6 +7,36 @@ namespace LovelyGit.Tests.Git.CommitGraph;
 public sealed class CommitPatchServiceTests
 {
     [Fact]
+    public async Task GetCommitPatchAsync_MissingCommitFailsWithoutWritingFiles()
+    {
+        using var repository = TemporaryGitRepository.Create();
+        repository.WriteFile("sentinel.txt", "unchanged\n");
+        var before = File.ReadAllText(Path.Combine(repository.Path, "sentinel.txt"));
+
+        await Assert.ThrowsAsync<FileNotFoundException>(() => new CommitPatchService()
+            .GetCommitPatchAsync(
+                repository.Path,
+                GitObjectId.Parse(new string('0', 40)),
+                CancellationToken.None));
+
+        Assert.Equal(before, File.ReadAllText(Path.Combine(repository.Path, "sentinel.txt")));
+    }
+
+    [Fact]
+    public async Task GetCommitPatchAsync_PreCancelledReadDoesNotProduceOutput()
+    {
+        using var repository = TemporaryGitRepository.Create();
+        using var cancellation = new CancellationTokenSource();
+        cancellation.Cancel();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => new CommitPatchService()
+            .GetCommitPatchAsync(
+                repository.Path,
+                GitObjectId.Parse(new string('0', 40)),
+                cancellation.Token));
+    }
+
+    [Fact]
     public async Task GetCommitPatchAsync_ReturnsUnifiedPatchForCommit()
     {
         using var repository = TemporaryGitRepository.Create();

@@ -17,7 +17,8 @@ internal sealed class CommitPatchService
         GitObjectId commitId,
         CancellationToken cancellationToken)
     {
-        using var repository = await LovelyGitRepository.OpenAsync(repositoryPath, cancellationToken)
+        using var repository = await LovelyGitRepository
+            .OpenObjectDatabaseAsync(repositoryPath, cancellationToken)
             .ConfigureAwait(false);
         return await GetCommitPatchAsync(repository, commitId, cancellationToken).ConfigureAwait(false);
     }

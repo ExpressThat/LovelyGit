@@ -20,7 +20,8 @@ internal sealed class CommitPatchSeriesService
         IReadOnlyList<GitObjectId> commitIds,
         CancellationToken cancellationToken)
     {
-        using var repository = await LovelyGitRepository.OpenAsync(repositoryPath, cancellationToken)
+        using var repository = await LovelyGitRepository
+            .OpenObjectDatabaseAsync(repositoryPath, cancellationToken)
             .ConfigureAwait(false);
         var output = new StringBuilder();
         var truncated = false;
