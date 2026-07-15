@@ -1,4 +1,5 @@
 using ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser.Refs;
+using ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser.CommitGraph;
 
 namespace ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser;
 
@@ -8,12 +9,15 @@ internal sealed partial class LovelyGitRepository : IDisposable
     private const int GraphCommitCacheSize = 1024;
     private const int GraphHeaderCacheSize = 2048;
     private readonly GitObjectStore _objectStore;
+    private GitCommitGraphReader? _commitGraph;
+    private readonly object _commitGraphGate = new();
     private readonly LruCache<GitObjectId, GitCommit> _commitCache = new(CommitCacheSize);
     private readonly LruCache<GitObjectId, GitCommit> _graphCommitCache = new(GraphCommitCacheSize);
     private readonly LruCache<GitObjectId, GitCommit> _graphHeaderCache = new(GraphHeaderCacheSize);
     private readonly Dictionary<string, GitRef> _refsByFullName;
     private readonly Dictionary<GitObjectId, List<GitCommitRef>> _refsByCommit;
     private readonly IReadOnlyList<string> _remotePrefixes;
+    private bool _commitGraphInitialized;
     private bool _disposed;
 
     private LovelyGitRepository(
@@ -47,6 +51,8 @@ internal sealed partial class LovelyGitRepository : IDisposable
     public GitObjectId? HeadTarget { get; }
     public string? CurrentBranchName { get; }
     public IReadOnlyList<string> RemotePrefixes => _remotePrefixes;
+    internal bool IsCommitGraphInitialized => _commitGraphInitialized;
+    internal bool HasCommitGraph => GetCommitGraph() != null;
 
     public static async Task<LovelyGitRepository> OpenAsync(string path, CancellationToken cancellationToken)
     {
@@ -205,6 +211,7 @@ internal sealed partial class LovelyGitRepository : IDisposable
         _refsByFullName.Clear();
         _refsByCommit.Clear();
         _objectStore.Dispose();
+        _commitGraph?.Dispose();
         _disposed = true;
     }
 

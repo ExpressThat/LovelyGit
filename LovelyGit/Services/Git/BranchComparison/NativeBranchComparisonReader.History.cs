@@ -39,7 +39,7 @@ internal static partial class NativeBranchComparisonReader
                     break;
                 }
 
-                node.Header = await repository.GetCommitTraversalHeaderAsync(hash, cancellationToken)
+                node.Header = await repository.GetCommitAncestryHeaderAsync(hash, cancellationToken)
                     .ConfigureAwait(false);
             }
 
@@ -62,7 +62,7 @@ internal static partial class NativeBranchComparisonReader
         var behind = Select(nodes, Reachability.Target);
         var mergeBase = nodes
             .Where(entry => entry.Value.IsCommonBoundary && entry.Value.Header != null)
-            .OrderByDescending(entry => entry.Value.Header!.Value.AuthorUnixSeconds)
+            .OrderByDescending(entry => entry.Value.Header!.Value.CommitUnixSeconds)
             .Select(entry => (GitObjectId?)entry.Key)
             .FirstOrDefault();
         return new HistoryPaintResult(ahead, behind, mergeBase, isPartial);
@@ -72,8 +72,8 @@ internal static partial class NativeBranchComparisonReader
         Dictionary<GitObjectId, PaintNode> nodes,
         Reachability side) => nodes
         .Where(entry => entry.Value.Reachability == side && entry.Value.Header != null)
-        .Select(entry => new PaintedCommit(entry.Key, entry.Value.Header!.Value.AuthorUnixSeconds))
-        .OrderByDescending(commit => commit.AuthorUnixSeconds)
+        .Select(entry => new PaintedCommit(entry.Key, entry.Value.Header!.Value.CommitUnixSeconds))
+        .OrderByDescending(commit => commit.CommitUnixSeconds)
         .ToList();
 
     private static void Enqueue(
@@ -107,7 +107,7 @@ internal static partial class NativeBranchComparisonReader
     {
         public Reachability Reachability { get; set; }
         public Reachability Propagated { get; set; }
-        public GitCommitTraversalHeader? Header { get; set; }
+        public GitCommitAncestryHeader? Header { get; set; }
         public bool IsQueued { get; set; }
         public bool IsCommonBoundary { get; set; }
     }
@@ -117,5 +117,5 @@ internal static partial class NativeBranchComparisonReader
         List<PaintedCommit> Behind,
         GitObjectId? MergeBaseHash,
         bool IsPartial);
-    private readonly record struct PaintedCommit(GitObjectId Hash, long AuthorUnixSeconds);
+    private readonly record struct PaintedCommit(GitObjectId Hash, long CommitUnixSeconds);
 }

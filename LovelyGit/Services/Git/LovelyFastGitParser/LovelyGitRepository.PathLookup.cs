@@ -24,6 +24,20 @@ internal sealed partial class LovelyGitRepository
         return GitObjectParsers.ParseCommitTraversalHeader(id, data.Data);
     }
 
+    public async Task<GitCommitAncestryHeader> GetCommitAncestryHeaderAsync(
+        GitObjectId id,
+        CancellationToken cancellationToken)
+    {
+        if (GetCommitGraph()?.TryRead(id, cancellationToken, out var graphHeader) == true)
+            return graphHeader;
+        var data = await _objectStore
+            .ReadObjectWithTransientPackCacheAsync(id, cancellationToken)
+            .ConfigureAwait(false);
+        if (data.Kind != GitObjectKind.Commit)
+            throw new InvalidDataException($"Object is not a commit: {id}");
+        return GitObjectParsers.ParseCommitAncestryHeader(id, data.Data);
+    }
+
     public async Task<GitTreeFile?> FindTreeFileByObjectIdAsync(
         GitObjectId treeId,
         GitObjectId objectId,

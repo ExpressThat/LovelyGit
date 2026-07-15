@@ -39,15 +39,15 @@ public sealed class NativeBranchComparisonPerformanceTests(ITestOutputHelper out
                     repository.HeadTarget!.Value,
                     target,
                     CancellationToken.None);
+                var countElapsed = Stopwatch.GetElapsedTime(countStartedAt);
+                var countAllocated = GC.GetTotalAllocatedBytes(true) - countAllocatedBefore;
                 output.WriteLine(
-                    $"History only: {Stopwatch.GetElapsedTime(countStartedAt).TotalMilliseconds:F2} ms; " +
-                    $"{GC.GetTotalAllocatedBytes(true) - countAllocatedBefore:N0} bytes");
+                    $"History only: {countElapsed.TotalMilliseconds:F2} ms; {countAllocated:N0} bytes");
                 Assert.Equal(CommitsPerSide, counts.AheadCount);
                 Assert.Equal(CommitsPerSide, counts.BehindCount);
                 Assert.False(GitObjectStore.IsSharedObjectCached(deepHistoryId));
-                Assert.True(
-                    GC.GetTotalAllocatedBytes(true) - countAllocatedBefore < 56_000_000,
-                    "History traversal exceeded its allocation budget.");
+                Assert.True(countElapsed < TimeSpan.FromMilliseconds(300), $"History took {countElapsed}.");
+                Assert.True(countAllocated < 16_000_000, "History traversal exceeded its allocation budget.");
             }
 
             GC.Collect();
@@ -66,8 +66,8 @@ public sealed class NativeBranchComparisonPerformanceTests(ITestOutputHelper out
             Assert.Equal(CommitsPerSide, response.AheadCount);
             Assert.Equal(CommitsPerSide, response.BehindCount);
             Assert.False(response.IsHistoryPartial);
-            Assert.True(elapsed < TimeSpan.FromMilliseconds(1_500), $"Comparison took {elapsed}.");
-            Assert.True(allocated < 55_000_000, $"Comparison allocated {allocated:N0} bytes.");
+            Assert.True(elapsed < TimeSpan.FromMilliseconds(300), $"Comparison took {elapsed}.");
+            Assert.True(allocated < 16_000_000, $"Comparison allocated {allocated:N0} bytes.");
         }
         finally
         {
@@ -98,8 +98,8 @@ public sealed class NativeBranchComparisonPerformanceTests(ITestOutputHelper out
                 $"Direct comparison: {elapsed.TotalMilliseconds:F2} ms; {allocated:N0} bytes");
             Assert.Equal(CommitsPerSide, response.AheadCount);
             Assert.Equal(CommitsPerSide, response.BehindCount);
-            Assert.True(elapsed < TimeSpan.FromMilliseconds(1_100), $"Comparison took {elapsed}.");
-            Assert.True(allocated < 68_000_000, $"Comparison allocated {allocated:N0} bytes.");
+            Assert.True(elapsed < TimeSpan.FromMilliseconds(300), $"Comparison took {elapsed}.");
+            Assert.True(allocated < 16_000_000, $"Comparison allocated {allocated:N0} bytes.");
         }
         finally
         {
