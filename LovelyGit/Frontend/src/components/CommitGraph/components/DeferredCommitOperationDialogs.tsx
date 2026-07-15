@@ -5,6 +5,8 @@ import { createDeferredLoader } from "@/lib/deferredLoader";
 import type { CheckoutCommitDialog } from "./CheckoutCommitDialog";
 import type { CherryPickDialog } from "./CherryPickDialog";
 import type { InteractiveRebaseDialog } from "./InteractiveRebaseDialog";
+import type { ReflogDialog } from "./ReflogDialog";
+import type { ReflogResetDialog } from "./ReflogResetDialog";
 import type { ResetCommitDialog } from "./ResetCommitDialog";
 import type { RevertDialog } from "./RevertDialog";
 
@@ -20,6 +22,14 @@ export const DeferredInteractiveRebaseDialog = createDialog(
 	() => import("./InteractiveRebaseDialog"),
 	"InteractiveRebaseDialog",
 );
+export const DeferredReflogDialog = createDialog(
+	() => import("./ReflogDialog"),
+	"ReflogDialog",
+);
+export const DeferredReflogResetDialog = createDialog(
+	() => import("./ReflogResetDialog"),
+	"ReflogResetDialog",
+);
 export const DeferredResetCommitDialog = createDialog(
 	() => import("./ResetCommitDialog"),
 	"ResetCommitDialog",
@@ -33,6 +43,8 @@ type DialogModuleMap = {
 	CheckoutCommitDialog: typeof CheckoutCommitDialog;
 	CherryPickDialog: typeof CherryPickDialog;
 	InteractiveRebaseDialog: typeof InteractiveRebaseDialog;
+	ReflogDialog: typeof ReflogDialog;
+	ReflogResetDialog: typeof ReflogResetDialog;
 	ResetCommitDialog: typeof ResetCommitDialog;
 	RevertDialog: typeof RevertDialog;
 };

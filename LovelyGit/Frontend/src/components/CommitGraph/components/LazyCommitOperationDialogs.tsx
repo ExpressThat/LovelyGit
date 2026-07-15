@@ -1,11 +1,12 @@
-import { type ComponentProps, lazy, type ReactNode, Suspense } from "react";
-import { SurfaceLoading } from "@/AppLazySurfaces";
+import type { ComponentProps } from "react";
 import type { CheckoutCommitDialog } from "./CheckoutCommitDialog";
 import type { CherryPickDialog } from "./CherryPickDialog";
 import {
 	DeferredCheckoutCommitDialog,
 	DeferredCherryPickDialog,
 	DeferredInteractiveRebaseDialog,
+	DeferredReflogDialog,
+	DeferredReflogResetDialog,
 	DeferredResetCommitDialog,
 	DeferredRevertDialog,
 } from "./DeferredCommitOperationDialogs";
@@ -15,12 +16,6 @@ import type { ReflogResetDialog } from "./ReflogResetDialog";
 import type { ResetCommitDialog } from "./ResetCommitDialog";
 import type { RevertDialog } from "./RevertDialog";
 
-const Reflog = lazy(() =>
-	importDialog("ReflogDialog", () => import("./ReflogDialog")),
-);
-const ReflogReset = lazy(() =>
-	importDialog("ReflogResetDialog", () => import("./ReflogResetDialog")),
-);
 export function LazyCherryPickDialog(
 	props: ComponentProps<typeof CherryPickDialog>,
 ) {
@@ -39,12 +34,12 @@ export function LazyInteractiveRebaseDialog(
 	) : null;
 }
 export function LazyReflogDialog(props: ComponentProps<typeof ReflogDialog>) {
-	return <Boundary>{<Reflog {...props} />}</Boundary>;
+	return <DeferredReflogDialog {...props} />;
 }
 export function LazyReflogResetDialog(
 	props: ComponentProps<typeof ReflogResetDialog>,
 ) {
-	return <Boundary>{<ReflogReset {...props} />}</Boundary>;
+	return <DeferredReflogResetDialog {...props} />;
 }
 export function LazyResetCommitDialog(
 	props: ComponentProps<typeof ResetCommitDialog>,
@@ -53,22 +48,4 @@ export function LazyResetCommitDialog(
 }
 export function LazyRevertDialog(props: ComponentProps<typeof RevertDialog>) {
 	return props.commits?.length ? <DeferredRevertDialog {...props} /> : null;
-}
-
-function Boundary({ children }: { children: ReactNode }) {
-	return (
-		<Suspense
-			fallback={<SurfaceLoading label="Opening Git operation" overlay />}
-		>
-			{children}
-		</Suspense>
-	);
-}
-
-async function importDialog<
-	TName extends string,
-	TModule extends Record<TName, unknown>,
->(name: TName, load: () => Promise<TModule>) {
-	const module = await load();
-	return { default: module[name] as TModule[TName] };
 }

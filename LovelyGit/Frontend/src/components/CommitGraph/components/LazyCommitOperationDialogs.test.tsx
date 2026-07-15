@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from "vitest";
 import type { CommitGraphRow } from "@/generated/types";
 import {
 	LazyCherryPickDialog,
+	LazyReflogDialog,
 	LazyRevertDialog,
 } from "./LazyCommitOperationDialogs";
 
@@ -16,6 +17,12 @@ vi.mock("./CherryPickDialog", () => ({
 vi.mock("./RevertDialog", () => ({
 	RevertDialog: ({ commits }: { commits: CommitGraphRow[] | null }) =>
 		commits?.length ? <div>Revert dialog loaded</div> : null,
+}));
+
+vi.mock("./ReflogDialog", () => ({
+	ReflogDialog: ({ branchName }: { branchName: string }) => (
+		<div>Reflog for {branchName} loaded</div>
+	),
 }));
 
 describe("LazyCommitOperationDialogs", () => {
@@ -47,5 +54,18 @@ describe("LazyCommitOperationDialogs", () => {
 		};
 		render(<LazyCherryPickDialog {...props} />);
 		expect(await screen.findByText("Cherry-pick dialog loaded")).toBeVisible();
+	});
+
+	it("reveals the reflog for the selected branch", async () => {
+		render(
+			<LazyReflogDialog
+				branchName="main"
+				onClose={vi.fn()}
+				onCreateBranch={vi.fn()}
+				onReset={vi.fn()}
+				repositoryId="repo"
+			/>,
+		);
+		expect(await screen.findByText("Reflog for main loaded")).toBeVisible();
 	});
 });
