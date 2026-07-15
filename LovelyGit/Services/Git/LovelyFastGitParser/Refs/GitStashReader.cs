@@ -1,4 +1,6 @@
+using System.Buffers;
 using System.Globalization;
+using System.Text;
 
 namespace ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser.Refs;
 
@@ -15,27 +17,90 @@ internal static class GitStashReader
             return Array.Empty<GitStashEntry>();
         }
 
-        var lines = await File.ReadAllLinesAsync(logPath, cancellationToken)
+        var file = new FileInfo(logPath);
+        var estimatedCount = (int)Math.Min(file.Length / 128 + 1, 1_000_000);
+        var entries = new List<GitStashEntry>(estimatedCount);
+        await ReadEntriesAsync(logPath, objectFormat, entries, cancellationToken)
             .ConfigureAwait(false);
-        var entries = new List<GitStashEntry>(lines.Length);
-        for (var lineIndex = lines.Length - 1; lineIndex >= 0; lineIndex--)
+        entries.Reverse();
+        for (var index = 0; index < entries.Count; index++)
         {
-            cancellationToken.ThrowIfCancellationRequested();
-            if (!TryParse(lines[lineIndex].AsSpan(), objectFormat, entries.Count, out var entry))
-            {
-                continue;
-            }
-
-            entries.Add(entry);
+            entries[index] = entries[index] with { Selector = $"stash@{{{index}}}" };
         }
 
         return entries;
     }
 
+    private static async Task ReadEntriesAsync(
+        string path,
+        GitObjectFormat objectFormat,
+        List<GitStashEntry> entries,
+        CancellationToken cancellationToken)
+    {
+        const int BufferSize = 16 * 1024;
+        var buffer = ArrayPool<char>.Shared.Rent(BufferSize);
+        StringBuilder? pending = null;
+        try
+        {
+            await using var stream = new FileStream(
+                path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete,
+                BufferSize, FileOptions.Asynchronous | FileOptions.SequentialScan);
+            using var reader = new StreamReader(stream);
+            int read;
+            while ((read = await reader.ReadAsync(
+                       buffer.AsMemory(0, BufferSize), cancellationToken).ConfigureAwait(false)) > 0)
+            {
+                var remaining = buffer.AsSpan(0, read);
+                while (true)
+                {
+                    var newline = remaining.IndexOf('\n');
+                    if (newline < 0) break;
+                    ProcessSegment(remaining[..newline], ref pending, objectFormat, entries);
+                    cancellationToken.ThrowIfCancellationRequested();
+                    remaining = remaining[(newline + 1)..];
+                }
+                if (!remaining.IsEmpty)
+                {
+                    pending ??= new StringBuilder(remaining.Length + 128);
+                    pending.Append(remaining);
+                }
+            }
+            if (pending is { Length: > 0 }) ProcessLine(pending.ToString(), objectFormat, entries);
+        }
+        finally
+        {
+            ArrayPool<char>.Shared.Return(buffer);
+        }
+    }
+
+    private static void ProcessSegment(
+        ReadOnlySpan<char> segment,
+        ref StringBuilder? pending,
+        GitObjectFormat objectFormat,
+        List<GitStashEntry> entries)
+    {
+        if (pending == null)
+        {
+            ProcessLine(segment, objectFormat, entries);
+            return;
+        }
+        pending.Append(segment);
+        ProcessLine(pending.ToString(), objectFormat, entries);
+        pending = null;
+    }
+
+    private static void ProcessLine(
+        ReadOnlySpan<char> line,
+        GitObjectFormat objectFormat,
+        List<GitStashEntry> entries)
+    {
+        if (!line.IsEmpty && line[^1] == '\r') line = line[..^1];
+        if (TryParse(line, objectFormat, out var entry)) entries.Add(entry);
+    }
+
     private static bool TryParse(
         ReadOnlySpan<char> line,
         GitObjectFormat objectFormat,
-        int stashIndex,
         out GitStashEntry entry)
     {
         entry = default;
@@ -77,7 +142,7 @@ internal static class GitStashReader
         }
 
         entry = new GitStashEntry(
-            $"stash@{{{stashIndex}}}",
+            string.Empty,
             target,
             message,
             createdAtUnixSeconds);
