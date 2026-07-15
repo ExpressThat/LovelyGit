@@ -18,9 +18,8 @@ internal static partial class GitRefReader
             foreach (var file in Directory.EnumerateFiles(refsDirectory, "*", SearchOption.AllDirectories))
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                var text = File.ReadAllText(file).AsSpan().Trim();
                 var fullName = Path.GetRelativePath(gitDirectory, file).Replace('\\', '/');
-                if (GitObjectId.TryParse(text, objectFormat, out var id))
+                if (GitLooseRefReader.TryReadObjectId(file, objectFormat, out var id))
                 {
                     if (ShouldSkipTag(fullName, maxTags, ref tagCount))
                     {

@@ -22,6 +22,21 @@ public sealed class GitRefSummaryLooseRefTests
     }
 
     [Fact]
+    public async Task LoadRefsAsync_UsesTheSharedLooseRefParser()
+    {
+        using var directory = new TemporaryGitDirectory();
+        directory.WriteRef("heads/feature", $" \t{ObjectId.ToUpperInvariant()}\r\n");
+
+        var refs = await GitRefReader.LoadRefsAsync(
+            directory.Path,
+            GitObjectFormat.Sha1,
+            GitRefReader.DefaultTagLimit,
+            CancellationToken.None);
+
+        Assert.Equal(ObjectId, refs["refs/heads/feature"].Target.ToString());
+    }
+
+    [Fact]
     public async Task ReadAsync_PreservesLongWhitespaceFallback()
     {
         using var directory = new TemporaryGitDirectory();
