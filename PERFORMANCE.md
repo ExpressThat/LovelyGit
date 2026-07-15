@@ -67,6 +67,7 @@ This is the durable inventory of LovelyGit performance work. Update it in the sa
 | Large Git LFS attributes scan | 95.63 ms and 47.91 MB allocated while scanning 300,000 mixed lines for 10,000 LFS patterns | 61.57 ms and 1.91 MB allocated with a bounded pooled block reader | Disposable attributes fixture; 35.62% lower latency and 96.01% fewer allocated bytes with quoted/escaped pattern, BOM, long-line, cancellation, limit, and real track/untrack coverage | `145b479` |
 | Active bisect session refresh | 1,732.13 ms and 9.67 MB allocated for five reads in a 1,500-ref repository | 23.84 ms and 0.55 MB allocated with direct HEAD/object reads and targeted per-worktree bisect refs | Disposable active-session fixture; 98.62% lower latency and 94.31% fewer allocated bytes, plus linked-worktree correctness, malformed-ref, cancellation, and full bisect-workflow coverage | `ff73534` |
 | Maximum interactive-rebase plan | 333.91 ms and 3.02 MB allocated for 100 commits in a 1,500-ref repository | 36.97 ms and 0.77 MB allocated with direct HEAD/object reads and one parse per commit | Deterministic packed disposable history; 88.93% lower latency and 74.50% fewer allocated bytes with maximum-limit, ancestry, merge, detached/unborn HEAD, cancellation, no-mutation, and real rebase-workflow coverage | `9434fa4` |
+| Primary remote URL refresh | 60.79 ms and 44.11 MB allocated for five reads of a 10,001-remote config | 16.36 ms and 0.35 MB allocated with a pooled purpose-built scanner | Disposable large-config fixture; 73.09% lower latency and 99.20% fewer allocated bytes while preserving duplicate-origin last-value, first-fallback, quoted URL, BOM, long-line, cancellation, and full-manager behavior | `1c2629b` |
 | Real remote clone | Not previously recorded | 4.91 s; 42.5 MiB checkout; 34.99 MiB pack; +21.7 MB observed desktop private memory | Full `sharkdp/bat` clone through CMG; 20,693 objects with monotonic overall and phase progress | `d795e85` |
 | Complete backend test gate | Previously over one minute during early integration work | 55.89 s clean run; established baseline 30–36 s | `Invoke-LovelyGitTestGate.ps1`, 574 tests at this checkpoint | `021c0ee`, `089f559`, `3a4bcbd` |
 
@@ -116,6 +117,7 @@ Measured through the same Git commands LovelyGit uses, in a disposable 2,001-fil
 - Reduced initial paging/retention, cancelled abandoned refreshes, and coalesced warm activation (`9a1856b`, `30547fd`, `4d29e3d`, `aec7cd9`, `e207118`).
 - Cached bounded ref snapshots, streamed peeled refs, reused refs across controls, and reduced loose-ref loading (`24806de`, `5ad6053`, `4e2ad7c`, `ede92d7`, `4c47c80`).
 - Streamed large stash reflogs from a pooled buffer and assigned newest-first selectors in place instead of retaining a second full raw-line representation (`f2d0af1b`).
+- Scanned primary remote URLs with a pooled purpose-built reader instead of constructing the complete remote model during repository refreshes (`1c2629b`).
 - Reset scroll on tab switches and reduced virtualized graph overscan (`6b0fcf6`, `ca11dfd`, `7180d47`).
 
 ### Native Git Parser and Object Storage
