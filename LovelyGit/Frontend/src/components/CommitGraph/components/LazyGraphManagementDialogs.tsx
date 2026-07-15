@@ -17,6 +17,11 @@ import {
 	DeferredCreateTagDialog,
 	DeferredDeleteTagDialog,
 } from "./DeferredTagManagementDialogs";
+import {
+	DeferredCreateWorktreeDialog,
+	DeferredLockWorktreeDialog,
+	DeferredRemoveWorktreeDialog,
+} from "./DeferredWorktreeDialogs";
 import type { DeleteBranchDialog } from "./DeleteBranchDialog";
 import type { DeleteRemoteTagDialog } from "./DeleteRemoteTagDialog";
 import type { DeleteTagDialog } from "./DeleteTagDialog";
@@ -30,20 +35,11 @@ const CommitComparison = lazy(() =>
 		() => import("./CommitComparisonDialog"),
 	),
 );
-const CreateWorktree = lazy(() =>
-	importDialog("CreateWorktreeDialog", () => import("./CreateWorktreeDialog")),
-);
 const DeleteRemoteTag = lazy(() =>
 	importDialog(
 		"DeleteRemoteTagDialog",
 		() => import("./DeleteRemoteTagDialog"),
 	),
-);
-const LockWorktree = lazy(() =>
-	importDialog("LockWorktreeDialog", () => import("./LockWorktreeDialog")),
-);
-const RemoveWorktree = lazy(() =>
-	importDialog("RemoveWorktreeDialog", () => import("./RemoveWorktreeDialog")),
 );
 
 export function LazyBranchComparisonDialog(
@@ -77,7 +73,7 @@ export function LazyCreateWorktreeDialog(
 	props: ComponentProps<typeof CreateWorktreeDialog>,
 ) {
 	return props.branchName !== null ? (
-		<Boundary>{<CreateWorktree {...props} />}</Boundary>
+		<DeferredCreateWorktreeDialog {...props} />
 	) : null;
 }
 export function LazyDeleteBranchDialog(
@@ -100,12 +96,12 @@ export function LazyDeleteTagDialog(
 export function LazyLockWorktreeDialog(
 	props: ComponentProps<typeof LockWorktreeDialog>,
 ) {
-	return <Boundary>{<LockWorktree {...props} />}</Boundary>;
+	return <DeferredLockWorktreeDialog {...props} />;
 }
 export function LazyRemoveWorktreeDialog(
 	props: ComponentProps<typeof RemoveWorktreeDialog>,
 ) {
-	return <Boundary>{<RemoveWorktree {...props} />}</Boundary>;
+	return <DeferredRemoveWorktreeDialog {...props} />;
 }
 export function LazyRenameBranchDialog(
 	props: ComponentProps<typeof RenameBranchDialog>,

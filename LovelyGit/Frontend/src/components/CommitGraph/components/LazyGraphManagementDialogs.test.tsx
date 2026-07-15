@@ -4,6 +4,7 @@ import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import {
 	LazyCheckoutTagDialog,
+	LazyCreateWorktreeDialog,
 	LazyDeleteTagDialog,
 	LazyRenameBranchDialog,
 } from "./LazyGraphManagementDialogs";
@@ -20,6 +21,11 @@ vi.mock("./CheckoutTagDialog", () => ({
 vi.mock("./RenameBranchDialog", () => ({
 	RenameBranchDialog: ({ branchName }: { branchName: string }) => (
 		<div>Rename {branchName} loaded</div>
+	),
+}));
+vi.mock("./CreateWorktreeDialog", () => ({
+	CreateWorktreeDialog: ({ branchName }: { branchName: string }) => (
+		<div>Create worktree for {branchName} loaded</div>
 	),
 }));
 
@@ -61,5 +67,22 @@ describe("LazyGraphManagementDialogs", () => {
 			/>,
 		);
 		expect(await screen.findByText("Checkout v1.0.0 loaded")).toBeVisible();
+	});
+
+	it("reveals create worktree after selecting a branch", async () => {
+		const props = {
+			branches: ["main", "topic"],
+			existingWorktree: null,
+			isBusy: false,
+			onBranchChange: vi.fn(),
+			onChooseDestination: vi.fn(),
+			onClose: vi.fn(),
+			onCreate: vi.fn(),
+			onOpenExisting: vi.fn(),
+		};
+		render(<LazyCreateWorktreeDialog {...props} branchName="topic" />);
+		expect(
+			await screen.findByText("Create worktree for topic loaded"),
+		).toBeVisible();
 	});
 });
