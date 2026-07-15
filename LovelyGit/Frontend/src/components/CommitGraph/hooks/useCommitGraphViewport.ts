@@ -1,5 +1,6 @@
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useWindowPointerDrag } from "@/components/layout/useWindowPointerDrag";
 import type { ColKey } from "../constants";
 import {
 	COL_DEFAULT,
@@ -30,6 +31,7 @@ export function useCommitGraphViewport({
 	const [graphScrollLeft, setGraphScrollLeft] = useState(0);
 	const [preferredWidths, setPreferredWidths] =
 		useState<Record<ColKey, number>>(COL_DEFAULT);
+	const startPointerDrag = useWindowPointerDrag();
 
 	useEffect(() => {
 		const node = viewportRef.current;
@@ -113,12 +115,7 @@ export function useCommitGraphViewport({
 				[rightKey]: pair - nextLeft,
 			}));
 		};
-		const onUp = () => {
-			window.removeEventListener("pointermove", onMove);
-			window.removeEventListener("pointerup", onUp);
-		};
-		window.addEventListener("pointermove", onMove);
-		window.addEventListener("pointerup", onUp, { once: true });
+		startPointerDrag({ onMove });
 	};
 
 	return {

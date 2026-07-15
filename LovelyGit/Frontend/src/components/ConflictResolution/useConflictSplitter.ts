@@ -1,4 +1,5 @@
 import { type RefObject, useState } from "react";
+import { useWindowPointerDrag } from "@/components/layout/useWindowPointerDrag";
 
 const MINIMUM_SOURCE_PERCENT = 30;
 const MAXIMUM_SOURCE_PERCENT = 76;
@@ -8,6 +9,7 @@ export function useConflictSplitter(
 ) {
 	const [sourcePercent, setSourcePercent] = useState(58);
 	const [isDragging, setIsDragging] = useState(false);
+	const startPointerDrag = useWindowPointerDrag();
 
 	const startDrag = (event: React.PointerEvent<HTMLButtonElement>) => {
 		const container = containerRef.current;
@@ -24,13 +26,11 @@ export function useConflictSplitter(
 				),
 			);
 		};
-		const stop = () => {
-			setIsDragging(false);
-			window.removeEventListener("pointermove", move);
-			window.removeEventListener("pointerup", stop);
-		};
-		window.addEventListener("pointermove", move);
-		window.addEventListener("pointerup", stop, { once: true });
+		startPointerDrag({
+			onCancel: () => setIsDragging(false),
+			onFinish: () => setIsDragging(false),
+			onMove: move,
+		});
 	};
 	const resizeBy = (amount: number) => {
 		setSourcePercent((current) =>

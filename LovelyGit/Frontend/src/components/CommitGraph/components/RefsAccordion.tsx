@@ -1,4 +1,5 @@
 import { useRef } from "react";
+import { useWindowPointerDrag } from "@/components/layout/useWindowPointerDrag";
 import type { BranchIntegrationMode } from "@/components/TopNavBar/components/BranchIntegrationDialog";
 import type { CommitGraphRow, RepositoryWorktreeItem } from "@/generated/types";
 import type { WorktreeMutationController } from "../hooks/useWorktreeMutations";
@@ -35,6 +36,7 @@ export function RefsAccordion({
 	worktrees: RepositoryWorktreeItem[];
 }) {
 	const containerRef = useRef<HTMLDivElement>(null);
+	const startPointerDrag = useWindowPointerDrag();
 	const entries = [
 		{ count: worktrees.length, id: "Worktrees", type: "worktrees" as const },
 		...sections.map((section) => ({
@@ -84,6 +86,7 @@ export function RefsAccordion({
 										entry.id,
 										nextOpen.id,
 										layout.resize,
+										startPointerDrag,
 									)
 								}
 								onResizeBy={(amount) =>
@@ -104,6 +107,7 @@ function startVerticalResize(
 	before: string,
 	after: string,
 	resize: (before: string, after: string, delta: number) => void,
+	startPointerDrag: ReturnType<typeof useWindowPointerDrag>,
 ) {
 	if (!container) return;
 	event.preventDefault();
@@ -113,10 +117,5 @@ function startVerticalResize(
 		resize(before, after, ((moveEvent.clientY - lastY) / height) * 2);
 		lastY = moveEvent.clientY;
 	};
-	const stop = () => {
-		window.removeEventListener("pointermove", move);
-		window.removeEventListener("pointerup", stop);
-	};
-	window.addEventListener("pointermove", move);
-	window.addEventListener("pointerup", stop, { once: true });
+	startPointerDrag({ onMove: move });
 }
