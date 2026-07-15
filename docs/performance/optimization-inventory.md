@@ -87,6 +87,7 @@ This ledger records shipped performance work by feature area. Update it in the s
 - Moved diff persistence off click paths and cached open variants (`b074af7`, `dc120ec`, `54cb0c7`, `3726952`).
 - Streamed patch previews through a pooled character buffer so large Apply Patch files no longer allocate one string per content line (`dfe357d`).
 - Opened commit and series patch export against the object database alone, avoiding unrelated branch, remote, tag, and stash enumeration (`9b71ea5`).
+- Opened commit-file diff sources against the object database alone, keeping unrelated refs out of cold file inspection while preserving cached Side-by-Side, Combined, whitespace, and parent variants (`3d932ef`).
 
 ### Conflict Resolution
 
