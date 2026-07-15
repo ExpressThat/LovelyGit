@@ -45,6 +45,7 @@ This ledger records shipped performance work by feature area. Update it in the s
 - Built interactive-rebase plans from direct HEAD and uncached commit-object reads, parsing each commit once without materializing the repository's complete ref model (`9434fa4`).
 - Validated detached checkout targets through the direct commit-existence reader instead of opening the complete repository/ref model (`de7c3b4`).
 - Compared authoritative commit pairs through an object-database-only repository session, keeping unrelated refs out of deep-history comparisons (`44344c2`).
+- Resolved named branch comparisons through worktree-aware HEAD plus the exact selected local/remote ref before opening an object-only session, preserving local-first precedence without enumerating unrelated refs (`b6816f7`).
 - Converted binary SHA-1/SHA-256 identities through a stack character buffer instead of allocating an intermediate `char[]` before the result string (`bb89ffc`).
 - Demand-read native monolithic and split commit-graph chains for ancestry painting instead of inflating every packed commit; the reader stays unopened for unrelated repository features and safely falls back for missing, corrupt, shallow, grafted, replaced, or disabled histories (`dfb379a`).
 - Reused native commit-graph ancestry in deep file-history and blame walks while preserving authoritative tree, blob, author, rename, and attribution reads (`3ca172f`).
