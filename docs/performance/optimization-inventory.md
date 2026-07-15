@@ -97,6 +97,7 @@ This ledger records shipped performance work by feature area. Update it in the s
 - Streamed/compacted conflict text and payload encoding/decoding while bounding retained memory (`583b14b`, `b71a162`, `0fa5802`, `357a04d`, `4b5962d`, `aeb5cc1`).
 - Avoided caching stage blobs, reused validated caches, and opened the resolver without suspense (`75cb386`, `10c7e85`, `f5cf4c4`, `2e993ea`).
 - Replaced repeated line-by-hunk scans during Changes/Full-file switching with a precedence-preserving interval index (`42fc630`).
+- Checked external merge-tool preflight/postflight state through the exact worktree index path instead of loading all refs and index entries; this also corrected linked-worktree conflict detection (`b91af35`).
 
 ### Test and Verification Throughput
 
