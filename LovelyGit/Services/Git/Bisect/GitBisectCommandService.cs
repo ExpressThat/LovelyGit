@@ -1,5 +1,6 @@
 using ExpressThat.LovelyGit.Services.Git.Cli;
 using ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser;
+using ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser.Refs;
 
 namespace ExpressThat.LovelyGit.Services.Git.Bisect;
 
@@ -52,16 +53,28 @@ internal sealed class GitBisectCommandService
         string? goodCommit,
         CancellationToken cancellationToken)
     {
-        using var repository = await LovelyGitRepository
-            .OpenAsync(repositoryPath, cancellationToken)
+        var paths = await GitRepositoryDiscovery
+            .ResolveRepositoryPathsAsync(repositoryPath, cancellationToken)
             .ConfigureAwait(false);
-        if (!GitObjectId.TryParse(goodCommit, repository.ObjectFormat, out var goodId) ||
-            !await CommitExistsAsync(repository, goodId, cancellationToken).ConfigureAwait(false))
+        var objectFormat = await GitRepositoryDiscovery
+            .ReadObjectFormatAsync(paths.GitDirectory, cancellationToken)
+            .ConfigureAwait(false);
+        if (!GitObjectId.TryParse(goodCommit, objectFormat, out var goodId))
+        {
+            throw new ArgumentException("Select a valid known-good commit.", nameof(goodCommit));
+        }
+        using var objectStore = new GitObjectStore(paths.GitDirectory, objectFormat);
+        if (!await CommitExistsAsync(objectStore, goodId, cancellationToken).ConfigureAwait(false))
         {
             throw new ArgumentException("Select a valid known-good commit.", nameof(goodCommit));
         }
 
-        var badId = repository.HeadTarget
+        var badId = await GitHeadReader.ResolveAsync(
+                paths.WorktreeGitDirectory,
+                paths.GitDirectory,
+                objectFormat,
+                cancellationToken)
+            .ConfigureAwait(false)
             ?? throw new InvalidOperationException("The repository does not have a HEAD commit.");
         if (badId == goodId)
         {
@@ -72,13 +85,15 @@ internal sealed class GitBisectCommandService
     }
 
     private static async Task<bool> CommitExistsAsync(
-        LovelyGitRepository repository,
+        GitObjectStore objectStore,
         GitObjectId id,
         CancellationToken cancellationToken)
     {
         try
         {
-            return await repository.GetCommitAsync(id, cancellationToken).ConfigureAwait(false) != null;
+            var data = await objectStore.ReadObjectWithoutCachingAsync(id, cancellationToken)
+                .ConfigureAwait(false);
+            return data.Kind == GitObjectKind.Commit;
         }
         catch (FileNotFoundException)
         {

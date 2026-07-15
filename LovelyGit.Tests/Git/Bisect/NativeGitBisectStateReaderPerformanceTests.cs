@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using ExpressThat.LovelyGit.Services.Git.Bisect;
+using ExpressThat.LovelyGit.Services.Git.Cli;
 using ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser;
 using ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser.Refs;
 using Xunit.Abstractions;
@@ -53,6 +54,44 @@ public sealed class NativeGitBisectStateReaderPerformanceTests(ITestOutputHelper
         }
     }
 
+    [Fact]
+    public async Task StartAsync_DoesNotScaleWithUnrelatedRefs()
+    {
+        var directory = Directory.CreateTempSubdirectory("lovelygit-bisect-start-performance-");
+        try
+        {
+            InitializedRepositoryTemplate.CopyInto(directory, "master");
+            var git = new GitCliService();
+            var good = await ReadHeadAsync(git, directory.FullName);
+            await git.ExecuteBufferedAsync(
+                ["commit", "--allow-empty", "-m", "Known bad"], directory.FullName);
+            var bad = await ReadHeadAsync(git, directory.FullName);
+            SeedUnrelatedRefs(directory.FullName, bad, 1_500);
+            var reader = new NativeGitBisectStateReader();
+            var service = new GitBisectCommandService(new GitOperationService(git), reader);
+            var allocatedBefore = GC.GetTotalAllocatedBytes(precise: true);
+            var startedAt = Stopwatch.GetTimestamp();
+
+            var state = await service.ExecuteAsync(
+                directory.FullName, GitBisectAction.Start, good, CancellationToken.None);
+
+            var elapsed = Stopwatch.GetElapsedTime(startedAt);
+            var allocated = GC.GetTotalAllocatedBytes(true) - allocatedBefore;
+            output.WriteLine($"StartElapsedMs={elapsed.TotalMilliseconds:F2}; AllocatedBytes={allocated:N0}");
+            Assert.True(state.IsActive);
+            Assert.Equal(bad, state.BadCommit);
+            Assert.Equal([good], state.GoodCommits);
+            Assert.True(elapsed < TimeSpan.FromMilliseconds(200), $"Start took {elapsed}.");
+            Assert.True(allocated < 1_200_000, $"Start allocated {allocated:N0} bytes.");
+        }
+        finally
+        {
+            foreach (var file in directory.EnumerateFiles("*", SearchOption.AllDirectories))
+                file.Attributes = FileAttributes.Normal;
+            directory.Delete(recursive: true);
+        }
+    }
+
     private static void SeedSession(string repositoryPath, string commit, int extraRefCount)
     {
         var gitDirectory = Path.Combine(repositoryPath, ".git");
@@ -69,4 +108,15 @@ public sealed class NativeGitBisectStateReaderPerformanceTests(ITestOutputHelper
             Path.Combine(gitDirectory, "BISECT_LOG"),
             $"# first bad commit: [{commit}] subject\n");
     }
+
+    private static void SeedUnrelatedRefs(string repositoryPath, string commit, int count)
+    {
+        var heads = Directory.CreateDirectory(
+            Path.Combine(repositoryPath, ".git", "refs", "heads", "perf"));
+        for (var index = 0; index < count; index++)
+            File.WriteAllText(Path.Combine(heads.FullName, $"branch-{index:D4}"), commit + "\n");
+    }
+
+    private static async Task<string> ReadHeadAsync(GitCliService git, string path) =>
+        (await git.ExecuteBufferedAsync(["rev-parse", "HEAD"], path)).StandardOutput.Trim();
 }

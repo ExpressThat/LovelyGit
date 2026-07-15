@@ -65,6 +65,31 @@ public sealed class GitBisectServicesTests
     }
 
     [Fact]
+    public async Task Start_InvalidTargetsAndCancellationLeaveRepositoryUnchanged()
+    {
+        using var repository = CreateRepository();
+        var reader = new NativeGitBisectStateReader();
+        var service = CreateService(reader);
+        var head = repository.Commits[^1];
+        var blobPath = Path.Combine(repository.Path, "not-commit.txt");
+        await File.WriteAllTextAsync(blobPath, "blob");
+        var blob = (await GitTestProcess.RunAsync(
+            repository.Path, "hash-object", "-w", "--", blobPath)).Trim();
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => service.ExecuteAsync(
+            repository.Path, GitBisectAction.Start, head, CancellationToken.None));
+        await Assert.ThrowsAsync<ArgumentException>(() => service.ExecuteAsync(
+            repository.Path, GitBisectAction.Start, blob, CancellationToken.None));
+        using var cancellation = new CancellationTokenSource();
+        cancellation.Cancel();
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => service.ExecuteAsync(
+            repository.Path, GitBisectAction.Start, repository.Commits[0], cancellation.Token));
+
+        Assert.False((await reader.ReadAsync(repository.Path, CancellationToken.None)).IsActive);
+        Assert.Equal(head, (await GitTestProcess.RunAsync(repository.Path, "rev-parse", "HEAD")).Trim());
+    }
+
+    [Fact]
     public async Task Skip_MovesToAnotherCandidateWithoutEndingSession()
     {
         using var repository = CreateRepository();
