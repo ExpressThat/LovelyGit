@@ -51,7 +51,7 @@ internal readonly record struct GitObjectId(string Value, GitObjectFormat Object
             throw new FormatException($"Invalid {objectFormat} Git object id byte length.");
         }
 
-        var chars = new char[value.Length * 2];
+        Span<char> chars = stackalloc char[value.Length * 2];
         for (var i = 0; i < value.Length; i++)
         {
             var current = value[i];
