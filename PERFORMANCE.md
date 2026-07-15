@@ -16,6 +16,7 @@ This is the durable inventory of LovelyGit performance work. Update it in the sa
 | --- | ---: | ---: | --- | --- |
 | Commit graph random scroll | 24.5 ms average; 2,305 DOM nodes | 13.9 ms average; 1,676 DOM nodes | Chromium CMG scroll journey; virtual overscan 36 to 8 | `7180d47` |
 | Large worktree status | 596 ms | 75.7 ms | 10,000-file disposable repository; choose Git status above the native scan threshold | `0a8d9e1` |
+| Large checkout / worktree creation | 1.69-1.82 s / 2.21-2.28 s | 0.97-1.03 s / 1.28-1.36 s | 2,001-file disposable repository; bounded four-worker checkout above 100 paths | This commit |
 | No-match commit search | 1,698 ms | 536 ms | Chromium CMG search journey; bounded first result budget | `dc5b68c` |
 | Chromium working changes | 1.49 s with no useful intermediate result | 1.07 s tracked result; 1.62 s complete result | CMG refresh; concurrent tracked-only and complete scans | `3a4bcbd` |
 | Cold Settings / Command Palette | 321.5 ms / 315.4 ms | 46.0 ms / 19.7 ms | Chromium CMG click-to-dialog timing; immediate deferred reveal while preserving lazy chunks | `f017242` |
@@ -98,6 +99,7 @@ This is the durable inventory of LovelyGit performance work. Update it in the sa
 - Added preliminary summaries, bounded preload, deferred heavy background preloads, and trusted complete cached summaries (`4032430`, `5824b04`, `1d6fbfa`, `f370993`).
 - Bounded wide-repository background memory and skipped oversized native scans (`8a2fd98`, `b580871`, `0a8d9e1`).
 - Added progressive tracked-first working changes with explicit completeness and disabled mutation controls until complete (`3a4bcbd`).
+- Enabled command-local, four-worker parallel checkout above 100 paths for switch, clone, worktree, reset, merge, rebase, cherry-pick, and revert operations. This avoids persistent repository configuration and daemon memory while bounding transient worker cost (`this commit`).
 
 ### Diff Engine and File Diffs
 

@@ -6,6 +6,8 @@ namespace ExpressThat.LovelyGit.Services.Git.Cli;
 
 internal sealed partial class GitCliService
 {
+    private const string CheckoutWorkerCount = "checkout.workers=4";
+    private const string ParallelCheckoutThreshold = "checkout.thresholdForParallelism=100";
     private readonly Lazy<GitCliInstallation> _installation = new(ResolveInstallation);
     private readonly IReadOnlyDictionary<string, string?>? _defaultEnvironmentVariables;
 
@@ -28,7 +30,12 @@ internal sealed partial class GitCliService
     {
         var installation = Installation;
         var command = global::CliWrap.Cli.Wrap(installation.GitExecutablePath)
-            .WithArguments(arguments)
+            .WithArguments(builder => builder
+                .Add("-c")
+                .Add(CheckoutWorkerCount)
+                .Add("-c")
+                .Add(ParallelCheckoutThreshold)
+                .Add(arguments))
             .WithEnvironmentVariables(environment =>
                 ConfigureEnvironment(environment, installation, environmentVariables));
 
