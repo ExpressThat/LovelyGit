@@ -91,59 +91,77 @@ internal sealed partial class WorkingTreeChangeService
                     cancellationToken)
                 .ConfigureAwait(false);
         }
-
-        using var repository = await LovelyGitRepository.OpenAsync(repositoryPath, cancellationToken)
-            .ConfigureAwait(false);
-        var indexEntries = await new GitIndexReader()
-            .ReadAsync(repository.GitDirectory, repository.ObjectFormat, cancellationToken)
-            .ConfigureAwait(false);
-        var indexByPath = indexEntries
-            .Where(entry => entry.Stage == 0)
-            .ToDictionary(entry => entry.Path, StringComparer.Ordinal);
-
-        byte[] oldBytes = Array.Empty<byte>();
-        byte[] newBytes = Array.Empty<byte>();
-        var status = "Modified";
-
-        if (group == WorkingTreeChangeGroup.Staged)
+        if (group == WorkingTreeChangeGroup.Unstaged)
         {
-            var headFiles = await ReadHeadFilesAsync(repository, cancellationToken).ConfigureAwait(false);
-            headFiles.TryGetValue(path, out var headFile);
-            indexByPath.TryGetValue(path, out var indexEntry);
-            oldBytes = headFile == null
-                ? Array.Empty<byte>()
-                : await TryReadBlobBytesAsync(repository, headFile.ObjectId, headFile.Mode, cancellationToken).ConfigureAwait(false) ?? Array.Empty<byte>();
-            newBytes = indexEntry == null
-                ? Array.Empty<byte>()
-                : await TryReadBlobBytesAsync(repository, indexEntry.ObjectId, indexEntry.Mode, cancellationToken).ConfigureAwait(false) ?? Array.Empty<byte>();
-            status = headFile == null ? "Added" : indexEntry == null ? "Deleted" : "Modified";
+            return await BuildUnstagedFileDiffAsync(
+                    repositoryPath, path, viewMode, ignoreWhitespace, cancellationToken)
+                .ConfigureAwait(false);
         }
-        else if (group == WorkingTreeChangeGroup.Unstaged)
-        {
-            if (!indexByPath.TryGetValue(path, out var indexEntry))
-            {
-                throw new FileNotFoundException("Index entry not found.", path);
-            }
-
-            oldBytes = await TryReadBlobBytesAsync(repository, indexEntry.ObjectId, indexEntry.Mode, cancellationToken).ConfigureAwait(false) ?? Array.Empty<byte>();
-            var worktreePath = Path.Combine(repository.WorkTreeDirectory, FromGitPath(path));
-            var readBytes = File.Exists(worktreePath)
-                ? await TryReadWorktreeFileBytesAsync(worktreePath, cancellationToken).ConfigureAwait(false)
-                : null;
-            if (File.Exists(worktreePath) && readBytes == null)
-            {
-                return BuildUnreadableFileDiff("WORKTREE", path, "Modified", viewMode);
-            }
-
-            newBytes = readBytes ?? Array.Empty<byte>();
-            status = File.Exists(worktreePath) ? "Modified" : "Deleted";
-        }
-        else
+        if (group != WorkingTreeChangeGroup.Staged)
         {
             throw new InvalidOperationException("Unmerged file diffs are not available yet.");
         }
 
+        using var repository = await LovelyGitRepository.OpenAsync(repositoryPath, cancellationToken)
+            .ConfigureAwait(false);
+        var indexEntries = await new GitIndexReader().ReadEntriesForPathAsync(
+                repository.WorktreeGitDirectory,
+                repository.ObjectFormat,
+                path,
+                cancellationToken)
+            .ConfigureAwait(false);
+        var indexEntry = indexEntries.FirstOrDefault(entry => entry.Stage == 0);
+
+        var headFiles = await ReadHeadFilesAsync(repository, cancellationToken).ConfigureAwait(false);
+        headFiles.TryGetValue(path, out var headFile);
+        var oldBytes = headFile == null
+            ? Array.Empty<byte>()
+            : await TryReadBlobBytesAsync(repository, headFile.ObjectId, headFile.Mode, cancellationToken).ConfigureAwait(false) ?? Array.Empty<byte>();
+        var newBytes = indexEntry == null
+            ? Array.Empty<byte>()
+            : await TryReadBlobBytesAsync(repository, indexEntry.ObjectId, indexEntry.Mode, cancellationToken).ConfigureAwait(false) ?? Array.Empty<byte>();
+        var status = headFile == null ? "Added" : indexEntry == null ? "Deleted" : "Modified";
+
         return BuildDiffResponse("WORKTREE", path, status, viewMode, ignoreWhitespace, oldBytes, newBytes);
+    }
+
+    private static async Task<CommitFileDiffResponse> BuildUnstagedFileDiffAsync(
+        string repositoryPath,
+        string path,
+        CommitDiffViewMode viewMode,
+        bool ignoreWhitespace,
+        CancellationToken cancellationToken)
+    {
+        var paths = await GitRepositoryDiscovery.ResolveRepositoryPathsAsync(
+            repositoryPath, cancellationToken).ConfigureAwait(false);
+        var objectFormat = await GitRepositoryDiscovery.ReadObjectFormatAsync(
+            paths.GitDirectory, cancellationToken).ConfigureAwait(false);
+        var entries = await new GitIndexReader().ReadEntriesForPathAsync(
+            paths.WorktreeGitDirectory, objectFormat, path, cancellationToken).ConfigureAwait(false);
+        var indexEntry = entries.FirstOrDefault(entry => entry.Stage == 0)
+            ?? throw new FileNotFoundException("Index entry not found.", path);
+        using var objectStore = new GitObjectStore(paths.GitDirectory, objectFormat);
+        var oldBytes = await TryReadBlobBytesAsync(
+            objectStore, indexEntry.ObjectId, indexEntry.Mode, cancellationToken).ConfigureAwait(false)
+            ?? Array.Empty<byte>();
+        var worktreePath = Path.Combine(paths.WorkTreeDirectory, FromGitPath(path));
+        var exists = File.Exists(worktreePath);
+        var newBytes = exists
+            ? await TryReadWorktreeFileBytesAsync(worktreePath, cancellationToken).ConfigureAwait(false)
+            : null;
+        if (exists && newBytes == null)
+        {
+            return BuildUnreadableFileDiff("WORKTREE", path, "Modified", viewMode);
+        }
+
+        return BuildDiffResponse(
+            "WORKTREE",
+            path,
+            exists ? "Modified" : "Deleted",
+            viewMode,
+            ignoreWhitespace,
+            oldBytes,
+            newBytes ?? Array.Empty<byte>());
     }
 
     private static async Task<CommitFileDiffResponse> BuildUntrackedFileDiffAsync(

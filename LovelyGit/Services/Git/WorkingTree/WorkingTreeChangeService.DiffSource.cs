@@ -68,6 +68,30 @@ internal sealed partial class WorkingTreeChangeService
         }
     }
 
+    private static async Task<byte[]?> TryReadBlobBytesAsync(
+        GitObjectStore objectStore,
+        GitObjectId objectId,
+        string mode,
+        CancellationToken cancellationToken)
+    {
+        if (IsSubmoduleMode(mode))
+        {
+            return null;
+        }
+
+        try
+        {
+            var data = await objectStore
+                .ReadObjectAsync(objectId, cancellationToken)
+                .ConfigureAwait(false);
+            return data.Kind == GitObjectKind.Blob ? data.Data : null;
+        }
+        catch when (!cancellationToken.IsCancellationRequested)
+        {
+            return null;
+        }
+    }
+
     private static (uint Additions, uint Deletions, bool IsBinary) CalculateStats(byte[]? oldBytes, byte[]? newBytes)
     {
         if (oldBytes == null || newBytes == null)
