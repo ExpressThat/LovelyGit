@@ -123,6 +123,40 @@ describe("native messaging client", () => {
 		).toThrow("Native messaging is unavailable");
 	});
 
+	it("releases a pending request when the native send throws", async () => {
+		vi.useFakeTimers();
+		try {
+			const harness = await createHarness();
+			vi.mocked(harness.transport.sendNativeMessage).mockImplementationOnce(
+				() => {
+					throw new Error("host disconnected");
+				},
+			);
+
+			const response = harness.client.requestNativeMessage(
+				harness.types.NativeMessageType.GetAllSettings,
+				{},
+			);
+			const request = harness.sentRequest();
+
+			await expect(response).rejects.toThrow("host disconnected");
+			expect(vi.getTimerCount()).toBe(0);
+			harness.receive(
+				harness.types.NativeMessageType.GetAllSettings,
+				JSON.stringify({
+					body: {},
+					messageId: request.messageId,
+					success: true,
+				}),
+			);
+			expect(
+				harness.performance.recordNativeMessagePerformance,
+			).not.toHaveBeenCalled();
+		} finally {
+			vi.useRealTimers();
+		}
+	});
+
 	it("delivers valid notifications until unsubscribed", async () => {
 		const harness = await createHarness();
 		const subscriber = vi.fn();

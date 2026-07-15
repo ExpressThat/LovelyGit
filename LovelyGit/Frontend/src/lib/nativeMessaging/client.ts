@@ -90,19 +90,26 @@ export function requestNativeMessage<
 	}
 
 	return new Promise<unknown>((resolve, reject) => {
+		const pendingKey = getPendingKey(messageType, messageId);
 		const timeoutId = window.setTimeout(() => {
-			pendingRequests.delete(getPendingKey(messageType, messageId));
+			pendingRequests.delete(pendingKey);
 			reject(new Error(`Timed out waiting for '${messageType}' response.`));
 		}, timeoutMs);
 
-		pendingRequests.set(getPendingKey(messageType, messageId), {
+		pendingRequests.set(pendingKey, {
 			resolve: resolve as (body: unknown) => void,
 			reject,
 			startedAt: performance.now(),
 			timeoutId,
 		});
 
-		sendNativeMessage(messageType, request);
+		try {
+			sendNativeMessage(messageType, request);
+		} catch (error) {
+			window.clearTimeout(timeoutId);
+			pendingRequests.delete(pendingKey);
+			reject(error);
+		}
 	});
 }
 
