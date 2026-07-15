@@ -28,7 +28,7 @@ internal sealed class GitTagCommandService
             throw new ArgumentException("Signed tags must be annotated.", nameof(isAnnotated));
         }
         var normalizedMessage = isAnnotated ? NormalizeMessage(message) : null;
-        await EnsureCommitExistsAsync(repositoryPath, target, cancellationToken)
+        await GitCommitExistenceReader.EnsureExistsAsync(repositoryPath, target, cancellationToken)
             .ConfigureAwait(false);
 
         IReadOnlyList<string> arguments = isAnnotated
@@ -122,33 +122,6 @@ internal sealed class GitTagCommandService
             throw new ArgumentException("Commit hash is not valid.", nameof(commitHash));
         }
         return normalized;
-    }
-
-    private static async Task EnsureCommitExistsAsync(
-        string repositoryPath,
-        string commitHash,
-        CancellationToken cancellationToken)
-    {
-        using var repository = await LovelyGitRepository
-            .OpenAsync(repositoryPath, cancellationToken)
-            .ConfigureAwait(false);
-        if (!GitObjectId.TryParse(commitHash, repository.ObjectFormat, out var id))
-        {
-            throw new ArgumentException("Commit hash does not match this repository.", nameof(commitHash));
-        }
-
-        try
-        {
-            if (await repository.GetCommitAsync(id, cancellationToken).ConfigureAwait(false) is not null)
-            {
-                return;
-            }
-        }
-        catch (FileNotFoundException)
-        {
-        }
-
-        throw new ArgumentException("Target commit does not exist.", nameof(commitHash));
     }
 
     private static string NormalizeRemoteName(string remoteName) =>

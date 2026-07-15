@@ -64,6 +64,55 @@ public sealed class GitTagCommandServiceFailureTests
     }
 
     [Fact]
+    public async Task CreateTagAsync_NonCommitObjectDoesNotCreateTagOrMoveHead()
+    {
+        using var repository = TemporaryGitRepository.Create();
+        var blobPath = Path.Combine(repository.Path, "blob.txt");
+        await File.WriteAllTextAsync(blobPath, "not a commit");
+        var blobHash = (await repository.GitCliService.ExecuteBufferedAsync(
+            ["hash-object", "-w", "--", "blob.txt"],
+            repository.Path,
+            cancellationToken: CancellationToken.None)).StandardOutput.Trim();
+        var service = new GitTagCommandService(
+            new GitOperationService(repository.GitCliService));
+
+        var exception = await Assert.ThrowsAsync<InvalidDataException>(() => service.CreateTagAsync(
+            repository.Path,
+            "v-invalid-target",
+            blobHash,
+            false,
+            false,
+            null,
+            CancellationToken.None));
+
+        Assert.Contains("not a commit", exception.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Empty(await ReadTagsAsync(repository));
+        Assert.Equal(repository.HeadCommitHash, await ReadHeadAsync(repository));
+    }
+
+    [Fact]
+    public async Task CreateTagAsync_CancellationDoesNotCreateTagOrMoveHead()
+    {
+        using var repository = TemporaryGitRepository.Create();
+        using var cancellation = new CancellationTokenSource();
+        cancellation.Cancel();
+        var service = new GitTagCommandService(
+            new GitOperationService(repository.GitCliService));
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => service.CreateTagAsync(
+            repository.Path,
+            "v-cancelled",
+            repository.HeadCommitHash,
+            false,
+            false,
+            null,
+            cancellation.Token));
+
+        Assert.Empty(await ReadTagsAsync(repository));
+        Assert.Equal(repository.HeadCommitHash, await ReadHeadAsync(repository));
+    }
+
+    [Fact]
     public async Task DeleteTagAsync_MissingTagPreservesExistingTags()
     {
         using var repository = TemporaryGitRepository.Create();
