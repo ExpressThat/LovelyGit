@@ -9,7 +9,8 @@ public sealed class WorkingTreeCommitTests
     public async Task CommitStagedChangesAsync_CreatesCommitWithTitleAndBody()
     {
         using var repository = TemporaryGitRepository.Create();
-        var service = new WorkingTreeIndexService(repository.GitCliService);
+        var maintenance = new RecordingMaintenanceScheduler();
+        var service = new WorkingTreeIndexService(repository.GitCliService, maintenance);
         await File.WriteAllTextAsync(Path.Combine(repository.Path, "feature.txt"), "feature");
         await repository.GitCliService.ExecuteBufferedAsync(["add", "feature.txt"], repository.Path);
 
@@ -23,6 +24,7 @@ public sealed class WorkingTreeCommitTests
 
         Assert.Equal("Feature title\nFeature body", await ReadHeadMessageAsync(repository));
         Assert.Equal("2", await CountCommitsAsync(repository));
+        Assert.Equal([repository.Path], maintenance.RepositoryPaths);
     }
 
     [Fact]
@@ -49,7 +51,8 @@ public sealed class WorkingTreeCommitTests
     public async Task CommitStagedChangesAsync_RejectsBlankTitle()
     {
         using var repository = TemporaryGitRepository.Create();
-        var service = new WorkingTreeIndexService(repository.GitCliService);
+        var maintenance = new RecordingMaintenanceScheduler();
+        var service = new WorkingTreeIndexService(repository.GitCliService, maintenance);
 
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
             service.CommitStagedChangesAsync(
@@ -61,6 +64,41 @@ public sealed class WorkingTreeCommitTests
                 CancellationToken.None));
 
         Assert.Equal("Commit title is required.", exception.Message);
+        Assert.Empty(maintenance.RepositoryPaths);
+    }
+
+    [Fact]
+    public async Task CommitStagedChangesAsync_GitFailureDoesNotScheduleMaintenance()
+    {
+        using var repository = TemporaryGitRepository.Create();
+        var maintenance = new RecordingMaintenanceScheduler();
+        var service = new WorkingTreeIndexService(repository.GitCliService, maintenance);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            service.CommitStagedChangesAsync(
+                repository.Path,
+                "No changes",
+                string.Empty,
+                amend: false,
+                sign: false,
+                CancellationToken.None));
+
+        Assert.Empty(maintenance.RepositoryPaths);
+        Assert.Equal("1", await CountCommitsAsync(repository));
+    }
+
+    [Fact]
+    public void BuildCommitArguments_DefersAutomaticMaintenance()
+    {
+        var arguments = WorkingTreeIndexService.BuildCommitArguments(
+            "Title",
+            "Body",
+            amend: false,
+            sign: false);
+
+        Assert.Equal(
+            ["-c", "maintenance.auto=false", "commit", "-m", "Title", "-m", "Body"],
+            arguments);
     }
 
     [Fact]
@@ -127,4 +165,11 @@ public sealed class WorkingTreeCommitTests
         (await repository.GitCliService.ExecuteBufferedAsync(
             ["log", "-1", "--format=%s%n%b"],
             repository.Path)).StandardOutput.Trim();
+
+    private sealed class RecordingMaintenanceScheduler : IGitMaintenanceScheduler
+    {
+        public List<string> RepositoryPaths { get; } = [];
+
+        public void Schedule(string repositoryPath) => RepositoryPaths.Add(repositoryPath);
+    }
 }

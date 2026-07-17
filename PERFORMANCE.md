@@ -7,7 +7,7 @@ This is the durable index of LovelyGit performance work. Update the linked ledge
 - [Verified performance results](docs/performance/verified-results.md)
 - [Completed optimization inventory](docs/performance/optimization-inventory.md)
 
-Latest verified checkpoint: bulk stage, unstage, and discard now paint their optimistic Working Changes state before the synchronous desktop bridge begins native Git work; see the linked ledgers for measured WebView latency and safety coverage.
+Latest verified checkpoint: foreground commit latency no longer includes Git's automatic maintenance; LovelyGit schedules the same maintenance on a bounded, owned background worker after the commit succeeds. See the linked ledgers for native and WebView measurements.
 
 ## Measurement Rules
 
@@ -34,6 +34,7 @@ Measured through the same Git commands LovelyGit uses, primarily in a disposable
 | Stage 1,000 of 20,000 tracked files | 7.18 s cold CMG completion; 0.70-0.90 s warm service runs |
 | Unstage 1,000 of 20,000 tracked files | 749 ms CMG completion; 0.31-0.47 s warm service runs |
 | Discard 1,000 of 20,000 tracked files | 87 ms warm CMG completion; 0.65-0.67 s cold service runs |
+| Commit 1,000 staged files in a 20,000-file repository | 0.23-0.34 s service; 439.2 ms CMG control settlement after deferring auto-maintenance |
 
 ## Rejected or Deferred Experiments
 
@@ -51,6 +52,8 @@ Measured through the same Git commands LovelyGit uses, primarily in a disposable
 | Force the native status scanner across a 20,000-entry index | 822 ms and 10.5 MB allocated versus Git's roughly 48-53 ms warm scan | The existing 1,000-entry crossover policy remains correct; wide repositories should use Git's optimized index/stat traversal. |
 | Replace streamed single-file pathspec input with a direct `git add -- <path>` argument | Both forms remained roughly 52-57 ms on the 20,000-file fixture | Git index rewrite cost dominates; retained the shared streamed pathspec path for consistent validation and batching. |
 | Replace bulk `git add -A` with `git add -u` for tracked-only changes | `add -u` took about 579 ms versus 537 ms for `add -A` on the 20,000-file fixture | It was slower and would exclude untracked files from Stage All, so the existing command was retained. |
+| Detach post-commit status reconciliation | No improvement; the graph updated in 441 ms but the commit control remained busy for about 1.38 s | Trace2 proved the delay was inside Git's automatic maintenance, not LovelyGit's reconciliation, so the experiment was reverted. |
+| Add only `--quiet` to foreground commit | Highly variable at 192-1,095 ms versus 361-1,906 ms without it | Output was not the bottleneck; automatic maintenance dominated. LovelyGit instead disables auto-maintenance for that invocation and schedules it after success. |
 
 ## Next Measurement Areas
 

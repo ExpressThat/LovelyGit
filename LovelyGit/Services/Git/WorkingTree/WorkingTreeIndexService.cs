@@ -13,10 +13,14 @@ internal sealed partial class WorkingTreeIndexService
     private static readonly byte[] Nul = [0];
 
     private readonly GitCliService _gitCliService;
+    private readonly IGitMaintenanceScheduler? _maintenanceScheduler;
 
-    public WorkingTreeIndexService(GitCliService gitCliService)
+    public WorkingTreeIndexService(
+        GitCliService gitCliService,
+        IGitMaintenanceScheduler? maintenanceScheduler = null)
     {
         _gitCliService = gitCliService;
+        _maintenanceScheduler = maintenanceScheduler;
     }
 
     public async Task StageAsync(

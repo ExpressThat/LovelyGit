@@ -31,6 +31,7 @@ internal sealed partial class WorkingTreeIndexService
             .ConfigureAwait(false);
         if (result.ExitCode == 0)
         {
+            _maintenanceScheduler?.Schedule(repositoryPaths.WorkTreeDirectory);
             return;
         }
 
@@ -42,9 +43,14 @@ internal sealed partial class WorkingTreeIndexService
             : message);
     }
 
-    private static string[] BuildCommitArguments(string title, string body, bool amend, bool sign)
+    internal static string[] BuildCommitArguments(string title, string body, bool amend, bool sign)
     {
-        var arguments = new List<string>(amend ? 8 : 6) { "commit" };
+        var arguments = new List<string>(amend ? 10 : 8)
+        {
+            "-c",
+            "maintenance.auto=false",
+            "commit",
+        };
         if (amend)
         {
             arguments.Add("--amend");

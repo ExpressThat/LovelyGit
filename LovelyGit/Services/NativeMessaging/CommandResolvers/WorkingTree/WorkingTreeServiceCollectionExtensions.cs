@@ -37,6 +37,11 @@ internal static class WorkingTreeServiceCollectionExtensions
         services.AddSingleton<WorkingTreeStatusListService>();
         services.AddSingleton<WorkingTreePreliminarySummaryService>();
         services.AddSingleton<WorkingTreeSummaryService>();
+        services.AddSingleton<GitMaintenanceScheduler>();
+        services.AddSingleton<IGitMaintenanceScheduler>(provider =>
+            provider.GetRequiredService<GitMaintenanceScheduler>());
+        services.AddHostedService(provider =>
+            provider.GetRequiredService<GitMaintenanceScheduler>());
         services.AddSingleton<WorkingTreeIndexService>();
         services.AddSingleton<GitIgnoreService>();
         services.AddSingleton<HeadCommitMessageService>();
