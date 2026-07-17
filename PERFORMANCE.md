@@ -7,6 +7,8 @@ This is the durable index of LovelyGit performance work. Update the linked ledge
 - [Verified performance results](docs/performance/verified-results.md)
 - [Completed optimization inventory](docs/performance/optimization-inventory.md)
 
+Latest verified checkpoint: simple suffix ignore rules now avoid compiled regex overhead; see the linked ledgers for measurements and coverage.
+
 ## Measurement Rules
 
 - Measure from a healthy runner state and use disposable repositories only.

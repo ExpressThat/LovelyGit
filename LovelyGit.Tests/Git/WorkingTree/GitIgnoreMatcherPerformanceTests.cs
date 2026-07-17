@@ -9,6 +9,38 @@ namespace LovelyGit.Tests.Git.WorkingTree;
 public sealed class GitIgnoreMatcherPerformanceTests(ITestOutputHelper output)
 {
     [Fact]
+    public async Task LoadAsync_HandlesManySimpleSuffixGlobsWithoutRegexOverhead()
+    {
+        using var root = TemporaryDirectory.Create("lovelygit-ignore-suffix-performance-");
+        var gitDirectory = Directory.CreateDirectory(Path.Combine(root.Path, ".git"));
+        Directory.CreateDirectory(Path.Combine(gitDirectory.FullName, "info"));
+        await File.WriteAllTextAsync(Path.Combine(gitDirectory.FullName, "config"), "[core]\n");
+        var ignore = new StringBuilder(150_000);
+        for (var index = 0; index < 5_000; index++)
+            ignore.Append("*.generated-").AppendLine(index.ToString("D5"));
+        await File.WriteAllTextAsync(Path.Combine(root.Path, ".gitignore"), ignore.ToString());
+        GC.Collect();
+        var allocatedBefore = GC.GetTotalAllocatedBytes(precise: true);
+        var startedAt = Stopwatch.GetTimestamp();
+
+        var matcher = await GitIgnoreMatcher.LoadAsync(
+            root.Path, gitDirectory.FullName, CancellationToken.None);
+
+        var loadElapsed = Stopwatch.GetElapsedTime(startedAt);
+        var allocated = GC.GetTotalAllocatedBytes(true) - allocatedBefore;
+        startedAt = Stopwatch.GetTimestamp();
+        Assert.True(matcher.IsIgnored("nested/file.generated-04999", isDirectory: false));
+        Assert.False(matcher.IsIgnored("nested/file.generated-missing", isDirectory: false));
+        var lookupElapsed = Stopwatch.GetElapsedTime(startedAt);
+        output.WriteLine(
+            $"LoadMs={loadElapsed.TotalMilliseconds:F2}; LookupMs={lookupElapsed.TotalMilliseconds:F2}; " +
+            $"AllocatedBytes={allocated:N0}");
+        Assert.True(loadElapsed < TimeSpan.FromMilliseconds(100), $"Glob load took {loadElapsed}.");
+        Assert.True(lookupElapsed < TimeSpan.FromMilliseconds(100), $"Glob lookup took {lookupElapsed}.");
+        Assert.True(allocated < 5_000_000, $"Glob load allocated {allocated:N0} bytes.");
+    }
+
+    [Fact]
     public async Task LoadAsync_StreamsLargeConfigAndIgnoreSources()
     {
         using var root = TemporaryDirectory.Create("lovelygit-ignore-performance-");

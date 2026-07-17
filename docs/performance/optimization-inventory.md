@@ -78,6 +78,7 @@ This ledger records shipped performance work by feature area. Update it in the s
 - Streamed sparse-checkout specifications directly into the response collector instead of retaining a duplicate raw-line array (`d70f301`).
 - Streamed large `.gitattributes` files through a pooled parser so non-LFS lines do not become managed strings while retaining the existing bounded result (`145b479`).
 - Streamed Git config and ignore sources through pooled line buffers and matched literal ignore rules directly instead of compiling one regex per rule, sharply reducing initial status GC pressure while retaining regex handling for actual glob rules (`6fed8fa`).
+- Matched common single-leading-asterisk suffix rules such as `*.pdb` directly per path segment, preserving compiled-regex fallback for complex globs while removing their dominant large-rule-set latency and memory cost (`this commit`).
 
 ### Diff Engine and File Diffs
 

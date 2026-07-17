@@ -9,6 +9,7 @@ internal sealed partial class GitIgnoreMatcher
     {
         private readonly Regex? _regex;
         private readonly string? _literal;
+        private readonly string? _suffix;
         private readonly string _basePrefix;
         private readonly bool _anchored;
         private readonly bool _directoryOnly;
@@ -16,6 +17,7 @@ internal sealed partial class GitIgnoreMatcher
         private GitIgnoreRule(
             Regex? regex,
             string? literal,
+            string? suffix,
             string basePrefix,
             bool anchored,
             bool isNegation,
@@ -23,6 +25,7 @@ internal sealed partial class GitIgnoreMatcher
         {
             _regex = regex;
             _literal = literal;
+            _suffix = suffix;
             _basePrefix = basePrefix;
             _anchored = anchored;
             IsNegation = isNegation;
@@ -41,11 +44,18 @@ internal sealed partial class GitIgnoreMatcher
             var normalizedBase = baseDirectory.Trim('/');
             var basePrefix = normalizedBase.Length == 0 ? string.Empty : normalizedBase + "/";
 
+            if (IsSimpleSuffixGlob(pattern))
+            {
+                return new GitIgnoreRule(
+                    null, null, pattern[1..], basePrefix, anchored,
+                    isNegation, directoryOnly);
+            }
+
             if (pattern.IndexOf('*') < 0 && pattern.IndexOf('?') < 0 &&
                 pattern.IndexOf('[') < 0 && pattern.IndexOf('\\') < 0)
             {
                 return new GitIgnoreRule(
-                    null, pattern, basePrefix, anchored, isNegation, directoryOnly);
+                    null, pattern, null, basePrefix, anchored, isNegation, directoryOnly);
             }
 
             var prefix = string.IsNullOrEmpty(baseDirectory)
@@ -59,6 +69,7 @@ internal sealed partial class GitIgnoreMatcher
             return new GitIgnoreRule(
                 new Regex(regexPattern, RegexOptions.CultureInvariant | RegexOptions.Compiled),
                 null,
+                null,
                 basePrefix,
                 anchored,
                 isNegation,
@@ -68,10 +79,16 @@ internal sealed partial class GitIgnoreMatcher
         public bool IsMatch(string relativePath, bool isDirectory)
         {
             if (_directoryOnly && !isDirectory) return false;
-            return _literal == null
-                ? _regex!.IsMatch(relativePath)
-                : IsLiteralMatch(relativePath.AsSpan());
+            if (_literal != null) return IsLiteralMatch(relativePath.AsSpan());
+            if (_suffix != null) return IsSuffixMatch(relativePath.AsSpan());
+            return _regex!.IsMatch(relativePath);
         }
+
+        private static bool IsSimpleSuffixGlob(string pattern) =>
+            pattern.Length > 1 && pattern[0] == '*' &&
+            pattern.IndexOf('*', 1) < 0 && pattern.IndexOf('?') < 0 &&
+            pattern.IndexOf('[') < 0 && pattern.IndexOf('\\') < 0 &&
+            pattern.IndexOf('/') < 0;
 
         private bool IsLiteralMatch(ReadOnlySpan<char> path)
         {
@@ -98,6 +115,30 @@ internal sealed partial class GitIgnoreMatcher
                 !path.Slice(start, literal.Length).SequenceEqual(literal)) return false;
             var end = start + literal.Length;
             return end == path.Length || path[end] == '/';
+        }
+
+        private bool IsSuffixMatch(ReadOnlySpan<char> path)
+        {
+            if (_basePrefix.Length > 0)
+            {
+                if (!path.StartsWith(_basePrefix, StringComparison.Ordinal)) return false;
+                path = path[_basePrefix.Length..];
+            }
+            if (_anchored) return FirstSegment(path).EndsWith(_suffix, StringComparison.Ordinal);
+            while (true)
+            {
+                var separator = path.IndexOf('/');
+                var segment = separator < 0 ? path : path[..separator];
+                if (segment.EndsWith(_suffix, StringComparison.Ordinal)) return true;
+                if (separator < 0) return false;
+                path = path[(separator + 1)..];
+            }
+        }
+
+        private static ReadOnlySpan<char> FirstSegment(ReadOnlySpan<char> path)
+        {
+            var separator = path.IndexOf('/');
+            return separator < 0 ? path : path[..separator];
         }
 
         private static string ConvertGlob(string pattern)

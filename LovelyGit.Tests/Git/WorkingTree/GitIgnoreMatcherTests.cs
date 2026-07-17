@@ -91,6 +91,24 @@ public sealed class GitIgnoreMatcherTests : IDisposable
     }
 
     [Fact]
+    public async Task SimpleSuffixRules_PreserveAnchoringDirectoryAndNestedScope()
+    {
+        await File.WriteAllLinesAsync(
+            Path.Combine(_root, ".gitignore"),
+            ["/*.root", "*.cache/"]);
+        Directory.CreateDirectory(Path.Combine(_root, "src"));
+        await File.WriteAllTextAsync(Path.Combine(_root, "src", ".gitignore"), "*.tmp\n");
+        var matcher = await LoadAsync();
+        await matcher.LoadRulesForDirectoryAsync(_root, "src", CancellationToken.None);
+
+        Assert.True(matcher.IsIgnored("file.root", isDirectory: false));
+        Assert.False(matcher.IsIgnored("nested/file.root", isDirectory: false));
+        Assert.True(matcher.IsIgnored("build.cache/output.bin", isDirectory: false));
+        Assert.True(matcher.IsIgnored("src/nested/file.tmp", isDirectory: false));
+        Assert.False(matcher.IsIgnored("nested/file.tmp", isDirectory: false));
+    }
+
+    [Fact]
     public async Task RepositoryAndConfiguredExcludes_AreLoaded()
     {
         var configuredExcludes = Path.Combine(_root, "configured-excludes");
