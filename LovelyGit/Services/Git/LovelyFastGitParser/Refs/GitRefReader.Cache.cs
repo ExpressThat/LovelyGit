@@ -15,7 +15,10 @@ internal static partial class GitRefReader
         CancellationToken cancellationToken)
     {
         var key = new CacheKey(Path.GetFullPath(gitDirectory), objectFormat, maxTags);
-        var fingerprint = CreateFingerprint(key.GitDirectory);
+        var fingerprint = CreateFingerprint(
+            key.GitDirectory,
+            maxTags: key.MaxTags,
+            objectFormat: key.ObjectFormat);
         if (TryGetCached(key, fingerprint, out var cached))
         {
             return cached;
@@ -86,21 +89,22 @@ internal static partial class GitRefReader
 
     internal static RefFingerprint CreateFingerprint(
         string gitDirectory,
-        string? worktreeGitDirectory = null)
+        string? worktreeGitDirectory = null,
+        int maxTags = DefaultTagLimit,
+        GitObjectFormat objectFormat = GitObjectFormat.Sha1)
     {
         var hash = new HashCode();
         AddFile(Path.Combine(worktreeGitDirectory ?? gitDirectory, "HEAD"), ref hash);
         AddFile(Path.Combine(gitDirectory, "packed-refs"), ref hash);
         AddFile(Path.Combine(gitDirectory, "logs", "refs", "stash"), ref hash);
-        var refsDirectory = Path.Combine(gitDirectory, "refs");
         var count = 0;
-        if (Directory.Exists(refsDirectory))
+        foreach (var file in GitLooseRefFileEnumerator.Enumerate(
+                     gitDirectory,
+                     objectFormat,
+                     maxTags))
         {
-            foreach (var path in Directory.EnumerateFiles(refsDirectory, "*", SearchOption.AllDirectories))
-            {
-                AddFile(path, ref hash);
-                count++;
-            }
+            AddFile(file.Path, ref hash);
+            count++;
         }
 
         return new RefFingerprint(hash.ToHashCode(), count);

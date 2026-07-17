@@ -43,20 +43,21 @@ internal static class GitRefSummaryReader
         ref int tagCount,
         CancellationToken cancellationToken)
     {
-        var refsDirectory = Path.Combine(gitDirectory, "refs");
-        if (!Directory.Exists(refsDirectory))
-        {
-            return;
-        }
-
-        foreach (var file in Directory.EnumerateFiles(refsDirectory, "*", SearchOption.AllDirectories))
+        foreach (var file in GitLooseRefFileEnumerator.Enumerate(
+                     gitDirectory,
+                     objectFormat,
+                     maxTags,
+                     cancellationToken))
         {
             cancellationToken.ThrowIfCancellationRequested();
-            var fullName = Path.GetRelativePath(gitDirectory, file).Replace('\\', '/');
-            if (GitLooseRefReader.TryReadObjectId(file, objectFormat, out var id))
-            {
-                AddRef(refs, seenFullNames, remotePrefixes, fullName, id, maxTags, ref tagCount);
-            }
+            AddRef(
+                refs,
+                seenFullNames,
+                remotePrefixes,
+                file.FullName,
+                file.Target,
+                maxTags,
+                ref tagCount);
         }
     }
 

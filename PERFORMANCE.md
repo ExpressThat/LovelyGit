@@ -7,7 +7,7 @@ This is the durable index of LovelyGit performance work. Update the linked ledge
 - [Verified performance results](docs/performance/verified-results.md)
 - [Completed optimization inventory](docs/performance/optimization-inventory.md)
 
-Latest verified checkpoint: commit details now stream only refs that point to the selected commit instead of constructing the complete repository ref model; see the linked ledgers for measurements and coverage.
+Latest verified checkpoint: Chromium-scale cold graph activation now bounds loose-tag enumeration and avoids random page-cache churn on very large pack indexes; see the linked ledgers for measurements and coverage.
 
 ## Measurement Rules
 
@@ -41,6 +41,7 @@ Measured through the same Git commands LovelyGit uses, in a disposable 2,001-fil
 | Suppress working-tree watchers during checkout | No repeatable improvement | Added lifecycle complexity without measurable value; reverted. |
 | Swap Git executable path for checkout | No repeatable improvement | Nested app-process launch cost remained; reverted. |
 | Replace standard stash push with `--quiet` or create/store/reset | None; warmed standard was 1.33 s, quiet 1.37 s, custom 1.47 s | Standard Git semantics were both fastest and safest, so the alternatives were rejected. |
+| Bypass object caches while peeling loose tags | Cold Chromium-scale graph open regressed from 281.86 ms / 5.21 MB allocated to 319.37 ms / 7.55 MB | Many lightweight tags share commit targets, so the existing bounded object cache avoids repeated pack reads; retained unchanged resolver. |
 | Batch submodule HEAD tree lookups with a path trie | Allocations fell from 2.53 MB to 2.18 MB for 1,000 definitions, but latency moved from 59.29 ms to 60.18 ms | Path normalization and worktree state checks dominate the manager read; the extra parser complexity did not improve interaction latency, so it was removed. |
 | Replace async worktree fan-out with synchronous `Parallel.For` | Allocations remained about 43.5 MB and ten-read latency regressed from 304.30 ms to 325.15 ms in the intermediate small-file experiment | The existing bounded async scheduler was retained; allocation was subsequently addressed at the small-file buffer layer instead. |
 | Keep only the top 100 painted branch-comparison commits during traversal | Repeated 10,000-commit runs remained at 65.85-65.99 MB and latency varied within the prior range | Sorting the displayed subset is not the bottleneck; packed commit decoding dominates, so the more complex bounded selector was removed. |

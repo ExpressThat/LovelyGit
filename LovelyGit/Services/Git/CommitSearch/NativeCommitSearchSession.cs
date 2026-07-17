@@ -52,7 +52,9 @@ internal sealed partial class NativeCommitSearchSession : IDisposable
         _beforeUnixSeconds = beforeUnixSeconds;
         _resultLimit = resultLimit;
         _refFingerprint = GitRefReader.CreateFingerprint(
-            repository.GitDirectory, repository.WorktreeGitDirectory);
+            repository.GitDirectory,
+            repository.WorktreeGitDirectory,
+            objectFormat: repository.ObjectFormat);
         _queryUtf8 = Encoding.UTF8.GetBytes(query);
         _authorUtf8 = Encoding.UTF8.GetBytes(author);
         _directResult = directResult;
@@ -136,7 +138,9 @@ internal sealed partial class NativeCommitSearchSession : IDisposable
                 && _resultLimit == Math.Clamp(
                     limit, 1, NativeCommitSearchReader.MaximumResultLimit)
                 && _refFingerprint == GitRefReader.CreateFingerprint(
-                    _repository.GitDirectory, _repository.WorktreeGitDirectory);
+                    _repository.GitDirectory,
+                    _repository.WorktreeGitDirectory,
+                    objectFormat: _repository.ObjectFormat);
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {

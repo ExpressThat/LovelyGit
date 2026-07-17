@@ -6,17 +6,25 @@ internal sealed partial class GitPackIndex
 {
     private const int IndexPageBytes = 64 * 1024;
     private const int IndexPageCacheBytes = 8 * 1024 * 1024;
+    private const int MaximumPageCachedIndexBytes = 128 * 1024 * 1024;
     private static readonly LruCache<IndexPageKey, byte[]> IndexPages = new(
         IndexPageCacheBytes / IndexPageBytes,
         IndexPageCacheBytes,
         static page => page.LongLength);
     private static long _nextCacheGeneration;
     private readonly long _cacheGeneration = Interlocked.Increment(ref _nextCacheGeneration);
+    private bool UsePageCache => _file.Length <= MaximumPageCachedIndexBytes;
 
     internal static long CachedIndexBytes => IndexPages.CurrentWeight;
 
     private void ReadExactlyAt(Span<byte> destination, long offset)
     {
+        if (!UsePageCache)
+        {
+            ReadDirect(destination, offset);
+            return;
+        }
+
         while (!destination.IsEmpty)
         {
             var pageIndex = offset / IndexPageBytes;
@@ -31,6 +39,17 @@ internal sealed partial class GitPackIndex
             page.AsSpan(pageOffset, available).CopyTo(destination);
             destination = destination[available..];
             offset += available;
+        }
+    }
+
+    private void ReadDirect(Span<byte> destination, long offset)
+    {
+        while (!destination.IsEmpty)
+        {
+            var read = RandomAccess.Read(_file.SafeFileHandle, destination, offset);
+            if (read == 0) throw new EndOfStreamException();
+            destination = destination[read..];
+            offset += read;
         }
     }
 

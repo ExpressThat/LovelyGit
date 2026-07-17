@@ -12,26 +12,19 @@ internal static partial class GitRefReader
     {
         var refs = new Dictionary<string, GitRawRef>(StringComparer.Ordinal);
         var tagCount = 0;
-        var refsDirectory = Path.Combine(gitDirectory, "refs");
-        if (Directory.Exists(refsDirectory))
+        foreach (var file in GitLooseRefFileEnumerator.Enumerate(
+                     gitDirectory,
+                     objectFormat,
+                     maxTags,
+                     cancellationToken))
         {
-            foreach (var file in Directory.EnumerateFiles(refsDirectory, "*", SearchOption.AllDirectories))
-            {
-                cancellationToken.ThrowIfCancellationRequested();
-                var fullName = Path.GetRelativePath(gitDirectory, file).Replace('\\', '/');
-                if (GitLooseRefReader.TryReadObjectId(file, objectFormat, out var id))
-                {
-                    if (ShouldSkipTag(fullName, maxTags, ref tagCount))
-                    {
-                        continue;
-                    }
-
-                    refs[fullName] = new GitRawRef(
-                        id,
-                        null,
-                        RequiresPeeling: GetRefKind(fullName) == GitRefKind.Tag);
-                }
-            }
+            cancellationToken.ThrowIfCancellationRequested();
+            var kind = GetRefKind(file.FullName);
+            if (kind == GitRefKind.Tag) tagCount++;
+            refs[file.FullName] = new GitRawRef(
+                file.Target,
+                null,
+                RequiresPeeling: kind == GitRefKind.Tag);
         }
 
         var packedRefsPath = Path.Combine(gitDirectory, "packed-refs");

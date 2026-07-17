@@ -38,23 +38,23 @@ internal static class GitCommitRefReader
         Func<GitObjectId, CancellationToken, Task<GitObjectId?>> peelTagAsync,
         CancellationToken cancellationToken)
     {
-        var refsDirectory = Path.Combine(gitDirectory, "refs");
-        if (!Directory.Exists(refsDirectory)) return 0;
-
         var tagCount = 0;
-        foreach (var path in Directory.EnumerateFiles(refsDirectory, "*", SearchOption.AllDirectories))
+        foreach (var file in GitLooseRefFileEnumerator.Enumerate(
+                     gitDirectory,
+                     objectFormat,
+                     GitRefReader.DefaultTagLimit,
+                     cancellationToken))
         {
             cancellationToken.ThrowIfCancellationRequested();
-            var fullName = Path.GetRelativePath(gitDirectory, path).Replace('\\', '/');
+            var fullName = file.FullName;
             var kind = GitRefReader.GetRefKind(fullName);
             if (kind == GitRefKind.Tag && tagCount++ >= GitRefReader.DefaultTagLimit) continue;
-            if (kind is not (GitRefKind.Head or GitRefKind.Remote or GitRefKind.Tag) ||
-                !GitLooseRefReader.TryReadObjectId(path, objectFormat, out var target)) continue;
+            if (kind is not (GitRefKind.Head or GitRefKind.Remote or GitRefKind.Tag)) continue;
 
-            var matches = target == commitId;
+            var matches = file.Target == commitId;
             if (!matches && kind == GitRefKind.Tag)
             {
-                matches = await peelTagAsync(target, cancellationToken).ConfigureAwait(false) == commitId;
+                matches = await peelTagAsync(file.Target, cancellationToken).ConfigureAwait(false) == commitId;
             }
 
             if (matches) Add(refs, fullName, kind);

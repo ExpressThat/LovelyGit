@@ -31,6 +31,7 @@ This ledger records shipped performance work by feature area. Update it in the s
 - Kept active traversal warm, cached bounded tab previews, preserved caches across reloads, and disposed idle sessions (`2ee809d`, `4e6d8d3`, `cd6124a`, `6275027`).
 - Reduced initial paging/retention, cancelled abandoned refreshes, and coalesced warm activation (`9a1856b`, `30547fd`, `4d29e3d`, `aec7cd9`, `e207118`).
 - Cached bounded ref snapshots, streamed peeled refs, reused refs across controls, and reduced loose-ref loading (`24806de`, `5ad6053`, `4e2ad7c`, `ede92d7`, `4c47c80`).
+- Made the configured 500-tag limit bound loose-ref enumeration and cache fingerprinting, while still reading every local/remote branch and stash ref; very large pack indexes now use allocation-free direct hash probes instead of thrashing the 64 KiB page cache (`this commit`).
 - Streamed large stash reflogs from a pooled buffer and assigned newest-first selectors in place instead of retaining a second full raw-line representation (`f2d0af1b`).
 - Scanned primary remote URLs with a pooled purpose-built reader instead of constructing the complete remote model during repository refreshes (`1c2629b`).
 - Read tiny worktree `HEAD`, `gitdir`, and lock files through stack buffers while preserving the existing bounded concurrency (`48a56ad`).

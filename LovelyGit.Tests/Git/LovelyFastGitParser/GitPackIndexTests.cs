@@ -1,3 +1,4 @@
+using System.Buffers.Binary;
 using ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser;
 using ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser.Packs;
 using LovelyGit.Tests.Git.WorkingTree;
@@ -53,5 +54,39 @@ public sealed class GitPackIndexTests
         Assert.Throws<OperationCanceledException>(() => index.TryFindOffset(
             GitObjectId.Parse("0000000000000000000000000000000000000000"),
             source.Token));
+    }
+
+    [Fact]
+    public async Task TryFindOffset_LargeIndexUsesAllocationFreeDirectReads()
+    {
+        using var directory = TemporaryDirectory.Create("lovelygit-large-pack-index-");
+        var indexPath = Path.Combine(directory.Path, "pack-large.idx");
+        var header = new byte[8 + (256 * 4) + 20 + 4 + 4];
+        header[0] = 0xff;
+        header[1] = 0x74;
+        header[2] = 0x4f;
+        header[3] = 0x63;
+        BinaryPrimitives.WriteUInt32BigEndian(header.AsSpan(4), 2);
+        for (var index = 0; index < 256; index++)
+            BinaryPrimitives.WriteUInt32BigEndian(header.AsSpan(8 + (index * 4)), 1);
+        BinaryPrimitives.WriteUInt32BigEndian(header.AsSpan(header.Length - 4), 12);
+        await using (var file = new FileStream(indexPath, FileMode.CreateNew, FileAccess.Write))
+        {
+            await file.WriteAsync(header);
+            file.SetLength(129L * 1024 * 1024);
+        }
+
+        var cachedBefore = GitPackIndex.CachedIndexBytes;
+        using var packIndex = await GitPackIndex.OpenAsync(
+            indexPath,
+            GitObjectFormat.Sha1,
+            CancellationToken.None);
+
+        var offset = packIndex.TryFindOffset(
+            GitObjectId.Parse("0000000000000000000000000000000000000000"),
+            CancellationToken.None);
+
+        Assert.Equal(12, offset);
+        Assert.Equal(cachedBefore, GitPackIndex.CachedIndexBytes);
     }
 }

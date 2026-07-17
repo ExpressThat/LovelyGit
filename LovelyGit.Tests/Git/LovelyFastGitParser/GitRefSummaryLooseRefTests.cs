@@ -61,6 +61,38 @@ public sealed class GitRefSummaryLooseRefTests
         Assert.Single(summary.Refs, reference => reference.Kind == GitRefKind.Tag);
     }
 
+    [Fact]
+    public async Task ReadAsync_StopsAfterValidLooseTagLimitButKeepsAllBranches()
+    {
+        using var directory = new TemporaryGitDirectory();
+        directory.WriteRef("tags/000-malformed", "not-an-object-id\n");
+        directory.WriteRef("tags/001-first", $"{ObjectId}\n");
+        directory.WriteRef("tags/002-beyond-limit", $"{ObjectId}\n");
+        directory.WriteRef("heads/feature", $"{ObjectId}\n");
+
+        var summary = await directory.ReadAsync(maxTags: 1);
+
+        Assert.Contains(summary.Refs, reference => reference.Name == "feature");
+        var tag = Assert.Single(summary.Refs, reference => reference.Kind == GitRefKind.Tag);
+        Assert.Equal("001-first", tag.Name);
+    }
+
+    [Fact]
+    public async Task LoadRefsAsync_ExcludesLooseTagsBeyondRequestedLimit()
+    {
+        using var directory = new TemporaryGitDirectory();
+        directory.WriteRef("tags/first", $"{ObjectId}\n");
+        directory.WriteRef("tags/second", $"{ObjectId}\n");
+
+        var refs = await GitRefReader.LoadRefsAsync(
+            directory.Path,
+            GitObjectFormat.Sha1,
+            1,
+            CancellationToken.None);
+
+        Assert.Single(refs, reference => reference.Key.StartsWith("refs/tags/"));
+    }
+
     private sealed class TemporaryGitDirectory : IDisposable
     {
         private readonly DirectoryInfo _directory =
