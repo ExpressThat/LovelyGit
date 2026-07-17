@@ -54,6 +54,8 @@ Measured through the same Git commands LovelyGit uses, primarily in a disposable
 | Replace bulk `git add -A` with `git add -u` for tracked-only changes | `add -u` took about 579 ms versus 537 ms for `add -A` on the 20,000-file fixture | It was slower and would exclude untracked files from Stage All, so the existing command was retained. |
 | Detach post-commit status reconciliation | No improvement; the graph updated in 441 ms but the commit control remained busy for about 1.38 s | Trace2 proved the delay was inside Git's automatic maintenance, not LovelyGit's reconciliation, so the experiment was reverted. |
 | Add only `--quiet` to foreground commit | Highly variable at 192-1,095 ms versus 361-1,906 ms without it | Output was not the bottleneck; automatic maintenance dominated. LovelyGit instead disables auto-maintenance for that invocation and schedules it after success. |
+| Hard-link repository-template files in the backend suite | Full-suite time regressed from 98.4 s to 100.3 s and retained the same two contention-sensitive failures | NTFS link creation and the remaining fixture setup dominated; reverted to isolated physical copies to preserve straightforward ownership. |
+| Let the serialized performance collection overlap ordinary tests | Full-suite time improved from 94.7 s to 86.2 s | Still exceeded the one-minute requirement and retained timing-budget failures under contention, so global isolation was restored. |
 
 ## Next Measurement Areas
 
