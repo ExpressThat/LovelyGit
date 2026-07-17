@@ -1,3 +1,4 @@
+import { flushSync } from "react-dom";
 import { toast } from "sonner";
 import type {
 	GitIgnoreTarget,
@@ -7,6 +8,7 @@ import type {
 import { sendRequestWithResponse } from "@/lib/commands";
 import { applyOptimisticIndexMutation } from "./OptimisticWorkingTreeIndex";
 import { uniquePaths } from "./WorkingChangesPanelParts";
+import { waitForWorkingTreePaint } from "./WorkingTreePaintBoundary";
 
 export type IndexCommandType =
 	| "StageWorkingTreeFiles"
@@ -77,16 +79,19 @@ export async function runIndexCommand({
 		return;
 	}
 
-	setIsMutating(true);
-	setActionError(null);
-	setOptimisticChanges(
-		applyOptimisticIndexMutation(
-			changes,
-			commandType === "StageWorkingTreeFiles" ? "stage" : "unstage",
-			files,
-			includeAll,
-		),
-	);
+	flushSync(() => {
+		setIsMutating(true);
+		setActionError(null);
+		setOptimisticChanges(
+			applyOptimisticIndexMutation(
+				changes,
+				commandType === "StageWorkingTreeFiles" ? "stage" : "unstage",
+				files,
+				includeAll,
+			),
+		);
+	});
+	await waitForWorkingTreePaint();
 	let indexUpdated = false;
 	try {
 		await sendRequestWithResponse({
@@ -188,49 +193,4 @@ export async function loadHeadCommitMessage(repositoryId: string) {
 		commandType: "GetHeadCommitMessage",
 		arguments: { repositoryId },
 	});
-}
-
-export async function discardWorkingChanges({
-	discardFiles,
-	onRefresh,
-	repositoryId,
-	setActionError,
-	setDiscardFiles,
-	setIsMutating,
-	setSelectedKeys,
-}: {
-	discardFiles: WorkingTreeChangedFile[];
-	onRefresh: () => Promise<void> | void;
-	repositoryId: string;
-	setActionError: (message: string | null) => void;
-	setDiscardFiles: (files: WorkingTreeChangedFile[]) => void;
-	setIsMutating: (isMutating: boolean) => void;
-	setSelectedKeys: (keys: Set<string>) => void;
-}) {
-	if (discardFiles.length === 0) {
-		return;
-	}
-
-	setIsMutating(true);
-	setActionError(null);
-	try {
-		await sendRequestWithResponse({
-			commandType: "DiscardWorkingTreeChanges",
-			arguments: {
-				files: discardFiles,
-				repositoryId,
-			},
-		});
-		setDiscardFiles([]);
-		setSelectedKeys(new Set());
-		await onRefresh();
-	} catch (error) {
-		setActionError(
-			error instanceof Error
-				? error.message
-				: "Failed to discard selected changes.",
-		);
-	} finally {
-		setIsMutating(false);
-	}
 }

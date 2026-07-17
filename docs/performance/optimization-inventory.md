@@ -71,12 +71,13 @@ This ledger records shipped performance work by feature area. Update it in the s
 - Removed the Suspense reveal delay from Working Changes and working-tree diffs while preserving their separate lazy chunks; the disposable diff opened in 53.1 ms and its display controls responded in 0.5–2.1 ms (`3cb31fa`).
 - Removed the nested Suspense reveal delay from stashed-file inspection while preserving the commit-diff chunk; its diff controls and add/remove colors remain shared with the verified diff surface (`95b00d5`).
 - Added immediate optimistic stage/unstage previews and kept them stable during refresh (`7db0b3d`, `15ebece`).
+- Gave bulk stage, unstage, and discard one browser paint opportunity before entering the synchronous desktop bridge, so bounded optimistic state is visible in 4.3-7.9 ms even when native Git takes seconds; controls remain disabled through completion and failures retain rollback/retry behavior (`this commit`).
 - Accelerated single-file index updates and avoided duplicate staged/index scans (`c1dc63e`, `67f1d6a`, `f662e04`).
 - Coalesced notifications and reconciliation scans and reused background scans (`3c47512`, `7ccc7c8`, `69cc4e1`, `e6bf212`).
 - Added preliminary summaries, bounded preload, deferred heavy background preloads, and trusted complete cached summaries (`4032430`, `5824b04`, `1d6fbfa`, `f370993`).
 - Bounded wide-repository background memory and skipped oversized native scans (`8a2fd98`, `b580871`, `0a8d9e1`).
 - Added progressive tracked-first working changes with explicit completeness and disabled mutation controls until complete (`3a4bcbd`).
-- Avoided overlapping tracked-only and complete Git status processes on wide repositories: the backend marks its Git-backed preliminary response complete, and the frontend starts a second phase only when the first response is genuinely incomplete (`this commit`).
+- Avoided overlapping tracked-only and complete Git status processes on wide repositories: the backend marks its Git-backed preliminary response complete, and the frontend starts a second phase only when the first response is genuinely incomplete (`5eb857e`).
 - Enabled command-local, four-worker parallel checkout above 100 paths for switch, clone, worktree, reset, merge, rebase, cherry-pick, and revert operations. This avoids persistent repository configuration and daemon memory while bounding transient worker cost (`db9ea3b`).
 - Streamed sparse-checkout specifications directly into the response collector instead of retaining a duplicate raw-line array (`d70f301`).
 - Streamed large `.gitattributes` files through a pooled parser so non-LFS lines do not become managed strings while retaining the existing bounded result (`145b479`).

@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
 import { act, fireEvent, render, screen } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type {
 	WorkingTreeChangedFile,
 	WorkingTreeChangesResponse,
@@ -15,7 +15,17 @@ vi.mock("@/lib/commands", async (importOriginal) => ({
 }));
 
 describe("WorkingChangesPanel optimistic index state", () => {
-	beforeEach(() => vi.clearAllMocks());
+	beforeEach(() => {
+		vi.clearAllMocks();
+		vi.stubGlobal(
+			"requestAnimationFrame",
+			vi.fn((callback: FrameRequestCallback) => {
+				callback(0);
+				return 1;
+			}),
+		);
+	});
+	afterEach(() => vi.unstubAllGlobals());
 
 	it("keeps a staged preview when an intermediate status event replaces the parent response", async () => {
 		const command = deferred<unknown>();

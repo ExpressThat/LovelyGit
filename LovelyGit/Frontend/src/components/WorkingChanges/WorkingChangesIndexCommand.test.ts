@@ -9,9 +9,13 @@ import type {
 } from "@/generated/types";
 import { sendRequestWithResponse } from "@/lib/commands";
 import { runIndexCommand } from "./WorkingChangesPanelCommands";
+import { waitForWorkingTreePaint } from "./WorkingTreePaintBoundary";
 
 vi.mock("@/lib/commands", () => ({ sendRequestWithResponse: vi.fn() }));
 vi.mock("sonner", () => ({ toast: { success: vi.fn() } }));
+vi.mock("./WorkingTreePaintBoundary", () => ({
+	waitForWorkingTreePaint: vi.fn().mockResolvedValue(undefined),
+}));
 
 describe("working changes index commands", () => {
 	beforeEach(() => vi.clearAllMocks());
@@ -44,6 +48,8 @@ describe("working changes index commands", () => {
 			}),
 		);
 		expect(harness.onRefresh).not.toHaveBeenCalled();
+		expect(waitForWorkingTreePaint).toHaveBeenCalledOnce();
+		expect(sendRequestWithResponse).not.toHaveBeenCalled();
 
 		command.resolve(undefined);
 		await pending;

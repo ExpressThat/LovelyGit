@@ -4,9 +4,9 @@ import type {
 	WorkingTreeChangesResponse,
 } from "@/generated/types";
 import { useSetting } from "@/lib/settings/settingsStore";
+import { discardWorkingChanges } from "./WorkingChangesDiscardCommand";
 import {
 	commitStagedChanges,
-	discardWorkingChanges,
 	type IndexCommandType,
 	ignoreWorkingTreePath,
 	loadHeadCommitMessage,
@@ -91,12 +91,14 @@ export function useWorkingChangesPanelActions({
 		discardFiles,
 		discardWorkingChanges: () =>
 			discardWorkingChanges({
+				changes,
 				discardFiles,
 				onRefresh,
 				repositoryId,
 				setActionError,
 				setDiscardFiles,
 				setIsMutating,
+				setOptimisticChanges,
 				setSelectedKeys,
 			}),
 		isBusy: isMutating || isCommitting || isLoadingAmendMessage,

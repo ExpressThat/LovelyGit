@@ -7,7 +7,7 @@ This is the durable index of LovelyGit performance work. Update the linked ledge
 - [Verified performance results](docs/performance/verified-results.md)
 - [Completed optimization inventory](docs/performance/optimization-inventory.md)
 
-Latest verified checkpoint: wide-repository Working Changes now performs one complete status traversal instead of launching overlapping tracked-only and complete Git processes; see the linked ledgers for measurements and coverage.
+Latest verified checkpoint: bulk stage, unstage, and discard now paint their optimistic Working Changes state before the synchronous desktop bridge begins native Git work; see the linked ledgers for measured WebView latency and safety coverage.
 
 ## Measurement Rules
 
@@ -19,7 +19,7 @@ Latest verified checkpoint: wide-repository Working Changes now performs one com
 
 ## Mutation Workflow Baselines
 
-Measured through the same Git commands LovelyGit uses, in a disposable 2,001-file repository with an 8 MiB file. These are investigation baselines, not all optimization claims.
+Measured through the same Git commands LovelyGit uses, primarily in a disposable 2,001-file repository with an 8 MiB file; rows identify the larger 20,000-file fixture where used. These are investigation baselines, not all optimization claims.
 
 | Workflow | Observed latency |
 | --- | ---: |
@@ -31,6 +31,9 @@ Measured through the same Git commands LovelyGit uses, in a disposable 2,001-fil
 | Cherry-pick/revert 100 changed files | 251 ms / 183 ms |
 | Merge 500 changed files | 1.02 s |
 | Rebase 100 changed files | 894 ms |
+| Stage 1,000 of 20,000 tracked files | 7.18 s cold CMG completion; 0.70-0.90 s warm service runs |
+| Unstage 1,000 of 20,000 tracked files | 749 ms CMG completion; 0.31-0.47 s warm service runs |
+| Discard 1,000 of 20,000 tracked files | 87 ms warm CMG completion; 0.65-0.67 s cold service runs |
 
 ## Rejected or Deferred Experiments
 
@@ -47,6 +50,7 @@ Measured through the same Git commands LovelyGit uses, in a disposable 2,001-fil
 | Keep only the top 100 painted branch-comparison commits during traversal | Repeated 10,000-commit runs remained at 65.85-65.99 MB and latency varied within the prior range | Sorting the displayed subset is not the bottleneck; packed commit decoding dominates, so the more complex bounded selector was removed. |
 | Force the native status scanner across a 20,000-entry index | 822 ms and 10.5 MB allocated versus Git's roughly 48-53 ms warm scan | The existing 1,000-entry crossover policy remains correct; wide repositories should use Git's optimized index/stat traversal. |
 | Replace streamed single-file pathspec input with a direct `git add -- <path>` argument | Both forms remained roughly 52-57 ms on the 20,000-file fixture | Git index rewrite cost dominates; retained the shared streamed pathspec path for consistent validation and batching. |
+| Replace bulk `git add -A` with `git add -u` for tracked-only changes | `add -u` took about 579 ms versus 537 ms for `add -A` on the 20,000-file fixture | It was slower and would exclude untracked files from Stage All, so the existing command was retained. |
 
 ## Next Measurement Areas
 
