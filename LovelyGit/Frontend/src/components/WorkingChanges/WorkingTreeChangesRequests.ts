@@ -9,17 +9,15 @@ export async function loadWorkingTreeChanges(
 	onPreliminary?: (changes: ReturnTypeResult) => void,
 ) {
 	if (!onPreliminary) return loadWorkingTreeChangesMode(repositoryId, false);
-	const preliminaryRequest = loadWorkingTreeChangesMode(repositoryId, true);
-	const completeRequest = loadWorkingTreeChangesMode(repositoryId, false);
 	let preliminary: ReturnTypeResult;
 	try {
-		preliminary = await preliminaryRequest;
+		preliminary = await loadWorkingTreeChangesMode(repositoryId, true);
 	} catch {
-		return completeRequest;
+		return loadWorkingTreeChangesMode(repositoryId, false);
 	}
 	if (preliminary.isComplete) return preliminary;
 	onPreliminary(preliminary);
-	return completeRequest;
+	return loadWorkingTreeChangesMode(repositoryId, false);
 }
 
 async function loadWorkingTreeChangesMode(

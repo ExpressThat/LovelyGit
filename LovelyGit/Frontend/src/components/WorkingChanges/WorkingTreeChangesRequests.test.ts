@@ -36,11 +36,19 @@ describe("loadWorkingTreeChanges", () => {
 		const preliminary = response(false);
 		const complete = response();
 		const onPreliminary = vi.fn();
-		send.mockResolvedValueOnce(preliminary).mockResolvedValueOnce(complete);
+		let resolvePreliminary: (value: ReturnTypeResponse) => void = () =>
+			undefined;
+		send
+			.mockReturnValueOnce(
+				new Promise((resolve) => (resolvePreliminary = resolve)),
+			)
+			.mockResolvedValueOnce(complete);
 
-		await expect(
-			loadWorkingTreeChanges("repo", onPreliminary),
-		).resolves.toEqual(complete);
+		const loading = loadWorkingTreeChanges("repo", onPreliminary);
+		expect(send).toHaveBeenCalledTimes(1);
+		resolvePreliminary(preliminary);
+		await vi.waitFor(() => expect(send).toHaveBeenCalledTimes(2));
+		await expect(loading).resolves.toEqual(complete);
 
 		expect(onPreliminary).toHaveBeenCalledWith(preliminary);
 		expect(send).toHaveBeenNthCalledWith(
@@ -54,6 +62,25 @@ describe("loadWorkingTreeChanges", () => {
 			2,
 			expect.objectContaining({
 				arguments: expect.objectContaining({ trackedOnly: false }),
+			}),
+			expect.anything(),
+		);
+	});
+
+	it("uses a complete preliminary result without starting another scan", async () => {
+		const complete = response();
+		const onPreliminary = vi.fn();
+		send.mockResolvedValueOnce(complete);
+
+		await expect(
+			loadWorkingTreeChanges("repo", onPreliminary),
+		).resolves.toEqual(complete);
+
+		expect(send).toHaveBeenCalledTimes(1);
+		expect(onPreliminary).not.toHaveBeenCalled();
+		expect(send).toHaveBeenCalledWith(
+			expect.objectContaining({
+				arguments: expect.objectContaining({ trackedOnly: true }),
 			}),
 			expect.anything(),
 		);

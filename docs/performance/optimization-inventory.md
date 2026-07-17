@@ -31,7 +31,7 @@ This ledger records shipped performance work by feature area. Update it in the s
 - Kept active traversal warm, cached bounded tab previews, preserved caches across reloads, and disposed idle sessions (`2ee809d`, `4e6d8d3`, `cd6124a`, `6275027`).
 - Reduced initial paging/retention, cancelled abandoned refreshes, and coalesced warm activation (`9a1856b`, `30547fd`, `4d29e3d`, `aec7cd9`, `e207118`).
 - Cached bounded ref snapshots, streamed peeled refs, reused refs across controls, and reduced loose-ref loading (`24806de`, `5ad6053`, `4e2ad7c`, `ede92d7`, `4c47c80`).
-- Made the configured 500-tag limit bound loose-ref enumeration and cache fingerprinting, while still reading every local/remote branch and stash ref; very large pack indexes now use allocation-free direct hash probes instead of thrashing the 64 KiB page cache (`this commit`).
+- Made the configured 500-tag limit bound loose-ref enumeration and cache fingerprinting, while still reading every local/remote branch and stash ref; very large pack indexes now use allocation-free direct hash probes instead of thrashing the 64 KiB page cache (`0a03302`).
 - Streamed large stash reflogs from a pooled buffer and assigned newest-first selectors in place instead of retaining a second full raw-line representation (`f2d0af1b`).
 - Scanned primary remote URLs with a pooled purpose-built reader instead of constructing the complete remote model during repository refreshes (`1c2629b`).
 - Read tiny worktree `HEAD`, `gitdir`, and lock files through stack buffers while preserving the existing bounded concurrency (`48a56ad`).
@@ -64,7 +64,7 @@ This ledger records shipped performance work by feature area. Update it in the s
 - Removed duplicate graph work during search and bounded ref suggestions (`f4c3080`, `c03ac25`).
 - Prefetched details on hover intent and rendered prefetched details without suspense (`e346227`, `bda6b62`, `2cd7423`).
 - Moved details parsing/persistence off click paths, bulked cache writes, and reduced blob/parser allocations (`c03064b`, `7ce891c`, `ddc34cd`, `021b3dd`, `d461dc6`).
-- Opened commit details against the object database alone and streamed only branch, remote, and bounded tag refs that point to the selected commit, preserving packed, annotated-tag, and loose-override semantics without materializing unrelated refs (`this commit`).
+- Opened commit details against the object database alone and streamed only branch, remote, and bounded tag refs that point to the selected commit, preserving packed, annotated-tag, and loose-override semantics without materializing unrelated refs (`2f4586d`).
 
 ### Working Tree, Staging, and Status
 
@@ -76,6 +76,7 @@ This ledger records shipped performance work by feature area. Update it in the s
 - Added preliminary summaries, bounded preload, deferred heavy background preloads, and trusted complete cached summaries (`4032430`, `5824b04`, `1d6fbfa`, `f370993`).
 - Bounded wide-repository background memory and skipped oversized native scans (`8a2fd98`, `b580871`, `0a8d9e1`).
 - Added progressive tracked-first working changes with explicit completeness and disabled mutation controls until complete (`3a4bcbd`).
+- Avoided overlapping tracked-only and complete Git status processes on wide repositories: the backend marks its Git-backed preliminary response complete, and the frontend starts a second phase only when the first response is genuinely incomplete (`this commit`).
 - Enabled command-local, four-worker parallel checkout above 100 paths for switch, clone, worktree, reset, merge, rebase, cherry-pick, and revert operations. This avoids persistent repository configuration and daemon memory while bounding transient worker cost (`db9ea3b`).
 - Streamed sparse-checkout specifications directly into the response collector instead of retaining a duplicate raw-line array (`d70f301`).
 - Streamed large `.gitattributes` files through a pooled parser so non-LFS lines do not become managed strings while retaining the existing bounded result (`145b479`).

@@ -13,6 +13,18 @@ internal sealed partial class WorkingTreeStatusListService
         var paths = await GitRepositoryDiscovery
             .ResolveRepositoryPathsAsync(repositoryPath, cancellationToken)
             .ConfigureAwait(false);
+        return await GetPorcelainChangesFromWorktreeAsync(
+                paths.WorkTreeDirectory,
+                trackedOnly,
+                cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    private async Task<WorkingTreeChangesResponse> GetPorcelainChangesFromWorktreeAsync(
+        string workTreeDirectory,
+        bool trackedOnly,
+        CancellationToken cancellationToken)
+    {
         var result = await _gitCliService
             .ExecuteBufferedAsync(
                 [
@@ -22,7 +34,7 @@ internal sealed partial class WorkingTreeStatusListService
                     "-z",
                     trackedOnly ? "--untracked-files=no" : "--untracked-files=all",
                 ],
-                paths.WorkTreeDirectory,
+                workTreeDirectory,
                 validateExitCode: false,
                 cancellationToken)
             .ConfigureAwait(false);

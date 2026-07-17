@@ -56,7 +56,13 @@ internal sealed partial class WorkingTreeStatusListService
         if (trackedEntryCount is uint count
             && WorkingTreeStatusScanPolicy.ShouldSkipNativeScanBeforeRootTracking(count))
         {
-            return null;
+            return trackedOnly
+                ? await GetPorcelainChangesFromWorktreeAsync(
+                        paths.WorkTreeDirectory,
+                        trackedOnly: false,
+                        cancellationToken)
+                    .ConfigureAwait(false)
+                : null;
         }
 
         var objectFormat = await GitRepositoryDiscovery.ReadObjectFormatAsync(paths.GitDirectory, cancellationToken)
