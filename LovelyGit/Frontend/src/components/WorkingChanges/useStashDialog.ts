@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
 	CommitRefKind,
@@ -12,6 +12,7 @@ import {
 	invalidateRepositoryRefs,
 	loadRepositoryRefs,
 } from "@/lib/repositoryRefsCache";
+import { waitForWorkingTreePaint } from "./WorkingTreePaintBoundary";
 
 export function useStashDialog(
 	repositoryId: string,
@@ -34,6 +35,7 @@ export function useStashDialog(
 	const [includeUntracked, setIncludeUntracked] = useState(true);
 	const [isLoading, setIsLoading] = useState(false);
 	const [loadError, setLoadError] = useState<string | null>(null);
+	const loadRequestId = useRef(0);
 	const [message, setMessage] = useState("");
 	const [internalOpen, setInternalOpen] = useState(false);
 	const open = controlled?.open ?? internalOpen;
@@ -43,23 +45,28 @@ export function useStashDialog(
 
 	const loadStashes = useCallback(
 		async (forceRefresh = false) => {
+			const requestId = ++loadRequestId.current;
 			setIsLoading(true);
 			setLoadError(null);
 			try {
 				const response = await loadRepositoryRefs(repositoryId, forceRefresh);
+				if (requestId !== loadRequestId.current) return null;
 				setStashes(response.stashes);
 				setBranchNames(
 					(response.refs ?? [])
 						.filter((item) => item.kind === CommitRefKind.Local)
 						.map((item) => item.name),
 				);
+				return response.stashes;
 			} catch (error) {
+				if (requestId !== loadRequestId.current) return null;
 				setLoadError(
 					error instanceof Error ? error.message : "Failed to load stashes.",
 				);
 			} finally {
-				setIsLoading(false);
+				if (requestId === loadRequestId.current) setIsLoading(false);
 			}
+			return null;
 		},
 		[repositoryId],
 	);
@@ -74,11 +81,13 @@ export function useStashDialog(
 		branchName?: string,
 	) => {
 		if (busyAction) return;
+		const stashCountBefore = stashes.length;
 		setBusyAction(action);
 		const actionLabel = stashActionLabel(action);
 		const toastId = toast.loading(`${actionLabel} in progress`);
 		try {
-			await sendRequestWithResponse(
+			await waitForWorkingTreePaint();
+			const response = await sendRequestWithResponse(
 				{
 					arguments: {
 						action,
@@ -100,14 +109,25 @@ export function useStashDialog(
 			if (action === StashAction.Create) setMessage("");
 			if (action === StashAction.Branch) setBranchTarget(null);
 			setDropTarget(null);
-			await onRepositoryChanged();
-			if (action === StashAction.Create) await loadStashes(true);
-			else if (stash && action !== StashAction.Apply) {
+			if (response?.stashes) {
+				loadRequestId.current += 1;
+				invalidateRepositoryRefs(repositoryId);
+				setLoadError(null);
+				setIsLoading(false);
+				setStashes(response.stashes);
+			} else if (action === StashAction.Create) {
+				const refreshed = await loadStashes(true);
+				if (refreshed && refreshed.length <= stashCountBefore) {
+					await waitForWorkingTreePaint();
+					await loadStashes(true);
+				}
+			} else if (stash && action !== StashAction.Apply) {
 				invalidateRepositoryRefs(repositoryId);
 				setStashes((current) =>
 					current.filter((item) => item.selector !== stash.selector),
 				);
 			}
+			await onRepositoryChanged();
 			toast.success(`${actionLabel} complete`, { id: toastId });
 		} catch (error) {
 			toast.error(

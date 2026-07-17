@@ -209,7 +209,7 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging
         PushBranch,
         [NativeMessageContract(typeof(ManageBranchUpstreamCommandArguments), typeof(EmptyCommandArguments))]
         ManageBranchUpstream,
-        [NativeMessageContract(typeof(StashCommandArguments))]
+        [NativeMessageContract(typeof(StashCommandArguments), typeof(StashCommandResponse))]
         ManageStash,
         [NativeMessageContract(typeof(CreateTagAtCommitCommandArguments), typeof(EmptyCommandArguments))]
         CreateTagAtCommit,

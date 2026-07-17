@@ -1,5 +1,6 @@
 using ExpressThat.LovelyGit.Services.Git.Cli;
 using ExpressThat.LovelyGit.Services.Git.Stashes;
+using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.WorkingTree;
 
 namespace LovelyGit.Tests.Git.Stashes;
 
@@ -33,8 +34,10 @@ public sealed class GitStashCommandServiceTests
             ["status", "--short"],
             repository.Path,
             cancellationToken: CancellationToken.None);
+        var stashes = await StashCommandResolver.TryReadStashesAsync(repository.Path);
 
         Assert.Contains("LovelyGit test stash", stashList.StandardOutput);
+        Assert.Contains("LovelyGit test stash", Assert.Single(stashes!).Message);
         Assert.Contains("?? new.txt", status.StandardOutput);
         Assert.DoesNotContain("tracked.txt", status.StandardOutput);
     }
@@ -73,6 +76,14 @@ public sealed class GitStashCommandServiceTests
                 " ",
                 includeUntracked: false,
                 CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task SnapshotReadFailure_ReturnsNoSnapshotWithoutThrowing()
+    {
+        var missing = Path.Combine(Path.GetTempPath(), $"missing-stash-{Guid.NewGuid():N}");
+
+        Assert.Null(await StashCommandResolver.TryReadStashesAsync(missing));
     }
 
     [Fact]

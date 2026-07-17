@@ -125,6 +125,7 @@ describe("useStashDialog", () => {
 		);
 		send.mockResolvedValueOnce(undefined);
 		send.mockResolvedValueOnce({ stashes: [] });
+		send.mockResolvedValueOnce({ stashes: [stash] });
 
 		await act(() => result.current.runAction(StashAction.Create));
 

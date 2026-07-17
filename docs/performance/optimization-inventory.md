@@ -72,7 +72,7 @@ This ledger records shipped performance work by feature area. Update it in the s
 - Removed the nested Suspense reveal delay from stashed-file inspection while preserving the commit-diff chunk; its diff controls and add/remove colors remain shared with the verified diff surface (`95b00d5`).
 - Added immediate optimistic stage/unstage previews and kept them stable during refresh (`7db0b3d`, `15ebece`).
 - Gave bulk stage, unstage, and discard one browser paint opportunity before entering the synchronous desktop bridge, so bounded optimistic state is visible in 4.3-7.9 ms even when native Git takes seconds; controls remain disabled through completion and failures retain rollback/retry behavior (`5893731`).
-- Removed automatic repository maintenance from the foreground commit invocation and scheduled the same best-effort work on a bounded, app-owned background worker after successful commits. This reduced 1,000-file service latency by 74-81% without mutating repository configuration; validation and Git failures schedule nothing (`this commit`).
+- Removed automatic repository maintenance from the foreground commit invocation and scheduled the same best-effort work on a bounded, app-owned background worker after successful commits. This reduced 1,000-file service latency by 74-81% without mutating repository configuration; validation and Git failures schedule nothing (`d1e2d4a`).
 - Accelerated single-file index updates and avoided duplicate staged/index scans (`c1dc63e`, `67f1d6a`, `f662e04`).
 - Coalesced notifications and reconciliation scans and reused background scans (`3c47512`, `7ccc7c8`, `69cc4e1`, `e6bf212`).
 - Added preliminary summaries, bounded preload, deferred heavy background preloads, and trusted complete cached summaries (`4032430`, `5824b04`, `1d6fbfa`, `f370993`).
@@ -84,6 +84,7 @@ This ledger records shipped performance work by feature area. Update it in the s
 - Streamed large `.gitattributes` files through a pooled parser so non-LFS lines do not become managed strings while retaining the existing bounded result (`145b479`).
 - Streamed Git config and ignore sources through pooled line buffers and matched literal ignore rules directly instead of compiling one regex per rule, sharply reducing initial status GC pressure while retaining regex handling for actual glob rules (`6fed8fa`).
 - Matched common single-leading-asterisk suffix rules such as `*.pdb` directly per path segment, preserving compiled-regex fallback for complex globs while removing their dominant large-rule-set latency and memory cost (`fce25d8`).
+- Painted stash busy/disabled state before entering the synchronous desktop bridge and returned the authoritative reflog-only stash snapshot in the mutation response. This removes the racing full repository-refs follow-up request, keeps failure targets retryable, and makes a 501-file cold stash visibly respond in 1.2 ms (`this commit`).
 
 ### Diff Engine and File Diffs
 

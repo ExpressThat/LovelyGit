@@ -7,7 +7,7 @@ This is the durable index of LovelyGit performance work. Update the linked ledge
 - [Verified performance results](docs/performance/verified-results.md)
 - [Completed optimization inventory](docs/performance/optimization-inventory.md)
 
-Latest verified checkpoint: foreground commit latency no longer includes Git's automatic maintenance; LovelyGit schedules the same maintenance on a bounded, owned background worker after the commit succeeds. See the linked ledgers for native and WebView measurements.
+Latest verified checkpoint: stash mutations now paint their busy state before entering the desktop bridge and return the authoritative reflog snapshot with the mutation response, eliminating the stale follow-up ref scan. See the linked ledgers for native and WebView measurements.
 
 ## Measurement Rules
 
@@ -56,6 +56,7 @@ Measured through the same Git commands LovelyGit uses, primarily in a disposable
 | Add only `--quiet` to foreground commit | Highly variable at 192-1,095 ms versus 361-1,906 ms without it | Output was not the bottleneck; automatic maintenance dominated. LovelyGit instead disables auto-maintenance for that invocation and schedules it after success. |
 | Hard-link repository-template files in the backend suite | Full-suite time regressed from 98.4 s to 100.3 s and retained the same two contention-sensitive failures | NTFS link creation and the remaining fixture setup dominated; reverted to isolated physical copies to preserve straightforward ownership. |
 | Let the serialized performance collection overlap ordinary tests | Full-suite time improved from 94.7 s to 86.2 s | Still exceeded the one-minute requirement and retained timing-budget failures under contention, so global isolation was restored. |
+| Increase parallel-checkout settings for stash | Cold 501-of-20,000-file stash moved only from 4.19 s to 4.10 s | LovelyGit already supplies four checkout workers; Trace2 showed the temporary-index update dominates, so no additional Git configuration was added. |
 
 ## Next Measurement Areas
 

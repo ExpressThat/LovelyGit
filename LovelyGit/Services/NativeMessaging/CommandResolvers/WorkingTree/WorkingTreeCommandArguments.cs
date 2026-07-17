@@ -1,4 +1,5 @@
 using ExpressThat.LovelyGit.Services.TypeGeneration;
+using ExpressThat.LovelyGit.Services.Git.CommitGraph.Models;
 using ExpressThat.LovelyGit.Services.Git.WorkingTree.Models;
 using ExpressThat.LovelyGit.Services.Git.WorkingTree;
 
@@ -149,4 +150,10 @@ public record StashCommandArguments
     public string? BranchName { get; set; }
     public bool SelectedOnly { get; set; }
     public List<string> Paths { get; set; } = new();
+}
+
+[TypeSharp]
+public sealed record StashCommandResponse
+{
+    public List<RepositoryStashItem>? Stashes { get; init; }
 }

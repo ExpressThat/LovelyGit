@@ -57,6 +57,7 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Workin
 [JsonSerializable(typeof(CheckoutCommitCommandArguments))]
 [JsonSerializable(typeof(CreateBranchCommandArguments))]
 [JsonSerializable(typeof(StashCommandArguments))]
+[JsonSerializable(typeof(StashCommandResponse))]
 [JsonSerializable(typeof(StashAction))]
 [JsonSerializable(typeof(GitPullMode))]
 [JsonSerializable(typeof(GetWorkingTreeFileDiffArguments))]
@@ -86,6 +87,7 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Workin
 [JsonSerializable(typeof(CommandResponse<KnownGitRepository>))]
 [JsonSerializable(typeof(CommandResponse<PatchPreviewResponse>))]
 [JsonSerializable(typeof(CommandResponse<List<GitSubmodule>>))]
+[JsonSerializable(typeof(CommandResponse<StashCommandResponse>))]
 internal partial class WorkingTreeJsonSerializerContext : JsonSerializerContext
 {
 }
