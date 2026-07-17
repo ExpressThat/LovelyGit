@@ -63,6 +63,7 @@ This ledger records shipped performance work by feature area. Update it in the s
 - Removed duplicate graph work during search and bounded ref suggestions (`f4c3080`, `c03ac25`).
 - Prefetched details on hover intent and rendered prefetched details without suspense (`e346227`, `bda6b62`, `2cd7423`).
 - Moved details parsing/persistence off click paths, bulked cache writes, and reduced blob/parser allocations (`c03064b`, `7ce891c`, `ddc34cd`, `021b3dd`, `d461dc6`).
+- Opened commit details against the object database alone and streamed only branch, remote, and bounded tag refs that point to the selected commit, preserving packed, annotated-tag, and loose-override semantics without materializing unrelated refs (`this commit`).
 
 ### Working Tree, Staging, and Status
 
@@ -78,7 +79,7 @@ This ledger records shipped performance work by feature area. Update it in the s
 - Streamed sparse-checkout specifications directly into the response collector instead of retaining a duplicate raw-line array (`d70f301`).
 - Streamed large `.gitattributes` files through a pooled parser so non-LFS lines do not become managed strings while retaining the existing bounded result (`145b479`).
 - Streamed Git config and ignore sources through pooled line buffers and matched literal ignore rules directly instead of compiling one regex per rule, sharply reducing initial status GC pressure while retaining regex handling for actual glob rules (`6fed8fa`).
-- Matched common single-leading-asterisk suffix rules such as `*.pdb` directly per path segment, preserving compiled-regex fallback for complex globs while removing their dominant large-rule-set latency and memory cost (`this commit`).
+- Matched common single-leading-asterisk suffix rules such as `*.pdb` directly per path segment, preserving compiled-regex fallback for complex globs while removing their dominant large-rule-set latency and memory cost (`fce25d8`).
 
 ### Diff Engine and File Diffs
 

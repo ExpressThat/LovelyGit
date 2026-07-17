@@ -121,9 +121,10 @@ internal sealed partial class CommitDetailsService
                 return pendingDetails;
             }
 
-            using var repository = await LovelyGitRepository.OpenAsync(repositoryPath, cancellationToken)
+            using var repository = await LovelyGitRepository.OpenObjectDatabaseAsync(repositoryPath, cancellationToken)
                 .ConfigureAwait(false);
             var commit = await repository.GetCommitAsync(commitId, cancellationToken).ConfigureAwait(false);
+            await repository.LoadRefsForCommitAsync(commit, cancellationToken).ConfigureAwait(false);
             var firstParent = await GetParentAsync(repository, commit, 0, cancellationToken)
                 .ConfigureAwait(false);
 
@@ -159,10 +160,11 @@ internal sealed partial class CommitDetailsService
         CancellationToken cancellationToken)
     {
         using var repository = await LovelyGitRepository
-            .OpenAsync(repositoryPath, cancellationToken)
+            .OpenObjectDatabaseAsync(repositoryPath, cancellationToken)
             .ConfigureAwait(false);
         var commit = await repository.GetCommitAsync(commitId, cancellationToken)
             .ConfigureAwait(false);
+        await repository.LoadRefsForCommitAsync(commit, cancellationToken).ConfigureAwait(false);
         var parent = await GetParentAsync(repository, commit, parentIndex, cancellationToken)
             .ConfigureAwait(false);
         return await new CommitDetailsBuilder(repository)
