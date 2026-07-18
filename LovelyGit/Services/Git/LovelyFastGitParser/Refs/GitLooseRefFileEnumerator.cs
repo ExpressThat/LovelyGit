@@ -2,7 +2,7 @@ namespace ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser.Refs;
 
 internal static class GitLooseRefFileEnumerator
 {
-    private const int MaxConcurrentReads = 8;
+    private const int MaxConcurrentReads = 32;
 
     public static async Task<IReadOnlyList<GitLooseRefFile>> ReadSummaryRefsAsync(
         string gitDirectory,

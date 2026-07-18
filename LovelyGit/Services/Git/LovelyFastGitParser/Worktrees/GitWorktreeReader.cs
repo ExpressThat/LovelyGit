@@ -4,6 +4,8 @@ namespace ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser.Worktrees;
 
 internal static class GitWorktreeReader
 {
+    private const int MaximumConcurrentReads = 32;
+
     public static async Task<IReadOnlyList<GitWorktree>> ReadAsync(
         string gitDirectory,
         string currentWorkTreeDirectory,
@@ -46,7 +48,7 @@ internal static class GitWorktreeReader
                     new ParallelOptions
                     {
                         CancellationToken = cancellationToken,
-                        MaxDegreeOfParallelism = 8,
+                        MaxDegreeOfParallelism = MaximumConcurrentReads,
                     },
                     (index, token) =>
                     {

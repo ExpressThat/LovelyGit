@@ -40,8 +40,8 @@ public sealed class RepositoryRefsPerformanceTests(ITestOutputHelper output)
             var allocated = GC.GetTotalAllocatedBytes(true) - allocatedBefore;
             output.WriteLine($"ElapsedMs={elapsed.TotalMilliseconds:F2}");
             output.WriteLine($"AllocatedBytes={allocated:N0}");
-            Assert.True(elapsed < TimeSpan.FromMilliseconds(1_200), $"Refreshes took {elapsed}.");
-            Assert.True(allocated < 60_000_000, $"Refreshes allocated {allocated:N0} bytes.");
+            Assert.True(elapsed < TimeSpan.FromMilliseconds(800), $"Refreshes took {elapsed}.");
+            Assert.True(allocated < 15_000_000, $"Refreshes allocated {allocated:N0} bytes.");
         }
         finally
         {
@@ -75,7 +75,7 @@ public sealed class RepositoryRefsPerformanceTests(ITestOutputHelper output)
             output.WriteLine($"WorktreesAllocatedBytes={allocated:N0}");
             Assert.Equal(WorktreeCount + 1, worktrees!.Count);
             Assert.Equal(WorktreeCount / 2, worktrees.Count(item => item.IsLocked));
-            Assert.True(elapsed < TimeSpan.FromMilliseconds(600), $"Reads took {elapsed}.");
+            Assert.True(elapsed < TimeSpan.FromMilliseconds(400), $"Reads took {elapsed}.");
             Assert.True(allocated < 5_000_000, $"Reads allocated {allocated:N0} bytes.");
         }
         finally
