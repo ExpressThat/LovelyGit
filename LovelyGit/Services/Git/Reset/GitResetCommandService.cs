@@ -22,7 +22,6 @@ internal sealed class GitResetCommandService
         CancellationToken cancellationToken)
     {
         var normalizedCommitHash = NormalizeCommitHash(commitHash);
-        var modeArgument = ModeArgument(mode);
         var paths = await GitRepositoryDiscovery
             .ResolveRepositoryPathsAsync(repositoryPath, cancellationToken)
             .ConfigureAwait(false);
@@ -31,7 +30,7 @@ internal sealed class GitResetCommandService
 
         await _operations.ExecuteRequiredBufferedAsync(
             $"{FormatMode(mode)} reset {branchName}",
-            ["reset", modeArgument, normalizedCommitHash],
+            BuildResetArguments(mode, normalizedCommitHash),
             paths.WorkTreeDirectory,
             RecoveryHint(mode),
             cancellationToken).ConfigureAwait(false);
@@ -92,6 +91,16 @@ internal sealed class GitResetCommandService
         GitResetMode.Hard => "--hard",
         _ => throw new ArgumentOutOfRangeException(nameof(mode)),
     };
+
+    internal static IReadOnlyList<string> BuildResetArguments(
+        GitResetMode mode,
+        string commitHash)
+    {
+        var modeArgument = ModeArgument(mode);
+        return mode == GitResetMode.Mixed
+            ? ["reset", modeArgument, "--no-refresh", commitHash]
+            : ["reset", modeArgument, commitHash];
+    }
 
     private static string RecoveryHint(GitResetMode mode) => mode == GitResetMode.Hard
         ? "Use the branch reflog to locate the previous commit if recovery is required."

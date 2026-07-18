@@ -7,6 +7,26 @@ namespace LovelyGit.Tests.Git.Reset;
 public sealed class GitResetCommandServiceTests
 {
     [Theory]
+    [InlineData(GitResetMode.Soft, "--soft", false)]
+    [InlineData(GitResetMode.Mixed, "--mixed", true)]
+    [InlineData(GitResetMode.Hard, "--hard", false)]
+    public void BuildResetArguments_SkipsOnlyTheDuplicateMixedRefresh(
+        GitResetMode mode,
+        string modeArgument,
+        bool expectNoRefresh)
+    {
+        const string commitHash = "0123456789012345678901234567890123456789";
+        var arguments = GitResetCommandService.BuildResetArguments(
+            mode,
+            commitHash);
+
+        var expected = expectNoRefresh
+            ? new[] { "reset", modeArgument, "--no-refresh", commitHash }
+            : ["reset", modeArgument, commitHash];
+        Assert.Equal(expected, arguments);
+    }
+
+    [Theory]
     [InlineData(GitResetMode.Soft, true, false, "after")]
     [InlineData(GitResetMode.Mixed, false, true, "after")]
     [InlineData(GitResetMode.Hard, false, false, "before")]
@@ -90,6 +110,44 @@ public sealed class GitResetCommandServiceTests
 
         Assert.Contains("active merge", exception.Message, StringComparison.OrdinalIgnoreCase);
         Assert.Equal(repository.SecondCommitHash, repository.RunGit(["rev-parse", "HEAD"]));
+    }
+
+    [Fact]
+    public async Task ResetCurrentBranchToCommitAsync_GitFailureLeavesRepositoryUnchanged()
+    {
+        using var repository = TemporaryGitRepository.Create();
+        var index = File.ReadAllBytes(Path.Combine(repository.Path, ".git", "index"));
+
+        await Assert.ThrowsAsync<GitOperationException>(() =>
+            repository.Service.ResetCurrentBranchToCommitAsync(
+                repository.Path,
+                new string('f', 40),
+                GitResetMode.Mixed,
+                CancellationToken.None));
+
+        Assert.Equal(repository.SecondCommitHash, repository.RunGit(["rev-parse", "HEAD"]));
+        Assert.Equal(index, File.ReadAllBytes(Path.Combine(repository.Path, ".git", "index")));
+        Assert.Equal("after", File.ReadAllText(Path.Combine(repository.Path, "file.txt")));
+    }
+
+    [Fact]
+    public async Task ResetCurrentBranchToCommitAsync_PreCancellationLeavesRepositoryUnchanged()
+    {
+        using var repository = TemporaryGitRepository.Create();
+        var index = File.ReadAllBytes(Path.Combine(repository.Path, ".git", "index"));
+        using var cancellation = new CancellationTokenSource();
+        cancellation.Cancel();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+            repository.Service.ResetCurrentBranchToCommitAsync(
+                repository.Path,
+                repository.FirstCommitHash,
+                GitResetMode.Hard,
+                cancellation.Token));
+
+        Assert.Equal(repository.SecondCommitHash, repository.RunGit(["rev-parse", "HEAD"]));
+        Assert.Equal(index, File.ReadAllBytes(Path.Combine(repository.Path, ".git", "index")));
+        Assert.Equal("after", File.ReadAllText(Path.Combine(repository.Path, "file.txt")));
     }
 
     [Fact]

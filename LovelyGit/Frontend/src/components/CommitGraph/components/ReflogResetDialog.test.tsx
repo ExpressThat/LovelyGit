@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { GitReflogEntry } from "@/generated/types";
@@ -48,6 +48,26 @@ describe("ReflogResetDialog", () => {
 			"main",
 		);
 		expect(resetButton).toBeEnabled();
+	});
+
+	it("re-enables the reset after failure and supports a successful retry", async () => {
+		const user = userEvent.setup();
+		vi.mocked(sendRequestWithResponse)
+			.mockRejectedValueOnce(new Error("reset failed"))
+			.mockResolvedValueOnce(undefined);
+		const onClose = vi.fn();
+		const onRepositoryChanged = vi.fn();
+		renderDialog({ onClose, onRepositoryChanged });
+		const resetButton = screen.getByRole("button", { name: "Mixed reset" });
+
+		await user.click(resetButton);
+		await waitFor(() => expect(resetButton).toBeEnabled());
+		expect(onClose).not.toHaveBeenCalled();
+		expect(onRepositoryChanged).not.toHaveBeenCalled();
+
+		await user.click(resetButton);
+		await waitFor(() => expect(onClose).toHaveBeenCalledOnce());
+		expect(onRepositoryChanged).toHaveBeenCalledOnce();
 	});
 });
 
