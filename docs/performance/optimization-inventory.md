@@ -44,8 +44,8 @@ This ledger records shipped performance work by feature area. Update it in the s
 - Virtualized branch reflog entries against the dialog's existing scroll viewport and kept a bounded 10-row bootstrap, reducing maximum-response render latency and DOM retention while preserving filtering, scrolling, row actions, and lazy context menus (`de1bd0c`).
 - Virtualized maximum interactive-rebase plans, bounded the dialog to its visible window, removed per-row layout animation from the large virtual list, and preserved dynamic Reword sizing, draft input, reordering, and top-to-bottom actions (`99436df`).
 - Virtualized the independently resizable Worktrees accordion so repository refreshes no longer mount every linked-worktree row; the existing scroll range, final-row access, and lazy context menu remain intact (current worktree-list checkpoint).
-- Parallelized loose local/remote ref reads with a bounded eight-worker path, stopped parsing object IDs merely to fingerprint loose refs, and retained exact malformed-ref, tag-limit, cancellation, and cache semantics (current maximum-ref checkpoint).
-- Compressed large ref collections before native transport, expanded them once in the shared frontend cache, retained stale refs during forced refreshes, and virtualized the branch switcher with full filtering and keyboard selection (current maximum-ref checkpoint).
+- Parallelized loose local/remote ref reads with a bounded eight-worker path, stopped parsing object IDs merely to fingerprint loose refs, and retained exact malformed-ref, tag-limit, cancellation, and cache semantics (`23e20e0`).
+- Compressed large ref collections before native transport, expanded them once in the shared frontend cache, retained stale refs during forced refreshes, and virtualized the branch switcher with full filtering and keyboard selection (`23e20e0`).
 
 ### Native Git Parser and Object Storage
 
