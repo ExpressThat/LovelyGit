@@ -7,7 +7,7 @@ This is the durable index of LovelyGit performance work. Update the linked ledge
 - [Verified performance results](docs/performance/verified-results.md)
 - [Completed optimization inventory](docs/performance/optimization-inventory.md)
 
-Latest verified checkpoint: the saved-stash manager now virtualizes large reflogs, reducing a controlled 500-row render from 468.03 ms to 49.64 ms while retaining only eight rows in the real WebView. See the linked ledgers for the complete evidence.
+Latest verified checkpoint: remote management now virtualizes large configurations, reducing a controlled 500-row render from 346.89 ms to 48.14 ms while retaining only eight rows in the real WebView. See the linked ledgers for the complete evidence.
 
 ## Measurement Rules
 
