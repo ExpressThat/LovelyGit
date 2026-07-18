@@ -14,14 +14,12 @@ import {
 	DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { motion, useReducedMotion } from "@/lib/motion";
 import { useRepositoryContext } from "@/lib/repositoryContext";
-import { cn } from "@/lib/utils";
+import { CommandPaletteList } from "./CommandPaletteList";
 import {
 	createPaletteItems,
 	filterPaletteItems,
 	nextEnabledItem,
-	type PaletteItem,
 } from "./commandPaletteItems";
 
 export function CommandPalette({
@@ -155,21 +153,12 @@ export function CommandPalette({
 						Esc
 					</kbd>
 				</div>
-				<div className="custom-scrollbar max-h-[min(420px,60vh)] overflow-y-auto p-2">
-					{filtered.length ? (
-						filtered.map((item, index) => (
-							<PaletteRow
-								active={activeIndex === index}
-								item={item}
-								key={item.id}
-								onHover={() => setActiveIndex(index)}
-							/>
-						))
-					) : (
-						<div className="px-3 py-8 text-center text-sm text-muted-foreground">
-							No matching commands
-						</div>
-					)}
+				<div className="p-2">
+					<CommandPaletteList
+						activeIndex={activeIndex}
+						items={filtered}
+						onActiveIndexChange={setActiveIndex}
+					/>
 				</div>
 				<footer className="flex items-center gap-3 border-t bg-card/60 px-4 py-2 text-[10px] text-muted-foreground">
 					<span>↑↓ Navigate</span>
@@ -178,43 +167,5 @@ export function CommandPalette({
 				</footer>
 			</DialogContent>
 		</Dialog>
-	);
-}
-
-function PaletteRow({
-	active,
-	item,
-	onHover,
-}: {
-	active: boolean;
-	item: PaletteItem;
-	onHover: () => void;
-}) {
-	const reduceMotion = useReducedMotion();
-	return (
-		<motion.button
-			aria-disabled={item.disabled}
-			className={cn(
-				"relative flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left",
-				active && "bg-accent text-accent-foreground",
-				item.disabled && "opacity-40",
-			)}
-			disabled={item.disabled}
-			onClick={item.run}
-			onMouseEnter={onHover}
-			type="button"
-			whileTap={reduceMotion ? undefined : { scale: 0.99 }}
-		>
-			<item.icon
-				aria-hidden="true"
-				className="size-4 shrink-0 text-muted-foreground"
-			/>
-			<span className="min-w-0">
-				<span className="block truncate text-sm font-medium">{item.label}</span>
-				<span className="block truncate text-xs text-muted-foreground">
-					{item.description}
-				</span>
-			</span>
-		</motion.button>
 	);
 }

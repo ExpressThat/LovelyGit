@@ -19,6 +19,7 @@ This ledger records shipped performance work by feature area. Update it in the s
 - Applied immediate deferred reveal to commit-identity editing while preserving its separate dialog chunk (`74f068a`).
 - Applied immediate deferred reveal to remote-branch checkout and deletion confirmations while preserving their shared chunk (`a2648d6`).
 - Applied immediate deferred reveal to repository onboarding/New Tab while preserving its separate lazy chunk (`88b7b26`).
+- Virtualized command-palette results above 30 items while preserving the fully mounted ordinary layout, filtering, disabled-command skipping, active-row scrolling, pointer activation, and Arrow/Enter keyboard behavior (current command-palette checkpoint).
 - Applied immediate deferred reveal to meaningful bisect-session content while preserving its separate session chunk (`79a6057`).
 - Applied immediate deferred reveal to force-with-lease confirmation while preserving its separate safety-dialog chunk (`1f749da`).
 - Switched the desktop process to workstation GC and moved process-memory sampling off interaction paths (`b0d124b`, `c7241dc`).
