@@ -117,12 +117,12 @@ This ledger records shipped performance work by feature area. Update it in the s
 
 ### Runtime Memory and Resource Lifetime
 
-- Verified Settings, Bisect, and Force Push overlays plateau after warm-up rather than retaining linearly; a second 60-interaction pass added only 0.22 MB post-GC with no DOM growth (this commit).
-- Verified Working Changes open/close cycles plateau after the status/cache warm-up; the second ten-cycle pass added only 0.08 MB post-GC with no DOM growth (this commit).
-- Verified repeated native bisect-state reads do not leak process handles, and recorded the warmed four-tab host/WebView2 footprint as the next memory-reduction baseline (this commit).
+- Verified Settings, Bisect, and Force Push overlays plateau after warm-up rather than retaining linearly; a second 60-interaction pass added only 0.22 MB post-GC with no DOM growth (`9913036`).
+- Verified Working Changes open/close cycles plateau after the status/cache warm-up; the second ten-cycle pass added only 0.08 MB post-GC with no DOM growth (`9913036`).
+- Verified repeated native bisect-state reads do not leak process handles, and recorded the warmed four-tab host/WebView2 footprint as the next memory-reduction baseline (`9913036`).
 - Diagnosed the warmed host with a managed heap dump: 74,804 BLite transactions were retained by the dependency registry, accounting for 14.96 MB of transaction, change-list, and dictionary-node objects plus a 1.86 MB expanded bucket table.
-- Added an exact, concurrency-safe BLite transaction retention boundary to every application and cache write. Successful, failed, abandoned, and no-op operations now unregister only their own transaction; regression coverage proves the registry returns to zero (`this commit`).
-- Batched each commit-graph page cache write into one caller-owned transaction instead of opening one auto-commit transaction per row (`this commit`).
+- Added an exact, concurrency-safe BLite transaction retention boundary to every application and cache write. Successful, failed, abandoned, and no-op operations now unregister only their own transaction; regression coverage proves the registry returns to zero (`4df8eae`).
+- Batched each commit-graph page cache write into one caller-owned transaction instead of opening one auto-commit transaction per row (`4df8eae`).
 - Verified 120 real WebView2 tab activations between the Chromium-scale repository and a disposable repository: small-repository content was ready in about 16 ms, Chromium was typically ready in 22-28 ms, and the worst sample was 37.6 ms.
 - Verified multi-repository switching does not retain linearly: post-GC JavaScript heap increased only 0.36 MB across 120 activations while the active DOM count stayed constant; the on-disk app/cache databases remained bounded at 3 MiB and 5 MiB.
 - Measured local-remote transport through the real WebView2 UI with an isolated bare remote: Fetch All and Pull (fast-forward only) each reflected in about 104 ms, and Push completed in about 96 ms.
