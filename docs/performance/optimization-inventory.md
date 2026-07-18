@@ -126,6 +126,7 @@ This ledger records shipped performance work by feature area. Update it in the s
 - Bounded decoded/source/result cache weight and skipped uncacheable prewarming (`15ce59d`, `9f613ed`, `c4e610c`, `70eecfd`).
 - Moved diff persistence off click paths and cached open variants (`b074af7`, `dc120ec`, `54cb0c7`, `3726952`).
 - Streamed patch previews through a pooled character buffer so large Apply Patch files no longer allocate one string per content line (`dfe357d`).
+- Virtualized Apply Patch previews above 30 files so the 5,000-file native safety limit retains only nine bootstrap rows while every parsed file remains reachable through the complete scroll range (current patch-preview checkpoint).
 - Opened commit and series patch export against the object database alone, avoiding unrelated branch, remote, tag, and stash enumeration (`9b71ea5`).
 - Opened commit-file diff sources against the object database alone, keeping unrelated refs out of cold file inspection while preserving cached Side-by-Side, Combined, whitespace, and parent variants (`3d932ef`).
 
