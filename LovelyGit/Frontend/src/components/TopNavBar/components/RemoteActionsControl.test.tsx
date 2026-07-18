@@ -51,10 +51,9 @@ describe("RemoteActionsControl", () => {
 	it("keeps normal push one click and disables remote controls while busy", async () => {
 		const user = userEvent.setup();
 		const pending = deferred<void>();
+		const onRepositoryChanged = vi.fn();
 		send.mockReturnValueOnce(pending.promise);
-		render(
-			<RemoteActionsControl currentBranchName="main" repositoryId="repo-1" />,
-		);
+		renderControl("main", "repo-1", onRepositoryChanged);
 
 		await user.click(screen.getByRole("button", { name: "Push" }));
 		expect(send).toHaveBeenCalledWith(
@@ -85,19 +84,16 @@ describe("RemoteActionsControl", () => {
 			id: "toast-1",
 		});
 		expect(sync.reload).toHaveBeenCalledOnce();
+		expect(onRepositoryChanged).toHaveBeenCalledOnce();
 	});
 
 	it("confirms force-with-lease, keeps the dialog retryable on failure, then closes", async () => {
 		const user = userEvent.setup();
+		const onRepositoryChanged = vi.fn();
 		send
 			.mockRejectedValueOnce(new Error("remote changed since your last fetch"))
 			.mockResolvedValueOnce(undefined);
-		render(
-			<RemoteActionsControl
-				currentBranchName="feature/rewrite"
-				repositoryId="repo-1"
-			/>,
-		);
+		renderControl("feature/rewrite", "repo-1", onRepositoryChanged);
 
 		await user.click(screen.getByRole("button", { name: "More push actions" }));
 		await user.click(await screen.findByText("Force push with lease…"));
@@ -123,6 +119,7 @@ describe("RemoteActionsControl", () => {
 		expect(
 			screen.getByRole("heading", { name: /Force push feature\/rewrite/ }),
 		).toBeInTheDocument();
+		expect(onRepositoryChanged).not.toHaveBeenCalled();
 
 		await user.click(
 			screen.getByRole("button", { name: "Force push with lease" }),
@@ -145,6 +142,7 @@ describe("RemoteActionsControl", () => {
 			},
 			{ timeoutMs: 120_000 },
 		);
+		expect(onRepositoryChanged).toHaveBeenCalledOnce();
 	});
 
 	it("fetches every remote and offers a retryable prune action", async () => {
@@ -152,9 +150,7 @@ describe("RemoteActionsControl", () => {
 		send
 			.mockRejectedValueOnce(new Error("remote unavailable"))
 			.mockResolvedValueOnce(undefined);
-		render(
-			<RemoteActionsControl currentBranchName="main" repositoryId="repo-1" />,
-		);
+		renderControl();
 
 		await user.click(
 			screen.getByRole("button", { name: "Choose fetch or pull default" }),
@@ -192,9 +188,7 @@ describe("RemoteActionsControl", () => {
 	});
 
 	it("disables every remote mutation when no repository is selected", () => {
-		render(
-			<RemoteActionsControl currentBranchName={null} repositoryId={null} />,
-		);
+		renderControl(null, null);
 
 		expect(screen.getByRole("button", { name: "Fetch all" })).toBeDisabled();
 		expect(screen.getByRole("button", { name: "Push" })).toBeDisabled();
@@ -205,9 +199,7 @@ describe("RemoteActionsControl", () => {
 
 	it("adds accessible animated incoming and outgoing counts", () => {
 		sync.status = { aheadCount: 2, behindCount: 1, isHistoryPartial: false };
-		render(
-			<RemoteActionsControl currentBranchName="main" repositoryId="repo-1" />,
-		);
+		renderControl();
 
 		expect(
 			screen.getByRole("button", { name: "Fetch all, 1 incoming commit" }),
@@ -219,6 +211,20 @@ describe("RemoteActionsControl", () => {
 		expect(screen.getByText("2")).toBeInTheDocument();
 	});
 });
+
+function renderControl(
+	currentBranchName: string | null = "main",
+	repositoryId: string | null = "repo-1",
+	onRepositoryChanged = vi.fn(),
+) {
+	return render(
+		<RemoteActionsControl
+			currentBranchName={currentBranchName}
+			onRepositoryChanged={onRepositoryChanged}
+			repositoryId={repositoryId}
+		/>,
+	);
+}
 
 function deferred<T>() {
 	let resolve!: (value: T | PromiseLike<T>) => void;

@@ -47,6 +47,7 @@ function App() {
 		workingTreeChanges.reload,
 		setCommitGraphRefreshToken,
 	);
+	const refreshGraph = () => setCommitGraphRefreshToken((token) => token + 1);
 	const selectCommit = (row: CommitGraphRow) => {
 		void LazySurfaces.preloadCommitFileDiffSurface();
 		setDetailsPanel({ commitHash: row.commit.hash, kind: "commit" });
@@ -65,6 +66,7 @@ function App() {
 					onOpenWorkingChanges={() =>
 						setDetailsPanel({ kind: "workingChanges" })
 					}
+					onRepositoryChanged={refreshGraph}
 					onSearchCommits={() => overlays.setCommitSearchOpen(true)}
 					onSettingsOpenChange={overlays.setSettingsOpen}
 					repositoryId={currentGitRepositoryId}
@@ -84,9 +86,7 @@ function App() {
 									onOpenWorkingChanges={() =>
 										setDetailsPanel({ kind: "workingChanges" })
 									}
-									onRepositoryChanged={() =>
-										setCommitGraphRefreshToken((token) => token + 1)
-									}
+									onRepositoryChanged={refreshGraph}
 									onSelectCommit={selectCommit}
 									refreshToken={commitGraphRefreshToken}
 									repositoryId={currentGitRepositoryId}
@@ -235,9 +235,7 @@ function App() {
 				currentBranchName={currentBranchName}
 				fileDiscovery={fileDiscovery}
 				onRefreshRepository={refreshRepository}
-				onRepositoryChanged={() =>
-					setCommitGraphRefreshToken((token) => token + 1)
-				}
+				onRepositoryChanged={refreshGraph}
 				overlays={overlays}
 				repositoryId={currentGitRepositoryId}
 				setCurrentBranchName={setCurrentBranchName}

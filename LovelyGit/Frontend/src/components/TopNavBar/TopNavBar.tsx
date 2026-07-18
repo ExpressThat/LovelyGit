@@ -20,6 +20,7 @@ export function TopNavBar({
 	onBranchChanged,
 	onOpenCommandPalette,
 	onOpenWorkingChanges,
+	onRepositoryChanged,
 	onSearchCommits,
 	onSettingsOpenChange,
 	repositoryId,
@@ -30,6 +31,7 @@ export function TopNavBar({
 	onBranchChanged: (branchName: string) => void;
 	onOpenCommandPalette: () => void;
 	onOpenWorkingChanges: () => void;
+	onRepositoryChanged: () => void;
 	onSearchCommits: () => void;
 	onSettingsOpenChange: (open: boolean) => void;
 	repositoryId: string | null;
@@ -57,6 +59,7 @@ export function TopNavBar({
 				<div className="flex items-center justify-center gap-2">
 					<RemoteActionsControl
 						currentBranchName={currentBranchName}
+						onRepositoryChanged={onRepositoryChanged}
 						repositoryId={repositoryId}
 					/>
 					<PatchApplyControl

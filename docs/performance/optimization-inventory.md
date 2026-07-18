@@ -153,6 +153,7 @@ This ledger records shipped performance work by feature area. Update it in the s
 - Added bounded process ownership, cancellation, and session-health gates (`74c0f12`, `089f559`).
 - Kept the official backend suite below one minute without weakening assertions (`021c0ee`).
 - Added application dependency-graph validation without launching the desktop host (`525a3c2`).
+- Isolated frontend wall-clock performance files from ordinary parallel workers while retaining parallel execution for the rest of the suite. Two complete 709-test gates passed in 50.69 and 49.76 seconds with every latency ceiling unchanged (current remote-reconciliation checkpoint).
 
 ### Runtime Memory and Resource Lifetime
 
@@ -167,6 +168,7 @@ This ledger records shipped performance work by feature area. Update it in the s
 - Repeated the resource audit across 20 independent 2,000-commit repositories: after 60 real WebView2 activations and the two-second graph-disposal horizon, observed page heap settled at 13.79 MB and the complete process tree at 363.22 MB private / 3,889 handles versus the 364.17 MB / 3,888-handle baseline (`faa310d`).
 - Corrected Fetch, Pull, and Push from one-way native contracts to completion responses, so their promises, success messages, refreshes, and busy controls now follow the real Git process instead of only message dispatch (`9b33cc7`).
 - Shared the proven two-frame browser paint boundary with remote synchronization. In a delayed disposable local transport, Fetch, Pull, and Push painted disabled in 1-5 ms and remained protected for 3.37-3.50 seconds until their upload/receive process exited; exact refs, `HEAD`, and remote state matched afterward with clean page/error-console gates (`9b33cc7`).
+- Invalidated the active graph immediately after successful remote synchronization instead of waiting for the 200 ms external-change debounce. Pull now presents the moved local ref 5 ms after completion instead of 186 ms, while Fetch presents its updated remote ref in 12 ms (current remote-reconciliation checkpoint).
 - Replaced lifetime-long retired pack-index and pack-file retention with generation-aware read leases. Fetch/repack can now replace native pack snapshots without interrupting active reads, while obsolete handles close after their final reader instead of accumulating until repository disposal (`986719d`).
 
 ### Clone and Remote Transport

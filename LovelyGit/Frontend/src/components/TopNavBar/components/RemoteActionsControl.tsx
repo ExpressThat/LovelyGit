@@ -29,9 +29,11 @@ import { useRemoteSyncStatus } from "./useRemoteSyncStatus";
 
 export function RemoteActionsControl({
 	currentBranchName,
+	onRepositoryChanged,
 	repositoryId,
 }: {
 	currentBranchName: string | null;
+	onRepositoryChanged: () => void;
 	repositoryId: string | null;
 }) {
 	const [busyAction, setBusyAction] = useState<RemotePrimaryAction | null>(
@@ -82,6 +84,7 @@ export function RemoteActionsControl({
 				},
 			);
 			toast.success(`${action.label} complete`, { id: toastId });
+			onRepositoryChanged();
 			void sync.reload();
 			return true;
 		} catch (error) {

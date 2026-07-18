@@ -36,7 +36,11 @@ it("paints disabled controls before entering the native bridge", async () => {
 		}),
 	);
 	render(
-		<RemoteActionsControl currentBranchName="main" repositoryId="repo-1" />,
+		<RemoteActionsControl
+			currentBranchName="main"
+			onRepositoryChanged={vi.fn()}
+			repositoryId="repo-1"
+		/>,
 	);
 
 	await user.click(screen.getByRole("button", { name: "Fetch all" }));
