@@ -143,7 +143,11 @@ export function LfsManagerContent({ repositoryId }: { repositoryId: string }) {
 					</AlertDialogHeader>
 					<AlertDialogFooter>
 						<AlertDialogCancel>Cancel</AlertDialogCancel>
-						<AlertDialogAction onClick={() => void manager.run("Prune")}>
+						<AlertDialogAction
+							onClick={async () => {
+								if (await manager.run("Prune")) setConfirmPrune(false);
+							}}
+						>
 							Prune cache
 						</AlertDialogAction>
 					</AlertDialogFooter>

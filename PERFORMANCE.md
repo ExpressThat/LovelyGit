@@ -33,6 +33,8 @@ Maximum sparse-checkout mutation preparation now scans cone paths directly and s
 
 A real 5,000-file submodule Initialize paints disabled feedback in 1.1 ms and reaches authoritative `Current` state in 3.64 seconds, including Git and the native refresh. Direct Git took 6.20 seconds in the same disposable fixture, confirming the existing asynchronous LovelyGit path is not the bottleneck and should not gain an artificial paint delay.
 
+Git LFS mutations remain responsive with a 50,500-line `.gitattributes`: Track, Untrack, and Prune paint disabled feedback in 8.7-17.4 ms and complete through the desktop in 739, 612, and 416-450 ms. Equivalent direct Git takes 645, 472, and 352 ms, leaving only about 8 ms of measured UI/native-envelope overhead. Git and the authoritative rescan dominate, so the existing single CLI mutation path was retained. Successful prune now closes its confirmation while failure stays open and retryable.
+
 ## Measurement Rules
 
 - Measure from a healthy runner state and use disposable repositories only.
@@ -57,6 +59,7 @@ Measured through the same Git commands LovelyGit uses, primarily in a disposable
 | Merge 500 changed files | 1.02 s |
 | Rebase 100 changed files | 894 ms |
 | Interactive rebase of 100 commits / 1,010 files | Busy DOM 3.5 ms; visibly painted by 8.9 ms; completed in 273.5 ms versus 294.7 ms direct Git |
+| Git LFS Track / Untrack / Prune with 50,500 attributes | Busy paint 8.7-17.4 ms; desktop completion 739 / 612 / 416-450 ms; direct Git 645 / 472 / 352 ms |
 | Merge / rebase 1,000 files plus one 100,000-line file | Busy paint 19.4-26.9 ms / 22.8 ms; desktop completion 4.40-4.59 s / 6.52 s; exact direct Git 0.95-1.12 s / 1.72 s |
 | Cherry-pick / revert / hard reset 1,000 files plus one 100,000-line file | Busy paint 19.2 ms / 20.9 ms / 16.2 ms; native completion 4.54 s / 1.18 s / 1.09-4.30 s; exact direct Git 0.99 s / 0.76 s / 0.67 s |
 | Bisect across 1,001 files plus one 100,000-line file | Busy paint 1.1-1.9 ms; start 177-188 ms; checkout-heavy good step 4.38 s cold / 921 ms warm; final bad step 85 ms; reset 1.09-1.16 s |
@@ -108,6 +111,6 @@ Measured through the same Git commands LovelyGit uses, primarily in a disposable
 ## Next Measurement Areas
 
 - Large network clone/fetch/pull/push transfer memory, credential hand-off, and cancellation against a controlled remote where network variance can be isolated.
-- Failure-path timing for submodule, LFS, bisect, and interactive-rebase execution; successful large submodule, bisect, and interactive-rebase mutation paths are now measured.
+- Failure-path timing for submodule, LFS, bisect, and interactive-rebase execution; successful large submodule, LFS, bisect, and interactive-rebase mutation paths are now measured.
 - Pack/cache invalidation under repeated remote repacks and long-session resource scaling beyond the measured 20-tab, overlay, handle, transaction, and four-repository heap baselines.
 - Packaged cold/warm startup across slower storage tiers and repository activation after operating-system file-cache eviction.

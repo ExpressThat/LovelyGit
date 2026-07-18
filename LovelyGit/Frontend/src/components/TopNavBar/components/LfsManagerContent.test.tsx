@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Dialog } from "@/components/ui/dialog";
@@ -72,6 +72,31 @@ describe("LfsManagerContent", () => {
 			within(confirmation).getByRole("button", { name: "Prune cache" }),
 		);
 		expect(manager.run).toHaveBeenCalledWith("Prune");
+		await waitFor(() =>
+			expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument(),
+		);
+	});
+
+	it("keeps a failed prune retryable and closes after a later success", async () => {
+		const user = userEvent.setup();
+		manager.run.mockResolvedValueOnce(false);
+		renderContent();
+
+		await user.click(screen.getByRole("button", { name: "Prune cache" }));
+		const confirmation = await screen.findByRole("alertdialog", {
+			name: "Prune the local LFS cache?",
+		});
+		const prune = within(confirmation).getByRole("button", {
+			name: "Prune cache",
+		});
+		await user.click(prune);
+		expect(confirmation).toBeVisible();
+
+		await user.click(prune);
+		expect(manager.run).toHaveBeenCalledTimes(2);
+		await waitFor(() =>
+			expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument(),
+		);
 	});
 
 	it("explains unavailable LFS and disables every mutation", () => {
