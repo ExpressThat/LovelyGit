@@ -25,7 +25,7 @@ export function useCommitMultiSelection(
 		onOpen: (row: CommitGraphRow) => void,
 	) => {
 		if (!gesture.ctrlKey && !gesture.metaKey && !gesture.shiftKey) {
-			setState({ repositoryId, anchorIndex: index, hashes: new Set() });
+			setState({ ...emptyState(repositoryId), anchorIndex: index });
 			onOpen(row);
 			return;
 		}
@@ -36,90 +36,110 @@ export function useCommitMultiSelection(
 					? previous
 					: emptyState(repositoryId);
 			if (gesture.shiftKey && active.anchorIndex != null) {
+				const selected = selectRange(
+					rows,
+					active.anchorIndex,
+					index,
+					gesture.ctrlKey || gesture.metaKey
+						? active
+						: emptyState(repositoryId),
+				);
 				return {
 					repositoryId,
 					anchorIndex: active.anchorIndex,
-					hashes: selectRange(
-						rows,
-						active.anchorIndex,
-						index,
-						gesture.ctrlKey || gesture.metaKey ? active.hashes : new Set(),
-					),
+					...selected,
 				};
 			}
 
 			const hashes = new Set(active.hashes);
+			const selectedRows = new Map(active.selectedRows);
 			const hash = row.commit.hash;
-			if (hashes.has(hash)) hashes.delete(hash);
-			else if (hashes.size < MAX_SELECTED_COMMITS) hashes.add(hash);
-			return { repositoryId, anchorIndex: index, hashes };
+			if (hashes.has(hash)) {
+				hashes.delete(hash);
+				selectedRows.delete(hash);
+			} else if (hashes.size < MAX_SELECTED_COMMITS) {
+				hashes.add(hash);
+				selectedRows.set(hash, { index, row });
+			}
+			return { repositoryId, anchorIndex: index, hashes, selectedRows };
 		});
 	};
 	const rowsFor = (clicked: CommitGraphRow, mode: "cherry-pick" | "revert") =>
 		orderSelectedCommits(
-			rows,
 			current.hashes.has(clicked.commit.hash)
-				? current.hashes
-				: new Set([clicked.commit.hash]),
+				? current.selectedRows.values()
+				: [{ index: -1, row: clicked }],
 			mode,
 		);
 
 	return {
 		clear: () => setState(emptyState(repositoryId)),
-		comparison: () => comparisonPair(rows, current.hashes),
+		comparison: () => comparisonPair(current.selectedRows.values()),
 		count: current.hashes.size,
 		hashes: current.hashes,
 		ordered: (mode: "cherry-pick" | "revert") =>
-			orderSelectedCommits(rows, current.hashes, mode),
+			orderSelectedCommits(current.selectedRows.values(), mode),
 		rowsFor,
 		select,
 	};
 }
 
-export function comparisonPair(
-	rows: Array<CommitGraphRow | null>,
-	hashes: ReadonlySet<string>,
-) {
-	const selected = rows.filter(
-		(row): row is CommitGraphRow => row != null && hashes.has(row.commit.hash),
-	);
+export function comparisonPair(selectedRows: Iterable<SelectedCommit>) {
+	const selected = [...selectedRows].sort(byGraphIndex);
 	if (selected.length !== 2) return null;
-	return { base: selected[1], target: selected[0] };
+	return { base: selected[1].row, target: selected[0].row };
 }
 
 export function orderSelectedCommits(
-	rows: Array<CommitGraphRow | null>,
-	hashes: ReadonlySet<string>,
+	selectedRows: Iterable<SelectedCommit>,
 	mode: "cherry-pick" | "revert",
 ) {
-	const selected = rows.filter(
-		(row): row is CommitGraphRow => row != null && hashes.has(row.commit.hash),
-	);
-	return mode === "cherry-pick" ? selected.reverse() : selected;
+	const selected = [...selectedRows].sort(byGraphIndex);
+	if (mode === "cherry-pick") selected.reverse();
+	return selected.map((item) => item.row);
 }
 
 function selectRange(
 	rows: Array<CommitGraphRow | null>,
 	anchorIndex: number,
 	targetIndex: number,
-	existing: ReadonlySet<string>,
+	existing: Pick<SelectionState, "hashes" | "selectedRows">,
 ) {
-	const hashes = new Set(existing);
+	const hashes = new Set(existing.hashes);
+	const selectedRows = new Map(existing.selectedRows);
 	const step = targetIndex >= anchorIndex ? 1 : -1;
 	for (let index = anchorIndex; ; index += step) {
 		const row = rows[index];
-		if (row) hashes.add(row.commit.hash);
+		if (
+			row &&
+			(hashes.has(row.commit.hash) || hashes.size < MAX_SELECTED_COMMITS)
+		) {
+			hashes.add(row.commit.hash);
+			selectedRows.set(row.commit.hash, { index, row });
+		}
 		if (index === targetIndex || hashes.size >= MAX_SELECTED_COMMITS) break;
 	}
-	return hashes;
+	return { hashes, selectedRows };
 }
 
 function emptyState(repositoryId: string | null): SelectionState {
-	return { repositoryId, anchorIndex: null, hashes: new Set() };
+	return {
+		repositoryId,
+		anchorIndex: null,
+		hashes: new Set(),
+		selectedRows: new Map(),
+	};
 }
+
+function byGraphIndex(left: SelectedCommit, right: SelectedCommit) {
+	return left.index - right.index;
+}
+
+export type SelectedCommit = { index: number; row: CommitGraphRow };
 
 type SelectionState = {
 	repositoryId: string | null;
 	anchorIndex: number | null;
 	hashes: Set<string>;
+	selectedRows: Map<string, SelectedCommit>;
 };

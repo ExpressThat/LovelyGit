@@ -7,7 +7,7 @@ This is the durable index of LovelyGit performance work. Update the linked ledge
 - [Verified performance results](docs/performance/verified-results.md)
 - [Completed optimization inventory](docs/performance/optimization-inventory.md)
 
-Latest verified checkpoint: commit-ref grouping now reuses already-normalized inputs, and the refs sidebar reads a compact index of loaded ref-tip rows instead of scanning the graph's total sparse row space. See the linked ledgers for native and WebView measurements.
+Latest verified checkpoint: multi-commit cherry-pick, revert, comparison, and patch-series actions retain bounded selection metadata instead of rescanning the graph's full sparse row space. See the linked ledgers for native and WebView measurements.
 
 ## Measurement Rules
 
