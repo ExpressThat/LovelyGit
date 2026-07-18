@@ -1,4 +1,6 @@
-import type { ReactNode } from "react";
+import { useVirtualizer } from "@tanstack/react-virtual";
+import type { CSSProperties, ReactNode } from "react";
+import { useRef } from "react";
 import { FileDiff, GitCommitHorizontal } from "@/components/icons/lovelyIcons";
 import type {
 	BranchComparisonCommit,
@@ -9,6 +11,9 @@ import { motion, useReducedMotion } from "@/lib/motion";
 import { shortHash } from "../utils/format";
 
 export type BranchComparisonSection = "ahead" | "behind" | "files";
+
+const FILE_ROW_HEIGHT = 34;
+const INITIAL_FILE_WINDOW = 12;
 
 export function BranchComparisonContent({
 	comparison,
@@ -26,7 +31,11 @@ export function BranchComparisonContent({
 	return (
 		<motion.div
 			animate={{ opacity: 1, x: 0 }}
-			className="custom-scrollbar min-h-0 flex-1 overflow-y-auto"
+			className={
+				section === "files"
+					? "flex min-h-0 flex-1 flex-col overflow-hidden"
+					: "custom-scrollbar min-h-0 flex-1 overflow-y-auto"
+			}
 			exit={{ opacity: 0, x: section === "behind" ? 8 : -8 }}
 			initial={{ opacity: 0, x: section === "behind" ? -8 : 8 }}
 			key={section}
@@ -100,6 +109,22 @@ function FileList({
 	total: number;
 	truncated: boolean;
 }) {
+	const parentRef = useRef<HTMLDivElement>(null);
+	const virtualizer = useVirtualizer({
+		count: files.length,
+		estimateSize: () => FILE_ROW_HEIGHT,
+		gap: 6,
+		getScrollElement: () => parentRef.current,
+		overscan: 6,
+	});
+	const measuredRows = virtualizer.getVirtualItems();
+	const visibleRows =
+		measuredRows.length > 0
+			? measuredRows
+			: Array.from(
+					{ length: Math.min(files.length, INITIAL_FILE_WINDOW) },
+					(_, index) => ({ index, start: index * (FILE_ROW_HEIGHT + 6) }),
+				);
 	if (files.length === 0)
 		return (
 			<EmptyState
@@ -108,17 +133,33 @@ function FileList({
 			/>
 		);
 	return (
-		<div className="grid gap-2 pr-1">
-			<ul className="grid gap-1.5">
-				{files.map((file) => (
-					<FileRow file={file} key={file.path} onOpen={onOpenFile} />
-				))}
-			</ul>
-			{truncated ? (
-				<p className="text-center text-muted-foreground text-xs">
-					Showing 500 of {total.toLocaleString()} changed files.
-				</p>
-			) : null}
+		<div
+			className="custom-scrollbar min-h-0 flex-1 overflow-y-auto"
+			ref={parentRef}
+		>
+			<div className="grid gap-2 pr-1">
+				<ul
+					className="relative"
+					style={{ height: `${virtualizer.getTotalSize()}px` }}
+				>
+					{visibleRows.map((virtualRow) => {
+						const file = files[virtualRow.index];
+						return file ? (
+							<FileRow
+								file={file}
+								key={file.path}
+								onOpen={onOpenFile}
+								style={{ transform: `translateY(${virtualRow.start}px)` }}
+							/>
+						) : null;
+					})}
+				</ul>
+				{truncated ? (
+					<p className="text-center text-muted-foreground text-xs">
+						Showing 500 of {total.toLocaleString()} changed files.
+					</p>
+				) : null}
+			</div>
 		</div>
 	);
 }
@@ -126,9 +167,11 @@ function FileList({
 function FileRow({
 	file,
 	onOpen,
+	style,
 }: {
 	file: BranchComparisonFile;
 	onOpen?: (file: BranchComparisonFile) => void;
+	style?: CSSProperties;
 }) {
 	const content = (
 		<>
@@ -139,7 +182,10 @@ function FileRow({
 		</>
 	);
 	return (
-		<li className="rounded-lg border bg-card">
+		<li
+			className="absolute left-0 right-0 rounded-lg border bg-card"
+			style={style}
+		>
 			{onOpen ? (
 				<button
 					aria-label={`Open comparison diff for ${file.path}`}

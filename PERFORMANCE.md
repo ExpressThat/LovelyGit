@@ -7,7 +7,7 @@ This is the durable index of LovelyGit performance work. Update the linked ledge
 - [Verified performance results](docs/performance/verified-results.md)
 - [Completed optimization inventory](docs/performance/optimization-inventory.md)
 
-Latest verified checkpoint: multi-commit cherry-pick, revert, comparison, and patch-series actions retain bounded selection metadata instead of rescanning the graph's full sparse row space. See the linked ledgers for native and WebView measurements.
+Latest verified checkpoint: maximum-size branch-comparison file results now virtualize against a list-owned scroll viewport, retaining only the visible window and a bounded bootstrap instead of 500 DOM rows. See the linked ledgers for native and WebView measurements.
 
 ## Measurement Rules
 
