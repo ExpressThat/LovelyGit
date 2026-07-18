@@ -9,6 +9,16 @@ namespace LovelyGit.Tests.Git.Worktrees;
 public sealed class GitWorktreeCommandServiceTests
 {
     [Fact]
+    public void CreateArguments_UsesMeasuredWideCheckoutParallelism()
+    {
+        var arguments = GitWorktreeCommandService.CreateArguments("C:/linked", "feature/worktree");
+
+        Assert.Equal(
+            ["-c", "checkout.workers=8", "worktree", "add", "--", "C:/linked", "feature/worktree"],
+            arguments);
+    }
+
+    [Fact]
     public async Task CreateLockUnlockAndRemoveAsync_ManagesLinkedWorktree()
     {
         using var repository = TemporaryGitRepository.Create();

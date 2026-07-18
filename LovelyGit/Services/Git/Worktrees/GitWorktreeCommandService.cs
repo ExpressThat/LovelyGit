@@ -7,6 +7,7 @@ namespace ExpressThat.LovelyGit.Services.Git.Worktrees;
 
 internal sealed class GitWorktreeCommandService
 {
+    private const string WorktreeCheckoutWorkerCount = "checkout.workers=8";
     private readonly GitOperationService _operations;
 
     public GitWorktreeCommandService(GitOperationService operations)
@@ -45,11 +46,14 @@ internal sealed class GitWorktreeCommandService
 
         await _operations.ExecuteRequiredBufferedAsync(
             "Create worktree",
-            ["worktree", "add", "--", destination, branch],
+            CreateArguments(destination, branch),
             paths.WorkTreeDirectory,
             "Choose an empty folder and a local branch that is not checked out in another worktree.",
             cancellationToken).ConfigureAwait(false);
     }
+
+    internal static IReadOnlyList<string> CreateArguments(string destination, string branch) =>
+        ["-c", WorktreeCheckoutWorkerCount, "worktree", "add", "--", destination, branch];
 
     public Task LockAsync(
         string repositoryPath,
