@@ -1,3 +1,5 @@
+import { useVirtualizer } from "@tanstack/react-virtual";
+import { useRef } from "react";
 import { toast } from "sonner";
 import {
 	AlertTriangle,
@@ -19,6 +21,9 @@ import { motion, useReducedMotion } from "@/lib/motion";
 import { useReflog } from "../hooks/useReflog";
 import { ReflogEntryRow } from "./ReflogEntryRow";
 
+const REFLOG_ROW_HEIGHT = 56;
+const INITIAL_REFLOG_WINDOW = 10;
+
 export function ReflogDialog({
 	branchName,
 	onClose,
@@ -34,6 +39,24 @@ export function ReflogDialog({
 }) {
 	const { entries, error, filteredEntries, isLoading, query, setQuery } =
 		useReflog(repositoryId, branchName);
+	const scrollRef = useRef<HTMLDivElement>(null);
+	const virtualizer = useVirtualizer({
+		count: filteredEntries.length,
+		estimateSize: () => REFLOG_ROW_HEIGHT,
+		gap: 6,
+		getScrollElement: () => scrollRef.current,
+		overscan: 5,
+	});
+	const measuredRows = virtualizer.getVirtualItems();
+	const visibleRows =
+		measuredRows.length > 0
+			? measuredRows
+			: Array.from(
+					{
+						length: Math.min(filteredEntries.length, INITIAL_REFLOG_WINDOW),
+					},
+					(_, index) => ({ index, start: index * (REFLOG_ROW_HEIGHT + 6) }),
+				);
 	const reduceMotion = useReducedMotion();
 	const copyHash = async (hash: string) => {
 		try {
@@ -87,7 +110,10 @@ export function ReflogDialog({
 							{filteredEntries.length} of {entries.length}
 						</span>
 					</div>
-					<div className="custom-scrollbar h-[min(58vh,520px)] overflow-y-auto pr-1">
+					<div
+						className="custom-scrollbar h-[min(58vh,520px)] overflow-y-auto pr-1"
+						ref={scrollRef}
+					>
 						{isLoading ? (
 							<ReflogLoading />
 						) : error ? (
@@ -107,18 +133,29 @@ export function ReflogDialog({
 						) : (
 							<motion.div
 								animate={{ opacity: 1, y: 0 }}
-								className="grid gap-1.5"
+								className="relative"
 								initial={{ opacity: 0, y: reduceMotion ? 0 : 4 }}
+								style={{ height: `${virtualizer.getTotalSize()}px` }}
 							>
-								{filteredEntries.map((entry) => (
-									<ReflogEntryRow
-										entry={entry}
-										key={`${entry.selector}:${entry.newHash}`}
-										onCopy={(hash) => void copyHash(hash)}
-										onCreateBranch={onCreateBranch}
-										onReset={onReset}
-									/>
-								))}
+								{visibleRows.map((virtualRow) => {
+									const entry = filteredEntries[virtualRow.index];
+									return entry ? (
+										<div
+											className="absolute left-0 right-0"
+											key={`${entry.selector}:${entry.newHash}`}
+											style={{
+												transform: `translateY(${virtualRow.start}px)`,
+											}}
+										>
+											<ReflogEntryRow
+												entry={entry}
+												onCopy={(hash) => void copyHash(hash)}
+												onCreateBranch={onCreateBranch}
+												onReset={onReset}
+											/>
+										</div>
+									) : null;
+								})}
 							</motion.div>
 						)}
 					</div>
