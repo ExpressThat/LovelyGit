@@ -7,7 +7,7 @@ This is the durable index of LovelyGit performance work. Update the linked ledge
 - [Verified performance results](docs/performance/verified-results.md)
 - [Completed optimization inventory](docs/performance/optimization-inventory.md)
 
-Latest verified checkpoint: Git LFS management now virtualizes large pattern sets, reducing a controlled 500-row render from 125.96 ms to 64.07 ms while retaining only 13 rows in the real WebView. See the linked ledgers for the complete evidence.
+Latest verified checkpoint: sparse-checkout management now edits 100,000 patterns without per-keystroke parsing, transports large specifications as compact gzip payloads, and applies 100,001 patterns through Git stdin in 532 ms end-to-end. See the linked ledgers for the complete evidence.
 
 ## Measurement Rules
 
