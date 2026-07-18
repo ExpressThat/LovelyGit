@@ -75,6 +75,7 @@ This ledger records shipped performance work by feature area. Update it in the s
 - Eliminated per-index-entry scan allocations and reused compiled ignore matchers (`353786e`, `dbc5386`).
 - Added a packed-graph performance regression gate (`81514be`).
 - Reused each normalized path's UTF-8 bytes across deep file-history and blame ancestry walks, avoiding thousands of repeated buffer rentals and encodes while preserving rename-aware path changes (current test-gate checkpoint).
+- Carried each already-read parent commit header and tree-path result into the next deep file-history work item instead of resolving it twice, while retaining merge-parent deduplication and exact rename traversal. Pre-cancelled reads now stop before repository discovery, and the merge regression uses one fast-import process so the 941-test gate remains below one minute (pending commit).
 
 ### Test Infrastructure
 

@@ -41,7 +41,7 @@ public sealed class NativeAncestryWorkflowPerformanceTests(ITestOutputHelper out
             Assert.Equal(HistoryLength + 1, response.ScannedCommitCount);
             Assert.Equal(FileHistoryChangeKind.Added, Assert.Single(response.Results).ChangeKind);
             Assert.True(elapsed < TimeSpan.FromMilliseconds(700), $"History took {elapsed}.");
-            Assert.True(allocated < 35_000_000, $"History allocated {allocated:N0} bytes.");
+            Assert.True(allocated < 25_000_000, $"History allocated {allocated:N0} bytes.");
         }
         finally
         {

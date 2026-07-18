@@ -67,6 +67,28 @@ public sealed class NativeFileHistoryReaderTests
     }
 
     [Fact]
+    public async Task ReadAsync_TraversesBothMergeParentsWithoutDuplicatingHistory()
+    {
+        using var fixture = FileHistoryMergeFixture.Create();
+
+        var response = await NativeFileHistoryReader.ReadAsync(
+            fixture.Path,
+            "tracked.txt",
+            fixture.Head,
+            limit: 100,
+            maximumCommits: 100,
+            maximumDuration: Timeout.InfiniteTimeSpan,
+            CancellationToken.None);
+
+        Assert.False(response.IsPartial);
+        Assert.Equal(3, response.MatchingCommitCount);
+        Assert.Equal(3, response.Results.Select(result => result.Hash).Distinct().Count());
+        Assert.Equal(
+            ["base file", "merge topic", "topic edit"],
+            response.Results.Select(result => result.Subject).Order().ToArray());
+    }
+
+    [Fact]
     public async Task ReadAsync_ReportsDeletionAndBoundedPartialTraversal()
     {
         using var repository = TemporaryGitRepository.Create();
@@ -107,6 +129,32 @@ public sealed class NativeFileHistoryReaderTests
                 maximumDuration: Timeout.InfiniteTimeSpan,
                 CancellationToken.None));
             Assert.False(Directory.Exists(Path.Combine(directory.FullName, ".git")));
+        }
+        finally
+        {
+            directory.Delete(recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task ReadAsync_HonorsCancellationBeforeRepositoryDiscovery()
+    {
+        var directory = Directory.CreateTempSubdirectory("lovelygit-history-cancel-");
+        using var cancellation = new CancellationTokenSource();
+        cancellation.Cancel();
+        try
+        {
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+                NativeFileHistoryReader.ReadAsync(
+                    directory.FullName,
+                    "tracked.txt",
+                    null,
+                    limit: 100,
+                    maximumCommits: 100,
+                    maximumDuration: Timeout.InfiniteTimeSpan,
+                    cancellation.Token));
+
+            Assert.Empty(directory.EnumerateFileSystemInfos());
         }
         finally
         {
