@@ -14,7 +14,7 @@ import {
 	DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { FileHistoryResultRow } from "./FileHistoryResultRow";
+import { FileHistoryResults } from "./FileHistoryResults";
 import { useFileHistory } from "./useFileHistory";
 
 export type FileHistoryTarget = {
@@ -54,7 +54,12 @@ export function FileHistoryDialog({
 		);
 	});
 	const activeIndex = Math.min(selectedIndex, Math.max(results.length - 1, 0));
-
+	const canSearchDeeper = Boolean(
+		!deep &&
+			response &&
+			(response.isPartial ||
+				response.results.length < response.matchingCommitCount),
+	);
 	useEffect(() => {
 		if (!open) {
 			setDeep(false);
@@ -62,11 +67,6 @@ export function FileHistoryDialog({
 			setSelectedIndex(0);
 		}
 	}, [open]);
-	useEffect(() => {
-		document
-			.getElementById(`file-history-result-${activeIndex}`)
-			?.scrollIntoView?.({ block: "nearest" });
-	}, [activeIndex]);
 
 	const selectResult = (index: number) => {
 		const result = results[index];
@@ -129,31 +129,30 @@ export function FileHistoryDialog({
 						/>
 					) : null}
 				</div>
-				<div className="custom-scrollbar h-[min(58vh,520px)] overflow-y-auto p-2">
-					{error ? <Message tone="error">{error}</Message> : null}
-					{!error && !isLoading && results.length === 0 ? (
-						<Message>No history found for this path.</Message>
-					) : null}
-					{results.map((result, index) => (
-						<FileHistoryResultRow
-							key={result.hash}
-							index={index}
-							isSelected={index === activeIndex}
-							onSelect={() => selectResult(index)}
-							onSelectIndex={() => setSelectedIndex(index)}
-							result={result}
-						/>
-					))}
-					{response?.isPartial && !deep ? (
-						<Button
-							className="mt-2 w-full"
-							onClick={() => setDeep(true)}
-							variant="outline"
-						>
-							Search deeper history
-						</Button>
-					) : null}
-				</div>
+				<FileHistoryResults
+					activeIndex={activeIndex}
+					emptyState={
+						error ? (
+							<Message tone="error">{error}</Message>
+						) : !isLoading && results.length === 0 ? (
+							<Message>No history found for this path.</Message>
+						) : null
+					}
+					footer={
+						canSearchDeeper ? (
+							<Button
+								className="mt-2 w-full"
+								onClick={() => setDeep(true)}
+								variant="outline"
+							>
+								Search deeper history
+							</Button>
+						) : null
+					}
+					onSelect={selectResult}
+					onSelectIndex={setSelectedIndex}
+					results={results}
+				/>
 				<div className="flex items-center justify-between border-t bg-muted/30 px-4 py-2 text-[11px] text-muted-foreground">
 					<span>
 						{response

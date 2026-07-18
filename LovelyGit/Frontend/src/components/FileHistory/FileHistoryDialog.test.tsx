@@ -84,6 +84,68 @@ describe("FileHistoryDialog", () => {
 			{ timeoutMs: 12_000 },
 		);
 	});
+
+	it("offers deeper history when the completed result is truncated", async () => {
+		const user = userEvent.setup();
+		vi.mocked(sendRequestWithResponse)
+			.mockResolvedValueOnce({
+				...historyResponse(),
+				matchingCommitCount: 251,
+			})
+			.mockResolvedValueOnce(historyResponse());
+		render(
+			<FileHistoryDialog
+				onOpenChange={vi.fn()}
+				onSelectCommit={vi.fn()}
+				repositoryId="repo"
+				target={{ path: "src/file.ts", startCommitHash: null }}
+			/>,
+		);
+
+		await user.click(
+			await screen.findByRole("button", { name: "Search deeper history" }),
+		);
+		await waitFor(() =>
+			expect(sendRequestWithResponse).toHaveBeenCalledTimes(2),
+		);
+		expect(sendRequestWithResponse).toHaveBeenLastCalledWith(
+			expect.objectContaining({
+				arguments: expect.objectContaining({ deep: true, limit: 250 }),
+			}),
+			{ timeoutMs: 12_000 },
+		);
+	});
+
+	it("bounds maximum deep-history rendering", async () => {
+		const results = Array.from({ length: 250 }, (_, index) =>
+			historyResult({
+				hash: index.toString(16).padStart(40, "0"),
+				subject: `Historical change ${index}`,
+			}),
+		);
+		vi.mocked(sendRequestWithResponse).mockResolvedValueOnce(
+			historyResponse(results),
+		);
+		const startedAt = performance.now();
+		render(
+			<FileHistoryDialog
+				onOpenChange={vi.fn()}
+				onSelectCommit={vi.fn()}
+				repositoryId="repo"
+				target={{ path: "src/file.ts", startCommitHash: null }}
+			/>,
+		);
+
+		await screen.findByRole("button", { name: /Historical change 0/ });
+		const elapsed = performance.now() - startedAt;
+		expect(
+			screen.getAllByRole("button", { name: /Historical change/ }),
+		).toHaveLength(10);
+		expect(elapsed).toBeLessThan(250);
+		expect(
+			screen.queryByRole("button", { name: /Historical change 249/ }),
+		).toBeNull();
+	});
 });
 
 function historyResponse(results = [historyResult()]): FileHistoryResponse {
