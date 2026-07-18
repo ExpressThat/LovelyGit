@@ -46,6 +46,7 @@ This ledger records shipped performance work by feature area. Update it in the s
 - Virtualized the independently resizable Worktrees accordion so repository refreshes no longer mount every linked-worktree row; the existing scroll range, final-row access, and lazy context menu remain intact (current worktree-list checkpoint).
 - Parallelized loose local/remote ref reads with a bounded eight-worker path, stopped parsing object IDs merely to fingerprint loose refs, and retained exact malformed-ref, tag-limit, cancellation, and cache semantics (`23e20e0`).
 - Compressed large ref collections before native transport, expanded them once in the shared frontend cache, retained stale refs during forced refreshes, and virtualized the branch switcher with full filtering and keyboard selection (`23e20e0`).
+- Replaced the unbounded Base UI selectors used by merge/rebase, worktree creation, and upstream assignment with one searchable externally virtualized branch picker. Closed dialogs no longer register every repository branch, while pointer, filtered, Home/End, arrow-key, and Enter selection retain native combobox semantics (current branch-picker checkpoint).
 
 ### Native Git Parser and Object Storage
 

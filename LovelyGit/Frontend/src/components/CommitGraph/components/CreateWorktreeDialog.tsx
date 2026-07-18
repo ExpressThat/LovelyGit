@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { BranchPicker } from "@/components/BranchPicker/BranchPicker";
 import {
 	FolderGit2,
 	FolderOpen,
@@ -14,13 +15,6 @@ import {
 	DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
 import type { RepositoryWorktreeItem } from "@/generated/types";
 import { motion, useReducedMotion } from "@/lib/motion";
 
@@ -81,23 +75,14 @@ export function CreateWorktreeDialog({
 						{!branchName ? (
 							<div className="grid gap-2 text-sm">
 								<span className="font-medium">Branch</span>
-								<Select<string>
-									onValueChange={(value) => onBranchChange(value ?? "")}
-								>
-									<SelectTrigger
-										aria-label="Worktree branch"
-										className="w-full"
-									>
-										<SelectValue placeholder="Choose a local branch" />
-									</SelectTrigger>
-									<SelectContent>
-										{branches.map((branch) => (
-											<SelectItem key={branch} value={branch}>
-												{branch}
-											</SelectItem>
-										))}
-									</SelectContent>
-								</Select>
+								<BranchPicker
+									ariaLabel="Worktree branch"
+									disabled={isBusy}
+									onValueChange={onBranchChange}
+									options={branches}
+									placeholder="Choose a local branch"
+									value={branchName}
+								/>
 							</div>
 						) : null}
 						{existingWorktree ? (

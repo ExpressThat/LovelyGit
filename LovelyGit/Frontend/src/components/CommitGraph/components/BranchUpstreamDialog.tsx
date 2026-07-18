@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { BranchPicker } from "@/components/BranchPicker/BranchPicker";
 import { Link2, LoaderCircle, Unlink } from "@/components/icons/lovelyIcons";
 import { Button } from "@/components/ui/button";
 import {
@@ -9,13 +10,6 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
 import { motion, useReducedMotion } from "@/lib/motion";
 
 export function BranchUpstreamDialog({
@@ -78,31 +72,18 @@ export function BranchUpstreamDialog({
 							</motion.div>
 						) : null}
 						{options.length > 0 ? (
-							<label className="grid gap-2 text-sm" htmlFor="branch-upstream">
+							<div className="grid gap-2 text-sm">
 								<span className="font-medium">Remote branch</span>
-								<Select
+								<BranchPicker
+									ariaLabel="Remote branch"
 									disabled={isBusy}
-									onValueChange={(value) => setSelected(value ?? "")}
+									kind="remote"
+									onValueChange={setSelected}
+									options={options}
+									placeholder="Choose a remote branch"
 									value={selected}
-								>
-									<SelectTrigger
-										aria-label="Remote branch"
-										className="w-full"
-										id="branch-upstream"
-									>
-										<SelectValue>
-											{selected || "Choose a remote branch"}
-										</SelectValue>
-									</SelectTrigger>
-									<SelectContent align="start" className="max-h-64">
-										{options.map((branch) => (
-											<SelectItem key={branch} value={branch}>
-												{branch}
-											</SelectItem>
-										))}
-									</SelectContent>
-								</Select>
-							</label>
+								/>
+							</div>
 						) : (
 							<div className="rounded-lg border border-dashed bg-muted/30 p-4 text-center text-muted-foreground text-sm">
 								No remote branches are available. Fetch a remote first.

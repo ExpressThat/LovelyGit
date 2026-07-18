@@ -58,7 +58,9 @@ describe("CreateWorktreeDialog", () => {
 		);
 
 		await user.click(screen.getByRole("combobox", { name: "Worktree branch" }));
-		await user.keyboard("{ArrowDown}{ArrowDown}{Enter}");
+		await user.click(
+			await screen.findByRole("option", { name: "feature/demo" }),
+		);
 		expect(onBranchChange).toHaveBeenCalledWith("feature/demo");
 	});
 

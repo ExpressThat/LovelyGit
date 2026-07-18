@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { BranchPicker } from "@/components/BranchPicker/BranchPicker";
 import {
 	GitMerge,
 	ListRestart,
@@ -14,13 +15,6 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
 import type { RepositoryRefItem } from "@/generated/types";
 import { sendRequestWithResponse } from "@/lib/commands";
 import { gitMutationTimeoutMs } from "@/lib/gitMutationTimeout";
@@ -54,6 +48,10 @@ export function BranchIntegrationDialog({
 				.filter((branch) => branch.name !== currentBranchName)
 				.toSorted((left, right) => left.name.localeCompare(right.name)),
 		[branches, currentBranchName],
+	);
+	const availableBranchNames = useMemo(
+		() => availableBranches.map((branch) => branch.name),
+		[availableBranches],
 	);
 	const [selectedBranch, setSelectedBranch] = useState("");
 
@@ -170,36 +168,19 @@ export function BranchIntegrationDialog({
 								</span>
 							</div>
 						) : (
-							<label
-								className="grid gap-2 text-sm"
-								htmlFor="integration-branch"
-							>
+							<div className="grid gap-2 text-sm">
 								<span className="font-medium">
 									{isMerge ? "Branch to merge" : "New base branch"}
 								</span>
-								<Select
+								<BranchPicker
+									ariaLabel={isMerge ? "Branch to merge" : "New base branch"}
 									disabled={isRunning}
-									onValueChange={(value) => setSelectedBranch(value ?? "")}
+									onValueChange={setSelectedBranch}
+									options={availableBranchNames}
+									placeholder="Choose a branch"
 									value={selectedBranch}
-								>
-									<SelectTrigger
-										aria-label={isMerge ? "Branch to merge" : "New base branch"}
-										className="w-full"
-										id="integration-branch"
-									>
-										<SelectValue>
-											{selectedBranch || "Choose a branch"}
-										</SelectValue>
-									</SelectTrigger>
-									<SelectContent align="start" className="max-h-64">
-										{availableBranches.map((branch) => (
-											<SelectItem key={branch.name} value={branch.name}>
-												{branch.name}
-											</SelectItem>
-										))}
-									</SelectContent>
-								</Select>
-							</label>
+								/>
+							</div>
 						)}
 						<div className="rounded-lg border bg-muted/40 p-3 text-muted-foreground text-xs">
 							{isMerge
