@@ -61,6 +61,7 @@ This ledger records shipped performance work by feature area. Update it in the s
 - Avoided opening object stores without upstreams and avoided search pollution of the object cache (`93dde92`, `f4c3080`).
 - Read active bisect state from direct HEAD/object data and the worktree-scoped `refs/bisect` directory instead of loading every repository ref twice (`ff73534`).
 - Started bisect by resolving only the worktree-aware HEAD and selected known-good commit object instead of materializing the complete repository/ref model (`037f147`).
+- Verified the complete bisect mutation journey against a 1,001-file plus 100,000-line disposable history. Every action disables in 1.1-1.9 ms; the checkout-heavy good step settles in 921 ms warm versus 662 ms for direct Git, and exact first-bad/reset state is preserved. The existing CLI mutation plus targeted native-state reads were retained rather than adding a second bisect engine (current bisect-operation audit).
 - Built interactive-rebase plans from direct HEAD and uncached commit-object reads, parsing each commit once without materializing the repository's complete ref model (`9434fa4`).
 - Validated detached checkout targets through the direct commit-existence reader instead of opening the complete repository/ref model (`de7c3b4`).
 - Compared authoritative commit pairs through an object-database-only repository session, keeping unrelated refs out of deep-history comparisons (`44344c2`).

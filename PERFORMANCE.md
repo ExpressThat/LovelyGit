@@ -58,6 +58,7 @@ Measured through the same Git commands LovelyGit uses, primarily in a disposable
 | Rebase 100 changed files | 894 ms |
 | Merge / rebase 1,000 files plus one 100,000-line file | Busy paint 19.4-26.9 ms / 22.8 ms; desktop completion 4.40-4.59 s / 6.52 s; exact direct Git 0.95-1.12 s / 1.72 s |
 | Cherry-pick / revert / hard reset 1,000 files plus one 100,000-line file | Busy paint 19.2 ms / 20.9 ms / 16.2 ms; native completion 4.54 s / 1.18 s / 1.09-4.30 s; exact direct Git 0.99 s / 0.76 s / 0.67 s |
+| Bisect across 1,001 files plus one 100,000-line file | Busy paint 1.1-1.9 ms; start 177-188 ms; checkout-heavy good step 4.38 s cold / 921 ms warm; final bad step 85 ms; reset 1.09-1.16 s |
 | Apply 3.97 MB / 1,001-file patch | 2,169.4 ms with redundant preflight to 2,025.2 ms atomic apply; 144.3 ms / 6.7% faster and one fewer Git process |
 | Stage 1,000 of 20,000 tracked files | 7.18 s cold CMG completion; 0.70-0.90 s warm service runs |
 | Unstage 1,000 of 20,000 tracked files | 749 ms CMG completion; 0.31-0.47 s warm service runs |
@@ -106,6 +107,6 @@ Measured through the same Git commands LovelyGit uses, primarily in a disposable
 ## Next Measurement Areas
 
 - Large network clone/fetch/pull/push transfer memory, credential hand-off, and cancellation against a controlled remote where network variance can be isolated.
-- Destructive and failure-path timing for submodule, LFS, bisect, and interactive-rebase execution; their list rendering and cold dialogs are already measured.
+- Failure-path timing for submodule, LFS, bisect, and interactive-rebase execution; successful large submodule and bisect mutation paths are now measured.
 - Pack/cache invalidation under repeated remote repacks and long-session resource scaling beyond the measured 20-tab, overlay, handle, transaction, and four-repository heap baselines.
 - Packaged cold/warm startup across slower storage tiers and repository activation after operating-system file-cache eviction.
