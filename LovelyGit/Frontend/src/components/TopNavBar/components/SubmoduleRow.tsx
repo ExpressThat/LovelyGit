@@ -7,28 +7,50 @@ import {
 } from "@/components/icons/lovelyIcons";
 import { Button } from "@/components/ui/button";
 import type { GitSubmodule, SubmoduleAction } from "@/generated/types";
-import { motion } from "@/lib/motion";
+import { motion, useReducedMotion } from "@/lib/motion";
 
 export function SubmoduleRow({
+	animateRow = true,
 	busy,
 	disabled,
 	onDeinitialize,
 	onRun,
+	position,
 	submodule,
 }: {
+	animateRow?: boolean;
 	busy: boolean;
 	disabled: boolean;
 	onDeinitialize: () => void;
 	onRun: (action: SubmoduleAction) => void;
+	position?: {
+		index: number;
+		measureElement: (node: Element | null) => void;
+		start: number;
+	};
 	submodule: GitSubmodule;
 }) {
 	const uninitialized = submodule.state === "Uninitialized";
+	const reduceMotion = useReducedMotion();
+	const shouldAnimate = animateRow && !reduceMotion;
 	return (
-		<motion.div
+		<motion.article
 			animate={{ opacity: 1, y: 0 }}
 			className="grid gap-3 rounded-lg border bg-card p-3"
-			initial={{ opacity: 0, y: 6 }}
-			layout
+			data-index={position?.index}
+			initial={shouldAnimate ? { opacity: 0, y: 6 } : false}
+			layout={shouldAnimate}
+			ref={position?.measureElement}
+			style={
+				position
+					? {
+							left: 0,
+							position: "absolute",
+							right: 0,
+							top: position.start,
+						}
+					: undefined
+			}
 		>
 			<div className="flex min-w-0 items-start gap-3">
 				<Box className="mt-0.5 size-5 shrink-0 text-primary" />
@@ -92,7 +114,7 @@ export function SubmoduleRow({
 					</>
 				)}
 			</div>
-		</motion.div>
+		</motion.article>
 	);
 }
 

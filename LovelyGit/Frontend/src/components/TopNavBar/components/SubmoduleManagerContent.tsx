@@ -17,7 +17,7 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
-import { SubmoduleRow } from "./SubmoduleRow";
+import { SubmoduleVirtualList } from "./SubmoduleVirtualList";
 import { useSubmoduleManager } from "./useSubmoduleManager";
 
 export function SubmoduleManagerContent({
@@ -34,7 +34,7 @@ export function SubmoduleManagerContent({
 	}, []);
 	return (
 		<>
-			<DialogContent className="max-h-[82vh] overflow-hidden sm:max-w-2xl">
+			<DialogContent className="grid max-h-[82vh] grid-rows-[auto_auto_minmax(0,1fr)] overflow-hidden sm:max-w-2xl">
 				<DialogHeader>
 					<DialogTitle className="flex items-center gap-2">
 						<Boxes aria-hidden="true" className="size-5 text-primary" />{" "}
@@ -59,7 +59,7 @@ export function SubmoduleManagerContent({
 						Refresh
 					</Button>
 				</div>
-				<div className="custom-scrollbar min-h-24 space-y-2 overflow-y-auto">
+				<div className="min-h-24 overflow-hidden">
 					{manager.isLoading ? <Loading /> : null}
 					{manager.error ? (
 						<p className="text-destructive text-sm">{manager.error}</p>
@@ -71,16 +71,14 @@ export function SubmoduleManagerContent({
 							No submodules are configured.
 						</p>
 					) : null}
-					{manager.submodules.map((submodule) => (
-						<SubmoduleRow
-							busy={manager.busyPath === submodule.path}
-							disabled={manager.busyPath !== null}
-							key={submodule.path}
-							onDeinitialize={() => setDeinitializePath(submodule.path)}
-							onRun={(action) => void manager.run(submodule.path, action)}
-							submodule={submodule}
+					{manager.submodules.length > 0 ? (
+						<SubmoduleVirtualList
+							busyPath={manager.busyPath}
+							onDeinitialize={setDeinitializePath}
+							onRun={(path, action) => void manager.run(path, action)}
+							submodules={manager.submodules}
 						/>
-					))}
+					) : null}
 				</div>
 			</DialogContent>
 			<AlertDialog
