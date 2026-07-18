@@ -6,5 +6,6 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Branch
 
 [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
 [JsonSerializable(typeof(GetBranchComparisonCommandArguments))]
+[JsonSerializable(typeof(List<BranchComparisonFile>))]
 [JsonSerializable(typeof(CommandResponse<BranchComparisonResponse>))]
 internal partial class BranchComparisonJsonSerializerContext : JsonSerializerContext;

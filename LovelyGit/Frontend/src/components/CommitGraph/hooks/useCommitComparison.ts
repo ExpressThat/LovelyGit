@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import type { BranchComparisonResponse } from "@/generated/types";
+import { expandBranchComparisonPayload } from "@/lib/branchComparisonPayload";
 import { sendRequestWithResponse } from "@/lib/commands";
 import { NativeMessageType } from "@/lib/nativeMessaging";
 
@@ -30,6 +31,7 @@ export function useCommitComparison(
 			},
 			commandType: NativeMessageType.GetBranchComparison,
 		})
+			.then(expandBranchComparisonPayload)
 			.then((result) => active && setComparison(result))
 			.catch((reason) => {
 				if (active) {

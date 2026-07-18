@@ -69,9 +69,7 @@ describe("RefCell", () => {
 			screen.getByRole("button", { name: /Show 9999 grouped references/ }),
 		);
 		const popup = await screen.findByLabelText(/^References at/);
-		const virtualList = popup.querySelector(
-			"[data-ref-hover-list='virtual']",
-		);
+		const virtualList = popup.querySelector("[data-ref-hover-list='virtual']");
 		expect(virtualList).toBeInTheDocument();
 		expect(virtualList?.querySelectorAll("[title]").length).toBeLessThanOrEqual(
 			12,

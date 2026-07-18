@@ -49,7 +49,7 @@ internal sealed class GetBranchComparisonCommandResolver
                 CommandUniqueId = command.CommandUniqueId,
                 CommandType = command.CommandType,
                 IsSuccess = true,
-                Result = result,
+                Result = BranchComparisonPayloadCompactor.CompactIfUseful(result),
             };
         }
         catch (Exception exception)

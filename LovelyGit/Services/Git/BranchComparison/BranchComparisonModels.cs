@@ -24,6 +24,7 @@ public sealed record BranchComparisonResponse
     public int ChangedFileCount { get; init; }
     public bool IsHistoryPartial { get; init; }
     public bool IsFileListTruncated { get; init; }
+    public string? CompactFilesGzipBase64 { get; init; }
     public List<BranchComparisonCommit> AheadCommits { get; init; } = [];
     public List<BranchComparisonCommit> BehindCommits { get; init; } = [];
     public List<BranchComparisonFile> Files { get; init; } = [];

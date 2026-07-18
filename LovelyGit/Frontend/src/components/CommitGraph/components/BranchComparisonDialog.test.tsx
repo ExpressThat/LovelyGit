@@ -71,6 +71,7 @@ describe("BranchComparisonDialog", () => {
 });
 
 const response: BranchComparisonResponse = {
+	compactFilesGzipBase64: null,
 	aheadCommits: [
 		{
 			authorName: "Ross",

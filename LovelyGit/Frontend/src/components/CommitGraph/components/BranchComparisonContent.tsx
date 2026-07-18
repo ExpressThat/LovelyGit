@@ -136,7 +136,8 @@ function FileList({
 				</ul>
 				{truncated ? (
 					<p className="text-center text-muted-foreground text-xs">
-						Showing 500 of {total.toLocaleString()} changed files.
+						Showing {files.length.toLocaleString()} of {total.toLocaleString()}{" "}
+						changed files.
 					</p>
 				) : null}
 			</div>

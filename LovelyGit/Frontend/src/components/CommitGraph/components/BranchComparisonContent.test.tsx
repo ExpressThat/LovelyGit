@@ -20,10 +20,11 @@ vi.mock("@tanstack/react-virtual", () => ({
 describe("BranchComparisonContent", () => {
 	it("renders the maximum file comparison payload", () => {
 		const onOpenFile = vi.fn();
+		const comparison = comparisonWithFiles(20_000);
 		const startedAt = performance.now();
 		render(
 			<BranchComparisonContent
-				comparison={comparisonWithFiles(500)}
+				comparison={comparison}
 				onOpenFile={onOpenFile}
 				section="files"
 			/>,
@@ -37,6 +38,18 @@ describe("BranchComparisonContent", () => {
 		expect(onOpenFile).toHaveBeenCalledWith(
 			expect.objectContaining({ path: "src/generated/file-0000.ts" }),
 		);
+	});
+
+	it("reports the actual bounded file count when native results are truncated", () => {
+		const comparison = comparisonWithFiles(20_000);
+		comparison.changedFileCount = 25_000;
+		comparison.isFileListTruncated = true;
+
+		render(<BranchComparisonContent comparison={comparison} section="files" />);
+
+		expect(
+			screen.getByText("Showing 20,000 of 25,000 changed files."),
+		).toBeInTheDocument();
 	});
 
 	it("shows the empty file state without virtual rows", () => {
@@ -74,6 +87,7 @@ describe("BranchComparisonContent", () => {
 
 function comparisonWithFiles(count: number): BranchComparisonResponse {
 	return {
+		compactFilesGzipBase64: null,
 		aheadCommits: [],
 		aheadCount: 0,
 		behindCommits: [],

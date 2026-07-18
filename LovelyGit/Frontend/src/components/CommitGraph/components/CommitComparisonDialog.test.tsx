@@ -57,6 +57,7 @@ function row(digit: string, message: string) {
 }
 
 const response: BranchComparisonResponse = {
+	compactFilesGzipBase64: null,
 	aheadCommits: [
 		{
 			authorName: "Ross",

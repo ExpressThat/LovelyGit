@@ -7,7 +7,7 @@ internal static partial class NativeBranchComparisonReader
 {
     public const int MaximumHistoryNodes = 200_000;
     public const int MaximumDisplayedCommits = 100;
-    public const int MaximumDisplayedFiles = 500;
+    public const int MaximumDisplayedFiles = 20_000;
 
     public static async Task<BranchComparisonResponse> ReadAsync(
         string repositoryPath,
