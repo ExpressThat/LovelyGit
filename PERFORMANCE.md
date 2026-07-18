@@ -7,7 +7,7 @@ This is the durable index of LovelyGit performance work. Update the linked ledge
 - [Verified performance results](docs/performance/verified-results.md)
 - [Completed optimization inventory](docs/performance/optimization-inventory.md)
 
-Latest verified checkpoint: submodule management now virtualizes large configurations, reducing a controlled 500-row render from 332.92 ms to 57.18 ms while retaining only 9-10 rows in the real WebView. See the linked ledgers for the complete evidence.
+Latest verified checkpoint: Git LFS management now virtualizes large pattern sets, reducing a controlled 500-row render from 125.96 ms to 64.07 ms while retaining only 13 rows in the real WebView. See the linked ledgers for the complete evidence.
 
 ## Measurement Rules
 
