@@ -87,6 +87,24 @@ describe("LfsManagerContent", () => {
 		expect(screen.getByRole("button", { name: "Prune cache" })).toBeDisabled();
 		expect(screen.getByLabelText("LFS path pattern")).toBeDisabled();
 	});
+
+	it("bounds large pattern sets and preserves exact row actions", async () => {
+		const user = userEvent.setup();
+		manager.state.trackedPatterns = Array.from(
+			{ length: 500 },
+			(_, index) => `assets/pattern-${index}/**`,
+		);
+		renderContent();
+
+		expect(screen.getAllByRole("article")).toHaveLength(10);
+		expect(screen.queryByText("assets/pattern-499/**")).toBeNull();
+		await user.click(
+			screen.getByRole("button", {
+				name: "Stop tracking assets/pattern-0/** with Git LFS",
+			}),
+		);
+		expect(manager.run).toHaveBeenCalledWith("Untrack", "assets/pattern-0/**");
+	});
 });
 
 function renderContent() {

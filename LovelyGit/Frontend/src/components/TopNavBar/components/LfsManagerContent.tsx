@@ -26,8 +26,7 @@ import {
 	DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { AnimatePresence } from "@/lib/motion";
-import { LfsPatternRow } from "./LfsPatternRow";
+import { LfsPatternVirtualList } from "./LfsPatternVirtualList";
 import { useLfsManager } from "./useLfsManager";
 
 export function LfsManagerContent({ repositoryId }: { repositoryId: string }) {
@@ -40,7 +39,7 @@ export function LfsManagerContent({ repositoryId }: { repositoryId: string }) {
 	const busy = manager.busyAction !== null;
 	return (
 		<>
-			<DialogContent className="max-h-[84vh] overflow-hidden sm:max-w-2xl">
+			<DialogContent className="grid max-h-[84vh] grid-rows-[auto_minmax(0,1fr)] overflow-hidden sm:max-w-2xl">
 				<DialogHeader>
 					<DialogTitle className="flex items-center gap-2">
 						<HardDriveDownload className="size-5 text-primary" /> Git LFS
@@ -57,7 +56,7 @@ export function LfsManagerContent({ repositoryId }: { repositoryId: string }) {
 					</div>
 				) : null}
 				{manager.state ? (
-					<div className="flex min-h-0 flex-col gap-4">
+					<div className="flex min-h-0 flex-col gap-4 overflow-hidden">
 						<StatusCard
 							available={manager.state.isAvailable}
 							busy={busy}
@@ -111,21 +110,19 @@ export function LfsManagerContent({ repositoryId }: { repositoryId: string }) {
 								{manager.state.trackedPatterns.length} configured
 							</span>
 						</div>
-						<div className="custom-scrollbar min-h-20 space-y-2 overflow-y-auto">
-							<AnimatePresence initial={false}>
-								{manager.state.trackedPatterns.map((item) => (
-									<LfsPatternRow
-										busy={
-											manager.busyAction === "Untrack" &&
-											manager.busyPattern === item
-										}
-										disabled={busy}
-										key={item}
-										onRemove={() => void manager.run("Untrack", item)}
-										pattern={item}
-									/>
-								))}
-							</AnimatePresence>
+						<div className="min-h-20 flex-1 overflow-hidden">
+							{manager.state.trackedPatterns.length > 0 ? (
+								<LfsPatternVirtualList
+									busyPattern={
+										manager.busyAction === "Untrack"
+											? manager.busyPattern
+											: null
+									}
+									disabled={busy}
+									onRemove={(item) => void manager.run("Untrack", item)}
+									patterns={manager.state.trackedPatterns}
+								/>
+							) : null}
 							{manager.state.trackedPatterns.length === 0 ? (
 								<p className="py-5 text-center text-muted-foreground text-sm">
 									No path patterns are tracked by Git LFS yet.
