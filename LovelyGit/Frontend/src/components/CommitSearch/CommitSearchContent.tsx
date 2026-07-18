@@ -2,7 +2,7 @@ import { AlertTriangle, Search } from "@/components/icons/lovelyIcons";
 import { Button } from "@/components/ui/button";
 import type { CommitSearchResponse } from "@/generated/types";
 import { motion } from "@/lib/motion";
-import { CommitSearchResultRow } from "./CommitSearchResultRow";
+import { CommitSearchResultList } from "./CommitSearchResultList";
 
 export type CommitSearchContentProps = {
 	canSearchDeeper: boolean;
@@ -34,26 +34,22 @@ export function CommitSearchContent(props: CommitSearchContentProps) {
 		return <EmptySearch {...props} response={props.response} />;
 	}
 	return (
-		<div className="grid gap-1">
+		<div className="flex h-full min-h-0 flex-col gap-1">
 			{props.response.isPartial ? (
 				<SearchLimitNotice {...props} response={props.response} />
 			) : null}
 			<motion.div
 				animate={{ opacity: 1, y: 0 }}
-				className="grid gap-1"
+				className="flex min-h-0 flex-1 flex-col"
 				initial={{ opacity: 0, y: props.reduceMotion ? 0 : 4 }}
 			>
-				{props.response.results.map((result, index) => (
-					<CommitSearchResultRow
-						index={index}
-						isSelected={props.selectedIndex === index}
-						key={result.hash}
-						onSelect={() => props.onSelect(index)}
-						onSelectIndex={() => props.onSelectIndex(index)}
-						query={props.query}
-						result={result}
-					/>
-				))}
+				<CommitSearchResultList
+					onSelect={props.onSelect}
+					onSelectIndex={props.onSelectIndex}
+					query={props.query}
+					results={props.response.results}
+					selectedIndex={props.selectedIndex}
+				/>
 			</motion.div>
 		</div>
 	);

@@ -100,7 +100,7 @@ describe("useCommitSearch", () => {
 
 		expect(sendRequestWithResponse).toHaveBeenCalledWith(
 			expect.objectContaining({
-				arguments: expect.objectContaining({ deep: true }),
+				arguments: expect.objectContaining({ deep: true, limit: 100 }),
 			}),
 			{ timeoutMs: 12_000 },
 		);

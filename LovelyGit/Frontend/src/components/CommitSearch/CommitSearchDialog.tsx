@@ -63,12 +63,6 @@ export function CommitSearchDialog({
 			setFiltersOpen(false);
 		}
 	}, [open]);
-	useEffect(() => {
-		document
-			.getElementById(`commit-search-result-${activeIndex}`)
-			?.scrollIntoView?.({ block: "nearest" });
-	}, [activeIndex]);
-
 	const selectResult = (index: number) => {
 		const result = results[index];
 		if (!result) return;
@@ -157,7 +151,7 @@ export function CommitSearchDialog({
 					refs={searchRefs.refs}
 					refsLoading={searchRefs.isLoading}
 				/>
-				<div className="custom-scrollbar h-[min(58vh,520px)] overflow-y-auto p-2">
+				<div className="h-[min(58vh,520px)] min-h-0 p-2">
 					<CommitSearchContent
 						error={error}
 						isLoading={isLoading}

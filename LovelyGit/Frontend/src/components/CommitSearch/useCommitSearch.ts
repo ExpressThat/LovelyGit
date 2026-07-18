@@ -55,7 +55,7 @@ export function useCommitSearch(
 						beforeUnixSeconds: boundaries.beforeUnixSeconds,
 						deep,
 						knownRepositoryId: repositoryId,
-						limit: 50,
+						limit: deep ? 100 : 50,
 						query: normalizedQuery,
 						scope: normalizedScope,
 					},
