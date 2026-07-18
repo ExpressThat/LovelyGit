@@ -15,11 +15,15 @@ export function CommitDetailsStats({
 				<Stat label="Files" value={fileCount} />
 				<Stat
 					label="Additions"
-					value={hasLineStats ? `+${stats.additions.toLocaleString()}` : "Deferred"}
+					value={
+						hasLineStats ? `+${stats.additions.toLocaleString()}` : "Deferred"
+					}
 				/>
 				<Stat
 					label="Deletions"
-					value={hasLineStats ? `-${stats.deletions.toLocaleString()}` : "Deferred"}
+					value={
+						hasLineStats ? `-${stats.deletions.toLocaleString()}` : "Deferred"
+					}
 				/>
 			</section>
 			{hasLineStats ? null : (

@@ -64,9 +64,10 @@ export function DiffHorizontalScroller({
 						scheduleValueChange(event.currentTarget.valueAsNumber)
 					}
 					onWheel={(event) => {
-						const delta = Math.abs(event.deltaX) > Math.abs(event.deltaY)
-							? event.deltaX
-							: event.deltaY;
+						const delta =
+							Math.abs(event.deltaX) > Math.abs(event.deltaY)
+								? event.deltaX
+								: event.deltaY;
 						scheduleValueChange(
 							Math.min(maximum, Math.max(0, current + delta)),
 						);
