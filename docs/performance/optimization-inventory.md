@@ -69,6 +69,7 @@ This ledger records shipped performance work by feature area. Update it in the s
 - Prefetched details on hover intent and rendered prefetched details without suspense (`e346227`, `bda6b62`, `2cd7423`).
 - Moved details parsing/persistence off click paths, bulked cache writes, and reduced blob/parser allocations (`c03064b`, `7ce891c`, `ddc34cd`, `021b3dd`, `d461dc6`).
 - Opened commit details against the object database alone and streamed only branch, remote, and bounded tag refs that point to the selected commit, preserving packed, annotated-tag, and loose-override semantics without materializing unrelated refs (`2f4586d`).
+- Virtualized maximum-size file-history results against the dialog's existing scroll viewport, retained keyboard navigation by virtual index, and restored deep traversal whenever a completed native scan returned a truncated result set (`f815567`).
 
 ### Working Tree, Staging, and Status
 
