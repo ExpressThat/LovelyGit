@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import type { CommitGraphRow } from "@/generated/types";
 import { sendRequestWithResponse } from "@/lib/commands";
 import { NativeMessageType } from "@/lib/nativeMessaging";
+import { expandCommitPatchPayload } from "../commitPatchPayload";
 import { copyToClipboard } from "../utils/clipboard";
 
 const SERIES_BUSY_KEY = "__patch-series__";
@@ -22,7 +23,7 @@ export function useCommitPatchActions(repositoryId: string | null) {
 			const response = await sendRequestWithResponse({
 				commandType: NativeMessageType.GetCommitPatch,
 				arguments: { commitHash: row.commit.hash, repositoryId },
-			});
+			}).then(expandCommitPatchPayload);
 			if (
 				!response ||
 				response.isTruncated ||
@@ -100,7 +101,7 @@ export function useCommitPatchActions(repositoryId: string | null) {
 					commitHashes: rows.map((row) => row.commit.hash),
 					repositoryId,
 				},
-			});
+			}).then(expandCommitPatchPayload);
 			if (
 				!response ||
 				response.isTruncated ||

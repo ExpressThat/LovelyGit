@@ -16,6 +16,7 @@ describe("useCommitPatchActions", () => {
 	it("requests the native patch and copies it", async () => {
 		vi.mocked(sendRequestWithResponse).mockResolvedValue({
 			commitHash: row.commit.hash,
+			compactPatchGzipBase64: "",
 			hasUnsupportedBinaryChanges: false,
 			isTruncated: false,
 			patch: "diff --git a/file.txt b/file.txt\n",
@@ -41,6 +42,7 @@ describe("useCommitPatchActions", () => {
 	it("does not copy a truncated patch", async () => {
 		vi.mocked(sendRequestWithResponse).mockResolvedValue({
 			commitHash: row.commit.hash,
+			compactPatchGzipBase64: "",
 			hasUnsupportedBinaryChanges: false,
 			isTruncated: true,
 			patch: "partial",
@@ -106,6 +108,7 @@ describe("useCommitPatchActions", () => {
 	it("copies a native patch series in the supplied commit order", async () => {
 		vi.mocked(sendRequestWithResponse).mockResolvedValue({
 			commitCount: 2,
+			compactPatchGzipBase64: "",
 			hasUnsupportedBinaryChanges: false,
 			isTruncated: false,
 			patch: "mail patch series",

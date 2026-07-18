@@ -53,7 +53,7 @@ internal sealed class GetCommitPatchCommandResolver : CommandResponder<GetCommit
             var response = await _commitPatchService
                 .GetCommitPatchAsync(foundRepo.Path, commitId, CancellationToken.None)
                 .ConfigureAwait(false);
-            return Success(command, response);
+            return Success(command, CommitPatchPayloadCompactor.Compact(response));
         }
         catch (Exception ex)
         {

@@ -88,7 +88,30 @@ public sealed class LineDiffStreamingPerformanceTests(ITestOutputHelper output)
         Assert.True(replacement.Allocated < 8_000_000, $"Disjoint diff allocated {replacement.Allocated:N0} bytes.");
     }
 
-    private static Measurement Measure(Func<LineDiffModel> action)
+    [Fact]
+    public void OversizedUnifiedPatch_StopsAtTheOutputBudget()
+    {
+        var oldText = string.Join('\n', Enumerable.Range(0, 50_000).Select(index => $"old {index:D5}"));
+        var newText = string.Join('\n', Enumerable.Range(0, 50_000).Select(index => $"new {index:D5}"));
+
+        var rendered = true;
+        var patch = "unexpected";
+        var bounded = Measure(() =>
+        {
+            rendered = UnifiedDiffRenderer.TryRender(
+                oldText, newText, "a/large.txt", "b/large.txt", 3, 256_000, out patch);
+            return patch;
+        });
+
+        output.WriteLine(
+            $"Bounded 50k-line patch: {bounded.Elapsed.TotalMilliseconds:N1} ms, {bounded.Allocated:N0} bytes");
+        Assert.False(rendered);
+        Assert.Empty(patch);
+        Assert.True(bounded.Elapsed < TimeSpan.FromMilliseconds(250));
+        Assert.True(bounded.Allocated < 30_000_000, $"Bounded patch allocated {bounded.Allocated:N0} bytes.");
+    }
+
+    private static Measurement Measure<T>(Func<T> action)
     {
         GC.Collect();
         var before = GC.GetAllocatedBytesForCurrentThread();

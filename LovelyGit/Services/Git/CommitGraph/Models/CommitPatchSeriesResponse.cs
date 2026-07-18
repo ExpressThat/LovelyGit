@@ -6,6 +6,7 @@ namespace ExpressThat.LovelyGit.Services.Git.CommitGraph.Models;
 public record CommitPatchSeriesResponse
 {
     public string Patch { get; set; } = string.Empty;
+    public string CompactPatchGzipBase64 { get; set; } = string.Empty;
     public int CommitCount { get; set; }
     public bool IsTruncated { get; set; }
     public bool HasUnsupportedBinaryChanges { get; set; }

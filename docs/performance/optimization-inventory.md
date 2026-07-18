@@ -132,6 +132,7 @@ This ledger records shipped performance work by feature area. Update it in the s
 - Streamed Git config and ignore sources through pooled line buffers and matched literal ignore rules directly instead of compiling one regex per rule, sharply reducing initial status GC pressure while retaining regex handling for actual glob rules (`6fed8fa`).
 - Matched common single-leading-asterisk suffix rules such as `*.pdb` directly per path segment, preserving compiled-regex fallback for complex globs while removing their dominant large-rule-set latency and memory cost (`fce25d8`).
 - Painted stash busy/disabled state before entering the synchronous desktop bridge and returned the authoritative reflog-only stash snapshot in the mutation response. This removes the racing full repository-refs follow-up request, keeps failure targets retryable, and makes a 501-file cold stash visibly respond in 1.2 ms (`4fd87da`).
+- Verified Undo Last Commit against 20,000 tracked files and a 1,001-file plus 100,000-line commit. The existing direct HEAD read and atomic `update-ref` path paints disabled feedback in 5.6 ms, matches direct Git mutation cost, and settles the exact staged result in 318.8 ms, so no speculative second mutation engine or optimistic 1,001-file reconstruction was added (current large-patch checkpoint).
 
 ### Diff Engine and File Diffs
 
@@ -146,6 +147,7 @@ This ledger records shipped performance work by feature area. Update it in the s
 - Virtualized Apply Patch previews above 30 files so the 5,000-file native safety limit retains only nine bootstrap rows while every parsed file remains reachable through the complete scroll range (`1b0d76b`).
 - Removed the redundant `git apply --check` process from Apply Patch and rely on Git's atomic apply transaction. A 3.97 MB, 1,001-file patch saves 144.3 ms / 6.7%; staged and unstaged partial-failure regressions prove no earlier file or index mutation survives a later invalid hunk (current patch-apply checkpoint).
 - Opened commit and series patch export against the object database alone, avoiding unrelated branch, remote, tag, and stash enumeration (`9b71ea5`).
+- Bounded unified patch rendering before appending an over-budget line, returned metadata-only truncation responses, skipped all blob/diff work when the 200-file copy limit is already exceeded, stopped patch-series work after the first unsafe commit, and gzip-compacted valid large patch/series clipboard payloads under the native bridge limit. A formerly unresolved 5.3 MB patch now rejects in 174.6 ms while exact 1.62M-character patches and 2.16M-character series copy in 141-180.3 ms (current large-patch checkpoint).
 - Opened commit-file diff sources against the object database alone, keeping unrelated refs out of cold file inspection while preserving cached Side-by-Side, Combined, whitespace, and parent variants (`3d932ef`).
 
 ### Conflict Resolution

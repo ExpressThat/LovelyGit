@@ -37,6 +37,10 @@ Git LFS mutations remain responsive with a 50,500-line `.gitattributes`: Track, 
 
 Maximum supported file blame no longer stalls on an all-different parent or silently exceeds the WebView bridge. A 50,000-line, 1.7 MB file with 10,000 alternating attribution hunks previously timed out beyond ten seconds even though direct Git blame took 3.49 seconds. The native no-common-line partition now completes in 96-165 ms, and a bounded gzip envelope carries the otherwise oversized result in 338,877 bytes. Hover preloading removes the cold dialog-chunk wait: the real desktop loads the chunk in 42.8 ms and opens the first blame in 211.2 ms total with a 137.6 ms native round trip. A typed line-offset index retains about 203 KB rather than 2.07 MB of per-line strings in isolation, while virtualization keeps 40 rows mounted and preserves exact access to line 50,000.
 
+Large commit patch transport is now bounded before rendering and bridge-safe when the result is usable. A single 100,000-line replacement previously built and serialized a roughly 5.3 MB patch, remained unresolved beyond 25 seconds, and raised desktop private memory to about 507 MB. It now returns a 341-byte truncation response in 110 ms and settles the UI in 174.6 ms with 39.4 MB host private memory. A valid 1,620,150-character patch compresses to 346,208 bridge characters, reaches the clipboard exactly in 141 ms, and a valid two-commit 2,160,827-character series compresses to 462,080 characters and copies in oldest-to-newest order in 180.3 ms. Commits above the 200-file copy limit now skip unusable patch generation and return in 8.6 ms native / 83.5 ms UI.
+
+Undo Last Commit is also conclusively measured rather than changed speculatively. Against 20,000 tracked files, a latest commit changing 1,001 files and adding one 100,000-line file previews in 110.6 ms, paints its disabled state 5.6 ms after the actual click, performs the atomic ref update in 59 ms, refreshes all staged changes in 62-82 ms, and settles in 318.8 ms. Direct `git update-ref` took 53.3 ms, so the existing native-read plus single CLI mutation path was retained.
+
 ## Measurement Rules
 
 - Measure from a healthy runner state and use disposable repositories only.
@@ -77,6 +81,8 @@ Measured through the same Git commands LovelyGit uses, primarily in a disposable
 | 50,000-commit graph retention | Cold rows 249-290 ms; roughly 6,000 paged commits retain 14.90 MB post-GC page heap and 1,710 DOM nodes; warm tab return 96.8 ms at scroll top; close-last-tab releases the native graph |
 | 50,000-commit search | Recent common query 217.4 ms including 140 ms debounce; complete native traversal 4.47-4.89 s to 0.87-0.97 s and 305-309 MB to 131-134 MB allocated; real WebView 4.92-5.03 s to 1.45 s; 13 mounted rows |
 | Maximum 50,000-line file blame | >10 s timeout to 96-165 ms native work and 211.2 ms first real-app open after hover preload; 338,877-byte compact envelope; 40 mounted rows |
+| Undo a 1,001-file / 100,000-line commit | Busy paint 5.6 ms after actual click; 59 ms atomic undo; 62-82 ms authoritative refresh; 318.8 ms complete |
+| Copy maximum commit patch / patch series | >25 s unresolved and ~507 MB private memory to 174.6 ms bounded rejection; valid 1.62M-character patch copies in 141 ms and valid 2.16M-character series in 180.3 ms |
 
 ## Rejected or Deferred Experiments
 

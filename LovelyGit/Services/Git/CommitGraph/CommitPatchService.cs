@@ -48,11 +48,16 @@ internal sealed class CommitPatchService
             .Take(MaxFiles + 1)
             .ToList();
 
-        var truncated = changedPaths.Count > MaxFiles;
-        var hasUnsupportedBinaryChanges = false;
-        foreach (var path in changedPaths.Take(MaxFiles))
+        if (changedPaths.Count > MaxFiles)
         {
-            hasUnsupportedBinaryChanges |= await AppendFilePatchAsync(
+            return Truncated(commit);
+        }
+
+        var truncated = false;
+        var hasUnsupportedBinaryChanges = false;
+        foreach (var path in changedPaths)
+        {
+            var result = await AppendFilePatchAsync(
                     patch,
                     path,
                     comparison.ParentFiles.GetValueOrDefault(path),
@@ -60,30 +65,25 @@ internal sealed class CommitPatchService
                     analyzer,
                     cancellationToken)
                 .ConfigureAwait(false);
+            hasUnsupportedBinaryChanges |= result.HasUnsupportedBinaryChanges;
 
-            if (patch.Length > MaxPatchCharacters)
+            if (result.IsTruncated)
             {
                 truncated = true;
                 break;
             }
         }
 
-        if (truncated)
-        {
-            patch.AppendLine();
-            patch.AppendLine("# Patch truncated by LovelyGit.");
-        }
-
         return new CommitPatchResponse
         {
             CommitHash = commit.Hash.ToString(),
-            Patch = NormalizeNewLines(patch.ToString()),
+            Patch = truncated ? string.Empty : NormalizeNewLines(patch.ToString()),
             IsTruncated = truncated,
             HasUnsupportedBinaryChanges = hasUnsupportedBinaryChanges,
         };
     }
 
-    private static async Task<bool> AppendFilePatchAsync(
+    private static async Task<FilePatchResult> AppendFilePatchAsync(
         StringBuilder patch,
         string path,
         GitTreeFile? oldFile,
@@ -103,18 +103,27 @@ internal sealed class CommitPatchService
                 .Append(" and b/")
                 .Append(path)
                 .AppendLine(" differ");
-            return true;
+            return new(true, false);
         }
 
-        var unified = UnifiedDiffRenderer.Render(
+        var rendered = UnifiedDiffRenderer.TryRender(
             oldBlob.Text,
             newBlob.Text,
             oldFile is null ? "/dev/null" : "a/" + path,
             newFile is null ? "/dev/null" : "b/" + path,
-            ContextLines);
+            ContextLines,
+            Math.Max(0, MaxPatchCharacters - patch.Length),
+            out var unified);
+        if (!rendered) return new(false, true);
         patch.Append(NormalizeNewLines(unified).TrimEnd('\n')).AppendLine();
-        return false;
+        return new(false, false);
     }
+
+    private static CommitPatchResponse Truncated(GitCommit commit) => new()
+    {
+        CommitHash = commit.Hash.ToString(),
+        IsTruncated = true,
+    };
 
     private static void AppendModeChange(
         StringBuilder patch,
@@ -159,4 +168,8 @@ internal sealed class CommitPatchService
         return value.Replace("\r\n", "\n", StringComparison.Ordinal)
             .Replace('\r', '\n');
     }
+
+    private readonly record struct FilePatchResult(
+        bool HasUnsupportedBinaryChanges,
+        bool IsTruncated);
 }

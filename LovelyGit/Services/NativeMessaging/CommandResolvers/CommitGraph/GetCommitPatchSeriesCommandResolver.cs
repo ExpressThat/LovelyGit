@@ -50,7 +50,7 @@ internal sealed class GetCommitPatchSeriesCommandResolver
                 CommandUniqueId = command.CommandUniqueId,
                 CommandType = command.CommandType,
                 IsSuccess = true,
-                Result = result,
+                Result = CommitPatchPayloadCompactor.Compact(result),
             };
         }
         catch (Exception exception)

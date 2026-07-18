@@ -34,8 +34,16 @@ internal sealed class CommitPatchSeriesService
             var patch = await _patchService
                 .GetCommitPatchAsync(repository, id, cancellationToken)
                 .ConfigureAwait(false);
-            truncated |= patch.IsTruncated;
-            binary |= patch.HasUnsupportedBinaryChanges;
+            if (patch.IsTruncated)
+            {
+                truncated = true;
+                break;
+            }
+            if (patch.HasUnsupportedBinaryChanges)
+            {
+                binary = true;
+                break;
+            }
             AppendEntry(output, commit, patch.Patch, index + 1, commitIds.Count);
             if (output.Length > MaximumCharacters)
             {

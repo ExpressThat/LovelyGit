@@ -6,13 +6,48 @@ internal static class UnifiedDiffRenderer
 {
     public static string Render(string oldText, string newText, string oldPath, string newPath, int context)
     {
+        TryRender(oldText, newText, oldPath, newPath, context, int.MaxValue, out var patch);
+        return patch;
+    }
+
+    public static bool TryRender(
+        string oldText,
+        string newText,
+        string oldPath,
+        string newPath,
+        int context,
+        int maximumCharacters,
+        out string patch)
+    {
         var model = LineDiffEngine.Build(oldText, newText);
         var output = new StringBuilder().Append("--- ").AppendLine(oldPath).Append("+++ ").AppendLine(newPath);
-        if (!model.HasDifferences) return output.ToString();
+        if (output.Length > maximumCharacters)
+        {
+            patch = string.Empty;
+            return false;
+        }
+        if (!model.HasDifferences)
+        {
+            patch = output.ToString();
+            return true;
+        }
 
         foreach (var group in Group(model.Blocks, context, model.OldLines.Length, model.NewLines.Length))
-            AppendGroup(output, model, group, EndsWithNewLine(oldText), EndsWithNewLine(newText));
-        return output.ToString();
+        {
+            if (!AppendGroup(
+                    output,
+                    model,
+                    group,
+                    EndsWithNewLine(oldText),
+                    EndsWithNewLine(newText),
+                    maximumCharacters))
+            {
+                patch = string.Empty;
+                return false;
+            }
+        }
+        patch = output.ToString();
+        return true;
     }
 
     private static IEnumerable<DiffGroup> Group(
@@ -37,54 +72,73 @@ internal static class UnifiedDiffRenderer
         if (active is not null) yield return active;
     }
 
-    private static void AppendGroup(
+    private static bool AppendGroup(
         StringBuilder output,
         LineDiffModel model,
         DiffGroup group,
         bool oldEndsWithNewLine,
-        bool newEndsWithNewLine)
+        bool newEndsWithNewLine,
+        int maximumCharacters)
     {
         output.Append("@@ -").Append(Range(group.OldStart, group.OldEnd - group.OldStart))
             .Append(" +").Append(Range(group.NewStart, group.NewEnd - group.NewStart)).AppendLine(" @@");
+        if (output.Length > maximumCharacters) return false;
         var oldIndex = group.OldStart;
         var newIndex = group.NewStart;
         foreach (var block in model.Blocks.Where(block => Intersects(block, group)))
         {
             while (oldIndex < block.OldStart && newIndex < block.NewStart)
             {
-                AppendLine(output, ' ', model.OldLines[oldIndex],
-                    oldIndex == model.OldLines.Length - 1 && !oldEndsWithNewLine);
+                if (!AppendLine(output, ' ', model.OldLines[oldIndex],
+                        oldIndex == model.OldLines.Length - 1 && !oldEndsWithNewLine,
+                        maximumCharacters)) return false;
                 oldIndex++;
                 newIndex++;
             }
             for (var index = 0; index < block.OldCount; index++)
             {
                 var line = block.OldStart + index;
-                AppendLine(output, '-', model.OldLines[line],
-                    line == model.OldLines.Length - 1 && !oldEndsWithNewLine);
+                if (!AppendLine(output, '-', model.OldLines[line],
+                        line == model.OldLines.Length - 1 && !oldEndsWithNewLine,
+                        maximumCharacters)) return false;
             }
             for (var index = 0; index < block.NewCount; index++)
             {
                 var line = block.NewStart + index;
-                AppendLine(output, '+', model.NewLines[line],
-                    line == model.NewLines.Length - 1 && !newEndsWithNewLine);
+                if (!AppendLine(output, '+', model.NewLines[line],
+                        line == model.NewLines.Length - 1 && !newEndsWithNewLine,
+                        maximumCharacters)) return false;
             }
             oldIndex = block.OldStart + block.OldCount;
             newIndex = block.NewStart + block.NewCount;
         }
         while (oldIndex < group.OldEnd && newIndex < group.NewEnd)
         {
-            AppendLine(output, ' ', model.OldLines[oldIndex],
-                oldIndex == model.OldLines.Length - 1 && !oldEndsWithNewLine);
+            if (!AppendLine(output, ' ', model.OldLines[oldIndex],
+                    oldIndex == model.OldLines.Length - 1 && !oldEndsWithNewLine,
+                    maximumCharacters)) return false;
             oldIndex++;
             newIndex++;
         }
+        return true;
     }
 
-    private static void AppendLine(StringBuilder output, char prefix, string text, bool missingNewLine)
+    private static bool AppendLine(
+        StringBuilder output,
+        char prefix,
+        string text,
+        bool missingNewLine,
+        int maximumCharacters)
     {
+        const string missingNewLineText = "\\ No newline at end of file";
+        var required = 1 + text.Length + Environment.NewLine.Length;
+        if (missingNewLine)
+            required += missingNewLineText.Length + Environment.NewLine.Length;
+        if (required > maximumCharacters - output.Length) return false;
+
         output.Append(prefix).AppendLine(text);
-        if (missingNewLine) output.AppendLine("\\ No newline at end of file");
+        if (missingNewLine) output.AppendLine(missingNewLineText);
+        return true;
     }
 
     private static bool EndsWithNewLine(string text) =>
