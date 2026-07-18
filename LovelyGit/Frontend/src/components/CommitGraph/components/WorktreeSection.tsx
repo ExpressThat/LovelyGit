@@ -68,7 +68,7 @@ export function WorktreeList({
 	);
 }
 
-function WorktreeRow({
+export function WorktreeRow({
 	controller,
 	worktree,
 }: {

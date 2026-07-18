@@ -7,7 +7,7 @@ This is the durable index of LovelyGit performance work. Update the linked ledge
 - [Verified performance results](docs/performance/verified-results.md)
 - [Completed optimization inventory](docs/performance/optimization-inventory.md)
 
-Latest verified checkpoint: the compiled desktop navigates in 145.8 ms, idles at 9.40 MB post-GC page heap, and uses 309.45 MB private memory across the full seven-process WebView2 tree; the LovelyGit host accounts for 53.37 MB. Warm repository-tab content activates in 7.2-13.2 ms using page-side timestamps. A 5,000-file checkout paints loading feedback in 17.3-42.2 ms, while its variable filesystem completion remains inside Git. The 100,000-line diff and 20,000-file observed-path improvements remain recorded in the linked ledgers, and the backend gate's strict sub-minute target remains open.
+Latest verified checkpoint: the compiled desktop navigates in 145.8 ms, idles at 9.40 MB post-GC page heap, and uses 309.45 MB private memory across the full seven-process WebView2 tree; the LovelyGit host accounts for 53.37 MB. Warm repository-tab content activates in 7.2-13.2 ms using page-side timestamps. The Worktrees accordion now retains 10 virtual rows instead of all 201 in the measured fixture, reducing its page from 3,405 to 1,124 DOM nodes and from 21.80 MB to 10.16 MB post-GC heap. A 5,000-file checkout paints loading feedback in 17.3-42.2 ms, while its variable filesystem completion remains inside Git. The 100,000-line diff and 20,000-file observed-path improvements remain recorded in the linked ledgers, and the backend gate's strict sub-minute target remains open.
 
 ## Measurement Rules
 

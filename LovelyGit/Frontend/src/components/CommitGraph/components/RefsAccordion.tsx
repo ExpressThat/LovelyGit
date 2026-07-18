@@ -9,7 +9,7 @@ import type { RefPanelSection } from "./RefsPanelData";
 import type { TagAction } from "./TagContextMenu";
 import { useRefsAccordionLayout } from "./useRefsAccordionLayout";
 import { VirtualRefSection } from "./VirtualRefSection";
-import { WorktreeList } from "./WorktreeSection";
+import { VirtualWorktreeList } from "./VirtualWorktreeList";
 
 export type RefsAccordionActions = {
 	branchMutationBusy: boolean;
@@ -72,7 +72,10 @@ export function RefsAccordion({
 							weight={layout.weights[entry.id] ?? 1}
 						>
 							{entry.type === "worktrees" ? (
-								<WorktreeList controller={controller} worktrees={worktrees} />
+								<VirtualWorktreeList
+									controller={controller}
+									worktrees={worktrees}
+								/>
 							) : (
 								<VirtualRefSection actions={actions} section={entry.section} />
 							)}
