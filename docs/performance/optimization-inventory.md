@@ -63,6 +63,12 @@ This ledger records shipped performance work by feature area. Update it in the s
 - Resolved abbreviated hashes from indexes and reduced native graph parsing allocations (`8aad229`, `89d0a34`).
 - Eliminated per-index-entry scan allocations and reused compiled ignore matchers (`353786e`, `dbc5386`).
 - Added a packed-graph performance regression gate (`81514be`).
+- Reused each normalized path's UTF-8 bytes across deep file-history and blame ancestry walks, avoiding thousands of repeated buffer rentals and encodes while preserving rename-aware path changes (current test-gate checkpoint).
+
+### Test Infrastructure
+
+- Prepared heavyweight performance-test repository templates and their exclusive physical copies on four bounded background workers while ordinary deterministic tests run. Performance and allocation tests remain serialized, fixture failures are surfaced, and every test retains independent repository ownership (current test-gate checkpoint).
+- Reused one canonical disposable submodule fixture across functional and performance suites, and moved the 1,500-ref bisect, ancestry, sparse-checkout, staging, diff, and ref-heavy setups into reusable templates without removing assertions or real-Git semantics (current test-gate checkpoint).
 
 ### Commit Search and Details
 

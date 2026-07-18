@@ -12,7 +12,7 @@ public sealed class GitCommitExistencePerformanceTests(ITestOutputHelper output)
     private const int RefCountPerKind = 500;
     private static readonly RepositoryTemplate<string> Template = new(
         "lovelygit-tag-validation-template-",
-        InitializeTemplate);
+        InitializeTemplate, prewarmCopies: 2);
 
     [Fact]
     public async Task ExistingCommitValidation_DoesNotScaleWithRefCount()

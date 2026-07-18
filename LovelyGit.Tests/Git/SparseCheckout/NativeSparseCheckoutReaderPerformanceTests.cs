@@ -10,14 +10,17 @@ namespace LovelyGit.Tests.Git.SparseCheckout;
 [Collection(PerformanceTestCollection.Name)]
 public sealed class NativeSparseCheckoutReaderPerformanceTests(ITestOutputHelper output)
 {
+    private static readonly RepositoryTemplate<bool> Template = new(
+        "lovelygit-sparse-performance-template-",
+        InitializeTemplate,
+        prewarmCopies: 1);
+
     [Fact]
     public async Task ReadAsync_LoadsLargePatternListWithinManagerBudget()
     {
-        var directory = Directory.CreateTempSubdirectory("lovelygit-sparse-performance-");
+        var (directory, _) = Template.CreateCopy("lovelygit-sparse-performance-");
         try
         {
-            InitializedRepositoryTemplate.CopyInto(directory, "master");
-            await EnableSparseCheckoutAsync(directory.FullName, 100_000);
             var reader = new NativeSparseCheckoutReader();
             var allocatedBefore = GC.GetTotalAllocatedBytes(precise: true);
             var startedAt = Stopwatch.GetTimestamp();
@@ -59,6 +62,13 @@ public sealed class NativeSparseCheckoutReaderPerformanceTests(ITestOutputHelper
             }
             directory.Delete(recursive: true);
         }
+    }
+
+    private static bool InitializeTemplate(DirectoryInfo directory)
+    {
+        InitializedRepositoryTemplate.CopyInto(directory, "master");
+        EnableSparseCheckoutAsync(directory.FullName, 100_000).GetAwaiter().GetResult();
+        return true;
     }
 
     private static async Task EnableSparseCheckoutAsync(string repositoryPath, int count)

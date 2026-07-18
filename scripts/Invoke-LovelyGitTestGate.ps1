@@ -20,6 +20,7 @@ if ($AdditionalArguments) {
     $arguments += $AdditionalArguments
 }
 
+$env:LOVELYGIT_PREWARM_PERFORMANCE_TEMPLATES = '1'
 $exitCode = Invoke-KillOnCloseProcess `
     -FilePath 'dotnet' `
     -ArgumentList $arguments `

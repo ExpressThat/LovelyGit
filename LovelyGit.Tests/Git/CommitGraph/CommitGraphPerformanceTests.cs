@@ -13,7 +13,7 @@ public sealed class CommitGraphPerformanceTests(ITestOutputHelper output)
     private const int CommitCount = 10_000;
     private static readonly RepositoryTemplate<int> Template = new(
         "lovelygit-graph-performance-template-",
-        InitializeTemplate);
+        InitializeTemplate, prewarmCopies: 1);
 
     [Fact]
     public async Task FirstPage_FromPackedHistory_HasBoundedLatencyAndAllocations()

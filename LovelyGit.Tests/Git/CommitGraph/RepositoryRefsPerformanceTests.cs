@@ -14,7 +14,7 @@ public sealed class RepositoryRefsPerformanceTests(ITestOutputHelper output)
     private const int WorktreeCount = 200;
     private static readonly RepositoryTemplate<bool> Template = new(
         "lovelygit-refs-refresh-template-",
-        InitializeTemplate);
+        InitializeTemplate, prewarmCopies: 2);
 
     [Fact]
     public async Task LargeRepositoryMetadataRefresh_RemainsResponsive()

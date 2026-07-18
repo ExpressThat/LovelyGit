@@ -18,7 +18,7 @@ public sealed class CommitFileDiffPerformanceTests(ITestOutputHelper output)
     private const int LineCount = 5_000;
     private static readonly RepositoryTemplate<GitObjectId> Template = new(
         "lovelygit-file-diff-performance-template-",
-        InitializeTemplate);
+        InitializeTemplate, prewarmCopies: 1);
 
     [Fact]
     public async Task LargeModifiedFile_HasResponsiveOpenAndViewSwitch()

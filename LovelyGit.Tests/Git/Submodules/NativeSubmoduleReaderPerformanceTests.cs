@@ -11,27 +11,20 @@ public sealed class NativeSubmoduleReaderPerformanceTests(ITestOutputHelper outp
     [Fact]
     public async Task ReadAsync_DoesNotScaleWithUnrelatedRefs()
     {
-        var root = Directory.CreateTempSubdirectory("lovelygit-submodule-performance-");
+        var root = SubmoduleRepositoryTemplate.CreateCopy("lovelygit-submodule-performance-");
         try
         {
+            var parentPath = Path.Combine(root.FullName, "parent");
             var git = new GitCliService();
-            var child = Directory.CreateDirectory(Path.Combine(root.FullName, "child"));
-            var parent = Directory.CreateDirectory(Path.Combine(root.FullName, "parent"));
-            InitializedRepositoryTemplate.CopyInto(child, "master");
-            InitializedRepositoryTemplate.CopyInto(parent, "master");
-            await git.ExecuteBufferedAsync(
-                ["-c", "protocol.file.allow=always", "submodule", "add", child.FullName, "deps/library"],
-                parent.FullName);
-            await git.ExecuteBufferedAsync(["commit", "-am", "Add submodule"], parent.FullName);
-            var head = (await git.ExecuteBufferedAsync(["rev-parse", "HEAD"], parent.FullName))
+            var head = (await git.ExecuteBufferedAsync(["rev-parse", "HEAD"], parentPath))
                 .StandardOutput.Trim();
-            SeedUnrelatedRefs(parent.FullName, head, 1_500);
+            SeedUnrelatedRefs(parentPath, head, 1_500);
             GC.Collect();
             var allocatedBefore = GC.GetTotalAllocatedBytes(precise: true);
             var startedAt = Stopwatch.GetTimestamp();
 
             var response = await new NativeSubmoduleReader().ReadAsync(
-                parent.FullName, CancellationToken.None);
+                parentPath, CancellationToken.None);
 
             var elapsed = Stopwatch.GetElapsedTime(startedAt);
             var allocated = GC.GetTotalAllocatedBytes(true) - allocatedBefore;

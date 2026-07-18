@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Text;
 using ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser;
 
 namespace ExpressThat.LovelyGit.Services.Git.FileHistory;
@@ -37,6 +38,7 @@ internal static class NativeFileHistoryReader
         Enqueue(pending, seen, new HistoryWorkItem(start.Value, normalizedPath));
         var results = new List<FileHistoryResult>(Math.Clamp(limit, 1, MaximumResultLimit));
         var emitted = new HashSet<GitObjectId>();
+        var encodedPaths = new Dictionary<string, byte[]>(StringComparer.Ordinal);
         var startedAt = Stopwatch.GetTimestamp();
         var scanned = 0;
         var matched = 0;
@@ -50,14 +52,17 @@ internal static class NativeFileHistoryReader
             }
 
             var item = pending.Dequeue();
+            var encodedPath = GetEncodedPath(encodedPaths, item.Path);
             var header = await repository.GetCommitAncestryHeaderAsync(item.Hash, cancellationToken)
                 .ConfigureAwait(false);
             scanned++;
             var current = header.TreeHash == null
                 ? null
-                : await repository.TryGetTreeFileAsync(header.TreeHash.Value, item.Path, cancellationToken)
+                : await repository.TryGetTreeFileAsync(
+                        header.TreeHash.Value, item.Path, encodedPath, cancellationToken)
                     .ConfigureAwait(false);
-            var change = await InspectParentsAsync(repository, item, header, current, pending, seen, cancellationToken)
+            var change = await InspectParentsAsync(
+                    repository, item, encodedPath, header, current, pending, seen, cancellationToken)
                 .ConfigureAwait(false);
             if (change == null || !emitted.Add(item.Hash))
             {
@@ -100,6 +105,7 @@ internal static class NativeFileHistoryReader
     private static async Task<FileChange?> InspectParentsAsync(
         LovelyGitRepository repository,
         HistoryWorkItem item,
+        ReadOnlyMemory<byte> encodedPath,
         GitCommitAncestryHeader header,
         GitTreeFile? current,
         Queue<HistoryWorkItem> pending,
@@ -119,7 +125,8 @@ internal static class NativeFileHistoryReader
                 .ConfigureAwait(false);
             var parent = parentHeader.TreeHash == null
                 ? null
-                : await repository.TryGetTreeFileAsync(parentHeader.TreeHash.Value, item.Path, cancellationToken)
+                : await repository.TryGetTreeFileAsync(
+                        parentHeader.TreeHash.Value, item.Path, encodedPath, cancellationToken)
                     .ConfigureAwait(false);
             var edge = await ClassifyAsync(
                     repository, current, header.TreeHash, parent, parentHeader.TreeHash, cancellationToken)
@@ -198,6 +205,18 @@ internal static class NativeFileHistoryReader
         {
             pending.Enqueue(item);
         }
+    }
+
+    private static ReadOnlyMemory<byte> GetEncodedPath(
+        Dictionary<string, byte[]> encodedPaths,
+        string path)
+    {
+        if (!encodedPaths.TryGetValue(path, out var encoded))
+        {
+            encoded = Encoding.UTF8.GetBytes(path);
+            encodedPaths.Add(path, encoded);
+        }
+        return encoded;
     }
 
     private readonly record struct HistoryWorkItem(GitObjectId Hash, string Path);

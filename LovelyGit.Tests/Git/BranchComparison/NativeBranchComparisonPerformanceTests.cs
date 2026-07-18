@@ -15,7 +15,7 @@ public sealed class NativeBranchComparisonPerformanceTests(ITestOutputHelper out
     private const int CommitsPerSide = 5_000;
     private static readonly RepositoryTemplate<TemplateState> Template = new(
         "lovelygit-branch-comparison-template-",
-        InitializeTemplate);
+        InitializeTemplate, prewarmCopies: 2);
 
     [Fact]
     public async Task NamedBranchComparison_DoesNotScaleWithUnrelatedRefs()

@@ -13,7 +13,7 @@ public sealed class CommitDetailsRefPerformanceTests(ITestOutputHelper output)
     private const int UnrelatedRefCount = 1_500;
     private static readonly RepositoryTemplate<GitObjectId> Template = new(
         "lovelygit-details-refs-template-",
-        InitializeTemplate);
+        InitializeTemplate, prewarmCopies: 1);
 
     [Fact]
     public async Task RefHeavyRepository_HasBoundedColdRead()

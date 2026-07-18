@@ -19,7 +19,7 @@ public sealed class CommitDetailsPerformanceTests(ITestOutputHelper output)
     private const int FileCount = 2_000;
     private static readonly RepositoryTemplate<GitObjectId> Template = new(
         "lovelygit-details-performance-template-",
-        InitializeTemplate);
+        InitializeTemplate, prewarmCopies: 2);
 
     [Fact]
     public async Task BuildManyModifiedFiles_HasBoundedLatency()

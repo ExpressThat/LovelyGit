@@ -14,7 +14,7 @@ public sealed class NativeAncestryWorkflowPerformanceTests(ITestOutputHelper out
     private const int HistoryLength = 5_000;
     private static readonly RepositoryTemplate<string> Template = new(
         "lovelygit-ancestry-workflow-template-",
-        InitializeTemplate);
+        InitializeTemplate, prewarmCopies: 2);
 
     [Fact]
     public async Task FileHistory_DeepUnchangedPathRemainsBounded()
@@ -22,7 +22,6 @@ public sealed class NativeAncestryWorkflowPerformanceTests(ITestOutputHelper out
         var (directory, head) = Template.CreateCopy("lovelygit-file-history-performance-");
         try
         {
-            SeedUnrelatedRefs(directory.FullName, head, 1_500);
             GC.Collect();
             var allocatedBefore = GC.GetTotalAllocatedBytes(precise: true);
             var startedAt = Stopwatch.GetTimestamp();
@@ -56,7 +55,6 @@ public sealed class NativeAncestryWorkflowPerformanceTests(ITestOutputHelper out
         var (directory, head) = Template.CreateCopy("lovelygit-file-blame-performance-");
         try
         {
-            SeedUnrelatedRefs(directory.FullName, head, 1_500);
             GC.Collect();
             var allocatedBefore = GC.GetTotalAllocatedBytes(precise: true);
             var startedAt = Stopwatch.GetTimestamp();
@@ -92,7 +90,9 @@ public sealed class NativeAncestryWorkflowPerformanceTests(ITestOutputHelper out
             .WithStandardInputPipe(PipeSource.FromString(BuildFastImport(), Encoding.UTF8))
             .ExecuteAsync().GetAwaiter().GetResult();
         Run(git, directory, ["gc", "--prune=now"]);
-        return Run(git, directory, ["rev-parse", "HEAD"]).Trim();
+        var head = Run(git, directory, ["rev-parse", "HEAD"]).Trim();
+        SeedUnrelatedRefs(directory.FullName, head, 1_500);
+        return head;
     }
 
     private static string BuildFastImport()

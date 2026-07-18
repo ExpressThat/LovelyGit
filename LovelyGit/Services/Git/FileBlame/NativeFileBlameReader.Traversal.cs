@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Text;
 using ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser;
 
 namespace ExpressThat.LovelyGit.Services.Git.FileBlame;
@@ -121,7 +122,8 @@ internal static partial class NativeFileBlameReader
     {
         var header = await repository.GetCommitAncestryHeaderAsync(parentHash, cancellationToken)
             .ConfigureAwait(false);
-        var file = await FindFileAsync(repository, header, current.Path, cancellationToken)
+        var file = await FindFileAsync(
+                repository, header, current.Path, current.EncodedPath, cancellationToken)
             .ConfigureAwait(false);
         var path = current.Path;
         if (file == null && header.TreeHash != null)
@@ -141,7 +143,10 @@ internal static partial class NativeFileBlameReader
             ? current.Text
             : BlameText.Decode(
                 await repository.ReadBlobAsync(file.ObjectId, cancellationToken).ConfigureAwait(false));
-        return new BlameState(parentHash, path, header, file, text);
+        var encodedPath = path == current.Path
+            ? current.EncodedPath
+            : Encoding.UTF8.GetBytes(path);
+        return new BlameState(parentHash, path, encodedPath, header, file, text);
     }
 
     private static async Task AttributeAsync(

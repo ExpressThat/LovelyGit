@@ -9,6 +9,15 @@ internal sealed partial class LovelyGitRepository
         await _objectStore.TryGetTreeFileAsync(treeId, normalizedPath, cancellationToken)
             .ConfigureAwait(false);
 
+    internal async Task<GitTreeFile?> TryGetTreeFileAsync(
+        GitObjectId treeId,
+        string normalizedPath,
+        ReadOnlyMemory<byte> encodedPath,
+        CancellationToken cancellationToken) =>
+        await _objectStore.TryGetTreeFileAsync(
+                treeId, normalizedPath, encodedPath, cancellationToken)
+            .ConfigureAwait(false);
+
     public async Task<GitCommitTraversalHeader> GetCommitTraversalHeaderAsync(
         GitObjectId id,
         CancellationToken cancellationToken)

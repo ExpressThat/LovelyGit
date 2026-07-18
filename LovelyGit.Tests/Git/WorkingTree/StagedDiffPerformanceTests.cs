@@ -17,7 +17,7 @@ public sealed class StagedDiffPerformanceTests(ITestOutputHelper output)
     private const int RefCountPerKind = 500;
     private static readonly RepositoryTemplate<bool> Template = new(
         "lovelygit-staged-diff-template-",
-        InitializeTemplate);
+        InitializeTemplate, prewarmCopies: 1);
 
     [Fact]
     public async Task AlternatingLargeDiffViews_DoNotMaterializeTheWholeHeadTree()

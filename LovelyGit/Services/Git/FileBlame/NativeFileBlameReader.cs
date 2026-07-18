@@ -1,5 +1,6 @@
 using ExpressThat.LovelyGit.Services.Git.FileHistory;
 using ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser;
+using System.Text;
 
 namespace ExpressThat.LovelyGit.Services.Git.FileBlame;
 
@@ -27,7 +28,9 @@ internal static partial class NativeFileBlameReader
             ?? throw new InvalidDataException("Repository has no commits to blame.");
         var header = await repository.GetCommitAncestryHeaderAsync(start, cancellationToken)
             .ConfigureAwait(false);
-        var file = await FindFileAsync(repository, header, normalizedPath, cancellationToken)
+        var encodedPath = Encoding.UTF8.GetBytes(normalizedPath);
+        var file = await FindFileAsync(
+                repository, header, normalizedPath, encodedPath, cancellationToken)
             .ConfigureAwait(false)
             ?? throw new FileNotFoundException("File was not found at the selected commit.", normalizedPath);
         var source = BlameText.Decode(
@@ -39,7 +42,7 @@ internal static partial class NativeFileBlameReader
         }
 
         var attributions = new GitCommit?[source.LineCount];
-        var current = new BlameState(start, normalizedPath, header, file, source);
+        var current = new BlameState(start, normalizedPath, encodedPath, header, file, source);
         var traversal = await TraceAsync(
                 repository,
                 new BlameWorkItem(current, active),
@@ -67,9 +70,11 @@ internal static partial class NativeFileBlameReader
         LovelyGitRepository repository,
         GitCommitAncestryHeader header,
         string path,
+        ReadOnlyMemory<byte> encodedPath,
         CancellationToken cancellationToken) => header.TreeHash == null
         ? null
-        : await repository.TryGetTreeFileAsync(header.TreeHash.Value, path, cancellationToken)
+        : await repository.TryGetTreeFileAsync(
+                header.TreeHash.Value, path, encodedPath, cancellationToken)
             .ConfigureAwait(false);
 
     private static async Task<GitObjectId?> ResolveStartAsync(
@@ -114,6 +119,7 @@ internal static partial class NativeFileBlameReader
     private readonly record struct BlameState(
         GitObjectId Hash,
         string Path,
+        ReadOnlyMemory<byte> EncodedPath,
         GitCommitAncestryHeader Header,
         GitTreeFile File,
         BlameText Text);

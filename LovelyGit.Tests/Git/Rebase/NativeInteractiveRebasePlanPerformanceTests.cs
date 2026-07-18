@@ -12,7 +12,7 @@ public sealed class NativeInteractiveRebasePlanPerformanceTests(ITestOutputHelpe
 {
     private static readonly RepositoryTemplate<TemplateState> Template = new(
         "lovelygit-rebase-plan-performance-template-",
-        InitializeTemplate);
+        InitializeTemplate, prewarmCopies: 2);
 
     [Fact]
     public async Task ReadAsync_BuildsMaximumPlanWithinDialogBudget()

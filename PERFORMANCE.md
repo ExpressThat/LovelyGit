@@ -7,7 +7,7 @@ This is the durable index of LovelyGit performance work. Update the linked ledge
 - [Verified performance results](docs/performance/verified-results.md)
 - [Completed optimization inventory](docs/performance/optimization-inventory.md)
 
-Latest verified checkpoint: sparse-checkout management now edits 100,000 patterns without per-keystroke parsing, transports large specifications as compact gzip payloads, and applies 100,001 patterns through Git stdin in 532 ms end-to-end. See the linked ledgers for the complete evidence.
+Latest verified checkpoint: the comparable 934-test backend gate fell from roughly 104.4 seconds to 75.94-76.09 seconds by preparing exclusive Git fixtures during ordinary unit-test execution; the final 935-test gate passed in 76.02 seconds after adding Unicode-path coverage. Deep history and blame also reuse one encoded Git path across their ancestry walks. The strict sub-minute target remains open. See the linked ledgers for the complete evidence.
 
 ## Measurement Rules
 
@@ -57,6 +57,10 @@ Measured through the same Git commands LovelyGit uses, primarily in a disposable
 | Add only `--quiet` to foreground commit | Highly variable at 192-1,095 ms versus 361-1,906 ms without it | Output was not the bottleneck; automatic maintenance dominated. LovelyGit instead disables auto-maintenance for that invocation and schedules it after success. |
 | Hard-link repository-template files in the backend suite | Full-suite time regressed from 98.4 s to 100.3 s and retained the same two contention-sensitive failures | NTFS link creation and the remaining fixture setup dominated; reverted to isolated physical copies to preserve straightforward ownership. |
 | Let the serialized performance collection overlap ordinary tests | Full-suite time improved from 94.7 s to 86.2 s | Still exceeded the one-minute requirement and retained timing-budget failures under contention, so global isolation was restored. |
+| Increase xUnit's maximum parallel threads to eight | The complete gate exceeded 120 s | Extra process and filesystem contention made the suite slower, so the default scheduler was restored. |
+| Share template Git objects through alternates | No repeatable wall-clock improvement | It changed which object store the commit-graph reader observed and complicated fixture ownership, so exclusive physical copies were retained. |
+| Split performance tests into six in-process lanes | Testhost wall time reached 59.83 s | `GC.GetTotalAllocatedBytes` is process-global; concurrent measurements caused 14 false allocation/latency failures, so the isolated collection was restored. |
+| Run six performance lanes in separate testhosts | The isolated lane phase completed in 24.5 s | Simultaneous Git/filesystem workloads caused three valid latency gates to fail under contention, so the safe single-testhost gate remains authoritative. |
 | Increase parallel-checkout settings for stash | Cold 501-of-20,000-file stash moved only from 4.19 s to 4.10 s | LovelyGit already supplies four checkout workers; Trace2 showed the temporary-index update dominates, so no additional Git configuration was added. |
 
 ## Next Measurement Areas

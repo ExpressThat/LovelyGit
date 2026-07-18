@@ -1,8 +1,6 @@
 using System.Diagnostics;
 using ExpressThat.LovelyGit.Services.Git.Bisect;
 using ExpressThat.LovelyGit.Services.Git.Cli;
-using ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser;
-using ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser.Refs;
 using Xunit.Abstractions;
 
 namespace LovelyGit.Tests.Git.Bisect;
@@ -10,20 +8,21 @@ namespace LovelyGit.Tests.Git.Bisect;
 [Collection(PerformanceTestCollection.Name)]
 public sealed class NativeGitBisectStateReaderPerformanceTests(ITestOutputHelper output)
 {
+    private static readonly RepositoryTemplate<string> ReadTemplate = new(
+        "lovelygit-bisect-read-template-",
+        InitializeReadTemplate,
+        prewarmCopies: 1);
+    private static readonly RepositoryTemplate<StartState> StartTemplate = new(
+        "lovelygit-bisect-start-template-",
+        InitializeStartTemplate,
+        prewarmCopies: 1);
+
     [Fact]
     public async Task ReadAsync_RefreshesLargeRefRepositoryWithinSessionBudget()
     {
-        var directory = Directory.CreateTempSubdirectory("lovelygit-bisect-performance-");
+        var (directory, commit) = ReadTemplate.CreateCopy("lovelygit-bisect-performance-");
         try
         {
-            InitializedRepositoryTemplate.CopyInto(directory, "master");
-            var commit = await GitHeadReader.ResolveAsync(
-                Path.Combine(directory.FullName, ".git"),
-                Path.Combine(directory.FullName, ".git"),
-                GitObjectFormat.Sha1,
-                CancellationToken.None);
-            Assert.True(commit.HasValue);
-            SeedSession(directory.FullName, commit.Value.ToString(), 1_500);
             var reader = new NativeGitBisectStateReader();
             var allocatedBefore = GC.GetTotalAllocatedBytes(precise: true);
             var startedAt = Stopwatch.GetTimestamp();
@@ -38,8 +37,8 @@ public sealed class NativeGitBisectStateReaderPerformanceTests(ITestOutputHelper
             var allocated = GC.GetTotalAllocatedBytes(true) - allocatedBefore;
             output.WriteLine($"ElapsedMs={elapsed.TotalMilliseconds:F2}; AllocatedBytes={allocated:N0}");
             Assert.True(state!.IsActive);
-            Assert.Equal(commit.Value.ToString(), state.BadCommit);
-            Assert.Equal(commit.Value.ToString(), state.FirstBadCommit);
+            Assert.Equal(commit, state.BadCommit);
+            Assert.Equal(commit, state.FirstBadCommit);
             Assert.Single(state.GoodCommits);
             Assert.True(elapsed < TimeSpan.FromMilliseconds(100), $"Refreshes took {elapsed}.");
             Assert.True(allocated < 1_000_000, $"Refreshes allocated {allocated:N0} bytes.");
@@ -57,30 +56,24 @@ public sealed class NativeGitBisectStateReaderPerformanceTests(ITestOutputHelper
     [Fact]
     public async Task StartAsync_DoesNotScaleWithUnrelatedRefs()
     {
-        var directory = Directory.CreateTempSubdirectory("lovelygit-bisect-start-performance-");
+        var (directory, fixture) = StartTemplate.CreateCopy("lovelygit-bisect-start-performance-");
         try
         {
-            InitializedRepositoryTemplate.CopyInto(directory, "master");
             var git = new GitCliService();
-            var good = await ReadHeadAsync(git, directory.FullName);
-            await git.ExecuteBufferedAsync(
-                ["commit", "--allow-empty", "-m", "Known bad"], directory.FullName);
-            var bad = await ReadHeadAsync(git, directory.FullName);
-            SeedUnrelatedRefs(directory.FullName, bad, 1_500);
             var reader = new NativeGitBisectStateReader();
             var service = new GitBisectCommandService(new GitOperationService(git), reader);
             var allocatedBefore = GC.GetTotalAllocatedBytes(precise: true);
             var startedAt = Stopwatch.GetTimestamp();
 
             var state = await service.ExecuteAsync(
-                directory.FullName, GitBisectAction.Start, good, CancellationToken.None);
+                directory.FullName, GitBisectAction.Start, fixture.Good, CancellationToken.None);
 
             var elapsed = Stopwatch.GetElapsedTime(startedAt);
             var allocated = GC.GetTotalAllocatedBytes(true) - allocatedBefore;
             output.WriteLine($"StartElapsedMs={elapsed.TotalMilliseconds:F2}; AllocatedBytes={allocated:N0}");
             Assert.True(state.IsActive);
-            Assert.Equal(bad, state.BadCommit);
-            Assert.Equal([good], state.GoodCommits);
+            Assert.Equal(fixture.Bad, state.BadCommit);
+            Assert.Equal([fixture.Good], state.GoodCommits);
             Assert.True(elapsed < TimeSpan.FromMilliseconds(200), $"Start took {elapsed}.");
             Assert.True(allocated < 1_200_000, $"Start allocated {allocated:N0} bytes.");
         }
@@ -119,4 +112,27 @@ public sealed class NativeGitBisectStateReaderPerformanceTests(ITestOutputHelper
 
     private static async Task<string> ReadHeadAsync(GitCliService git, string path) =>
         (await git.ExecuteBufferedAsync(["rev-parse", "HEAD"], path)).StandardOutput.Trim();
+
+    private static string InitializeReadTemplate(DirectoryInfo directory)
+    {
+        InitializedRepositoryTemplate.CopyInto(directory, "master");
+        var git = new GitCliService();
+        var commit = ReadHeadAsync(git, directory.FullName).GetAwaiter().GetResult();
+        SeedSession(directory.FullName, commit, 1_500);
+        return commit;
+    }
+
+    private static StartState InitializeStartTemplate(DirectoryInfo directory)
+    {
+        InitializedRepositoryTemplate.CopyInto(directory, "master");
+        var git = new GitCliService();
+        var good = ReadHeadAsync(git, directory.FullName).GetAwaiter().GetResult();
+        git.ExecuteBufferedAsync(["commit", "--allow-empty", "-m", "Known bad"], directory.FullName)
+            .GetAwaiter().GetResult();
+        var bad = ReadHeadAsync(git, directory.FullName).GetAwaiter().GetResult();
+        SeedUnrelatedRefs(directory.FullName, bad, 1_500);
+        return new StartState(good, bad);
+    }
+
+    private sealed record StartState(string Good, string Bad);
 }

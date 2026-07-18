@@ -49,6 +49,24 @@ public sealed class NativeFileHistoryReaderTests
     }
 
     [Fact]
+    public async Task ReadAsync_TraversesNestedUnicodePath()
+    {
+        using var repository = TemporaryGitRepository.Create();
+        var directory = Directory.CreateDirectory(Path.Combine(repository.Path, "résumés"));
+        var path = "résumés/naïve.txt";
+        await File.WriteAllTextAsync(Path.Combine(directory.FullName, "naïve.txt"), "first");
+        await RunGitAsync(repository, "add", "--", path);
+        await CommitAsync(repository, "2020-01-01T00:00:00Z", "add unicode file");
+        await File.WriteAllTextAsync(Path.Combine(directory.FullName, "naïve.txt"), "second");
+        await RunGitAsync(repository, "commit", "-am", "edit unicode file");
+
+        var response = await ReadAsync(repository, path);
+
+        Assert.Equal(2, response.MatchingCommitCount);
+        Assert.All(response.Results, result => Assert.Equal(path, result.Path));
+    }
+
+    [Fact]
     public async Task ReadAsync_ReportsDeletionAndBoundedPartialTraversal()
     {
         using var repository = TemporaryGitRepository.Create();

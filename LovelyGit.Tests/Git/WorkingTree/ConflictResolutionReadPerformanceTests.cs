@@ -14,7 +14,7 @@ public sealed class ConflictResolutionReadPerformanceTests(ITestOutputHelper out
     private const int RefCountPerKind = 500;
     private static readonly RepositoryTemplate<bool> Template = new(
         "lovelygit-conflict-read-template-",
-        InitializeTemplate);
+        InitializeTemplate, prewarmCopies: 2);
 
     [Fact]
     public async Task LargeConflict_InitialAndOptionSwitchReadsRemainBounded()

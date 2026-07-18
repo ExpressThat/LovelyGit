@@ -15,7 +15,7 @@ public sealed class UnstagedDiffPerformanceTests(ITestOutputHelper output)
     private const int LineCount = 20_000;
     private static readonly RepositoryTemplate<bool> Template = new(
         "lovelygit-unstaged-diff-template-",
-        InitializeTemplate);
+        InitializeTemplate, prewarmCopies: 1);
 
     [Fact]
     public async Task AlternatingLargeDiffViews_DoNotLoadRepositoryRefs()
