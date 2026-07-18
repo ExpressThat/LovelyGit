@@ -23,6 +23,7 @@ This ledger records shipped performance work by feature area. Update it in the s
 - Applied immediate deferred reveal to force-with-lease confirmation while preserving its separate safety-dialog chunk (`1f749da`).
 - Switched the desktop process to workstation GC and moved process-memory sampling off interaction paths (`b0d124b`, `c7241dc`).
 - Reduced native interaction metrics overhead (`efcd0a7`).
+- Verified the compiled desktop baseline at 145.8 ms navigation, 9.40 MB post-GC page heap, and 309.45 MB private memory for the complete seven-process WebView2 tree; the LovelyGit host accounts for 53.37 MB (current compiled-runtime checkpoint).
 
 ### Commit Graph, Refs, and Tabs
 
@@ -36,6 +37,7 @@ This ledger records shipped performance work by feature area. Update it in the s
 - Scanned primary remote URLs with a pooled purpose-built reader instead of constructing the complete remote model during repository refreshes (`1c2629b`).
 - Read tiny worktree `HEAD`, `gitdir`, and lock files through stack buffers while preserving the existing bounded concurrency (`48a56ad`).
 - Reset scroll on tab switches and reduced virtualized graph overscan (`6b0fcf6`, `ca11dfd`, `7180d47`).
+- Measured warm repository-tab visual activation at 7.2-13.2 ms with page-side click and mutation timestamps, while the active DOM remained at 998 nodes and post-GC page heap stayed near 9.4 MB (current compiled-runtime checkpoint).
 - Reused already-normalized commit refs, accumulated group ordering/current/kind state in one pass, and maintained a compact loaded ref-tip index so the sidebar no longer scans the graph's total sparse row space (`4542deb`).
 - Retained graph positions and rows for the bounded 100-commit operation selection, making cherry-pick, revert, comparison, and patch-series actions independent of total graph size while preserving their required history order (`667288d`).
 - Virtualized branch-comparison file results against a list-owned scroll viewport and kept a 12-row bootstrap window for immediate first paint, reducing maximum-payload DOM retention without changing file order, truncation, or click behavior (`ed8192f`).
@@ -96,6 +98,7 @@ This ledger records shipped performance work by feature area. Update it in the s
 - Added progressive tracked-first working changes with explicit completeness and disabled mutation controls until complete (`3a4bcbd`).
 - Avoided overlapping tracked-only and complete Git status processes on wide repositories: the backend marks its Git-backed preliminary response complete, and the frontend starts a second phase only when the first response is genuinely incomplete (`5eb857e`).
 - Enabled command-local, four-worker parallel checkout above 100 paths for switch, clone, worktree, reset, merge, rebase, cherry-pick, and revert operations. This avoids persistent repository configuration and daemon memory while bounding transient worker cost (`db9ea3b`).
+- Verified a 5,000-file branch switch paints its loading state in 17.3-42.2 ms and leaves controls protected throughout the long Git operation; completion remains dominated by Git's worktree update rather than LovelyGit refresh work (current compiled-runtime checkpoint).
 - Streamed sparse-checkout specifications directly into the response collector instead of retaining a duplicate raw-line array (`d70f301`).
 - Kept large sparse-checkout specifications outside controlled React state, compacted both native-bridge directions, returned one streamed text payload instead of 100,000 strings, and sent validated mutations to Git over stdin instead of the command line. This removed per-keystroke full-list parsing and the former 500-pattern mutation ceiling (`c8562ec`).
 - Streamed large `.gitattributes` files through a pooled parser so non-LFS lines do not become managed strings while retaining the existing bounded result (`145b479`).

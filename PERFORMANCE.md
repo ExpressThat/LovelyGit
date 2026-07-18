@@ -7,7 +7,7 @@ This is the durable index of LovelyGit performance work. Update the linked ledge
 - [Verified performance results](docs/performance/verified-results.md)
 - [Completed optimization inventory](docs/performance/optimization-inventory.md)
 
-Latest verified checkpoint: a 100,000-line modified diff now uses 45.45 MB of post-GC WebView heap instead of 83.18 MB and releases to 12.14-12.40 MB after closing instead of retaining 66.49 MB. Sparse observation of 25 paths in a 20,000-file working tree fell from 12.13-12.46 ms to 5.65 ms. The backend gate remains at 76.02 seconds for 935 tests, so its strict sub-minute target remains open. See the linked ledgers for the complete evidence.
+Latest verified checkpoint: the compiled desktop navigates in 145.8 ms, idles at 9.40 MB post-GC page heap, and uses 309.45 MB private memory across the full seven-process WebView2 tree; the LovelyGit host accounts for 53.37 MB. Warm repository-tab content activates in 7.2-13.2 ms using page-side timestamps. A 5,000-file checkout paints loading feedback in 17.3-42.2 ms, while its variable filesystem completion remains inside Git. The 100,000-line diff and 20,000-file observed-path improvements remain recorded in the linked ledgers, and the backend gate's strict sub-minute target remains open.
 
 ## Measurement Rules
 
@@ -62,6 +62,8 @@ Measured through the same Git commands LovelyGit uses, primarily in a disposable
 | Split performance tests into six in-process lanes | Testhost wall time reached 59.83 s | `GC.GetTotalAllocatedBytes` is process-global; concurrent measurements caused 14 false allocation/latency failures, so the isolated collection was restored. |
 | Run six performance lanes in separate testhosts | The isolated lane phase completed in 24.5 s | Simultaneous Git/filesystem workloads caused three valid latency gates to fail under contention, so the safe single-testhost gate remains authoritative. |
 | Increase parallel-checkout settings for stash | Cold 501-of-20,000-file stash moved only from 4.19 s to 4.10 s | LovelyGit already supplies four checkout workers; Trace2 showed the temporary-index update dominates, so no additional Git configuration was added. |
+| Prefer Git for Windows' `cmd\\git.exe` launcher over `mingw64\\bin\\git.exe` | No improvement: the 5,000-file in-app checkout completed in 23.13 s through the launcher versus 21.46-23.02 s through the direct executable | Executable selection is not the bottleneck, so the established direct executable and helper-path discovery remain unchanged. |
+| Raise global checkout workers from four to eight or sixteen | Direct 5,000-file switches improved from 2.81/3.85 s with four workers to 2.42/3.01 s with eight and 2.26/2.66 s with sixteen | The extra four to twelve transient Git worker processes trade substantial peak memory for a modest gain and did not address the in-app pre-worker filesystem phase; the bounded four-worker policy remains. |
 
 ## Next Measurement Areas
 
