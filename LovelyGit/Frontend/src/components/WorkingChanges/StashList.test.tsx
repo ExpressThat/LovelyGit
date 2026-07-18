@@ -14,6 +14,31 @@ const stash: RepositoryStashItem = {
 };
 
 describe("StashList", () => {
+	it("bounds rendering for large stash reflogs", () => {
+		const stashes = Array.from({ length: 500 }, (_, index) => ({
+			...stash,
+			commitHash: index.toString(16).padStart(40, "0"),
+			message: `Saved work ${index}`,
+			selector: `stash@{${index}}`,
+		}));
+		render(
+			<StashList
+				busyAction={null}
+				isLoading={false}
+				loadError={null}
+				onApply={vi.fn()}
+				onBranch={vi.fn()}
+				onDrop={vi.fn()}
+				onInspect={vi.fn()}
+				onPop={vi.fn()}
+				stashes={stashes}
+			/>,
+		);
+
+		expect(screen.getAllByRole("article")).toHaveLength(10);
+		expect(screen.queryByText("Saved work 499")).toBeNull();
+	});
+
 	it("selects the exact stash for branch recovery", async () => {
 		const user = userEvent.setup();
 		const onBranch = vi.fn();

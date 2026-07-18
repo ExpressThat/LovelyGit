@@ -154,7 +154,7 @@ export function StashDialog({
 							</Button>
 						</div>
 					</section>
-					<section className="custom-scrollbar min-h-0 overflow-y-auto px-5 py-4">
+					<section className="grid min-h-0 grid-rows-[auto_minmax(0,1fr)] px-5 py-4">
 						<div className="mb-3 flex items-center justify-between gap-3">
 							<div>
 								<h3 className="font-medium">Saved stashes</h3>
