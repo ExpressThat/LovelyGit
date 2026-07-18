@@ -99,12 +99,14 @@ export function WorkingTreeFileDiffView({
 		kind: "stage" | "unstage",
 		lines: CommitFileDiffLine[],
 	) => {
+		if (state.status !== "loaded") return;
+		const diff = state.diff;
 		setIsLineActionBusy(true);
 		try {
 			if (lines.length === 1) {
-				await moveWorkingTreeLine(kind, repositoryId, file, lines[0]);
+				await moveWorkingTreeLine(kind, repositoryId, file, diff, lines[0]);
 			} else {
-				await moveWorkingTreeHunk(kind, repositoryId, file, lines);
+				await moveWorkingTreeHunk(kind, repositoryId, file, diff, lines);
 			}
 			removeLinesFromCurrentDiff(lines);
 			refreshWorkingChangesList(onChange);

@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type {
 	CommitFileDiffLine,
+	CommitFileDiffResponse,
 	WorkingTreeChangedFile,
 } from "@/generated/types";
 import { sendRequestWithResponse } from "@/lib/commands";
@@ -19,7 +20,7 @@ describe("working tree partial-stage commands", () => {
 		const first = changedLine("Modified", 1, 1, "old", "new");
 		const second = changedLine("Inserted", null, 4, "", "added");
 
-		await moveWorkingTreeHunk("stage", "repo", file, [first, second]);
+		await moveWorkingTreeHunk("stage", "repo", file, diff, [first, second]);
 
 		expect(sendRequestWithResponse).toHaveBeenCalledWith({
 			arguments: {
@@ -29,15 +30,19 @@ describe("working tree partial-stage commands", () => {
 						changeType: "Modified",
 						newLineNumber: 1,
 						newText: "new",
+						newLineEnding: "\r\n",
 						oldLineNumber: 1,
 						oldText: "old",
+						oldLineEnding: "\r\n",
 					},
 					{
 						changeType: "Inserted",
 						newLineNumber: 4,
 						newText: "added",
+						newLineEnding: "",
 						oldLineNumber: null,
 						oldText: "",
+						oldLineEnding: null,
 					},
 				],
 				path: "file.txt",
@@ -52,7 +57,7 @@ describe("working tree partial-stage commands", () => {
 		vi.mocked(sendRequestWithResponse).mockRejectedValueOnce(error);
 
 		await expect(
-			moveWorkingTreeHunk("unstage", "repo", file, [
+			moveWorkingTreeHunk("unstage", "repo", file, diff, [
 				changedLine("Deleted", 2, null, "gone", ""),
 			]),
 		).rejects.toBe(error);
@@ -68,6 +73,7 @@ describe("working tree partial-stage commands", () => {
 			"stage",
 			"repo",
 			file,
+			diff,
 			changedLine("Inserted", null, 2, "", "new"),
 		);
 
@@ -86,6 +92,13 @@ const file: WorkingTreeChangedFile = {
 	path: "file.txt",
 	status: "Modified",
 };
+
+const diff = {
+	newLineEnding: "\r\n",
+	newLineEndingOverrides: [4 * 4 + 3],
+	oldLineEnding: "\r\n",
+	oldLineEndingOverrides: [],
+} as unknown as CommitFileDiffResponse;
 
 function changedLine(
 	changeType: string,

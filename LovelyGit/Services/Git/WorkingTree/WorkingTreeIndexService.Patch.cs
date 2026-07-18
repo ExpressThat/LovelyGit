@@ -15,7 +15,9 @@ internal sealed partial class WorkingTreeIndexService
         int? oldLineNumber,
         int? newLineNumber,
         string oldText,
-        string newText)
+        string newText,
+        string? oldLineEnding,
+        string? newLineEnding)
     {
         return BuildHunkPatch(
             path,
@@ -26,6 +28,8 @@ internal sealed partial class WorkingTreeIndexService
                 NewLineNumber = newLineNumber,
                 OldText = oldText,
                 NewText = newText,
+                OldLineEnding = oldLineEnding,
+                NewLineEnding = newLineEnding,
             }]);
     }
 
@@ -56,10 +60,12 @@ internal sealed partial class WorkingTreeIndexService
         switch (line.ChangeType)
         {
             case "Inserted":
-                AppendInsertedLineHunk(builder, line.OldLineNumber, line.NewLineNumber, line.NewText);
+                AppendInsertedLineHunk(
+                    builder, line.OldLineNumber, line.NewLineNumber, line.NewText, line.NewLineEnding);
                 break;
             case "Deleted":
-                AppendDeletedLineHunk(builder, line.OldLineNumber, line.NewLineNumber, line.OldText);
+                AppendDeletedLineHunk(
+                    builder, line.OldLineNumber, line.NewLineNumber, line.OldText, line.OldLineEnding);
                 break;
             case "Modified":
                 AppendModifiedLineHunk(
@@ -67,7 +73,9 @@ internal sealed partial class WorkingTreeIndexService
                     line.OldLineNumber,
                     line.NewLineNumber,
                     line.OldText,
-                    line.NewText);
+                    line.NewText,
+                    line.OldLineEnding,
+                    line.NewLineEnding);
                 break;
             default:
                 throw new InvalidOperationException("Only changed lines can be included in a hunk.");
@@ -78,7 +86,8 @@ internal sealed partial class WorkingTreeIndexService
         StringBuilder builder,
         int? oldLineNumber,
         int? newLineNumber,
-        string newText)
+        string newText,
+        string? newLineEnding)
     {
         if (newLineNumber == null)
         {
@@ -86,14 +95,16 @@ internal sealed partial class WorkingTreeIndexService
         }
 
         var oldStart = Math.Max(0, (oldLineNumber ?? newLineNumber.Value) - 1);
-        AppendPatchHunk(builder, $"@@ -{oldStart},0 +{newLineNumber.Value},1 @@", null, newText);
+        AppendPatchHunk(
+            builder, $"@@ -{oldStart},0 +{newLineNumber.Value},1 @@", null, null, newText, newLineEnding);
     }
 
     private static void AppendDeletedLineHunk(
         StringBuilder builder,
         int? oldLineNumber,
         int? newLineNumber,
-        string oldText)
+        string oldText,
+        string? oldLineEnding)
     {
         if (oldLineNumber == null)
         {
@@ -101,7 +112,8 @@ internal sealed partial class WorkingTreeIndexService
         }
 
         var newStart = Math.Max(0, (newLineNumber ?? oldLineNumber.Value) - 1);
-        AppendPatchHunk(builder, $"@@ -{oldLineNumber.Value},1 +{newStart},0 @@", oldText, null);
+        AppendPatchHunk(
+            builder, $"@@ -{oldLineNumber.Value},1 +{newStart},0 @@", oldText, oldLineEnding, null, null);
     }
 
     private static void AppendModifiedLineHunk(
@@ -109,7 +121,9 @@ internal sealed partial class WorkingTreeIndexService
         int? oldLineNumber,
         int? newLineNumber,
         string oldText,
-        string newText)
+        string newText,
+        string? oldLineEnding,
+        string? newLineEnding)
     {
         if (oldLineNumber == null || newLineNumber == null)
         {
@@ -120,25 +134,51 @@ internal sealed partial class WorkingTreeIndexService
             builder,
             $"@@ -{oldLineNumber.Value},1 +{newLineNumber.Value},1 @@",
             oldText,
-            newText);
+            oldLineEnding,
+            newText,
+            newLineEnding);
     }
 
     private static void AppendPatchHunk(
         StringBuilder builder,
         string hunkHeader,
         string? oldText,
-        string? newText)
+        string? oldLineEnding,
+        string? newText,
+        string? newLineEnding)
     {
         builder.Append(hunkHeader).Append('\n');
         if (oldText != null)
         {
-            builder.Append('-').Append(oldText).Append('\n');
+            AppendContentLine(builder, '-', oldText, oldLineEnding);
         }
 
         if (newText != null)
         {
-            builder.Append('+').Append(newText).Append('\n');
+            AppendContentLine(builder, '+', newText, newLineEnding);
         }
+    }
+
+    private static void AppendContentLine(
+        StringBuilder builder,
+        char prefix,
+        string text,
+        string? lineEnding)
+    {
+        builder.Append(prefix).Append(text);
+        if (lineEnding is null)
+        {
+            builder.Append('\n');
+            return;
+        }
+
+        if (lineEnding.Length > 0)
+        {
+            builder.Append(lineEnding);
+            return;
+        }
+
+        builder.Append("\n\\ No newline at end of file\n");
     }
 
     private static string? FirstNonEmptyLine(string text)

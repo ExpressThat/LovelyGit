@@ -25,6 +25,8 @@ public sealed class WorkingTreeHunkStagingTests
             1,
             "one",
             "ONE",
+            null,
+            null,
             CancellationToken.None);
         Assert.Equal(changed, await ReadIndexFileAsync(repository));
 
@@ -36,6 +38,8 @@ public sealed class WorkingTreeHunkStagingTests
             1,
             "one",
             "ONE",
+            null,
+            null,
             CancellationToken.None);
         Assert.Equal(baseline, await ReadIndexFileAsync(repository));
     }

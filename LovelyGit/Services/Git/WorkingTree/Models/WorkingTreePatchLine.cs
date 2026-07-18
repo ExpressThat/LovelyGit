@@ -14,4 +14,8 @@ public sealed record WorkingTreePatchLine
     public string OldText { get; set; } = string.Empty;
 
     public string NewText { get; set; } = string.Empty;
+
+    public string? OldLineEnding { get; set; }
+
+    public string? NewLineEnding { get; set; }
 }

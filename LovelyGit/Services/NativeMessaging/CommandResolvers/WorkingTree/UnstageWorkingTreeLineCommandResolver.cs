@@ -53,6 +53,8 @@ internal sealed class UnstageWorkingTreeLineCommandResolver : CommandResponder<S
                     command.Arguments.NewLineNumber,
                     command.Arguments.OldText ?? string.Empty,
                     command.Arguments.NewText ?? string.Empty,
+                    command.Arguments.OldLineEnding,
+                    command.Arguments.NewLineEnding,
                     CancellationToken.None)
                 .ConfigureAwait(false);
             return Success(command);

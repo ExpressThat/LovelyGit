@@ -172,24 +172,24 @@ internal sealed partial class WorkingTreeChangeService
 
         if (oldBytes.Length == 0 && ShouldUseCompressedVirtualBytes(newBytes))
         {
-            return LargeDiffPayloadBuilder.BuildVirtualTextBytes(
+            return LineEndingMetadataBuilder.Apply(LargeDiffPayloadBuilder.BuildVirtualTextBytes(
                 commitHash,
                 path,
                 status,
                 viewMode,
                 "Inserted",
-                newBytes);
+                newBytes), oldBytes, newBytes);
         }
 
         if (newBytes.Length == 0 && ShouldUseCompressedVirtualBytes(oldBytes))
         {
-            return LargeDiffPayloadBuilder.BuildVirtualTextBytes(
+            return LineEndingMetadataBuilder.Apply(LargeDiffPayloadBuilder.BuildVirtualTextBytes(
                 commitHash,
                 path,
                 status,
                 viewMode,
                 "Deleted",
-                oldBytes);
+                oldBytes), oldBytes, newBytes);
         }
 
         var oldText = System.Text.Encoding.UTF8.GetString(oldBytes);
@@ -204,7 +204,8 @@ internal sealed partial class WorkingTreeChangeService
                 ignoreWhitespace,
                 oldText,
                 newText);
-            return compact ? CompactDiffPayloadBuilder.CompactIfUseful(fastResponse) : fastResponse;
+            var prepared = LineEndingMetadataBuilder.Apply(fastResponse, oldBytes, newBytes);
+            return compact ? CompactDiffPayloadBuilder.CompactIfUseful(prepared) : prepared;
         }
 
         var language = oldText.Length + newText.Length <= MaxSyntaxHighlightedCharacters
@@ -214,7 +215,8 @@ internal sealed partial class WorkingTreeChangeService
         var response = viewMode == CommitDiffViewMode.SideBySide
             ? BuildSideBySideResponse(commitHash, path, status, oldText, newText, language, ignoreWhitespace)
             : BuildCombinedResponse(commitHash, path, status, oldText, newText, language, ignoreWhitespace);
-        return compact ? CompactDiffPayloadBuilder.CompactIfUseful(response) : response;
+        var result = LineEndingMetadataBuilder.Apply(response, oldBytes, newBytes);
+        return compact ? CompactDiffPayloadBuilder.CompactIfUseful(result) : result;
     }
 
     private static bool ShouldUseCompressedVirtualBytes(byte[] bytes) => bytes.Length >= 256_000;

@@ -147,6 +147,8 @@ internal sealed partial class WorkingTreeIndexService
         int? newLineNumber,
         string oldText,
         string newText,
+        string? oldLineEnding,
+        string? newLineEnding,
         CancellationToken cancellationToken)
     {
         var repositoryPaths = await GitRepositoryDiscovery
@@ -168,7 +170,9 @@ internal sealed partial class WorkingTreeIndexService
             oldLineNumber,
             newLineNumber,
             oldText,
-            newText);
+            newText,
+            oldLineEnding,
+            newLineEnding);
 
         await _gitCliService
             .CreateCommand(
@@ -187,6 +191,8 @@ internal sealed partial class WorkingTreeIndexService
         int? newLineNumber,
         string oldText,
         string newText,
+        string? oldLineEnding,
+        string? newLineEnding,
         CancellationToken cancellationToken)
     {
         var repositoryPaths = await GitRepositoryDiscovery
@@ -199,7 +205,9 @@ internal sealed partial class WorkingTreeIndexService
             oldLineNumber,
             newLineNumber,
             oldText,
-            newText);
+            newText,
+            oldLineEnding,
+            newLineEnding);
 
         await _gitCliService
             .CreateCommand(

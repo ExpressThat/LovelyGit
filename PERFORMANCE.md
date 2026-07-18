@@ -49,6 +49,8 @@ Large remote transport is now measured with an exclusive local bare remote conta
 
 Large branch comparisons no longer stop at the first 500 changed files. A 2,001-file divergent comparison now carries every file in a 12,492-byte gzip envelope, completes its real desktop native round trip in 46.5 ms, and retains only 18 file actions / 917 DOM nodes while scrolling the full 80,034 px range. Its 100,000-line diff completes in 394.5 ms end-to-end, retains 44 virtual rows / 1,424 DOM nodes, and settles at 28.81 MB post-GC page heap. Cached layout controls switch in 22.3-103.2 ms; whitespace-policy reloads take 219.3-238.8 ms. The complete frontend gate passes 732 tests in 48.43 seconds and the backend wrapper remains below one minute at 57.3 seconds.
 
+Partial line and hunk staging now preserves the authoritative old/new line endings instead of building LF-only patches. The former 100,000-line CRLF action failed outright; accepting it with Git's whitespace override was rejected because it silently produced mixed-EOL blobs. Uniform files add only two default-ending fields and zero per-line objects, while mixed files use sorted compact integer overrides. In the 20,001-file desktop fixture, line/hunk Stage completes natively in 73-78 ms and Unstage in 58-60 ms; optimistic diff feedback appears in 6.7-14.7 ms and the authoritative working-changes list settles in 128.1-149.7 ms. The 575,539-byte baseline diff response grows by only 102-119 bytes, its measured backend preparation remains 207-341 ms versus the prior 421 ms sample, and exact index-blob checks prove CRLF, mixed EOL, and missing-final-newline bytes survive Stage and Unstage.
+
 ## Measurement Rules
 
 - Measure from a healthy runner state and use disposable repositories only.

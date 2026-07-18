@@ -46,6 +46,8 @@ public record StageWorkingTreeLineCommandArguments
     public int? NewLineNumber { get; set; }
     public string OldText { get; set; } = string.Empty;
     public string NewText { get; set; } = string.Empty;
+    public string? OldLineEnding { get; set; }
+    public string? NewLineEnding { get; set; }
 }
 
 [TypeSharp]
