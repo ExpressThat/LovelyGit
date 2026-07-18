@@ -77,6 +77,7 @@ This ledger records shipped performance work by feature area. Update it in the s
 
 - Removed the Suspense reveal delay from Working Changes and working-tree diffs while preserving their separate lazy chunks; the disposable diff opened in 53.1 ms and its display controls responded in 0.5–2.1 ms (`3cb31fa`).
 - Removed the nested Suspense reveal delay from stashed-file inspection while preserving the commit-diff chunk; its diff controls and add/remove colors remain shared with the verified diff surface (`95b00d5`).
+- Virtualized saved-stash cards and reused one date formatter so large stash reflogs no longer retain every card and its five actions in the WebView (`89e7d3d`).
 - Added immediate optimistic stage/unstage previews and kept them stable during refresh (`7db0b3d`, `15ebece`).
 - Gave bulk stage, unstage, and discard one browser paint opportunity before entering the synchronous desktop bridge, so bounded optimistic state is visible in 4.3-7.9 ms even when native Git takes seconds; controls remain disabled through completion and failures retain rollback/retry behavior (`5893731`).
 - Removed automatic repository maintenance from the foreground commit invocation and scheduled the same best-effort work on a bounded, app-owned background worker after successful commits. This reduced 1,000-file service latency by 74-81% without mutating repository configuration; validation and Git failures schedule nothing (`d1e2d4a`).
