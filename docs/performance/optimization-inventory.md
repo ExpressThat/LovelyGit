@@ -102,7 +102,7 @@ This ledger records shipped performance work by feature area. Update it in the s
 - Removed the nested Suspense reveal delay from stashed-file inspection while preserving the commit-diff chunk; its diff controls and add/remove colors remain shared with the verified diff surface (`95b00d5`).
 - Virtualized saved-stash cards and reused one date formatter so large stash reflogs no longer retain every card and its five actions in the WebView (`89e7d3d`).
 - Rendered ordinary stash-inspection file lists without a virtualizer, bounded maximum-list bootstrap and overscan, and built tracked/untracked inspection entries into one exact-size array while keeping every file reachable (`d715240`).
-- Reused one bounded compressed source bundle across large-file view and whitespace variants, avoiding repeated optimal compression without retaining oversized source strings (current large-diff-source checkpoint).
+- Reused one bounded compressed source bundle across large-file view and whitespace variants, avoiding repeated optimal compression without retaining oversized source strings (`d9ff5a5`).
 - Added immediate optimistic stage/unstage previews and kept them stable during refresh (`7db0b3d`, `15ebece`).
 - Matched small observed-path bursts against sorted 20,000-file working-tree groups with binary searches, copying only groups that actually contain a match and preserving untouched array identity (current large-diff checkpoint).
 - Gave bulk stage, unstage, and discard one browser paint opportunity before entering the synchronous desktop bridge, so bounded optimistic state is visible in 4.3-7.9 ms even when native Git takes seconds; controls remain disabled through completion and failures retain rollback/retry behavior (`5893731`).
