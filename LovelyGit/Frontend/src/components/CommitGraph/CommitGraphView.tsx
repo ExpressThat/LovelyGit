@@ -39,6 +39,7 @@ export function CommitGraphView({
 		isInitialLoading,
 		laneCount,
 		remotePrefixes,
+		refRowsByHash,
 		rows,
 		totalRows,
 	} = useCommitGraphData(refreshToken);
@@ -109,6 +110,7 @@ export function CommitGraphView({
 						onSelectCommit={onSelectCommit}
 						onTagAction={tagController.manageTag}
 						remotePrefixes={remotePrefixes}
+						refRowsByHash={refRowsByHash}
 						repositoryRefs={repositoryRefs.refs}
 						rows={rows}
 						tagMutationBusy={tagController.busyTag !== null}

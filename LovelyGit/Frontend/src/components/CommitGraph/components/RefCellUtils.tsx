@@ -7,24 +7,30 @@ export function normalizeRefs(
 	remotePrefixes: string[],
 ): CommitRefInfo[] {
 	const seenLocalLabels = new Set<string>();
-	return refs.map((rawRef) => {
-		const ref = normalizeRuntimeKind(rawRef);
+	let normalized: CommitRefInfo[] | null = null;
+	for (let index = 0; index < refs.length; index++) {
+		const rawRef = refs[index];
+		let ref = normalizeRuntimeKind(rawRef);
 		if (ref.kind !== "Local") {
-			return ref;
+			// Already normalized.
+		} else {
+			const label = refLabelForRemotes(ref.name, remotePrefixes);
+			if (
+				isLikelyRemoteBranch(ref.name, remotePrefixes) ||
+				seenLocalLabels.has(label)
+			) {
+				ref = { ...ref, kind: "Remote" };
+			} else {
+				seenLocalLabels.add(label);
+			}
 		}
 
-		if (isLikelyRemoteBranch(ref.name, remotePrefixes)) {
-			return { ...ref, kind: "Remote" };
+		if (ref !== rawRef && normalized === null) {
+			normalized = refs.slice(0, index);
 		}
-
-		const label = refLabelForRemotes(ref.name, remotePrefixes);
-		if (seenLocalLabels.has(label)) {
-			return { ...ref, kind: "Remote" };
-		}
-
-		seenLocalLabels.add(label);
-		return ref;
-	});
+		normalized?.push(ref);
+	}
+	return normalized ?? refs;
 }
 
 function normalizeRuntimeKind(ref: CommitRefInfo): CommitRefInfo {
@@ -59,83 +65,74 @@ export function groupRefs(
 	remotePrefixes: string[],
 	currentBranchName: string | null,
 ): RefGroup[] {
-	const groups = new Map<string, CommitRefInfo[]>();
-	for (const ref of refs) {
-		const key = displayKey(ref, remotePrefixes);
+	const groups = new Map<string, RefGroupBuilder>();
+	for (const sourceRef of refs) {
+		const label = refLabelForRemotes(sourceRef.name, remotePrefixes);
+		const key = displayKey(sourceRef.kind, label);
 		const group = groups.get(key);
 		if (group) {
-			group.push(ref);
+			const ref =
+				sourceRef.kind === "Local" && group.hasLocal
+					? { ...sourceRef, kind: "Remote" as const }
+					: sourceRef;
+			group.hasLocal ||= ref.kind === "Local";
+			group.isCurrent ||=
+				ref.kind === "Local" && ref.name === currentBranchName;
+			group.kindMask |= 1 << kindRank(ref.kind);
+			group.refs.push(ref);
 		} else {
-			groups.set(key, [ref]);
+			groups.set(key, createGroup(sourceRef, key, label, currentBranchName));
 		}
 	}
 
-	return [...groups.entries()]
-		.map(([key, groupRefsForKey]) => {
-			const ordered = normalizeGroupedRefs(groupRefsForKey)
-				.slice()
-				.sort((left, right) => compareRefs(left, right, remotePrefixes));
-			return {
-				icons: uniqueKinds(ordered),
-				key,
-				primary: ordered[0],
-				refs: ordered,
-			};
-		})
-		.sort((left, right) =>
-			compareGroups(left, right, remotePrefixes, currentBranchName),
-		);
-}
-
-function compareGroups(
-	left: RefGroup,
-	right: RefGroup,
-	remotePrefixes: string[],
-	currentBranchName: string | null,
-) {
-	const leftIsCurrent = groupContainsCurrentBranch(left, currentBranchName);
-	const rightIsCurrent = groupContainsCurrentBranch(right, currentBranchName);
-	if (leftIsCurrent !== rightIsCurrent) {
-		return leftIsCurrent ? -1 : 1;
+	const orderedGroups = [...groups.values()];
+	for (const group of orderedGroups) {
+		group.refs.sort((left, right) => compareRefs(left, right, remotePrefixes));
 	}
-
-	return compareRefs(left.primary, right.primary, remotePrefixes);
-}
-
-function groupContainsCurrentBranch(
-	group: RefGroup,
-	currentBranchName: string | null,
-) {
-	return currentBranchName != null
-		? group.refs.some(
-				(ref) => ref.kind === "Local" && ref.name === currentBranchName,
-			)
-		: false;
-}
-
-function normalizeGroupedRefs(refs: CommitRefInfo[]): CommitRefInfo[] {
-	let sawLocal = false;
-	return refs.map((ref) => {
-		if (ref.kind !== "Local") {
-			return ref;
-		}
-
-		if (sawLocal) {
-			return { ...ref, kind: "Remote" };
-		}
-
-		sawLocal = true;
-		return ref;
+	orderedGroups.sort((left, right) => {
+		if (left.isCurrent !== right.isCurrent) return left.isCurrent ? -1 : 1;
+		const rank = kindRank(left.refs[0].kind) - kindRank(right.refs[0].kind);
+		return rank || left.label.localeCompare(right.label);
 	});
+	return orderedGroups.map((group) => ({
+		icons: kindsFromMask(group.kindMask),
+		key: group.key,
+		primary: group.refs[0],
+		refs: group.refs,
+	}));
 }
 
-function displayKey(ref: CommitRefInfo, remotePrefixes: string[]) {
-	if (ref.kind === "Stash") {
+function createGroup(
+	ref: CommitRefInfo,
+	key: string,
+	label: string,
+	currentBranchName: string | null,
+): RefGroupBuilder {
+	return {
+		hasLocal: ref.kind === "Local",
+		isCurrent: ref.kind === "Local" && ref.name === currentBranchName,
+		key,
+		kindMask: 1 << kindRank(ref.kind),
+		label,
+		refs: [ref],
+	};
+}
+
+type RefGroupBuilder = {
+	hasLocal: boolean;
+	isCurrent: boolean;
+	key: string;
+	kindMask: number;
+	label: string;
+	refs: CommitRefInfo[];
+};
+
+function displayKey(kind: CommitRefKind, label: string) {
+	if (kind === "Stash") {
 		return "stash";
 	}
 
-	const label = refLabelForRemotes(ref.name, remotePrefixes);
-	if (ref.kind === "Tag") {
+	if (kind === "Tag") {
 		return `tag:${label}`;
 	}
 
@@ -156,9 +153,18 @@ function compareRefs(
 }
 
 export function uniqueKinds(refs: CommitRefInfo[]) {
-	return [...new Set(refs.map((ref) => ref.kind))].sort(
-		(left, right) => kindRank(left) - kindRank(right),
-	);
+	let mask = 0;
+	for (const ref of refs) mask |= 1 << kindRank(ref.kind);
+	return kindsFromMask(mask);
+}
+
+function kindsFromMask(mask: number): CommitRefKind[] {
+	const kinds: CommitRefKind[] = [];
+	if (mask & 1) kinds.push("Local");
+	if (mask & 2) kinds.push("Remote");
+	if (mask & 4) kinds.push("Tag");
+	if (mask & 8) kinds.push("Stash");
+	return kinds;
 }
 
 function kindRank(kind: CommitRefKind) {

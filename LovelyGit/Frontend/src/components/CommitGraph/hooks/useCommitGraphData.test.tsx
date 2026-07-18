@@ -77,6 +77,44 @@ describe("useCommitGraphData", () => {
 		expect(result.current.rows).toHaveLength(256);
 	});
 
+	it("keeps a compact index of only loaded ref-tip rows", async () => {
+		const page = response(0, 128, true);
+		page.rows[37].commit.refs = [
+			{ kind: "Local", name: "feature/indexed", remoteUrl: null },
+		];
+		mocks.sendRequest.mockResolvedValueOnce(page);
+		const { useCommitGraphData } = await import("./useCommitGraphData");
+		const { result } = renderHook(() => useCommitGraphData());
+
+		await waitFor(() => expect(result.current.rows).toHaveLength(128));
+
+		expect(result.current.refRowsByHash.size).toBe(1);
+		expect(result.current.refRowsByHash.get(page.rows[37].commit.hash)).toBe(
+			result.current.rows[37],
+		);
+	});
+
+	it("removes a ref-tip row from the index when refreshed refs move", async () => {
+		const withRef = response(0, 1, false);
+		withRef.rows[0].commit.refs = [
+			{ kind: "Local", name: "feature/moving", remoteUrl: null },
+		];
+		mocks.sendRequest
+			.mockResolvedValueOnce(withRef)
+			.mockResolvedValueOnce(response(0, 1, false));
+		const { useCommitGraphData } = await import("./useCommitGraphData");
+		const { result, rerender } = renderHook(
+			({ refreshToken }) => useCommitGraphData(refreshToken),
+			{ initialProps: { refreshToken: 0 } },
+		);
+		await waitFor(() => expect(result.current.refRowsByHash.size).toBe(1));
+
+		rerender({ refreshToken: 1 });
+
+		await waitFor(() => expect(result.current.refRowsByHash.size).toBe(0));
+		expect(mocks.sendRequest).toHaveBeenCalledTimes(2);
+	});
+
 	it("honors a farther visible range requested while a page is loading", async () => {
 		let finishFirst!: (value: CommitGraphResponse) => void;
 		mocks.sendRequest

@@ -8,6 +8,7 @@ export type CommitGraphState = {
 	laneCount: number;
 	remotePrefixes: string[];
 	remoteRepositoryUrl: string | null;
+	refRowsByHash: ReadonlyMap<string, CommitGraphRow>;
 	rows: Array<CommitGraphRow | null>;
 	totalRows: number;
 };
@@ -22,6 +23,7 @@ type GraphSession = {
 	nextCursor: string | null;
 	remotePrefixes: string[];
 	remoteRepositoryUrl: string | null;
+	refRowsByHash: Map<string, CommitGraphRow>;
 	repositoryId: string | null;
 	requestedEnd: number;
 	rows: Array<CommitGraphRow | null>;
@@ -115,11 +117,20 @@ function createSession(
 		nextCursor: null,
 		remotePrefixes: cached?.remotePrefixes ?? [],
 		remoteRepositoryUrl: cached?.remoteRepositoryUrl ?? null,
+		refRowsByHash: indexRefRows(cached?.rows ?? []),
 		repositoryId,
 		requestedEnd: 0,
 		rows: cached?.rows ?? [],
 		totalRows: cached?.totalRows ?? 0,
 	};
+}
+
+function indexRefRows(rows: Array<CommitGraphRow | null>) {
+	const indexed = new Map<string, CommitGraphRow>();
+	for (const row of rows) {
+		if (row && row.commit.refs.length > 0) indexed.set(row.commit.hash, row);
+	}
+	return indexed;
 }
 
 type CachedGraphView = Pick<

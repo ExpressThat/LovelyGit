@@ -36,6 +36,7 @@ This ledger records shipped performance work by feature area. Update it in the s
 - Scanned primary remote URLs with a pooled purpose-built reader instead of constructing the complete remote model during repository refreshes (`1c2629b`).
 - Read tiny worktree `HEAD`, `gitdir`, and lock files through stack buffers while preserving the existing bounded concurrency (`48a56ad`).
 - Reset scroll on tab switches and reduced virtualized graph overscan (`6b0fcf6`, `ca11dfd`, `7180d47`).
+- Reused already-normalized commit refs, accumulated group ordering/current/kind state in one pass, and maintained a compact loaded ref-tip index so the sidebar no longer scans the graph's total sparse row space (`this commit`).
 
 ### Native Git Parser and Object Storage
 

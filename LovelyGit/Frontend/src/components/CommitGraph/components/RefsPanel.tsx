@@ -29,6 +29,7 @@ export function RefsPanel({
 	onSelectCommit,
 	onTagAction,
 	remotePrefixes,
+	refRowsByHash,
 	repositoryRefs,
 	rows,
 	tagMutationBusy,
@@ -44,6 +45,7 @@ export function RefsPanel({
 	onSelectCommit: (row: CommitGraphRow) => void;
 	onTagAction: (action: TagAction, tagName: string) => void;
 	remotePrefixes: string[];
+	refRowsByHash: ReadonlyMap<string, CommitGraphRow>;
 	repositoryRefs: RepositoryRefsResponse | null;
 	rows: Array<CommitGraphRow | null>;
 	tagMutationBusy: boolean;
@@ -67,9 +69,10 @@ export function RefsPanel({
 					repositoryRefs?.currentBranchName ?? currentBranchName,
 				refs: repositoryRefs?.refs,
 				remotePrefixes: repositoryRefs?.remotePrefixes ?? remotePrefixes,
+				refRowsByHash,
 				rows,
 			}),
-		[currentBranchName, remotePrefixes, repositoryRefs, rows],
+		[currentBranchName, refRowsByHash, remotePrefixes, repositoryRefs, rows],
 	);
 	const filteredSections = useMemo(
 		() => filterRefPanelSections(sections, query),

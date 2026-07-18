@@ -129,13 +129,14 @@ describe("buildRefPanelSections", () => {
 
 	it("builds refs from a large sparse graph within the interaction budget", () => {
 		const rows = Array<CommitGraphRow | null>(500_000).fill(null);
+		const refRowsByHash = new Map<string, CommitGraphRow>();
 		const refs = Array.from({ length: 500 }, (_, index) =>
 			repositoryRef("Local", `branch/${index}`, `hash-${index}`),
 		);
 		for (let index = 0; index < 128; index++) {
-			rows[index * 3_000] = row(`hash-${index}`, [
-				ref("Local", `branch/${index}`),
-			]);
+			const loadedRow = row(`hash-${index}`, [ref("Local", `branch/${index}`)]);
+			rows[index * 3_000] = loadedRow;
+			refRowsByHash.set(loadedRow.commit.hash, loadedRow);
 		}
 		const startedAt = performance.now();
 
@@ -143,6 +144,7 @@ describe("buildRefPanelSections", () => {
 			currentBranchName: "branch/127",
 			refs,
 			remotePrefixes: ["origin"],
+			refRowsByHash,
 			rows,
 		});
 		const elapsed = performance.now() - startedAt;
@@ -150,6 +152,7 @@ describe("buildRefPanelSections", () => {
 
 		expect(sections[0]?.items).toHaveLength(500);
 		expect(sections[0]?.items[0]?.name).toBe("branch/127");
+		expect(sections[0]?.items[0]?.row).toBe(refRowsByHash.get("hash-127"));
 		expect(elapsed).toBeLessThan(18);
 	});
 });

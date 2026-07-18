@@ -36,31 +36,34 @@ export function buildRefPanelSections({
 	currentBranchName,
 	refs,
 	remotePrefixes,
+	refRowsByHash,
 	rows,
 }: {
 	currentBranchName: string | null;
 	refs?: RepositoryRefItem[] | null;
 	remotePrefixes: string[];
+	refRowsByHash?: ReadonlyMap<string, CommitGraphRow>;
 	rows: Array<CommitGraphRow | null>;
 }): RefPanelSection[] {
 	const itemsByKey = new Map<string, RefPanelItem>();
-	const rowsByHash = new Map<string, CommitGraphRow>();
-	const loadedRows: CommitGraphRow[] = [];
-	const referencedHashes =
-		refs && refs.length > 0
-			? new Set(refs.map((reference) => reference.commitHash))
-			: null;
-	if (refs == null || refs.length > 0) {
+	let rowsByHash = refRowsByHash;
+	let loadedRows: Iterable<CommitGraphRow> = refRowsByHash?.values() ?? [];
+	if (!rowsByHash) {
+		const scannedRows = new Map<string, CommitGraphRow>();
+		const fallbackRows: CommitGraphRow[] = [];
+		const referencedHashes = createReferencedHashSet(refs);
 		for (const row of rows) {
 			if (!row) continue;
 			if (referencedHashes) {
 				if (referencedHashes.has(row.commit.hash)) {
-					rowsByHash.set(row.commit.hash, row);
+					scannedRows.set(row.commit.hash, row);
 				}
 			} else {
-				loadedRows.push(row);
+				fallbackRows.push(row);
 			}
 		}
+		rowsByHash = scannedRows;
+		loadedRows = fallbackRows;
 	}
 
 	for (const ref of refs ?? []) {
@@ -108,6 +111,13 @@ export function buildRefPanelSections({
 			label: sectionLabels[kind],
 		}))
 		.filter((section) => section.count > 0);
+}
+
+function createReferencedHashSet(refs?: RepositoryRefItem[] | null) {
+	if (!refs?.length) return null;
+	const hashes = new Set<string>();
+	for (const ref of refs) hashes.add(ref.commitHash);
+	return hashes;
 }
 
 export function filterRefPanelSections(

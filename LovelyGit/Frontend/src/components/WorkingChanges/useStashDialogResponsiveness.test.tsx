@@ -62,7 +62,9 @@ describe("useStashDialog responsiveness", () => {
 
 	it("refreshes the created stash before publishing the repository change", async () => {
 		const order: string[] = [];
-		const onRepositoryChanged = vi.fn(() => order.push("repository"));
+		const onRepositoryChanged = vi.fn(() => {
+			order.push("repository");
+		});
 		send
 			.mockImplementationOnce(async () => {
 				order.push("create");

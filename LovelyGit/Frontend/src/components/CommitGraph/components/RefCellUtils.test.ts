@@ -25,6 +25,30 @@ describe("commit graph ref grouping", () => {
 		expect(groups[1]?.key).toBe("tag:v1");
 	});
 
+	it("reuses already-normalized ref arrays without changing their entries", () => {
+		const refs = [
+			ref("Local", "feature"),
+			ref("Remote", "origin/feature"),
+			ref("Tag", "v1"),
+		];
+
+		expect(normalizeRefs(refs, ["origin"])).toBe(refs);
+		expect(refs.map((item) => item.kind)).toEqual(["Local", "Remote", "Tag"]);
+	});
+
+	it("normalizes numeric and duplicate local kinds without mutating input", () => {
+		const numeric = { ...ref("Local", "origin/main"), kind: 0 };
+		const duplicate = [numeric, ref("Local", "main")];
+
+		const normalized = normalizeRefs(duplicate as unknown as CommitRefInfo[], [
+			"origin",
+		]);
+
+		expect(normalized).not.toBe(duplicate);
+		expect(normalized.map((item) => item.kind)).toEqual(["Remote", "Local"]);
+		expect(numeric.kind).toBe(0);
+	});
+
 	it("prepares a dense 500-ref commit within the interaction budget", () => {
 		const refs = denseRefs();
 		const startedAt = performance.now();

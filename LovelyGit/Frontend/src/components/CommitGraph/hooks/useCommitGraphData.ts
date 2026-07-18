@@ -5,7 +5,7 @@ import {
 	useRef,
 	useState,
 } from "react";
-import type { CommitGraphResponse } from "@/generated/types";
+import type { CommitGraphRow } from "@/generated/types";
 import {
 	sendRequestWithResponse,
 	subscribeToServerEvent,
@@ -18,7 +18,7 @@ import {
 	deferCachedCommitGraphRefresh,
 	session,
 } from "./commitGraphSession";
-import { compactCommitGraphRow } from "./compactCommitGraphRow";
+import { applyCommitGraphResponse } from "./commitGraphSessionUpdates";
 
 const PAGE_SIZE = 128;
 const PREFETCH_ROWS = 32;
@@ -36,6 +36,7 @@ export function useCommitGraphData(externalRefreshToken = 0) {
 		laneCount: session.laneCount,
 		remotePrefixes: session.remotePrefixes,
 		remoteRepositoryUrl: session.remoteRepositoryUrl,
+		refRowsByHash: session.refRowsByHash,
 		rows: session.rows,
 		totalRows: visibleTotal(),
 	}));
@@ -81,7 +82,7 @@ export function useCommitGraphData(externalRefreshToken = 0) {
 				if (!response) {
 					continue;
 				}
-				applyResponse(response, requiredLength);
+				applyCommitGraphResponse(response, requiredLength, PAGE_SIZE);
 				loadedLength = session.rows.length;
 				startTransition(() => {
 					setState(readSessionState);
@@ -142,6 +143,7 @@ export function useCommitGraphData(externalRefreshToken = 0) {
 				laneCount: session.laneCount,
 				remotePrefixes: session.remotePrefixes,
 				remoteRepositoryUrl: session.remoteRepositoryUrl,
+				refRowsByHash: session.refRowsByHash,
 				rows: session.rows,
 				totalRows:
 					session.totalRows || (currentGitRepositoryId ? PAGE_SIZE : 0),
@@ -182,6 +184,9 @@ function resetSession(
 	const previousRemoteRepositoryUrl = keepRows
 		? session.remoteRepositoryUrl
 		: null;
+	const previousRefRows = keepRows
+		? session.refRowsByHash
+		: new Map<string, CommitGraphRow>();
 	const previousCurrentBranchName = keepRows ? session.currentBranchName : null;
 	session.generation++;
 	session.currentBranchName = previousCurrentBranchName;
@@ -192,32 +197,11 @@ function resetSession(
 	session.nextCursor = null;
 	session.remotePrefixes = previousRemotePrefixes;
 	session.remoteRepositoryUrl = previousRemoteRepositoryUrl;
+	session.refRowsByHash = previousRefRows;
 	session.repositoryId = repositoryId;
 	session.requestedEnd = 0;
 	session.rows = previousRows;
 	session.totalRows = previousTotalRows;
-}
-function applyResponse(response: CommitGraphResponse, requiredLength: number) {
-	const nextRows = session.rows;
-	let loadedRowCount = session.loadedRowCount;
-	for (const row of response.rows) {
-		nextRows[row.rowIndex] = compactCommitGraphRow(row);
-		loadedRowCount = Math.max(loadedRowCount, row.rowIndex + 1);
-	}
-	if (!response.hasMore) {
-		nextRows.length = response.totalRows;
-	}
-	session.nextCursor = response.nextCursor;
-	session.hasMore = response.hasMore;
-	session.currentBranchName = response.currentBranchName ?? null;
-	session.remotePrefixes = response.remotePrefixes;
-	session.remoteRepositoryUrl = response.remoteRepositoryUrl;
-	session.rows = nextRows;
-	session.loadedRowCount = loadedRowCount;
-	session.laneCount = Math.max(session.laneCount, response.laneCount);
-	session.totalRows = response.hasMore
-		? Math.max(session.totalRows, nextRows.length + PAGE_SIZE, requiredLength)
-		: response.totalRows;
 }
 function readSessionState(): CommitGraphState {
 	return {
@@ -227,6 +211,7 @@ function readSessionState(): CommitGraphState {
 		laneCount: session.laneCount,
 		remotePrefixes: session.remotePrefixes,
 		remoteRepositoryUrl: session.remoteRepositoryUrl,
+		refRowsByHash: session.refRowsByHash,
 		rows: session.rows,
 		totalRows: visibleTotal(),
 	};

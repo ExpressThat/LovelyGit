@@ -7,7 +7,7 @@ This is the durable index of LovelyGit performance work. Update the linked ledge
 - [Verified performance results](docs/performance/verified-results.md)
 - [Completed optimization inventory](docs/performance/optimization-inventory.md)
 
-Latest verified checkpoint: stash mutations now paint their busy state before entering the desktop bridge and return the authoritative reflog snapshot with the mutation response, eliminating the stale follow-up ref scan. See the linked ledgers for native and WebView measurements.
+Latest verified checkpoint: commit-ref grouping now reuses already-normalized inputs, and the refs sidebar reads a compact index of loaded ref-tip rows instead of scanning the graph's total sparse row space. See the linked ledgers for native and WebView measurements.
 
 ## Measurement Rules
 
