@@ -30,6 +30,8 @@ describe("applyObservedWorkingTreeChanges", () => {
 		expect(next?.untracked).toEqual([]);
 		expect(next?.unstaged.map((change) => change.path)).toEqual(["src/app.ts"]);
 		expect(next?.totalCount).toBe(1);
+		expect(next?.staged).toBe(current.staged);
+		expect(next?.unmerged).toBe(current.unmerged);
 	});
 
 	it("removes an observed untracked file when it is deleted", () => {

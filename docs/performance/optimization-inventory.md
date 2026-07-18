@@ -86,6 +86,7 @@ This ledger records shipped performance work by feature area. Update it in the s
 - Removed the nested Suspense reveal delay from stashed-file inspection while preserving the commit-diff chunk; its diff controls and add/remove colors remain shared with the verified diff surface (`95b00d5`).
 - Virtualized saved-stash cards and reused one date formatter so large stash reflogs no longer retain every card and its five actions in the WebView (`89e7d3d`).
 - Added immediate optimistic stage/unstage previews and kept them stable during refresh (`7db0b3d`, `15ebece`).
+- Matched small observed-path bursts against sorted 20,000-file working-tree groups with binary searches, copying only groups that actually contain a match and preserving untouched array identity (current large-diff checkpoint).
 - Gave bulk stage, unstage, and discard one browser paint opportunity before entering the synchronous desktop bridge, so bounded optimistic state is visible in 4.3-7.9 ms even when native Git takes seconds; controls remain disabled through completion and failures retain rollback/retry behavior (`5893731`).
 - Removed automatic repository maintenance from the foreground commit invocation and scheduled the same best-effort work on a bounded, app-owned background worker after successful commits. This reduced 1,000-file service latency by 74-81% without mutating repository configuration; validation and Git failures schedule nothing (`d1e2d4a`).
 - Accelerated single-file index updates and avoided duplicate staged/index scans (`c1dc63e`, `67f1d6a`, `f662e04`).
@@ -109,6 +110,7 @@ This ledger records shipped performance work by feature area. Update it in the s
 - Trimmed unchanged edges, vectorized line preparation, reduced line splitting/context allocations, and accelerated ignored-whitespace diffs (`91de674`, `5ca8e3e`, `9ee5854`, `470bc1c`, `5890323`).
 - Virtualized and bounded large/long-line rendering and halved side-by-side row work (`30404a9`, `4dd7b33`, `6c4a42b`, `4429b34`, `df83dfe`).
 - Compacted, compressed, referenced, and reused large colored diff payloads across layouts (`b55def8`, `f4f6d53`, `46af1fd`, `80d6769`, `ac7fb8a`, `df0c41b`, `d10ac7b`).
+- Shared immutable empty syntax/change metadata between hydrated rows and released oversized decoded row/intermediate caches when a diff unmounts, while retaining the compact response for fast reopening (current large-diff checkpoint).
 - Bounded decoded/source/result cache weight and skipped uncacheable prewarming (`15ce59d`, `9f613ed`, `c4e610c`, `70eecfd`).
 - Moved diff persistence off click paths and cached open variants (`b074af7`, `dc120ec`, `54cb0c7`, `3726952`).
 - Streamed patch previews through a pooled character buffer so large Apply Patch files no longer allocate one string per content line (`dfe357d`).

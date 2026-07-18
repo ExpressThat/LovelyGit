@@ -7,7 +7,7 @@ This is the durable index of LovelyGit performance work. Update the linked ledge
 - [Verified performance results](docs/performance/verified-results.md)
 - [Completed optimization inventory](docs/performance/optimization-inventory.md)
 
-Latest verified checkpoint: the comparable 934-test backend gate fell from roughly 104.4 seconds to 75.94-76.09 seconds by preparing exclusive Git fixtures during ordinary unit-test execution; the final 935-test gate passed in 76.02 seconds after adding Unicode-path coverage. Deep history and blame also reuse one encoded Git path across their ancestry walks. The strict sub-minute target remains open. See the linked ledgers for the complete evidence.
+Latest verified checkpoint: a 100,000-line modified diff now uses 45.45 MB of post-GC WebView heap instead of 83.18 MB and releases to 12.14-12.40 MB after closing instead of retaining 66.49 MB. Sparse observation of 25 paths in a 20,000-file working tree fell from 12.13-12.46 ms to 5.65 ms. The backend gate remains at 76.02 seconds for 935 tests, so its strict sub-minute target remains open. See the linked ledgers for the complete evidence.
 
 ## Measurement Rules
 

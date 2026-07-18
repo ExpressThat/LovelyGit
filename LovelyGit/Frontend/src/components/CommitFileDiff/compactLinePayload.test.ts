@@ -21,6 +21,7 @@ describe("compactLinePayload", () => {
 		expect(second).toBe(first);
 		expect(await second).toHaveLength(1);
 	});
+
 	it("restores syntax and intra-line change spans", () => {
 		const line = toDiffLine([
 			4,
@@ -97,6 +98,19 @@ describe("compactLinePayload", () => {
 		expect(lines[1].newText).toBe("source two");
 		expect(lines[1].oldSyntaxSpans[0].scope).toBe("keyword");
 		expect(lines[1].newChangeSpans[0].changeType).toBe("Inserted");
+	});
+
+	it("shares immutable empty rendering metadata across large rows", () => {
+		const lines = decodeDeltaReferenceLines(
+			Array.from({ length: 10_000 }, () => [1, 1, 0]),
+			Array.from({ length: 10_000 }, (_, index) => `old ${index}`).join("\n"),
+			Array.from({ length: 10_000 }, (_, index) => `new ${index}`).join("\n"),
+		);
+
+		expect(lines[0].syntaxSpans).toBe(lines[9_999].syntaxSpans);
+		expect(lines[0].changeSpans).toBe(lines[9_999].changeSpans);
+		expect(Object.isFrozen(lines[0].syntaxSpans)).toBe(true);
+		expect(Object.isFrozen(lines[0].changeSpans)).toBe(true);
 	});
 
 	it("hydrates the single text column used by combined rows", () => {

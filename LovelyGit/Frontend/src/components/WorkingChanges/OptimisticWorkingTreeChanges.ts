@@ -47,24 +47,60 @@ function partitionObservedPaths(
 	paths: Set<string>,
 ) {
 	const latest = new Map<string, WorkingTreeChangedFile[]>();
-	const retainUnobserved = (file: WorkingTreeChangedFile) => {
-		if (!paths.has(file.path)) return true;
-		const files = latest.get(file.path);
-		if (files) files.push(file);
-		else latest.set(file.path, [file]);
-		return false;
-	};
+	const sortedPaths = [...paths].sort();
 	return {
 		latest,
 		next: {
 			isComplete: current?.isComplete ?? true,
-			staged: (current?.staged ?? []).filter(retainUnobserved),
-			unstaged: (current?.unstaged ?? []).filter(retainUnobserved),
-			untracked: (current?.untracked ?? []).filter(retainUnobserved),
-			unmerged: (current?.unmerged ?? []).filter(retainUnobserved),
+			staged: partitionGroup(current?.staged ?? [], sortedPaths, latest),
+			unstaged: partitionGroup(current?.unstaged ?? [], sortedPaths, latest),
+			untracked: partitionGroup(current?.untracked ?? [], sortedPaths, latest),
+			unmerged: partitionGroup(current?.unmerged ?? [], sortedPaths, latest),
 			totalCount: current?.totalCount ?? 0,
 		},
 	};
+}
+
+function partitionGroup(
+	files: WorkingTreeChangedFile[],
+	paths: string[],
+	latest: Map<string, WorkingTreeChangedFile[]>,
+) {
+	const removed: number[] = [];
+	for (const path of paths) {
+		let index = lowerBound(files, path);
+		while (files[index]?.path === path) {
+			const existing = latest.get(path);
+			if (existing) existing.push(files[index]);
+			else latest.set(path, [files[index]]);
+			removed.push(index++);
+		}
+	}
+	if (removed.length === 0) return files;
+	const retained = new Array<WorkingTreeChangedFile>(
+		files.length - removed.length,
+	);
+	let removeIndex = 0;
+	let writeIndex = 0;
+	for (let readIndex = 0; readIndex < files.length; readIndex++) {
+		if (readIndex === removed[removeIndex]) {
+			removeIndex++;
+		} else {
+			retained[writeIndex++] = files[readIndex];
+		}
+	}
+	return retained;
+}
+
+function lowerBound(files: WorkingTreeChangedFile[], path: string) {
+	let low = 0;
+	let high = files.length;
+	while (low < high) {
+		const middle = (low + high) >>> 1;
+		if ((files[middle]?.path ?? "") < path) low = middle + 1;
+		else high = middle;
+	}
+	return low;
 }
 
 export function shouldApplyObservedWorkingTreeChanges(

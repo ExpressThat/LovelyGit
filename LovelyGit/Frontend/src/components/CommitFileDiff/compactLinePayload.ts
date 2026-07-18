@@ -1,6 +1,8 @@
 import type {
+	CommitFileDiffChangeSpan,
 	CommitFileDiffLine,
 	CommitFileDiffResponse,
+	CommitFileDiffSyntaxSpan,
 } from "@/generated/types";
 import { getCompactDiffPayloadIdentity } from "@/lib/compactDiffPayloadIdentity";
 import { decodeConflictTextBundle } from "../ConflictResolution/conflictTextBinary";
@@ -45,6 +47,11 @@ const decodedSourceCache = new WeakMap<
 	object,
 	Promise<{ oldLines: string[]; newLines: string[] }>
 >();
+const MAX_RETAINED_DECODED_LINES = 5_000;
+const EMPTY_SYNTAX_SPANS: CommitFileDiffSyntaxSpan[] = [];
+const EMPTY_CHANGE_SPANS: CommitFileDiffChangeSpan[] = [];
+Object.freeze(EMPTY_SYNTAX_SPANS);
+Object.freeze(EMPTY_CHANGE_SPANS);
 
 export function hasCompactLinePayload(diff: CommitFileDiffResponse) {
 	return Boolean(diff.compactLinesGzipBase64);
@@ -58,6 +65,12 @@ export function loadCompactLines(
 	const loading = decodeCompactLines(diff);
 	decodedLineCache.set(diff, loading);
 	return loading;
+}
+
+export function releaseCompactLines(diff: CommitFileDiffResponse) {
+	if (!isOversizedDecodedPayload(diff)) return;
+	decodedLineCache.delete(diff);
+	releaseDeltaIntermediates(diff);
 }
 
 async function decodeCompactLines(
@@ -75,16 +88,20 @@ async function decodeCompactLines(
 		if (!diff.compactSourceBundleGzipBase64) {
 			throw new Error("The compact diff source bundle is missing.");
 		}
-		const [sources, tuples] = await Promise.all([
-			loadDeltaSources(diff),
-			loadDeltaTuples(diff),
-		]);
-		return decodeDeltaReferenceLineArrays(
-			tuples,
-			sources.oldLines,
-			sources.newLines,
-			diff.viewMode === "Combined",
-		);
+		try {
+			const [sources, tuples] = await Promise.all([
+				loadDeltaSources(diff),
+				loadDeltaTuples(diff),
+			]);
+			return decodeDeltaReferenceLineArrays(
+				tuples,
+				sources.oldLines,
+				sources.newLines,
+				diff.viewMode === "Combined",
+			);
+		} finally {
+			if (isOversizedDecodedPayload(diff)) releaseDeltaIntermediates(diff);
+		}
 	}
 	if (
 		diff.compactLineSchema !== "tuple-v1:gzip-base64:utf-8" &&
@@ -152,6 +169,16 @@ function loadDeltaSources(diff: CommitFileDiffResponse) {
 	return loading;
 }
 
+function releaseDeltaIntermediates(diff: CommitFileDiffResponse) {
+	const identity = getCompactDiffPayloadIdentity(diff);
+	decodedDeltaTupleCache.delete(identity);
+	decodedSourceCache.delete(identity);
+}
+
+function isOversizedDecodedPayload(diff: CommitFileDiffResponse) {
+	return (diff.compactLineCount ?? 0) > MAX_RETAINED_DECODED_LINES;
+}
+
 export function toDiffLine(
 	tuple: CompactLineTuple,
 	sources?: { oldLines: string[]; newLines: string[] },
@@ -163,12 +190,12 @@ export function toDiffLine(
 		newText: tuple[3] ?? lineAt(sources?.newLines, tuple[1]),
 		text: tuple[4] ?? "",
 		changeType: tuple[5] ?? "",
-		oldSyntaxSpans: (tuple[6] ?? []).map(toSyntaxSpan),
-		newSyntaxSpans: (tuple[7] ?? []).map(toSyntaxSpan),
-		syntaxSpans: (tuple[8] ?? []).map(toSyntaxSpan),
-		oldChangeSpans: (tuple[9] ?? []).map(toChangeSpan),
-		newChangeSpans: (tuple[10] ?? []).map(toChangeSpan),
-		changeSpans: (tuple[11] ?? []).map(toChangeSpan),
+		oldSyntaxSpans: mapSyntaxSpans(tuple[6]),
+		newSyntaxSpans: mapSyntaxSpans(tuple[7]),
+		syntaxSpans: mapSyntaxSpans(tuple[8]),
+		oldChangeSpans: mapChangeSpans(tuple[9]),
+		newChangeSpans: mapChangeSpans(tuple[10]),
+		changeSpans: mapChangeSpans(tuple[11]),
 	};
 }
 
@@ -184,6 +211,14 @@ function toSyntaxSpan([start, length, scope]: CompactSyntaxSpanTuple) {
 	return { start, length, scope };
 }
 
+function mapSyntaxSpans(spans: CompactSyntaxSpanTuple[] | undefined) {
+	return spans?.length ? spans.map(toSyntaxSpan) : EMPTY_SYNTAX_SPANS;
+}
+
 function toChangeSpan([start, length, changeType]: CompactChangeSpanTuple) {
 	return { start, length, changeType };
+}
+
+function mapChangeSpans(spans: CompactChangeSpanTuple[] | undefined) {
+	return spans?.length ? spans.map(toChangeSpan) : EMPTY_CHANGE_SPANS;
 }

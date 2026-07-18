@@ -1,4 +1,8 @@
-import type { CommitFileDiffLine } from "@/generated/types";
+import type {
+	CommitFileDiffChangeSpan,
+	CommitFileDiffLine,
+	CommitFileDiffSyntaxSpan,
+} from "@/generated/types";
 
 type SyntaxSpanTuple = [number, number, string];
 type ChangeSpanTuple = [number, number, string];
@@ -13,6 +17,10 @@ export type DeltaReferenceTuple = [
 	ChangeSpanTuple[]?,
 	ChangeSpanTuple[]?,
 ];
+const EMPTY_SYNTAX_SPANS: CommitFileDiffSyntaxSpan[] = [];
+const EMPTY_CHANGE_SPANS: CommitFileDiffChangeSpan[] = [];
+Object.freeze(EMPTY_SYNTAX_SPANS);
+Object.freeze(EMPTY_CHANGE_SPANS);
 
 export function decodeDeltaReferenceLines(
 	tuples: DeltaReferenceTuple[],
@@ -52,12 +60,12 @@ export function decodeDeltaReferenceLineArrays(
 			newText: newLineText,
 			text: "",
 			changeType: resolvedChangeType,
-			oldSyntaxSpans: (tuple[3] ?? []).map(toSyntaxSpan),
-			newSyntaxSpans: (tuple[4] ?? []).map(toSyntaxSpan),
-			syntaxSpans: (tuple[5] ?? []).map(toSyntaxSpan),
-			oldChangeSpans: (tuple[6] ?? []).map(toChangeSpan),
-			newChangeSpans: (tuple[7] ?? []).map(toChangeSpan),
-			changeSpans: (tuple[8] ?? []).map(toChangeSpan),
+			oldSyntaxSpans: mapSyntaxSpans(tuple[3]),
+			newSyntaxSpans: mapSyntaxSpans(tuple[4]),
+			syntaxSpans: mapSyntaxSpans(tuple[5]),
+			oldChangeSpans: mapChangeSpans(tuple[6]),
+			newChangeSpans: mapChangeSpans(tuple[7]),
+			changeSpans: mapChangeSpans(tuple[8]),
 		};
 		if (
 			combined &&
@@ -122,6 +130,14 @@ function toSyntaxSpan([start, length, scope]: SyntaxSpanTuple) {
 	return { start, length, scope };
 }
 
+function mapSyntaxSpans(spans: SyntaxSpanTuple[] | undefined) {
+	return spans?.length ? spans.map(toSyntaxSpan) : EMPTY_SYNTAX_SPANS;
+}
+
 function toChangeSpan([start, length, changeType]: ChangeSpanTuple) {
 	return { start, length, changeType };
+}
+
+function mapChangeSpans(spans: ChangeSpanTuple[] | undefined) {
+	return spans?.length ? spans.map(toChangeSpan) : EMPTY_CHANGE_SPANS;
 }

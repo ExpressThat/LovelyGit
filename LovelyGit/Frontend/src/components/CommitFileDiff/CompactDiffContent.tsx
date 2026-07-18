@@ -4,7 +4,7 @@ import type {
 	CommitFileDiffResponse,
 } from "@/generated/types";
 import { CombinedDiff } from "./CombinedDiff";
-import { loadCompactLines } from "./compactLinePayload";
+import { loadCompactLines, releaseCompactLines } from "./compactLinePayload";
 import { buildDiffHunkLookupIfActionable } from "./DiffHunkActions";
 import { type DiffDisplayRow, getContextualDiffRows } from "./DiffRows";
 import { SideBySideDiff } from "./SideBySideDiff";
@@ -58,6 +58,7 @@ export function CompactDiffContent({
 			});
 		return () => {
 			active = false;
+			releaseCompactLines(diff);
 		};
 	}, [diff]);
 
