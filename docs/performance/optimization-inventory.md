@@ -172,6 +172,7 @@ This ledger records shipped performance work by feature area. Update it in the s
 - Invalidated the active graph immediately after successful remote synchronization instead of waiting for the 200 ms external-change debounce. Pull now presents the moved local ref 5 ms after completion instead of 186 ms, while Fetch presents its updated remote ref in 12 ms (`43b1057`).
 - Reconciled successful branch pushes directly instead of waiting for the repository watcher. The remote ref now appears 62 ms after completion instead of 278 ms, while the existing branch-action path already paints busy feedback in 18-21 ms without an extra forced delay (`55217b8`).
 - Replaced lifetime-long retired pack-index and pack-file retention with generation-aware read leases. Fetch/repack can now replace native pack snapshots without interrupting active reads, while obsolete handles close after their final reader instead of accumulating until repository disposal (`986719d`).
+- Followed `CurrentGitRepositoryId` changes in the commit-graph lifetime service so closing the final repository tab immediately disposes the active native pack reader and traversal. Visible repositories still retain their warm traversal for near-instant continuation, and switching repositories retains only the bounded 64-row frontend preview (current graph-lifetime checkpoint).
 
 ### Clone and Remote Transport
 

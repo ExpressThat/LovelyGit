@@ -132,7 +132,9 @@ internal sealed partial class CommitGraphPageService : IDisposable
         CloseGraph(repositoryId);
     }
 
-    private async Task SwitchActiveRepositoryAsync(Guid repositoryId, CancellationToken cancellationToken)
+    internal async Task SwitchActiveRepositoryAsync(
+        Guid? repositoryId,
+        CancellationToken cancellationToken = default)
     {
         List<Guid> staleRepositoryIds;
         lock (_cacheWorkLock)

@@ -67,12 +67,39 @@ public sealed class CommitGraphPageServiceLifetimeTests
                 CancellationToken.None));
     }
 
+    [Fact]
+    public async Task ClearingTheActiveRepository_DisposesItsTraversalImmediately()
+    {
+        using var repository = TemporaryGitRepository.Create();
+        var repositoryId = Guid.NewGuid();
+        var open = await CommitGraphManager.TryOpenAsync(
+            repository.Path,
+            repositoryId,
+            null!,
+            CancellationToken.None);
+        var graph = Assert.IsType<CommitGraphManager>(open.Graph);
+        using var service = CreateService(TimeSpan.FromSeconds(30));
+        var activeGraphs = GetActiveGraphs(service);
+        var cacheWorkLock = GetCacheWorkLock(service);
+        activeGraphs.Add(repositoryId, graph);
+        SetActiveRepository(service, repositoryId);
+
+        await service.SwitchActiveRepositoryAsync(null);
+
+        Assert.False(ContainsGraph(cacheWorkLock, activeGraphs, repositoryId));
+        await Assert.ThrowsAsync<ObjectDisposedException>(() =>
+            graph.GetCommitGraphPageAsync(
+                new CommitGraphCursorState(null, 0),
+                1,
+                CancellationToken.None));
+    }
+
     private static CommitGraphPageService CreateService(TimeSpan closeDelay) =>
         new(
             null!,
             null!,
-            null!,
-            null!,
+            new CommitDetailsPreloadService(null!, null!),
+            new CommitFileDiffService(null!),
             new CommitGraphBackgroundWorkerOptions(false, false, false),
             closeDelay);
 

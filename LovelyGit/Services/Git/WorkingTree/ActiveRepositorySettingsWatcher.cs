@@ -1,5 +1,6 @@
 using ExpressThat.LovelyGit.Services.Data;
 using ExpressThat.LovelyGit.Services.Data.Models;
+using ExpressThat.LovelyGit.Services.Git.CommitGraph.Queries;
 using ExpressThat.LovelyGit.Services.Settings;
 using BLite.Core.CDC;
 using System.Diagnostics;
@@ -10,16 +11,19 @@ internal sealed class ActiveRepositorySettingsWatcher : IHostedService, IDisposa
 {
     private readonly AppDbContext _appDbContext;
     private readonly SettingsManager _settingsManager;
+    private readonly CommitGraphPageService _commitGraphPageService;
     private readonly WorkingTreeWatcherService _workingTreeWatcherService;
     private IDisposable? _subscription;
 
     public ActiveRepositorySettingsWatcher(
         AppDbContext appDbContext,
         SettingsManager settingsManager,
+        CommitGraphPageService commitGraphPageService,
         WorkingTreeWatcherService workingTreeWatcherService)
     {
         _appDbContext = appDbContext;
         _settingsManager = settingsManager;
+        _commitGraphPageService = commitGraphPageService;
         _workingTreeWatcherService = workingTreeWatcherService;
     }
 
@@ -52,12 +56,15 @@ internal sealed class ActiveRepositorySettingsWatcher : IHostedService, IDisposa
             var repositoryId = await _settingsManager
                 .GetSetting(SettingsResolver.CurrentGitRepositoryId)
                 .ConfigureAwait(false);
+            await _commitGraphPageService
+                .SwitchActiveRepositoryAsync(repositoryId)
+                .ConfigureAwait(false);
             await _workingTreeWatcherService.SwitchActiveRepositoryAsync(repositoryId).ConfigureAwait(false);
         }
         catch (Exception exception)
         {
-            Trace.TraceWarning("Working tree watcher failed to follow active repository setting: {0}", exception);
-            Console.Error.WriteLine("Working tree watcher failed to follow active repository setting: {0}", exception);
+            Trace.TraceWarning("Repository services failed to follow active repository setting: {0}", exception);
+            Console.Error.WriteLine("Repository services failed to follow active repository setting: {0}", exception);
         }
     }
 
