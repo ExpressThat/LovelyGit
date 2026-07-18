@@ -92,7 +92,7 @@ public sealed class GitObjectStoreCacheTests
     }
 
     [Fact]
-    public async Task Repack_RetiresStalePackFileHandlesAfterTheLastRead()
+    public async Task RepeatedRepacks_RetireEveryStalePackGeneration()
     {
         using var directory = TemporaryDirectory.Create("lovelygit-pack-retirement-");
         await GitTestProcess.RunAsync(directory.Path, "init");
@@ -111,13 +111,24 @@ public sealed class GitObjectStoreCacheTests
         Assert.Equal(1, store.OpenPackFileCount);
         Assert.Equal(1, store.OpenPackIndexCount);
 
-        await File.WriteAllTextAsync(Path.Combine(directory.Path, "second.txt"), "second");
-        await GitTestProcess.RunAsync(directory.Path, "add", ".");
-        await GitTestProcess.RunAsync(directory.Path, "commit", "-m", "second pack");
-        await GitTestProcess.RunAsync(directory.Path, "gc", "--prune=now");
-        await store.ReadObjectWithoutCachingAsync(firstCommit, CancellationToken.None);
+        for (var generation = 2; generation <= 6; generation++)
+        {
+            await File.WriteAllTextAsync(
+                Path.Combine(directory.Path, $"packed-{generation}.txt"),
+                $"generation {generation}");
+            await GitTestProcess.RunAsync(directory.Path, "add", ".");
+            await GitTestProcess.RunAsync(
+                directory.Path,
+                "commit",
+                "-m",
+                $"pack generation {generation}");
+            var currentCommit = GitObjectId.Parse(
+                (await GitTestProcess.RunAsync(directory.Path, "rev-parse", "HEAD")).Trim());
+            await GitTestProcess.RunAsync(directory.Path, "gc", "--prune=now");
+            await store.ReadObjectWithoutCachingAsync(currentCommit, CancellationToken.None);
 
-        Assert.Equal(1, store.OpenPackFileCount);
-        Assert.Equal(1, store.OpenPackIndexCount);
+            Assert.Equal(1, store.OpenPackFileCount);
+            Assert.Equal(1, store.OpenPackIndexCount);
+        }
     }
 }
