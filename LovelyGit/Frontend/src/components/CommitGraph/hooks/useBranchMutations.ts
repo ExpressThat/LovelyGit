@@ -65,6 +65,7 @@ export function useBranchMutations({
 				},
 				commandType: NativeMessageType.PushBranch,
 			},
+			onRepositoryChanged,
 		);
 	};
 

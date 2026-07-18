@@ -15,6 +15,8 @@ Successful remote operations now invalidate the active graph directly instead of
 
 Frontend wall-clock performance tests now run as a sequential Vitest project after the ordinary parallel suite, preventing unrelated workers from invalidating strict latency budgets. Two complete 709-test gates passed in 50.69 and 49.76 seconds without relaxing any threshold.
 
+Successful branch pushes now request the same authoritative repository refresh as other ref mutations. In the delayed local-transport fixture, the pushed remote branch appeared 62 ms after completion instead of 278 ms while busy feedback remained visible in 18-21 ms.
+
 ## Measurement Rules
 
 - Measure from a healthy runner state and use disposable repositories only.
@@ -44,6 +46,7 @@ Measured through the same Git commands LovelyGit uses, primarily in a disposable
 | Commit 1,000 staged files in a 20,000-file repository | 0.23-0.34 s service; 439.2 ms CMG control settlement after deferring auto-maintenance |
 | Fetch / Pull / Push completion contract | Disabled feedback in 1-5 ms; awaited 3.37-3.50 s delayed transport process |
 | Remote completion to authoritative refs | Pull 186 ms to 5 ms; Fetch 12 ms measured after the change |
+| Branch push completion to remote ref | 278 ms to 62 ms; busy feedback remains visible in 18-21 ms |
 
 ## Rejected or Deferred Experiments
 

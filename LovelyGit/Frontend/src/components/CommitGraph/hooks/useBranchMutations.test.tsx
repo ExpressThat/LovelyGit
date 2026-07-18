@@ -104,6 +104,22 @@ describe("useBranchMutations", () => {
 		expect(result.current.busyBranch).toBeNull();
 	});
 
+	it("refreshes remote refs only after a branch push succeeds", async () => {
+		const callbacks = createCallbacks();
+		send.mockRejectedValueOnce(new Error("Remote rejected the push"));
+		const { result } = renderHook(() => useTestBranchMutations(callbacks));
+
+		act(() => result.current.manageBranch("push", "feature"));
+		await waitFor(() => expect(result.current.busyBranch).toBeNull());
+		expect(callbacks.onRepositoryChanged).not.toHaveBeenCalled();
+
+		send.mockResolvedValueOnce(undefined);
+		act(() => result.current.manageBranch("push", "feature"));
+		await waitFor(() =>
+			expect(callbacks.onRepositoryChanged).toHaveBeenCalledOnce(),
+		);
+	});
+
 	it("preserves failed remote checkout and retries as a tracking branch", async () => {
 		const callbacks = createCallbacks();
 		send.mockRejectedValueOnce(new Error("Local branch already exists"));
