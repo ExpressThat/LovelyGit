@@ -46,7 +46,7 @@ export function Tabs() {
 						repositories={repositories}
 					/>
 				) : (
-					<div className="flex min-w-0 flex-1 items-end gap-0.5 overflow-x-auto overflow-y-hidden">
+					<div className="tab-scrollbar flex min-w-0 flex-1 items-end gap-0.5 overflow-x-auto overflow-y-hidden">
 						<AnimatePresence initial={false}>
 							{repositories.map(renderRepositoryTab)}
 							{showNewTab ? (

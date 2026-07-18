@@ -52,6 +52,17 @@ describe("Tabs", () => {
 		).toHaveLength(6);
 	});
 
+	it("keeps overflowing ordinary tabs inside a compact scroll surface", () => {
+		state.repositories = repositories(20);
+		const view = render(<Tabs />);
+
+		expect(view.container.querySelector(".tab-scrollbar")).toHaveClass(
+			"overflow-x-auto",
+			"overflow-y-hidden",
+		);
+		expect(screen.getByTitle("C:\\perf\\repo-0019")).toBeVisible();
+	});
+
 	it("brings an externally selected distant repository into the virtual window", async () => {
 		state.repositories = repositories(100);
 		state.currentRepositoryId = "99";
