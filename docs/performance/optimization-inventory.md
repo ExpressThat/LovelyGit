@@ -96,6 +96,7 @@ This ledger records shipped performance work by feature area. Update it in the s
 - Rendered ordinary commit changed-file lists of up to 10 visible rows without allocating a virtualizer or resize observer, added an immediate bootstrap for maximum lists, and reduced large-list overscan from six rows to four while preserving the complete scroll and context-menu surfaces (`1ae1ea1`).
 - Virtualized maximum-size file-history results against the dialog's existing scroll viewport, retained keyboard navigation by virtual index, and restored deep traversal whenever a completed native scan returned a truncated result set (`f815567`).
 - Virtualized maximum-size commit-search results, moved selection scrolling onto virtual indexes, and restored the deep-search result cap from 50 to 100 without retaining 100 rich result rows (`7d1dbba`).
+- Released active and retained native commit-search sessions as soon as the dialog closes, while preserving the warm continuation when the user deliberately selects Search deeper (current commit-search checkpoint).
 
 ### Working Tree, Staging, and Status
 

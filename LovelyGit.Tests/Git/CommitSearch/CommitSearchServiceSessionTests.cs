@@ -49,6 +49,31 @@ public sealed class CommitSearchServiceSessionTests
         }
     }
 
+    [Fact]
+    public async Task Cancel_ReleasesARetainedPartialSessionImmediately()
+    {
+        var (directory, _) = Template.CreateCopy("lovelygit-search-cancel-");
+        try
+        {
+            using var service = new CommitSearchService(TimeSpan.FromSeconds(30));
+            var repositoryId = Guid.NewGuid();
+            var initial = await SearchAsync(service, repositoryId, directory.FullName, deep: false);
+            Assert.True(initial.IsPartial);
+            Assert.Equal(1, service.RetainedSessionCount);
+
+            service.Cancel(repositoryId);
+
+            Assert.Equal(0, service.RetainedSessionCount);
+            Assert.False(service.ExpirationScheduled);
+            service.Cancel(repositoryId);
+            Assert.Equal(0, service.RetainedSessionCount);
+        }
+        finally
+        {
+            TemporaryGitDirectory.Delete(directory);
+        }
+    }
+
     private static Task<CommitSearchResponse> SearchAsync(
         CommitSearchService service,
         Guid repositoryId,

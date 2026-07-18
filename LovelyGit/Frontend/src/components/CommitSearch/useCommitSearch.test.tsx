@@ -2,12 +2,18 @@
 
 import { renderHook, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { sendRequestWithResponse } from "@/lib/commands";
+import {
+	sendRequestWithoutResponse,
+	sendRequestWithResponse,
+} from "@/lib/commands";
 import { searchResponse } from "./CommitSearchTestData";
 import { emptyCommitSearchFilters } from "./commitSearchFilters";
 import { useCommitSearch } from "./useCommitSearch";
 
-vi.mock("@/lib/commands", () => ({ sendRequestWithResponse: vi.fn() }));
+vi.mock("@/lib/commands", () => ({
+	sendRequestWithoutResponse: vi.fn(),
+	sendRequestWithResponse: vi.fn(),
+}));
 
 describe("useCommitSearch", () => {
 	beforeEach(() => vi.clearAllMocks());
@@ -104,5 +110,30 @@ describe("useCommitSearch", () => {
 			}),
 			{ timeoutMs: 12_000 },
 		);
+	});
+
+	it("releases native search state when the dialog closes", () => {
+		const { rerender } = renderHook(
+			({ enabled }) => useCommitSearch("repo", "needle", enabled),
+			{ initialProps: { enabled: true } },
+		);
+
+		rerender({ enabled: false });
+
+		expect(sendRequestWithoutResponse).toHaveBeenCalledWith({
+			arguments: { knownRepositoryId: "repo" },
+			commandType: "CancelCommitSearch",
+		});
+	});
+
+	it("does not discard continuation state when search options change", () => {
+		const { rerender } = renderHook(
+			({ deep }) => useCommitSearch("repo", "needle", true, deep),
+			{ initialProps: { deep: false } },
+		);
+
+		rerender({ deep: true });
+
+		expect(sendRequestWithoutResponse).not.toHaveBeenCalled();
 	});
 });

@@ -41,6 +41,7 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Commit
 [JsonSerializable(typeof(GitReflogEntry))]
 [JsonSerializable(typeof(GitReflogResponse))]
 [JsonSerializable(typeof(SearchCommitsCommandArguments))]
+[JsonSerializable(typeof(CancelCommitSearchCommandArguments))]
 [JsonSerializable(typeof(CommitSearchResult))]
 [JsonSerializable(typeof(CommitSearchResponse))]
 [JsonSerializable(typeof(GetFileHistoryCommandArguments))]

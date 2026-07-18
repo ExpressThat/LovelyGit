@@ -117,6 +117,25 @@ internal sealed class CommitSearchService : IDisposable
         }
     }
 
+    public void Cancel(Guid repositoryId)
+    {
+        CancellationTokenSource? activeSearch;
+        NativeCommitSearchSession? retainedSession = null;
+        lock (_gate)
+        {
+            if (_disposed) return;
+            _activeSearches.Remove(repositoryId, out activeSearch);
+            if (_retainedSessions.Remove(repositoryId, out var retained))
+            {
+                retainedSession = retained.Session;
+            }
+            ScheduleExpirationLocked();
+        }
+
+        activeSearch?.Cancel();
+        retainedSession?.Dispose();
+    }
+
     public void Dispose()
     {
         List<CancellationTokenSource> searches;

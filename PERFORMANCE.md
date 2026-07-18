@@ -19,7 +19,7 @@ Successful branch pushes now request the same authoritative repository refresh a
 
 Maximum-ref local mutations remain inexpensive: cold Create Tag opens in 12.9 ms, paints busy in 13.1 ms, completes Git in 55.5 ms, and presents the ref 60.7 ms later. Branch Rename opens in 22.4 ms, paints busy in 12.2 ms, completes in 88.8 ms, and presents the renamed ref 64.9 ms later. The audit also corrected native WebView input handling that had left Rename disabled despite visible text.
 
-A fresh two-repository, 50,000-commit audit opens the first native graph rows in 249-290 ms. Paging through roughly 6,000 commits retains 1,710 DOM nodes and 14.90 MB post-GC page heap; returning to a cached tab takes 96.8 ms and resets its viewport to the top. Closing the final repository tab now disposes the active native graph immediately through the existing repository-setting lifecycle instead of retaining its pack reader/traversal on New Tab. The visible repository intentionally remains warm between scrolls. The complete 949-test backend gate passes in 58.16 seconds.
+A fresh two-repository, 50,000-commit audit opens the first native graph rows in 249-290 ms. Paging through roughly 6,000 commits retains 1,710 DOM nodes and 14.90 MB post-GC page heap; returning to a cached tab takes 96.8 ms and resets its viewport to the top. Closing the final repository tab now disposes the active native graph immediately through the existing repository-setting lifecycle instead of retaining its pack reader/traversal on New Tab. The visible repository intentionally remains warm between scrolls. Commit search responds in 173.8-222.8 ms for a recent common query, including its 140 ms debounce, and a full 50,000-commit native scan takes 4.92-5.03 s while retaining only 13 result rows. Closing the search now cancels active work and releases partial native traversal state immediately instead of retaining it for 30 seconds. The complete 950-test backend gate remains below one minute.
 
 ## Measurement Rules
 
@@ -53,6 +53,7 @@ Measured through the same Git commands LovelyGit uses, primarily in a disposable
 | Branch push completion to remote ref | 278 ms to 62 ms; busy feedback remains visible in 18-21 ms |
 | 500-tag create / 102-branch rename | Tag: 12.9 ms dialog, 13.1 ms busy, 55.5 ms Git, 60.7 ms reconciliation; rename: 22.4 ms dialog, 12.2 ms busy, 88.8 ms Git, 64.9 ms reconciliation |
 | 50,000-commit graph retention | Cold rows 249-290 ms; roughly 6,000 paged commits retain 14.90 MB post-GC page heap and 1,710 DOM nodes; warm tab return 96.8 ms at scroll top; close-last-tab releases the native graph |
+| 50,000-commit search | Recent common query 173.8-222.8 ms including 140 ms debounce; complete native traversal 4.92-5.03 s; 13 mounted rows; active close 268.7 ms and releases traversal state |
 
 ## Rejected or Deferred Experiments
 
@@ -84,6 +85,7 @@ Measured through the same Git commands LovelyGit uses, primarily in a disposable
 | Raise global checkout workers from four to eight or sixteen | Direct 5,000-file switches improved from 2.81/3.85 s with four workers to 2.42/3.01 s with eight and 2.26/2.66 s with sixteen | The extra four to twelve transient Git worker processes trade substantial peak memory for a modest gain and did not address the in-app pre-worker filesystem phase; the bounded four-worker policy remains. |
 | Disable WebView2 GPU acceleration | Compiled private memory fell from 302.92 MB to 212.95 MB; 500-tag and 100,000-line-diff virtual scrolling retained 120 Hz / zero frames over 20 ms | Warm two-frame tab activation regressed from 16.72 ms to 18.61 ms average, large-diff scrolling was unchanged, and [Microsoft's WebView2 performance guidance](https://learn.microsoft.com/microsoft-edge/webview2/concepts/performance) says GPU rendering is critical and should only be disabled for troubleshooting. Hardware acceleration remains enabled. |
 | Replace or virtualize the appearance theme selector | The real compiled WebView opens 49 light-theme options in 27.3 ms, adds only 210 DOM nodes, and remains at about 8.5 MB observed page heap | This is already comfortably inside the interaction budget and uses the design system's custom scrollbar; a heavier searchable picker would add complexity and bundle weight without a measured user-visible win. |
+| Replace native deep commit search with `git log --grep` | Direct Git scanned the same packed 50,000-commit fixture in roughly 291-341 ms versus 4.92-5.03 s for the current native traversal | LovelyGit's read architecture deliberately keeps commit discovery in-process, and the CLI result would discard the existing resumable session/filter pipeline. Keep the gap visible and optimize native pack traversal in a later measured checkpoint instead of silently changing engines. |
 
 ## Next Measurement Areas
 

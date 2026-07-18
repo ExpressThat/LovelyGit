@@ -7,7 +7,10 @@ import { sendRequestWithResponse } from "@/lib/commands";
 import { CommitSearchDialog } from "./CommitSearchDialog";
 import { searchResponse, searchResult } from "./CommitSearchTestData";
 
-vi.mock("@/lib/commands", () => ({ sendRequestWithResponse: vi.fn() }));
+vi.mock("@/lib/commands", () => ({
+	sendRequestWithoutResponse: vi.fn(),
+	sendRequestWithResponse: vi.fn(),
+}));
 vi.mock("./useCommitSearchRefs", () => ({
 	useCommitSearchRefs: () => ({ isLoading: false, loadFailed: true, refs: [] }),
 }));

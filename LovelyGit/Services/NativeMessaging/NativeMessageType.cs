@@ -77,6 +77,8 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging
         GetReflog,
         [NativeMessageContract(typeof(SearchCommitsCommandArguments), typeof(CommitSearchResponse))]
         SearchCommits,
+        [NativeMessageContract(typeof(CancelCommitSearchCommandArguments))]
+        CancelCommitSearch,
         [NativeMessageContract(typeof(GetFileHistoryCommandArguments), typeof(FileHistoryResponse))]
         GetFileHistory,
         [NativeMessageContract(typeof(GetFileBlameCommandArguments), typeof(FileBlameResponse))]

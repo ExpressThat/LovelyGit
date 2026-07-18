@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
 import type { CommitSearchResponse } from "@/generated/types";
-import { sendRequestWithResponse } from "@/lib/commands";
+import {
+	sendRequestWithoutResponse,
+	sendRequestWithResponse,
+} from "@/lib/commands";
 import {
 	type CommitSearchFilters,
 	emptyCommitSearchFilters,
@@ -34,6 +37,16 @@ export function useCommitSearch(
 			normalizedAuthor.length >= MINIMUM_QUERY_LENGTH) &&
 		isCommitSearchDateRangeValid(filters);
 	const requestIsValid = canSearch && scopeIsValid;
+
+	useEffect(() => {
+		if (!enabled || !repositoryId) return;
+		return () => {
+			sendRequestWithoutResponse({
+				arguments: { knownRepositoryId: repositoryId },
+				commandType: "CancelCommitSearch",
+			});
+		};
+	}, [enabled, repositoryId]);
 
 	useEffect(() => {
 		if (!enabled || !repositoryId || !requestIsValid) {
