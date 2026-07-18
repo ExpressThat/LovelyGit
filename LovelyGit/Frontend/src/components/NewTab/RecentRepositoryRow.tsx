@@ -142,6 +142,7 @@ function RepositoryButton({
 	return (
 		<Button
 			className="h-auto w-full min-w-0 justify-start px-3 py-2"
+			data-repository-row
 			onClick={onOpen}
 			title={path || label}
 			type="button"

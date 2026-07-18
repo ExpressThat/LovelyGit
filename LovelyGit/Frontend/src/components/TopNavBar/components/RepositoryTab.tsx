@@ -54,6 +54,7 @@ export function RepositoryTab({
 		<div
 			aria-current={isActive ? "page" : undefined}
 			aria-disabled={isLoadingRepositories}
+			data-repository-tab
 			className={cn(
 				"relative -mb-px inline-flex h-8 max-w-48 shrink-0 items-center rounded-t-md border px-2.5 text-xs font-semibold transition-colors focus-visible:z-20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
 				isActive

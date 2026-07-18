@@ -4,6 +4,9 @@ import { Input } from "@/components/ui/input";
 import { useRepositoryContext } from "@/lib/repositoryContext";
 import { RecentRepositoryRow } from "./RecentRepositoryRow";
 import { filterRepositories } from "./RepositorySearch";
+import { VirtualRecentRepositoryList } from "./VirtualRecentRepositoryList";
+
+const VIRTUAL_REPOSITORY_THRESHOLD = 30;
 
 export function RecentRepositories() {
 	const { closeRepository, repositories, setCurrentRepositoryId } =
@@ -45,14 +48,24 @@ export function RecentRepositories() {
 			</label>
 			<div className="grid gap-1">
 				{filtered.length > 0 ? (
-					filtered.map((repository) => (
-						<RecentRepositoryRow
-							key={repository.id}
-							onOpen={() => void setCurrentRepositoryId(repository.id)}
-							onRemove={() => closeRepository(repository.id)}
-							repository={repository}
+					filtered.length > VIRTUAL_REPOSITORY_THRESHOLD ? (
+						<VirtualRecentRepositoryList
+							onOpen={(repositoryId) =>
+								void setCurrentRepositoryId(repositoryId)
+							}
+							onRemove={closeRepository}
+							repositories={filtered}
 						/>
-					))
+					) : (
+						filtered.map((repository) => (
+							<RecentRepositoryRow
+								key={repository.id}
+								onOpen={() => void setCurrentRepositoryId(repository.id)}
+								onRemove={() => closeRepository(repository.id)}
+								repository={repository}
+							/>
+						))
+					)
 				) : (
 					<p className="rounded-md border border-dashed px-3 py-4 text-muted-foreground text-sm">
 						No repositories match this search.
