@@ -7,7 +7,7 @@ This is the durable index of LovelyGit performance work. Update the linked ledge
 - [Verified performance results](docs/performance/verified-results.md)
 - [Completed optimization inventory](docs/performance/optimization-inventory.md)
 
-Latest verified checkpoint: maximum-size branch-comparison file results now virtualize against a list-owned scroll viewport, retaining only the visible window and a bounded bootstrap instead of 500 DOM rows. See the linked ledgers for native and WebView measurements.
+Latest verified checkpoint: maximum-size branch reflogs now virtualize against their existing scroll viewport, reducing a controlled 200-entry render from 318.57 ms to 68.89 ms and retaining 13 rows in the real WebView instead of all 200. See the linked ledgers for the complete evidence.
 
 ## Measurement Rules
 
