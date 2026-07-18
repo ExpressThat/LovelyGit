@@ -40,6 +40,7 @@ This ledger records shipped performance work by feature area. Update it in the s
 - Retained graph positions and rows for the bounded 100-commit operation selection, making cherry-pick, revert, comparison, and patch-series actions independent of total graph size while preserving their required history order (`667288d`).
 - Virtualized branch-comparison file results against a list-owned scroll viewport and kept a 12-row bootstrap window for immediate first paint, reducing maximum-payload DOM retention without changing file order, truncation, or click behavior (`ed8192f`).
 - Virtualized branch reflog entries against the dialog's existing scroll viewport and kept a bounded 10-row bootstrap, reducing maximum-response render latency and DOM retention while preserving filtering, scrolling, row actions, and lazy context menus (`de1bd0c`).
+- Virtualized maximum interactive-rebase plans, bounded the dialog to its visible window, removed per-row layout animation from the large virtual list, and preserved dynamic Reword sizing, draft input, reordering, and top-to-bottom actions (`99436df`).
 
 ### Native Git Parser and Object Storage
 

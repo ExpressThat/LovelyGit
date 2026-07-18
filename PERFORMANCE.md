@@ -7,7 +7,7 @@ This is the durable index of LovelyGit performance work. Update the linked ledge
 - [Verified performance results](docs/performance/verified-results.md)
 - [Completed optimization inventory](docs/performance/optimization-inventory.md)
 
-Latest verified checkpoint: maximum deep file-history results now virtualize against their existing scroll viewport, reducing a controlled 250-entry render from 312.34 ms to 45.23 ms while retaining only 11-18 rows in the real WebView. See the linked ledgers for the complete evidence.
+Latest verified checkpoint: maximum interactive-rebase plans now virtualize inside a truly bounded dialog viewport, reducing a controlled 100-row render from 295.65 ms to 71.17 ms while retaining 14 rows in the real WebView. See the linked ledgers for the complete evidence.
 
 ## Measurement Rules
 
