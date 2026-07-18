@@ -45,6 +45,8 @@ Large commit patch transport is now bounded before rendering and bridge-safe whe
 
 Undo Last Commit is also conclusively measured rather than changed speculatively. Against 20,000 tracked files, a latest commit changing 1,001 files and adding one 100,000-line file previews in 110.6 ms, paints its disabled state 5.6 ms after the actual click, performs the atomic ref update in 59 ms, refreshes all staged changes in 62-82 ms, and settles in 318.8 ms. Direct `git update-ref` took 53.3 ms, so the existing native-read plus single CLI mutation path was retained.
 
+Large remote transport is now measured with an exclusive local bare remote containing 5,000 files and successive 64 MiB incompressible blobs. Full clone opens in 4.53 s through the desktop versus roughly 5.0 s through direct Git, reports its first progress in 2.5 ms, and cancels to a clean destination in 91.6 ms after the request. Fetch presents the new commit in 988.5 ms versus 1,201.3 ms directly. Warm Push paints disabled in 2.2-3.5 ms and settles in 1.35-1.37 s versus 1.45-1.66 s through direct Git; an initial 7.26 s cold sample did not reproduce and remains recorded as filesystem/pack-cache variance. Pull remains variable at 5.01-5.59 s versus 1.49 s directly, but Trace2 places 6.41 s inside Git's own unpack/checkout region rather than LovelyGit transport or reconciliation. Deferring or fully disabling worktree watcher notifications during Pull did not improve it and was reverted. The host remained about 44-63 MB private during Fetch/Pull and about 122-126 MB during the warmed Push fixture; transient Git processes account for the large-operation peaks.
+
 ## Measurement Rules
 
 - Measure from a healthy runner state and use disposable repositories only.
@@ -87,6 +89,7 @@ Measured through the same Git commands LovelyGit uses, primarily in a disposable
 | Maximum 50,000-line file blame | >10 s timeout to 96-165 ms native work and 211.2 ms first real-app open after hover preload; 338,877-byte compact envelope; 40 mounted rows |
 | Undo a 1,001-file / 100,000-line commit | Busy paint 5.6 ms after actual click; 59 ms atomic undo; 62-82 ms authoritative refresh; 318.8 ms complete |
 | Copy maximum commit patch / patch series | >25 s unresolved and ~507 MB private memory to 174.6 ms bounded rejection; valid 1.62M-character patch copies in 141 ms and valid 2.16M-character series in 180.3 ms |
+| Clone / Fetch / Pull / Push with 64 MiB incompressible increments | Clone 4.53 s, Fetch 988.5 ms, Pull 5.01-5.59 s, Push 1.35-1.37 s; interaction feedback 2.2-3.5 ms and clone cancellation 91.6 ms |
 
 ## Rejected or Deferred Experiments
 
@@ -121,9 +124,9 @@ Measured through the same Git commands LovelyGit uses, primarily in a disposable
 | Disable WebView2 GPU acceleration | Compiled private memory fell from 302.92 MB to 212.95 MB; 500-tag and 100,000-line-diff virtual scrolling retained 120 Hz / zero frames over 20 ms | Warm two-frame tab activation regressed from 16.72 ms to 18.61 ms average, large-diff scrolling was unchanged, and [Microsoft's WebView2 performance guidance](https://learn.microsoft.com/microsoft-edge/webview2/concepts/performance) says GPU rendering is critical and should only be disabled for troubleshooting. Hardware acceleration remains enabled. |
 | Replace or virtualize the appearance theme selector | The real compiled WebView opens 49 light-theme options in 27.3 ms, adds only 210 DOM nodes, and remains at about 8.5 MB observed page heap | This is already comfortably inside the interaction budget and uses the design system's custom scrollbar; a heavier searchable picker would add complexity and bundle weight without a measured user-visible win. |
 | Replace native deep commit search with `git log --grep` | Direct Git scans the packed 50,000-commit fixture in roughly 291-341 ms; the optimized native core is now 0.87-0.97 s instead of 4.47-4.89 s, with 1.45 s measured through the real WebView | LovelyGit's read architecture deliberately keeps commit discovery in-process, and the CLI result would discard the resumable session and native filter pipeline. The remaining gap stays visible for later profiling, but no longer justifies silently changing engines. |
+| Defer or disable worktree watcher notifications during remote Pull | Pull remained 5.08-5.13 s and showed no repeatable improvement | Git Trace2 attributes the delay to Git's unpack/checkout work; both watcher experiments added lifecycle complexity and were fully reverted. |
 
 ## Next Measurement Areas
 
-- Large network clone/fetch/pull/push transfer memory, credential hand-off, and cancellation against a controlled remote where network variance can be isolated.
 - Failure-path timing for submodule, LFS, bisect, and interactive-rebase execution; successful large submodule, LFS, bisect, and interactive-rebase mutation paths are now measured.
 - Packaged cold/warm startup across slower storage tiers and repository activation after operating-system file-cache eviction.

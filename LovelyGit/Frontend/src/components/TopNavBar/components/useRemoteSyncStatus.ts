@@ -51,11 +51,11 @@ export function useRemoteSyncStatus(
 			if (version === requestVersion.current) {
 				statusRef.current = null;
 				setStatus(null);
+				console.error(
+					"Failed to read native remote synchronization status.",
+					error,
+				);
 			}
-			console.error(
-				"Failed to read native remote synchronization status.",
-				error,
-			);
 		}
 	}, [repositoryId]);
 

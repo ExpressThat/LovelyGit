@@ -24,7 +24,7 @@ describe("RemoteManagerDialog", () => {
 		const user = userEvent.setup();
 		renderDialog();
 
-		expect(await screen.findByText("origin")).toBeVisible();
+		await waitFor(() => expect(screen.getByText("origin")).toBeVisible());
 		expect(screen.getByText(`Fetch · ${origin.url}`)).toBeVisible();
 		expect(screen.getByText(`Push · ${origin.pushUrl}`)).toBeVisible();
 		await user.click(screen.getByRole("button", { name: "Add remote" }));

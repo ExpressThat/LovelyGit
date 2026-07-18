@@ -47,6 +47,9 @@ namespace ExpressThat.LovelyGit.Services.Data.Repositorys
             return await _appDbContext.KnownGitRepositorys.AsQueryable().FirstAsync(entry => entry.Id == repositoryId);
         }
 
+        public ValueTask<KnownGitRepository?> TryFindByIdAsync(Guid repositoryId) =>
+            _appDbContext.KnownGitRepositorys.FindByIdAsync(repositoryId);
+
         public async Task<KnownGitRepository?> FindByPathAsync(string repositoryPath)
         {
             var normalizedRepositoryPath = NormalizePath(repositoryPath);

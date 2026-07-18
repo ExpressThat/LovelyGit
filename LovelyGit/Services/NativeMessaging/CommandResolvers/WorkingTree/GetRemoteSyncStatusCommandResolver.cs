@@ -30,7 +30,7 @@ internal sealed class GetRemoteSyncStatusCommandResolver
             return Failure(command, "RepositoryId is required.");
         }
 
-        var known = await _repositories.FindByIdAsync(repositoryId).ConfigureAwait(false);
+        var known = await _repositories.TryFindByIdAsync(repositoryId).ConfigureAwait(false);
         if (string.IsNullOrWhiteSpace(known?.Path))
         {
             return Failure(command, "Known repository not found.");

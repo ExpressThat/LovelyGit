@@ -100,6 +100,24 @@ describe("useRemoteSyncStatus", () => {
 		expect(result.current.status?.aheadCount).toBe(4);
 	});
 
+	it("does not report a stale failure after leaving a repository", async () => {
+		const first = deferred<RemoteSyncStatusResponse>();
+		const consoleError = vi
+			.spyOn(console, "error")
+			.mockImplementation(() => {});
+		send.mockReturnValueOnce(first.promise);
+		const { rerender } = renderHook(
+			({ repositoryId }) => useRemoteSyncStatus(repositoryId, "main"),
+			{ initialProps: { repositoryId: "repo-1" as string | null } },
+		);
+
+		rerender({ repositoryId: null });
+		await act(async () => first.reject(new Error("repository removed")));
+
+		expect(consoleError).not.toHaveBeenCalled();
+		consoleError.mockRestore();
+	});
+
 	it("does not duplicate a pending read for transient branch states", async () => {
 		const pending = deferred<RemoteSyncStatusResponse>();
 		send.mockReturnValueOnce(pending.promise);
@@ -201,8 +219,10 @@ function status(
 
 function deferred<T>() {
 	let resolve!: (value: T) => void;
-	const promise = new Promise<T>((resolvePromise) => {
+	let reject!: (reason?: unknown) => void;
+	const promise = new Promise<T>((resolvePromise, rejectPromise) => {
 		resolve = resolvePromise;
+		reject = rejectPromise;
 	});
-	return { promise, resolve };
+	return { promise, reject, resolve };
 }
