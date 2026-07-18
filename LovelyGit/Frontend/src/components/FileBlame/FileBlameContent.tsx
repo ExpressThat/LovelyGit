@@ -2,7 +2,11 @@ import { useVirtualizer } from "@tanstack/react-virtual";
 import { useMemo, useRef } from "react";
 import type { FileBlameResponse } from "@/generated/types";
 import { FileBlameRow } from "./FileBlameRow";
-import { findBlameHunk, splitBlameLines } from "./fileBlameLines";
+import {
+	buildBlameLineStarts,
+	findBlameHunk,
+	readBlameLine,
+} from "./fileBlameLines";
 
 const ROW_HEIGHT = 24;
 
@@ -14,12 +18,12 @@ export function FileBlameContent({
 	response: FileBlameResponse;
 }) {
 	const parentRef = useRef<HTMLDivElement>(null);
-	const lines = useMemo(
-		() => splitBlameLines(response.content),
-		[response.content],
+	const lineStarts = useMemo(
+		() => buildBlameLineStarts(response.content, response.lineCount),
+		[response.content, response.lineCount],
 	);
 	const virtualizer = useVirtualizer({
-		count: lines.length,
+		count: response.lineCount,
 		estimateSize: () => ROW_HEIGHT,
 		getScrollElement: () => parentRef.current,
 		overscan: 16,
@@ -45,7 +49,11 @@ export function FileBlameContent({
 						>
 							<FileBlameRow
 								hunk={findBlameHunk(response.hunks, lineNumber)}
-								line={lines[virtualRow.index] ?? ""}
+								line={readBlameLine(
+									response.content,
+									lineStarts,
+									virtualRow.index,
+								)}
 								lineNumber={lineNumber}
 								onSelectCommit={onSelectCommit}
 							/>

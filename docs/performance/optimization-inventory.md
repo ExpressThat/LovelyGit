@@ -81,6 +81,7 @@ This ledger records shipped performance work by feature area. Update it in the s
 - Eliminated per-index-entry scan allocations and reused compiled ignore matchers (`353786e`, `dbc5386`).
 - Added a packed-graph performance regression gate (`81514be`).
 - Reused each normalized path's UTF-8 bytes across deep file-history and blame ancestry walks, avoiding thousands of repeated buffer rentals and encodes while preserving rename-aware path changes (current test-gate checkpoint).
+- Short-circuited large diff partitions with no common lines before Myers fallback, used unaligned blame mappings, compacted oversized blame responses inside a bounded bridge-safe envelope, indexed line starts in a `Uint32Array`, and preloaded the lazy blame dialog from file-row hover/focus/context intent. Maximum supported blame now opens in 211.2 ms through the real desktop instead of timing out beyond ten seconds, with exact last-line reachability and bounded rendering (current maximum-blame checkpoint).
 - Carried each already-read parent commit header and tree-path result into the next deep file-history work item instead of resolving it twice, while retaining merge-parent deduplication and exact rename traversal. Pre-cancelled reads now stop before repository discovery, and the merge regression uses one fast-import process so the 941-test gate remains below one minute (`cb5199f`).
 
 ### Test Infrastructure

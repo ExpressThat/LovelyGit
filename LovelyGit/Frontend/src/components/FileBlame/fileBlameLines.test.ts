@@ -1,12 +1,26 @@
 import { describe, expect, it } from "vitest";
 import type { FileBlameHunk } from "@/generated/types";
-import { findBlameHunk, splitBlameLines } from "./fileBlameLines";
+import {
+	buildBlameLineStarts,
+	findBlameHunk,
+	readBlameLine,
+} from "./fileBlameLines";
 
 describe("fileBlameLines", () => {
-	it("splits content without inventing a trailing line", () => {
-		expect(splitBlameLines("one\r\ntwo\n")).toEqual(["one", "two"]);
-		expect(splitBlameLines("one\ntwo")).toEqual(["one", "two"]);
-		expect(splitBlameLines("")).toEqual([]);
+	it.each([
+		["one\r\ntwo\n", 2, ["one", "two"]],
+		["one\ntwo", 2, ["one", "two"]],
+		["one\n\n", 2, ["one", ""]],
+		["", 0, []],
+	] as const)("indexes lines without retaining a string per row", (content, count, expected) => {
+		const starts = buildBlameLineStarts(content, count);
+
+		expect(
+			Array.from({ length: count }, (_, index) =>
+				readBlameLine(content, starts, index),
+			),
+		).toEqual(expected);
+		expect(starts).toBeInstanceOf(Uint32Array);
 	});
 
 	it("finds compact attribution hunks by line number", () => {

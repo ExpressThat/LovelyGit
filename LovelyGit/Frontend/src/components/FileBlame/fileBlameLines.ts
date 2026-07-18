@@ -1,10 +1,25 @@
 import type { FileBlameHunk } from "@/generated/types";
 
-export function splitBlameLines(content: string) {
-	if (!content) return [];
-	const lines = content.replaceAll("\r\n", "\n").split("\n");
-	if (content.endsWith("\n")) lines.pop();
-	return lines;
+export function buildBlameLineStarts(content: string, lineCount: number) {
+	const starts = new Uint32Array(lineCount + 1);
+	let line = 1;
+	for (let index = 0; index < content.length && line < lineCount; index++) {
+		if (content.charCodeAt(index) === 10) starts[line++] = index + 1;
+	}
+	starts[lineCount] = content.length;
+	return starts;
+}
+
+export function readBlameLine(
+	content: string,
+	starts: Uint32Array,
+	index: number,
+) {
+	const start = starts[index] ?? 0;
+	let end = starts[index + 1] ?? content.length;
+	if (end > start && content.charCodeAt(end - 1) === 10) end--;
+	if (end > start && content.charCodeAt(end - 1) === 13) end--;
+	return content.slice(start, end);
 }
 
 export function findBlameHunk(hunks: FileBlameHunk[], lineNumber: number) {

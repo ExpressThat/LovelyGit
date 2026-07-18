@@ -8,6 +8,7 @@ public sealed record FileBlameResponse
     public string Path { get; init; } = string.Empty;
     public string StartCommitHash { get; init; } = string.Empty;
     public string Content { get; init; } = string.Empty;
+    public string CompactPayloadGzipBase64 { get; init; } = string.Empty;
     public List<FileBlameHunk> Hunks { get; init; } = new();
     public int LineCount { get; init; }
     public int ScannedCommitCount { get; init; }

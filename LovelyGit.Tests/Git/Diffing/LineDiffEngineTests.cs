@@ -171,6 +171,17 @@ public sealed class LineDiffEngineTests
     }
 
     [Fact]
+    public void Build_CompletelyDifferentLargeInputsProduceOneReplacement()
+    {
+        var oldText = string.Join('\n', Enumerable.Range(0, 4_000).Select(index => $"old {index}"));
+        var newText = string.Join('\n', Enumerable.Range(0, 4_000).Select(index => $"new {index}"));
+
+        var block = Assert.Single(LineDiffEngine.BuildUnaligned(oldText, newText).Blocks);
+
+        Assert.Equal(new LineDiffBlock(0, 0, 4_000, 4_000), block);
+    }
+
+    [Fact]
     public void ChangeSpans_UseTheSameEngineForCharacterChanges()
     {
         var row = new LineDiffRow(0, 0, isChanged: true);

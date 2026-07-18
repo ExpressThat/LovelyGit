@@ -70,6 +70,24 @@ public sealed class LineDiffStreamingPerformanceTests(ITestOutputHelper output)
             $"Distributed diff allocated {distributed.Allocated:N0} bytes.");
     }
 
+    [Fact]
+    public void CompletelyDifferentMaximumBlameInputs_AvoidQuadraticMyersWork()
+    {
+        var oldText = LineDiffEngine.Prepare(string.Join(
+            '\n', Enumerable.Range(0, 50_000).Select(index => $"old {index}")));
+        var newText = LineDiffEngine.Prepare(string.Join(
+            '\n', Enumerable.Range(0, 50_000).Select(index => $"new {index}")));
+
+        var replacement = Measure(() => LineDiffEngine.BuildUnaligned(oldText, newText));
+
+        output.WriteLine(
+            $"Disjoint 50k-line diff: {replacement.Elapsed.TotalMilliseconds:N1} ms, {replacement.Allocated:N0} bytes");
+        Assert.True(
+            replacement.Elapsed < TimeSpan.FromMilliseconds(150),
+            $"Disjoint diff took {replacement.Elapsed.TotalMilliseconds:N1} ms.");
+        Assert.True(replacement.Allocated < 8_000_000, $"Disjoint diff allocated {replacement.Allocated:N0} bytes.");
+    }
+
     private static Measurement Measure(Func<LineDiffModel> action)
     {
         GC.Collect();

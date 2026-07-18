@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { FileBlameResponse } from "@/generated/types";
 import { sendRequestWithResponse } from "@/lib/commands";
+import { expandFileBlamePayload } from "./fileBlamePayload";
 
 export function useFileBlame(
 	repositoryId: string | null,
@@ -36,6 +37,7 @@ export function useFileBlame(
 			},
 			deep ? { timeoutMs: 12_000 } : undefined,
 		)
+			.then(expandFileBlamePayload)
 			.then((nextResponse) => {
 				if (active) setResponse(nextResponse);
 			})

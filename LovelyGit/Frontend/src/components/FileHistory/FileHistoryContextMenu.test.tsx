@@ -3,7 +3,12 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
+import { preloadFileBlameDialog } from "@/lib/fileBlameDialogLoader";
 import { FileHistoryContextMenu } from "./FileHistoryContextMenu";
+
+vi.mock("@/lib/fileBlameDialogLoader", () => ({
+	preloadFileBlameDialog: vi.fn(),
+}));
 
 describe("FileHistoryContextMenu", () => {
 	it("composes directly with a file button and opens history", async () => {
@@ -20,6 +25,9 @@ describe("FileHistoryContextMenu", () => {
 			</FileHistoryContextMenu>,
 		);
 
+		await user.hover(screen.getByRole("button", { name: "src/file.ts" }));
+		expect(preloadFileBlameDialog).toHaveBeenCalled();
+		vi.mocked(preloadFileBlameDialog).mockClear();
 		await user.pointer({
 			keys: "[MouseRight]",
 			target: screen.getByRole("button", { name: "src/file.ts" }),
@@ -27,6 +35,7 @@ describe("FileHistoryContextMenu", () => {
 		expect(
 			await screen.findByRole("menuitem", { name: "View line blame" }),
 		).toBeVisible();
+		expect(preloadFileBlameDialog).toHaveBeenCalled();
 		await user.click(
 			await screen.findByRole("menuitem", { name: "View file history" }),
 		);

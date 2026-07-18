@@ -4,24 +4,21 @@ import {
 	DeferredPrimaryOverlay,
 } from "./AppPrimaryOverlays";
 import type { CommitSearchDialog as CommitSearchComponent } from "./components/CommitSearch/CommitSearchDialog";
-import type { FileBlameDialog as FileBlameComponent } from "./components/FileBlame/FileBlameDialog";
 import type { FileHistoryDialog as FileHistoryComponent } from "./components/FileHistory/FileHistoryDialog";
 import type { StashDialog as StashComponent } from "./components/WorkingChanges/StashDialog";
 import { createDeferredLoader } from "./lib/deferredLoader";
+import {
+	type FileBlameDialogProps,
+	fileBlameDialogLoader,
+} from "./lib/fileBlameDialogLoader";
 
 type CommitSearchProps = ComponentProps<typeof CommitSearchComponent>;
-type FileBlameProps = ComponentProps<typeof FileBlameComponent>;
 type FileHistoryProps = ComponentProps<typeof FileHistoryComponent>;
 type StashProps = NonNullable<ComponentProps<typeof StashComponent>>;
 
 const commitSearchLoader = createDeferredLoader(() =>
 	import("./components/CommitSearch/CommitSearchDialog").then(
 		(module) => module.CommitSearchDialog,
-	),
-);
-const fileBlameLoader = createDeferredLoader(() =>
-	import("./components/FileBlame/FileBlameDialog").then(
-		(module) => module.FileBlameDialog,
 	),
 );
 const fileHistoryLoader = createDeferredLoader(() =>
@@ -39,8 +36,8 @@ export const DeferredCommitSearchDialog = createOverlay<CommitSearchProps>(
 	commitSearchLoader,
 	"Opening commit search",
 );
-export const DeferredFileBlameDialog = createOverlay<FileBlameProps>(
-	fileBlameLoader,
+export const DeferredFileBlameDialog = createOverlay<FileBlameDialogProps>(
+	fileBlameDialogLoader,
 	"Opening file blame",
 );
 export const DeferredFileHistoryDialog = createOverlay<FileHistoryProps>(

@@ -53,10 +53,24 @@ describe("useFileBlame", () => {
 		expect(result.current.isLoading).toBe(false);
 		expect(sendRequestWithResponse).not.toHaveBeenCalled();
 	});
+
+	it("surfaces native failures without retaining a stale response", async () => {
+		vi.mocked(sendRequestWithResponse).mockRejectedValueOnce(
+			new Error("Blame fixture failed."),
+		);
+		const { result } = renderHook(() =>
+			useFileBlame("repo", "src/file.ts", null, true, false),
+		);
+
+		await waitFor(() => expect(result.current.isLoading).toBe(false));
+		expect(result.current.error).toBe("Blame fixture failed.");
+		expect(result.current.response).toBeNull();
+	});
 });
 
 function response(): FileBlameResponse {
 	return {
+		compactPayloadGzipBase64: "",
 		content: "line\n",
 		hunks: [],
 		isPartial: false,

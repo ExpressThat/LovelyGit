@@ -35,6 +35,8 @@ A real 5,000-file submodule Initialize paints disabled feedback in 1.1 ms and re
 
 Git LFS mutations remain responsive with a 50,500-line `.gitattributes`: Track, Untrack, and Prune paint disabled feedback in 8.7-17.4 ms and complete through the desktop in 739, 612, and 416-450 ms. Equivalent direct Git takes 645, 472, and 352 ms, leaving only about 8 ms of measured UI/native-envelope overhead. Git and the authoritative rescan dominate, so the existing single CLI mutation path was retained. Successful prune now closes its confirmation while failure stays open and retryable.
 
+Maximum supported file blame no longer stalls on an all-different parent or silently exceeds the WebView bridge. A 50,000-line, 1.7 MB file with 10,000 alternating attribution hunks previously timed out beyond ten seconds even though direct Git blame took 3.49 seconds. The native no-common-line partition now completes in 96-165 ms, and a bounded gzip envelope carries the otherwise oversized result in 338,877 bytes. Hover preloading removes the cold dialog-chunk wait: the real desktop loads the chunk in 42.8 ms and opens the first blame in 211.2 ms total with a 137.6 ms native round trip. A typed line-offset index retains about 203 KB rather than 2.07 MB of per-line strings in isolation, while virtualization keeps 40 rows mounted and preserves exact access to line 50,000.
+
 ## Measurement Rules
 
 - Measure from a healthy runner state and use disposable repositories only.
@@ -74,6 +76,7 @@ Measured through the same Git commands LovelyGit uses, primarily in a disposable
 | 500-tag create / 102-branch rename | Tag: 12.9 ms dialog, 13.1 ms busy, 55.5 ms Git, 60.7 ms reconciliation; rename: 22.4 ms dialog, 12.2 ms busy, 88.8 ms Git, 64.9 ms reconciliation |
 | 50,000-commit graph retention | Cold rows 249-290 ms; roughly 6,000 paged commits retain 14.90 MB post-GC page heap and 1,710 DOM nodes; warm tab return 96.8 ms at scroll top; close-last-tab releases the native graph |
 | 50,000-commit search | Recent common query 217.4 ms including 140 ms debounce; complete native traversal 4.47-4.89 s to 0.87-0.97 s and 305-309 MB to 131-134 MB allocated; real WebView 4.92-5.03 s to 1.45 s; 13 mounted rows |
+| Maximum 50,000-line file blame | >10 s timeout to 96-165 ms native work and 211.2 ms first real-app open after hover preload; 338,877-byte compact envelope; 40 mounted rows |
 
 ## Rejected or Deferred Experiments
 

@@ -13,7 +13,7 @@ internal static class BlameLineMapper
             return mapping;
         }
 
-        var result = LineDiffEngine.Build(oldText, newText);
+        var result = LineDiffEngine.BuildUnaligned(oldText, newText);
         var oldIndex = 0;
         var newIndex = 0;
         foreach (var block in result.Blocks)

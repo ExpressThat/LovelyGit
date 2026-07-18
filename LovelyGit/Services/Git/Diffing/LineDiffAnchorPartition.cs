@@ -19,7 +19,13 @@ internal static class LineDiffAnchorPartition
         if (mismatchCount < MinimumMismatches)
             return false;
 
-        var anchors = FindAnchors(oldLines, newLines, comparer, mismatchCount);
+        var anchors = FindAnchors(
+            oldLines, newLines, comparer, mismatchCount, out var hasCommonLine);
+        if (!hasCommonLine)
+        {
+            blocks = [new(offset, offset, oldLines.Length, newLines.Length)];
+            return true;
+        }
         if (anchors.Length < MinimumAnchors) return false;
 
         var result = new List<LineDiffBlock>(Math.Min(mismatchCount, 4_096));
@@ -72,7 +78,8 @@ internal static class LineDiffAnchorPartition
         string[] oldLines,
         string[] newLines,
         IEqualityComparer<string>? comparer,
-        int mismatchCount)
+        int mismatchCount,
+        out bool hasCommonLine)
     {
         var capacity = Math.Min(
             oldLines.Length + newLines.Length,
@@ -84,9 +91,11 @@ internal static class LineDiffAnchorPartition
         AddOccurrences(occurrences, newLines, oldSide: false);
 
         var candidates = new List<Anchor>(Math.Min(oldLines.Length, newLines.Length));
+        hasCommonLine = false;
         for (var oldIndex = 0; oldIndex < oldLines.Length; oldIndex++)
         {
             var occurrence = occurrences[oldLines[oldIndex]];
+            if (occurrence.NewIndex != 0) hasCommonLine = true;
             if (occurrence.OldIndex > 0 && occurrence.NewIndex > 0)
                 candidates.Add(new(oldIndex, occurrence.NewIndex - 1));
         }

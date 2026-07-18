@@ -59,7 +59,7 @@ internal sealed class GetFileBlameCommandResolver : CommandResponder<GetFileBlam
                 CommandUniqueId = command.CommandUniqueId,
                 CommandType = command.CommandType,
                 IsSuccess = true,
-                Result = response,
+                Result = FileBlamePayloadCompactor.CompactIfUseful(response),
             };
         }
         catch (OperationCanceledException)

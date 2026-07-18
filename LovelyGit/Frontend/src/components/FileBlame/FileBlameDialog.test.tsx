@@ -67,6 +67,7 @@ describe("FileBlameDialog", () => {
 
 function response(): FileBlameResponse {
 	return {
+		compactPayloadGzipBase64: "",
 		content: "one\ntwo\n",
 		hunks: [
 			{

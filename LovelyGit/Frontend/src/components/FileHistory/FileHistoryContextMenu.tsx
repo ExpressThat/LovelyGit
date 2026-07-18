@@ -14,6 +14,7 @@ import {
 	ContextMenuSeparator,
 	ContextMenuTrigger,
 } from "@/components/ui/context-menu";
+import { preloadFileBlameDialog } from "@/lib/fileBlameDialogLoader";
 
 export function FileHistoryContextMenu({
 	children,
@@ -36,7 +37,13 @@ export function FileHistoryContextMenu({
 }) {
 	return (
 		<ContextMenu>
-			<ContextMenuTrigger className="block w-full">
+			<ContextMenuTrigger
+				className="block w-full"
+				onContextMenuCapture={preloadFileBlameDialog}
+				onFocusCapture={preloadFileBlameDialog}
+				onMouseEnter={preloadFileBlameDialog}
+				onPointerEnter={preloadFileBlameDialog}
+			>
 				{children}
 			</ContextMenuTrigger>
 			<ContextMenuContent>
