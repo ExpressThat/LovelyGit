@@ -14,10 +14,9 @@ import {
 	DialogTitle,
 } from "@/components/ui/dialog";
 import type { CommitGraphRow } from "@/generated/types";
-import { AnimatePresence, motion, useReducedMotion } from "@/lib/motion";
 import { useInteractiveRebasePlan } from "../hooks/useInteractiveRebasePlan";
 import { shortHash } from "../utils/format";
-import { InteractiveRebasePlanRow } from "./InteractiveRebasePlanRow";
+import { InteractiveRebasePlanList } from "./InteractiveRebasePlanList";
 
 export function InteractiveRebaseDialog({
 	baseCommit,
@@ -34,7 +33,6 @@ export function InteractiveRebaseDialog({
 	onRepositoryChanged: () => void;
 	repositoryId: string | null;
 }) {
-	const reduceMotion = useReducedMotion();
 	const controller = useInteractiveRebasePlan(
 		repositoryId,
 		baseCommit?.commit.hash ?? null,
@@ -78,9 +76,9 @@ export function InteractiveRebaseDialog({
 				!open && !controller.isRunning && onOpenChange(null)
 			}
 		>
-			<DialogContent className="max-h-[min(88vh,760px)] sm:max-w-2xl">
+			<DialogContent className="h-[min(88vh,760px)] sm:max-w-2xl">
 				<form
-					className="flex min-h-0 flex-col gap-4"
+					className="flex h-full min-h-0 flex-col gap-4"
 					onSubmit={(event) => {
 						event.preventDefault();
 						void run();
@@ -110,37 +108,17 @@ export function InteractiveRebaseDialog({
 							<b className="block text-foreground">Drop</b>remove
 						</span>
 					</div>
-					<div className="custom-scrollbar min-h-28 flex-1 overflow-y-auto pr-1">
-						{controller.isLoading ? <LoadingPlan /> : null}
-						{controller.error ? <Notice message={controller.error} /> : null}
-						<AnimatePresence initial={false} mode="popLayout">
-							<motion.ul
-								layout
-								className="grid gap-2"
-								transition={reduceMotion ? { duration: 0 } : undefined}
-							>
-								{controller.plan.map((item, index) => {
-									const commit = commitByHash.get(item.hash);
-									return commit ? (
-										<InteractiveRebasePlanRow
-											key={item.hash}
-											commit={commit}
-											index={index}
-											item={item}
-											onAction={(action) =>
-												controller.updateAction(item.hash, action)
-											}
-											onMessage={(message) =>
-												controller.updateMessage(item.hash, message)
-											}
-											onMove={(offset) => controller.move(index, offset)}
-											total={controller.plan.length}
-										/>
-									) : null;
-								})}
-							</motion.ul>
-						</AnimatePresence>
-					</div>
+					{controller.isLoading ? <LoadingPlan /> : null}
+					{controller.error ? <Notice message={controller.error} /> : null}
+					{controller.plan.length > 0 ? (
+						<InteractiveRebasePlanList
+							commitByHash={commitByHash}
+							onAction={controller.updateAction}
+							onMessage={controller.updateMessage}
+							onMove={controller.move}
+							plan={controller.plan}
+						/>
+					) : null}
 					{controller.validationError ? (
 						<Notice message={controller.validationError} />
 					) : null}

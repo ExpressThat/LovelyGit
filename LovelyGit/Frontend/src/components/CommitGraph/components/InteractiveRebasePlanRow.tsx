@@ -12,38 +12,37 @@ import {
 	type InteractiveRebaseCommit,
 	type InteractiveRebasePlanItem,
 } from "@/generated/types";
-import { motion, useReducedMotion } from "@/lib/motion";
 import { shortHash } from "../utils/format";
 
 const actions = Object.values(InteractiveRebaseAction);
 
 export function InteractiveRebasePlanRow({
 	commit,
+	containerRef,
 	index,
 	item,
 	onAction,
 	onMessage,
 	onMove,
+	offset,
 	total,
 }: {
 	commit: InteractiveRebaseCommit;
+	containerRef: (node: HTMLLIElement | null) => void;
 	index: number;
 	item: InteractiveRebasePlanItem;
 	onAction: (action: InteractiveRebasePlanItem["action"]) => void;
 	onMessage: (message: string) => void;
 	onMove: (offset: number) => void;
+	offset: number;
 	total: number;
 }) {
-	const reduceMotion = useReducedMotion();
 	return (
-		<motion.li
-			layout="position"
-			transition={
-				reduceMotion
-					? { duration: 0 }
-					: { type: "spring", stiffness: 520, damping: 38 }
-			}
-			className="grid grid-cols-[auto_7rem_minmax(0,1fr)_auto] items-center gap-2 rounded-lg border bg-card p-2"
+		<li
+			className="absolute left-0 right-0 top-0 grid grid-cols-[auto_7rem_minmax(0,1fr)_auto] items-center gap-2 rounded-lg border bg-card p-2"
+			data-index={index}
+			ref={containerRef}
+			style={{ transform: `translateY(${offset}px)` }}
 		>
 			<span className="grid size-5 place-items-center rounded-full bg-muted font-mono text-[10px] text-muted-foreground">
 				{index + 1}
@@ -80,7 +79,7 @@ export function InteractiveRebasePlanRow({
 					<textarea
 						aria-label={`New message for ${commit.subject}`}
 						className="mt-2 min-h-14 w-full resize-y rounded-md border border-input bg-background px-2 py-1.5 text-xs outline-none focus-visible:ring-2 focus-visible:ring-ring"
-						onChange={(event) => onMessage(event.target.value)}
+						onInput={(event) => onMessage(event.currentTarget.value)}
 						value={item.message ?? ""}
 					/>
 				) : null}
@@ -107,6 +106,6 @@ export function InteractiveRebasePlanRow({
 					<ArrowDown />
 				</Button>
 			</div>
-		</motion.li>
+		</li>
 	);
 }
