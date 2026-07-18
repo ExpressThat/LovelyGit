@@ -8,6 +8,15 @@ import { CommitChangedFileStats } from "./CommitChangedFileStats";
 
 const ROW_HEIGHT = 42;
 const MAX_VISIBLE_ROWS = 10;
+const VIRTUALIZE_AFTER = MAX_VISIBLE_ROWS;
+
+type ChangedFilesListProps = {
+	files: CommitChangedFile[];
+	hasLineStats: boolean;
+	onOpenBlame: (file: CommitChangedFile) => void;
+	onOpenHistory: (file: CommitChangedFile) => void;
+	onSelectFile: (file: CommitChangedFile) => void;
+};
 
 export function getChangedFileListHeight(fileCount: number) {
 	return Math.min(fileCount, MAX_VISIBLE_ROWS) * ROW_HEIGHT;
@@ -19,27 +28,69 @@ export function CommitDetailsChangedFilesList({
 	onOpenBlame,
 	onOpenHistory,
 	onSelectFile,
-}: {
-	files: CommitChangedFile[];
-	hasLineStats: boolean;
-	onOpenBlame: (file: CommitChangedFile) => void;
-	onOpenHistory: (file: CommitChangedFile) => void;
-	onSelectFile: (file: CommitChangedFile) => void;
-}) {
+}: ChangedFilesListProps) {
+	if (files.length <= VIRTUALIZE_AFTER) {
+		return (
+			<section
+				aria-label="Changed files"
+				className="custom-scrollbar overflow-y-auto"
+				data-changed-files-list="ordinary"
+				style={{ height: `${getChangedFileListHeight(files.length)}px` }}
+			>
+				{files.map((file) =>
+					changedFileItem(
+						file,
+						hasLineStats,
+						onOpenBlame,
+						onOpenHistory,
+						onSelectFile,
+						`${file.status}:${file.path}`,
+					),
+				)}
+			</section>
+		);
+	}
+
+	return (
+		<VirtualChangedFilesList
+			files={files}
+			hasLineStats={hasLineStats}
+			onOpenBlame={onOpenBlame}
+			onOpenHistory={onOpenHistory}
+			onSelectFile={onSelectFile}
+		/>
+	);
+}
+
+function VirtualChangedFilesList({
+	files,
+	hasLineStats,
+	onOpenBlame,
+	onOpenHistory,
+	onSelectFile,
+}: ChangedFilesListProps) {
 	const parentRef = useRef<HTMLDivElement>(null);
 	const virtualizer = useVirtualizer({
 		count: files.length,
 		estimateSize: () => ROW_HEIGHT,
 		getScrollElement: () => parentRef.current,
-		overscan: 6,
+		overscan: 4,
 	});
-	const virtualRows = virtualizer.getVirtualItems();
+	const measuredRows = virtualizer.getVirtualItems();
+	const virtualRows =
+		measuredRows.length > 0
+			? measuredRows
+			: Array.from(
+					{ length: Math.min(MAX_VISIBLE_ROWS, files.length) },
+					(_, index) => ({ index, start: index * ROW_HEIGHT }),
+				);
 	const listHeight = getChangedFileListHeight(files.length);
 
 	return (
 		<section
 			aria-label="Changed files"
 			className="custom-scrollbar overflow-y-auto"
+			data-changed-files-list="virtual"
 			ref={parentRef}
 			style={{ height: `${listHeight}px` }}
 		>
@@ -59,22 +110,42 @@ export function CommitDetailsChangedFilesList({
 							key={`${file.status}:${file.path}`}
 							style={{ transform: `translateY(${virtualRow.start}px)` }}
 						>
-							<FileHistoryContextMenu
-								onOpenBlame={() => onOpenBlame(file)}
-								onOpen={() => onOpenHistory(file)}
-								path={file.path}
-							>
-								<ChangedFileRow
-									file={file}
-									hasLineStats={hasLineStats}
-									onSelect={() => onSelectFile(file)}
-								/>
-							</FileHistoryContextMenu>
+							{changedFileItem(
+								file,
+								hasLineStats,
+								onOpenBlame,
+								onOpenHistory,
+								onSelectFile,
+							)}
 						</div>
 					);
 				})}
 			</div>
 		</section>
+	);
+}
+
+function changedFileItem(
+	file: CommitChangedFile,
+	hasLineStats: boolean,
+	onOpenBlame: (file: CommitChangedFile) => void,
+	onOpenHistory: (file: CommitChangedFile) => void,
+	onSelectFile: (file: CommitChangedFile) => void,
+	key?: string,
+) {
+	return (
+		<FileHistoryContextMenu
+			key={key}
+			onOpenBlame={() => onOpenBlame(file)}
+			onOpen={() => onOpenHistory(file)}
+			path={file.path}
+		>
+			<ChangedFileRow
+				file={file}
+				hasLineStats={hasLineStats}
+				onSelect={() => onSelectFile(file)}
+			/>
+		</FileHistoryContextMenu>
 	);
 }
 
