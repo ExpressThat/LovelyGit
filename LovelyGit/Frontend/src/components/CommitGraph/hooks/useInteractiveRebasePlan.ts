@@ -7,6 +7,7 @@ import type {
 import { sendRequestWithResponse } from "@/lib/commands";
 import { gitMutationTimeoutMs } from "@/lib/gitMutationTimeout";
 import { NativeMessageType } from "@/lib/nativeMessaging";
+import { waitForBrowserPaint } from "@/lib/waitForBrowserPaint";
 
 export function useInteractiveRebasePlan(
 	repositoryId: string | null,
@@ -66,6 +67,7 @@ export function useInteractiveRebasePlan(
 			return null;
 		setIsRunning(true);
 		try {
+			await waitForBrowserPaint();
 			return await sendRequestWithResponse(
 				{
 					arguments: { baseCommitHash, plan, repositoryId },
