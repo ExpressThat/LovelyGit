@@ -67,22 +67,33 @@ async function loadInspection(repositoryId: string, stashHash: string) {
 		? await loadCommitDetails(repositoryId, untrackedHash, 0)
 		: null;
 	return {
-		files: [
-			...toInspectionFiles(tracked, "Tracked"),
-			...(untracked ? toInspectionFiles(untracked, "Untracked") : []),
-		],
+		files: toInspectionFiles(tracked, untracked),
 		tracked,
 		untracked,
 	};
 }
 
 function toInspectionFiles(
-	details: CommitDetailsResponse,
-	source: StashInspectionFile["source"],
+	tracked: CommitDetailsResponse,
+	untracked: CommitDetailsResponse | null,
 ) {
-	return details.changedFiles.map((file) => ({
-		commitHash: details.hash,
-		file,
-		source,
-	}));
+	const trackedCount = tracked.changedFiles.length;
+	const untrackedCount = untracked?.changedFiles.length ?? 0;
+	const files = new Array<StashInspectionFile>(trackedCount + untrackedCount);
+	for (let index = 0; index < trackedCount; index++) {
+		files[index] = {
+			commitHash: tracked.hash,
+			file: tracked.changedFiles[index],
+			source: "Tracked",
+		};
+	}
+	if (!untracked) return files;
+	for (let index = 0; index < untrackedCount; index++) {
+		files[trackedCount + index] = {
+			commitHash: untracked.hash,
+			file: untracked.changedFiles[index],
+			source: "Untracked",
+		};
+	}
+	return files;
 }

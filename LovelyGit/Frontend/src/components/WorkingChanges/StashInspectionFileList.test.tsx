@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { StashInspectionFileList } from "./StashInspectionFileList";
@@ -9,11 +9,7 @@ import type { StashInspectionFile } from "./useStashInspection";
 vi.mock("@tanstack/react-virtual", () => ({
 	useVirtualizer: ({ count }: { count: number }) => ({
 		getTotalSize: () => count * 48,
-		getVirtualItems: () =>
-			Array.from({ length: count }, (_, index) => ({
-				index,
-				start: index * 48,
-			})),
+		getVirtualItems: () => [],
 	}),
 }));
 
@@ -32,6 +28,8 @@ describe("StashInspectionFileList", () => {
 			/>,
 		);
 
+		const list = screen.getByRole("region", { name: "Stashed files" });
+		expect(list).toHaveAttribute("data-stashed-files-list", "ordinary");
 		expect(screen.getByText("Tracked · Modified")).toBeVisible();
 		expect(screen.getByText("Untracked · Added")).toBeVisible();
 		expect(screen.getByTitle("tracked.txt")).toHaveAttribute(
@@ -40,6 +38,30 @@ describe("StashInspectionFileList", () => {
 		);
 		await user.click(screen.getByTitle("notes.txt"));
 		expect(onSelect).toHaveBeenCalledWith(untracked);
+	});
+
+	it("bounds a large stash while retaining its complete scroll range", () => {
+		const files = Array.from({ length: 2_000 }, (_, index) =>
+			inspectionFile(
+				`group/file-${index.toString().padStart(4, "0")}.txt`,
+				"Modified",
+				"Tracked",
+			),
+		);
+		render(
+			<StashInspectionFileList
+				files={files}
+				onSelect={vi.fn()}
+				selected={null}
+			/>,
+		);
+
+		const list = screen.getByRole("region", { name: "Stashed files" });
+		expect(list).toHaveAttribute("data-stashed-files-list", "virtual");
+		expect(within(list).getAllByRole("button")).toHaveLength(10);
+		expect(within(list).getByTitle("group/file-0000.txt")).toBeVisible();
+		expect(within(list).queryByTitle("group/file-1999.txt")).toBeNull();
+		expect(list.firstElementChild).toHaveStyle({ height: "96000px" });
 	});
 });
 
