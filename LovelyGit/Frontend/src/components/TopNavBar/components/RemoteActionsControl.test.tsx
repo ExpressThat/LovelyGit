@@ -19,9 +19,15 @@ const sync = vi.hoisted(() => ({
 		isHistoryPartial: boolean;
 	},
 }));
+const waitForPaint = vi.hoisted(() =>
+	vi.fn<() => Promise<void>>(async () => undefined),
+);
 
 vi.mock("sonner", () => ({ toast }));
 vi.mock("@/lib/commands", () => ({ sendRequestWithResponse: vi.fn() }));
+vi.mock("@/lib/waitForBrowserPaint", () => ({
+	waitForBrowserPaint: waitForPaint,
+}));
 vi.mock("@/lib/settings/settingsStore", () => ({
 	setSetting: vi.fn(),
 	useSetting: () => "Fetch",
@@ -38,6 +44,8 @@ describe("RemoteActionsControl", () => {
 		toast.success.mockReset();
 		sync.reload.mockClear();
 		sync.status = null;
+		waitForPaint.mockReset();
+		waitForPaint.mockResolvedValue(undefined);
 	});
 
 	it("keeps normal push one click and disables remote controls while busy", async () => {

@@ -183,11 +183,11 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging
         GetRemotes,
         [NativeMessageContract(typeof(ManageRemoteCommandArguments), typeof(EmptyCommandArguments))]
         ManageRemote,
-        [NativeMessageContract(typeof(GitRemoteCommandArguments))]
+        [NativeMessageContract(typeof(GitRemoteCommandArguments), typeof(EmptyCommandArguments))]
         FetchRepository,
-        [NativeMessageContract(typeof(GitRemoteCommandArguments))]
+        [NativeMessageContract(typeof(GitRemoteCommandArguments), typeof(EmptyCommandArguments))]
         PullRepository,
-        [NativeMessageContract(typeof(GitRemoteCommandArguments))]
+        [NativeMessageContract(typeof(GitRemoteCommandArguments), typeof(EmptyCommandArguments))]
         PushRepository,
         [NativeMessageContract(typeof(CheckoutBranchCommandArguments), typeof(EmptyCommandArguments))]
         CheckoutBranch,

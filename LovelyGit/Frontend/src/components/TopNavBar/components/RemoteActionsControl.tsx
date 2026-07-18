@@ -13,6 +13,7 @@ import type { GitPushMode, RemotePrimaryAction } from "@/generated/types";
 import { sendRequestWithResponse } from "@/lib/commands";
 import { gitMutationTimeoutMs } from "@/lib/gitMutationTimeout";
 import { setSetting, useSetting } from "@/lib/settings/settingsStore";
+import { waitForBrowserPaint } from "@/lib/waitForBrowserPaint";
 import { LazyRemoteManagerDialog } from "./LazyRepositoryDialogs";
 import { PushActionsControl } from "./PushActionsControl";
 import {
@@ -64,6 +65,7 @@ export function RemoteActionsControl({
 		setBusyAction(action.value);
 		const toastId = toast.loading(`${action.label} in progress`);
 		try {
+			await waitForBrowserPaint();
 			await sendRequestWithResponse(
 				{
 					commandType: action.commandType,
