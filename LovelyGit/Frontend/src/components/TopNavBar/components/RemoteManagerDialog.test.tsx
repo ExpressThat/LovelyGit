@@ -33,6 +33,21 @@ describe("RemoteManagerDialog", () => {
 		).toBeInTheDocument();
 	});
 
+	it("bounds rendering for repositories with many remotes", async () => {
+		vi.mocked(sendRequestWithResponse).mockResolvedValueOnce(
+			Array.from({ length: 500 }, (_, index) => ({
+				name: `remote-${index}`,
+				pushUrl: `ssh://example.invalid/${index}`,
+				url: `https://example.invalid/${index}`,
+			})),
+		);
+		renderDialog();
+
+		expect(await screen.findByText("remote-0")).toBeVisible();
+		expect(screen.getAllByRole("listitem")).toHaveLength(10);
+		expect(screen.queryByText("remote-499")).toBeNull();
+	});
+
 	it("opens a destructive confirmation without closing the manager", async () => {
 		const user = userEvent.setup();
 		renderDialog();

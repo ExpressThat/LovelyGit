@@ -4,26 +4,47 @@ import type { GitRemote } from "@/generated/types";
 import { motion, useReducedMotion } from "@/lib/motion";
 
 export function RemoteRow({
+	animateRow = true,
 	disabled,
 	onEdit,
 	onRemove,
+	position,
 	remote,
 }: {
+	animateRow?: boolean;
 	disabled: boolean;
 	onEdit: () => void;
 	onRemove: () => void;
+	position?: {
+		index: number;
+		measureElement: (node: Element | null) => void;
+		start: number;
+	};
 	remote: GitRemote;
 }) {
 	const reduceMotion = useReducedMotion();
+	const shouldAnimate = animateRow && !reduceMotion;
 	return (
 		<motion.li
-			layout
+			data-index={position?.index}
+			layout={shouldAnimate}
+			ref={position?.measureElement}
+			style={
+				position
+					? {
+							left: 0,
+							position: "absolute",
+							right: 0,
+							top: position.start,
+						}
+					: undefined
+			}
 			animate={{ opacity: 1, scale: 1 }}
 			className="flex w-full min-w-0 items-start gap-3 rounded-lg border bg-card p-3"
 			exit={{ opacity: 0, scale: reduceMotion ? 1 : 0.98 }}
-			initial={{ opacity: 0, scale: reduceMotion ? 1 : 0.98 }}
+			initial={shouldAnimate ? { opacity: 0, scale: 0.98 } : false}
 			transition={{
-				duration: reduceMotion ? 0 : 0.16,
+				duration: shouldAnimate ? 0.16 : 0,
 				ease: [0.22, 1, 0.36, 1],
 			}}
 		>

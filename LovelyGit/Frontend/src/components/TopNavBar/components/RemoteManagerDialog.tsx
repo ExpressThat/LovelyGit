@@ -25,7 +25,7 @@ import {
 } from "@/components/ui/dialog";
 import { AnimatePresence } from "@/lib/motion";
 import { RemoteEditor } from "./RemoteEditor";
-import { RemoteRow } from "./RemoteRow";
+import { RemoteVirtualList } from "./RemoteVirtualList";
 import { useRemoteManager } from "./useRemoteManager";
 
 export function RemoteManagerDialog({
@@ -101,19 +101,12 @@ export function RemoteManagerDialog({
 							</div>
 						</div>
 					) : (
-						<ul className="grid min-w-0 max-h-72 gap-2 overflow-y-auto pr-1">
-							<AnimatePresence initial={false} mode="popLayout">
-								{manager.remotes.map((remote) => (
-									<RemoteRow
-										disabled={busy || manager.editor !== null}
-										key={remote.name}
-										onEdit={() => manager.startEdit(remote)}
-										onRemove={() => manager.startRemove(remote)}
-										remote={remote}
-									/>
-								))}
-							</AnimatePresence>
-						</ul>
+						<RemoteVirtualList
+							disabled={busy || manager.editor !== null}
+							onEdit={manager.startEdit}
+							onRemove={manager.startRemove}
+							remotes={manager.remotes}
+						/>
 					)}
 				</DialogContent>
 			</Dialog>
