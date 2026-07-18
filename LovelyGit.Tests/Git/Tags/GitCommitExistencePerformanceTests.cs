@@ -79,22 +79,9 @@ public sealed class GitCommitExistencePerformanceTests(ITestOutputHelper output)
         var git = new GitCliService();
         var head = git.ExecuteBufferedAsync(["rev-parse", "HEAD"], directory.FullName)
             .GetAwaiter().GetResult().StandardOutput.Trim();
-        var gitDirectory = Path.Combine(directory.FullName, ".git");
-        for (var index = 0; index < RefCountPerKind; index++)
-        {
-            WriteRef(gitDirectory, $"refs/heads/branch-{index}", head);
-            WriteRef(gitDirectory, $"refs/remotes/origin/branch-{index}", head);
-            WriteRef(gitDirectory, $"refs/tags/tag-{index}", head);
-        }
+        PackedRefFixture.AddBranchRemoteTagSets(directory.FullName, head, RefCountPerKind);
 
         return head;
-    }
-
-    private static void WriteRef(string gitDirectory, string name, string hash)
-    {
-        var path = Path.Combine(gitDirectory, name.Replace('/', Path.DirectorySeparatorChar));
-        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-        File.WriteAllText(path, hash + "\n");
     }
 
     private static void DeleteDirectory(DirectoryInfo directory)

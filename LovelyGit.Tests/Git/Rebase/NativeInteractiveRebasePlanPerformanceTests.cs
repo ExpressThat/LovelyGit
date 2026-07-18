@@ -77,11 +77,7 @@ public sealed class NativeInteractiveRebasePlanPerformanceTests(ITestOutputHelpe
             .ExecuteAsync().GetAwaiter().GetResult();
         Run(git, directory, ["gc", "--prune=now"]);
         var head = Run(git, directory, ["rev-parse", "HEAD"]).Trim();
-        var refs = Directory.CreateDirectory(Path.Combine(directory.FullName, ".git", "refs", "heads", "perf"));
-        for (var index = 0; index < 1_500; index++)
-        {
-            File.WriteAllText(Path.Combine(refs.FullName, $"branch-{index:D4}"), head + "\n");
-        }
+        PackedRefFixture.AddBranches(directory.FullName, head, 1_500);
         return new TemplateState(
             Run(git, directory, ["rev-parse", "main~100"]).Trim(),
             Run(git, directory, ["rev-parse", "main~101"]).Trim());

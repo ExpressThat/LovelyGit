@@ -211,14 +211,7 @@ public sealed class NativeBranchComparisonPerformanceTests(ITestOutputHelper out
     }
 
     private static void SeedUnrelatedRefs(string repositoryPath, string commit, int count)
-    {
-        var heads = Directory.CreateDirectory(
-            Path.Combine(repositoryPath, ".git", "refs", "heads", "perf"));
-        for (var index = 0; index < count; index++)
-        {
-            File.WriteAllText(Path.Combine(heads.FullName, $"branch-{index:D4}"), commit + "\n");
-        }
-    }
+        => PackedRefFixture.AddBranches(repositoryPath, commit, count);
 
     private sealed record TemplateState(
         int CommitCount,

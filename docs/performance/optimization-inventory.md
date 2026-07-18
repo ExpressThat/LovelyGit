@@ -80,6 +80,7 @@ This ledger records shipped performance work by feature area. Update it in the s
 
 - Prepared heavyweight performance-test repository templates and their exclusive physical copies on four bounded background workers while ordinary deterministic tests run. Performance and allocation tests remain serialized, fixture failures are surfaced, and every test retains independent repository ownership (current test-gate checkpoint).
 - Reused one canonical disposable submodule fixture across functional and performance suites, and moved the 1,500-ref bisect, ancestry, sparse-checkout, staging, diff, and ref-heavy setups into reusable templates without removing assertions or real-Git semantics (current test-gate checkpoint).
+- Moved the 66-commit search-session fixture to one fast-imported exclusive template, kept nested-shell integrations sequential with each other while allowing their lane to overlap ordinary tests, and represented bulk unrelated refs with a small loose sample plus a standards-compliant packed remainder. The complete backend gate is now repeatably below one minute without weakening performance budgets or Git-state assertions (current sub-minute test checkpoint).
 
 ### Commit Search and Details
 
