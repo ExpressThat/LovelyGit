@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { DeleteBranchDialog } from "./DeleteBranchDialog";
@@ -34,6 +34,24 @@ describe("RenameBranchDialog", () => {
 		await user.type(input, "feature/new");
 		await user.click(screen.getByRole("button", { name: "Rename branch" }));
 		expect(onConfirm).toHaveBeenCalledWith("feature/new");
+	});
+
+	it("accepts the native input event used by the desktop WebView", () => {
+		const onConfirm = vi.fn();
+		render(
+			<RenameBranchDialog
+				branchName="feature/old"
+				existingBranchNames={["feature/old"]}
+				isBusy={false}
+				onConfirm={onConfirm}
+				onOpenChange={vi.fn()}
+			/>,
+		);
+
+		fireEvent.input(screen.getByLabelText("New branch name"), {
+			target: { value: "feature/native-input" },
+		});
+		expect(screen.getByRole("button", { name: "Rename branch" })).toBeEnabled();
 	});
 });
 

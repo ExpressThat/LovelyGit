@@ -53,6 +53,7 @@ This ledger records shipped performance work by feature area. Update it in the s
 - Virtualized the capped 100-commit branch-comparison and cherry-pick/revert confirmation lists above 30 items, preserving ordinary fully mounted dialogs, operation ordering, exact hashes, and complete custom-scrollbar access (`eff8200`).
 - Virtualized the top repository strip and New Tab's recent-repository list above 30 records, while preserving the existing Motion tab layout for ordinary collections, exact filtering, lazy row overlays, active-tab visibility, and both complete custom-scrollbar ranges (`e7cadd8`).
 - Replaced the ordinary 2-30 repository strip's browser-default horizontal scrollbar with a two-pixel semantic scrollbar, preventing the native gutter from displacing and clipping the tab buttons while preserving user scrolling and access to every tab (`faa310d`).
+- Verified local tag creation and branch rename against 500 tags and 102 branches. Dialog/busy feedback stays within 12.2-22.4 ms, Git completes in 55.5-88.8 ms, and refreshed refs appear 60.7-64.9 ms later. Added the missing native `input` event path so WebView-driven rename text enables submission instead of leaving React state stale (current local-ref checkpoint).
 
 ### Native Git Parser and Object Storage
 

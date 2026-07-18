@@ -17,6 +17,8 @@ Frontend wall-clock performance tests now run as a sequential Vitest project aft
 
 Successful branch pushes now request the same authoritative repository refresh as other ref mutations. In the delayed local-transport fixture, the pushed remote branch appeared 62 ms after completion instead of 278 ms while busy feedback remained visible in 18-21 ms.
 
+Maximum-ref local mutations remain inexpensive: cold Create Tag opens in 12.9 ms, paints busy in 13.1 ms, completes Git in 55.5 ms, and presents the ref 60.7 ms later. Branch Rename opens in 22.4 ms, paints busy in 12.2 ms, completes in 88.8 ms, and presents the renamed ref 64.9 ms later. The audit also corrected native WebView input handling that had left Rename disabled despite visible text.
+
 ## Measurement Rules
 
 - Measure from a healthy runner state and use disposable repositories only.
@@ -47,6 +49,7 @@ Measured through the same Git commands LovelyGit uses, primarily in a disposable
 | Fetch / Pull / Push completion contract | Disabled feedback in 1-5 ms; awaited 3.37-3.50 s delayed transport process |
 | Remote completion to authoritative refs | Pull 186 ms to 5 ms; Fetch 12 ms measured after the change |
 | Branch push completion to remote ref | 278 ms to 62 ms; busy feedback remains visible in 18-21 ms |
+| 500-tag create / 102-branch rename | Tag: 12.9 ms dialog, 13.1 ms busy, 55.5 ms Git, 60.7 ms reconciliation; rename: 22.4 ms dialog, 12.2 ms busy, 88.8 ms Git, 64.9 ms reconciliation |
 
 ## Rejected or Deferred Experiments
 

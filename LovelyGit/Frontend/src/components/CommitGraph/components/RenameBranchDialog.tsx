@@ -62,6 +62,7 @@ export function RenameBranchDialog({
 							autoFocus
 							id="renamed-branch-name"
 							onChange={(event) => setNewBranchName(event.currentTarget.value)}
+							onInput={(event) => setNewBranchName(event.currentTarget.value)}
 							value={newBranchName}
 						/>
 						<AnimatePresence initial={false}>
