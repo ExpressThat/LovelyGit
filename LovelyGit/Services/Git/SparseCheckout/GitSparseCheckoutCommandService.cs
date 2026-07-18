@@ -1,4 +1,7 @@
+using CliWrap;
+using CliWrap.Buffered;
 using ExpressThat.LovelyGit.Services.Git.Cli;
+using System.Text;
 
 namespace ExpressThat.LovelyGit.Services.Git.SparseCheckout;
 
@@ -6,20 +9,33 @@ internal sealed class GitSparseCheckoutCommandService(
     GitCliService git,
     NativeSparseCheckoutReader reader)
 {
-    private const int MaximumPatterns = 500;
+    private const int MaximumPatterns = 250_000;
     private const int MaximumPatternLength = 4_096;
+    internal const int MaximumPatternTextLength = 64 * 1024 * 1024;
 
     public async Task<SparseCheckoutState> ExecuteAsync(
         string repositoryPath,
         SparseCheckoutAction action,
         bool coneMode,
-        IReadOnlyList<string>? patterns,
+        string? patternText,
         CancellationToken cancellationToken)
     {
-        var arguments = BuildArguments(action, coneMode, patterns);
-        var result = await git
-            .ExecuteBufferedAsync(arguments, repositoryPath, false, cancellationToken)
-            .ConfigureAwait(false);
+        var arguments = BuildArguments(action, coneMode);
+        BufferedCommandResult result;
+        if (action == SparseCheckoutAction.Disable)
+        {
+            result = await git.ExecuteBufferedAsync(
+                    arguments, repositoryPath, false, cancellationToken)
+                .ConfigureAwait(false);
+        }
+        else
+        {
+            var normalized = NormalizePatternText(patternText, coneMode);
+            result = await git.CreateCommand(arguments, repositoryPath, false)
+                .WithStandardInputPipe(PipeSource.FromString(normalized, Encoding.UTF8))
+                .ExecuteBufferedAsync(cancellationToken)
+                .ConfigureAwait(false);
+        }
         if (result.ExitCode != 0)
         {
             var error = result.StandardError.Trim();
@@ -32,8 +48,7 @@ internal sealed class GitSparseCheckoutCommandService(
 
     internal static string[] BuildArguments(
         SparseCheckoutAction action,
-        bool coneMode,
-        IReadOnlyList<string>? patterns)
+        bool coneMode)
     {
         if (action == SparseCheckoutAction.Disable)
         {
@@ -45,38 +60,47 @@ internal sealed class GitSparseCheckoutCommandService(
             throw new ArgumentOutOfRangeException(nameof(action));
         }
 
-        var normalized = NormalizePatterns(patterns, coneMode);
         return [
             "sparse-checkout",
             "set",
             coneMode ? "--cone" : "--no-cone",
             "--skip-checks",
-            "--",
-            .. normalized,
+            "--stdin",
         ];
     }
 
-    private static string[] NormalizePatterns(IReadOnlyList<string>? patterns, bool coneMode)
+    internal static string NormalizePatternText(string? patternText, bool coneMode)
     {
-        if (patterns == null || patterns.Count == 0 || patterns.Count > MaximumPatterns)
+        if (string.IsNullOrWhiteSpace(patternText) || patternText.Length > MaximumPatternTextLength)
         {
-            throw new ArgumentException($"Choose between 1 and {MaximumPatterns} sparse paths.");
+            throw new ArgumentException("The sparse-checkout specification is empty or too large.");
         }
 
-        var result = new List<string>(patterns.Count);
+        var result = new StringBuilder(patternText.Length + 1);
         var seen = new HashSet<string>(StringComparer.Ordinal);
-        foreach (var value in patterns)
+        var count = 0;
+        var start = 0;
+        for (var index = 0; index <= patternText.Length; index++)
         {
-            var pattern = value.Trim().Replace('\\', '/');
-            if (pattern.Length == 0 || pattern.Length > MaximumPatternLength ||
+            if (index < patternText.Length && patternText[index] != '\n') continue;
+            var pattern = patternText[start..index].Trim().Replace('\\', '/');
+            start = index + 1;
+            if (pattern.Length == 0) continue;
+            if (pattern.Length > MaximumPatternLength ||
                 pattern.IndexOfAny(['\0', '\r', '\n']) >= 0)
             {
                 throw new ArgumentException("A sparse-checkout path or pattern is invalid.");
             }
             if (coneMode) pattern = ValidateConePath(pattern);
-            if (seen.Add(pattern)) result.Add(pattern);
+            if (!seen.Add(pattern)) continue;
+            if (++count > MaximumPatterns)
+            {
+                throw new ArgumentException($"Choose at most {MaximumPatterns:N0} sparse paths.");
+            }
+            result.Append(pattern).Append('\n');
         }
-        return result.ToArray();
+        if (count == 0) throw new ArgumentException("Choose at least one sparse path.");
+        return result.ToString();
     }
 
     private static string ValidateConePath(string pattern)

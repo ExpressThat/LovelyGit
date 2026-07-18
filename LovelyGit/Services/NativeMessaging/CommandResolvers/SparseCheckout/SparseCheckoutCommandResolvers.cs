@@ -52,7 +52,7 @@ internal sealed class GetSparseCheckoutStateCommandResolver(
             CommandUniqueId = command.CommandUniqueId,
             CommandType = command.CommandType,
             IsSuccess = true,
-            Result = state,
+            Result = SparseCheckoutPayloadCompactor.CompactIfUseful(state),
         };
 
     internal static CommandResponseBase Failure<TArguments>(
@@ -95,7 +95,9 @@ internal sealed class ManageSparseCheckoutCommandResolver(
                     repository.Path!,
                     command.Arguments.Action,
                     command.Arguments.ConeMode,
-                    command.Arguments.Patterns,
+                    SparseCheckoutPayloadCompactor.ExpandRequest(
+                        command.Arguments.PatternText,
+                        command.Arguments.PatternTextGzipBase64),
                     CancellationToken.None)
                 .ConfigureAwait(false);
             return GetSparseCheckoutStateCommandResolver.Success(command, state);

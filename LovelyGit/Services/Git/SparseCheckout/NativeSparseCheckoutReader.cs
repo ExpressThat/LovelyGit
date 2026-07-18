@@ -1,4 +1,5 @@
 using ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser;
+using System.Text;
 
 namespace ExpressThat.LovelyGit.Services.Git.SparseCheckout;
 
@@ -25,14 +26,22 @@ internal sealed class NativeSparseCheckoutReader
             "info",
             "sparse-checkout");
         var enabled = settings.Enabled && File.Exists(specificationPath);
+        if (!enabled)
+        {
+            return new SparseCheckoutState();
+        }
+
+        var specification = await ReadPatternTextAsync(
+                specificationPath,
+                settings.ConeMode,
+                cancellationToken)
+            .ConfigureAwait(false);
         return new SparseCheckoutState
         {
-            Enabled = enabled,
-            ConeMode = enabled && settings.ConeMode,
-            Patterns = enabled
-                ? await ReadPatternsAsync(specificationPath, settings.ConeMode, cancellationToken)
-                    .ConfigureAwait(false)
-                : [],
+            Enabled = true,
+            ConeMode = settings.ConeMode,
+            PatternCount = specification.Count,
+            PatternText = specification.Text,
         };
     }
 
@@ -43,25 +52,20 @@ internal sealed class NativeSparseCheckoutReader
         return collector.Complete();
     }
 
-    private static async Task<List<string>> ReadPatternsAsync(
+    private static async Task<PatternText> ReadPatternTextAsync(
         string path,
         bool coneMode,
         CancellationToken cancellationToken)
     {
-        await using var stream = new FileStream(
-            path,
-            FileMode.Open,
-            FileAccess.Read,
-            FileShare.ReadWrite | FileShare.Delete,
-            16 * 1024,
-            FileOptions.Asynchronous | FileOptions.SequentialScan);
-        var capacity = (int)Math.Min(stream.Length / 32 + 1, 250_000);
-        var collector = new PatternCollector(coneMode, capacity);
-        using var reader = new StreamReader(stream);
-        while (await reader.ReadLineAsync(cancellationToken).ConfigureAwait(false) is { } line)
-        {
-            collector.Add(line);
-        }
+        var byteLength = new FileInfo(path).Length;
+        var estimatedCount = (int)Math.Min(byteLength / 32 + 1, 250_000);
+        var collector = new PatternTextCollector(coneMode, estimatedCount, byteLength);
+        await PooledTextLineReader.ReadAsync(
+                path,
+                collector,
+                static (line, state) => state.Add(line),
+                cancellationToken)
+            .ConfigureAwait(false);
         return collector.Complete();
     }
 
@@ -136,4 +140,39 @@ internal sealed class NativeSparseCheckoutReader
             return _patterns;
         }
     }
+
+    private sealed class PatternTextCollector(bool coneMode, int countCapacity, long byteLength)
+    {
+        private readonly PatternCollector? _coneCollector = coneMode
+            ? new PatternCollector(true, countCapacity)
+            : null;
+        private readonly StringBuilder? _text = coneMode
+            ? null
+            : new StringBuilder((int)Math.Min(byteLength, 16 * 1024 * 1024));
+        private int _count;
+
+        public void Add(ReadOnlySpan<char> source)
+        {
+            if (_coneCollector != null)
+            {
+                _coneCollector.Add(source.ToString());
+                return;
+            }
+
+            var line = source.Trim();
+            if (line.IsEmpty || line[0] == '#') return;
+            if (_count > 0) _text!.Append('\n');
+            _text!.Append(line);
+            _count++;
+        }
+
+        public PatternText Complete()
+        {
+            if (_coneCollector == null) return new PatternText(_text!.ToString(), _count);
+            var patterns = _coneCollector.Complete();
+            return new PatternText(string.Join('\n', patterns), patterns.Count);
+        }
+    }
+
+    private sealed record PatternText(string Text, int Count);
 }

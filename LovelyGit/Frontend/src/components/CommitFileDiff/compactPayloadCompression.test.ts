@@ -1,5 +1,9 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { decodeBase64Bytes } from "./compactPayloadCompression";
+import {
+	decodeBase64Bytes,
+	decodeGzipBase64,
+	encodeGzipBase64,
+} from "./compactPayloadCompression";
 
 const originalDescriptor = Object.getOwnPropertyDescriptor(
 	Uint8Array,
@@ -49,5 +53,16 @@ describe("decodeBase64Bytes", () => {
 		});
 
 		expect(() => decodeBase64Bytes("%%% invalid %%%")).toThrow();
+	});
+});
+
+describe("encodeGzipBase64", () => {
+	it("round-trips a large UTF-8 specification", async () => {
+		const source = `${"src/module\n".repeat(10_000)}café`;
+
+		const encoded = await encodeGzipBase64(source);
+
+		expect(encoded.length).toBeLessThan(source.length / 10);
+		await expect(decodeGzipBase64(encoded)).resolves.toBe(source);
 	});
 });

@@ -1,5 +1,9 @@
 import { useState } from "react";
 import { toast } from "sonner";
+import {
+	decodeGzipBase64,
+	encodeGzipBase64,
+} from "@/components/CommitFileDiff/compactPayloadCompression";
 import type {
 	SparseCheckoutAction,
 	SparseCheckoutState,
@@ -22,10 +26,12 @@ export function useSparseCheckoutManager(repositoryId: string) {
 		setError(null);
 		try {
 			setState(
-				await sendRequestWithResponse({
-					commandType: NativeMessageType.GetSparseCheckoutState,
-					arguments: { repositoryId },
-				}),
+				await decodeState(
+					await sendRequestWithResponse({
+						commandType: NativeMessageType.GetSparseCheckoutState,
+						arguments: { repositoryId },
+					}),
+				),
 			);
 		} catch (loadError) {
 			setError(message(loadError, "Could not read sparse-checkout state"));
@@ -37,17 +43,29 @@ export function useSparseCheckoutManager(repositoryId: string) {
 	async function run(
 		action: SparseCheckoutAction,
 		coneMode: boolean,
-		patterns: string[],
+		patternText: string,
 	) {
 		if (busyAction) return false;
 		setBusyAction(action);
 		try {
-			const nextState = await sendRequestWithResponse(
-				{
-					commandType: NativeMessageType.ManageSparseCheckout,
-					arguments: { action, coneMode, patterns, repositoryId },
-				},
-				{ timeoutMs: gitMutationTimeoutMs },
+			const compactPatternText =
+				action === "Set" && patternText.length >= 64_000
+					? await encodeGzipBase64(patternText)
+					: "";
+			const nextState = await decodeState(
+				await sendRequestWithResponse(
+					{
+						commandType: NativeMessageType.ManageSparseCheckout,
+						arguments: {
+							action,
+							coneMode,
+							patternText: compactPatternText ? "" : patternText,
+							patternTextGzipBase64: compactPatternText,
+							repositoryId,
+						},
+					},
+					{ timeoutMs: gitMutationTimeoutMs },
+				),
 			);
 			setState(nextState);
 			setError(null);
@@ -68,6 +86,15 @@ export function useSparseCheckoutManager(repositoryId: string) {
 	}
 
 	return { busyAction, error, isLoading, load, run, state };
+}
+
+async function decodeState(state: SparseCheckoutState) {
+	if (!state.patternTextGzipBase64) return state;
+	return {
+		...state,
+		patternText: await decodeGzipBase64(state.patternTextGzipBase64),
+		patternTextGzipBase64: "",
+	};
 }
 
 function message(error: unknown, fallback: string) {

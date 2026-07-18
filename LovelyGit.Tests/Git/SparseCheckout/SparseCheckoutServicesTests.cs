@@ -15,7 +15,8 @@ public sealed class SparseCheckoutServicesTests
             CancellationToken.None);
 
         Assert.False(state.Enabled);
-        Assert.Empty(state.Patterns);
+        Assert.Equal(0, state.PatternCount);
+        Assert.Empty(state.PatternText);
     }
 
     [Fact]
@@ -28,12 +29,13 @@ public sealed class SparseCheckoutServicesTests
             repository.Path,
             SparseCheckoutAction.Set,
             coneMode: true,
-            ["src/feature", "docs"],
+            "src/feature\ndocs",
             CancellationToken.None);
 
         Assert.True(state.Enabled);
         Assert.True(state.ConeMode);
-        Assert.Equal(["docs", "src/feature"], state.Patterns.Order());
+        Assert.Equal(2, state.PatternCount);
+        Assert.Equal(["docs", "src/feature"], state.PatternText.Split('\n').Order());
         Assert.True(File.Exists(Path.Combine(repository.Path, "src", "feature", "file.txt")));
         Assert.False(File.Exists(Path.Combine(repository.Path, "src", "other", "file.txt")));
     }
@@ -47,12 +49,13 @@ public sealed class SparseCheckoutServicesTests
             repository.Path,
             SparseCheckoutAction.Set,
             coneMode: false,
-            ["/*", "!/src/other/"],
+            "/*\n!/src/other/",
             CancellationToken.None);
 
         Assert.True(state.Enabled);
         Assert.False(state.ConeMode);
-        Assert.Equal(["/*", "!/src/other/"], state.Patterns);
+        Assert.Equal(2, state.PatternCount);
+        Assert.Equal("/*\n!/src/other/", state.PatternText);
     }
 
     [Fact]
@@ -64,7 +67,7 @@ public sealed class SparseCheckoutServicesTests
             repository.Path,
             SparseCheckoutAction.Set,
             true,
-            ["docs"],
+            "docs",
             CancellationToken.None);
 
         var state = await service.ExecuteAsync(
@@ -94,7 +97,7 @@ public sealed class SparseCheckoutServicesTests
                 directory.FullName,
                 SparseCheckoutAction.Set,
                 true,
-                [path],
+                path,
                 CancellationToken.None));
 
             Assert.Equal("unchanged", await File.ReadAllTextAsync(sentinel));
@@ -119,7 +122,7 @@ public sealed class SparseCheckoutServicesTests
             repository.Path,
             SparseCheckoutAction.Set,
             true,
-            ["docs"],
+            "docs",
             CancellationToken.None));
 
         var state = await new NativeSparseCheckoutReader().ReadAsync(
@@ -130,14 +133,12 @@ public sealed class SparseCheckoutServicesTests
     }
 
     [Fact]
-    public void BuildArguments_SeparatesPatternsFromGitOptions()
+    public void BuildArguments_UsesStandardInputForPatterns()
     {
         var arguments = GitSparseCheckoutCommandService.BuildArguments(
             SparseCheckoutAction.Set,
-            false,
-            ["--stdin"]);
+            false);
 
-        Assert.Equal("--", arguments[^2]);
         Assert.Equal("--stdin", arguments[^1]);
     }
 
@@ -169,7 +170,7 @@ public sealed class SparseCheckoutServicesTests
             repository.Path,
             SparseCheckoutAction.Set,
             false,
-            ["/*", "!/src/other/"],
+            "/*\n!/src/other/",
             CancellationToken.None);
         var specification = Path.Combine(repository.Path, ".git", "info", "sparse-checkout");
         var before = await File.ReadAllBytesAsync(specification);

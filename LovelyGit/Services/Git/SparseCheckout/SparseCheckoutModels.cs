@@ -17,5 +17,7 @@ public sealed record SparseCheckoutState
 {
     public bool Enabled { get; init; }
     public bool ConeMode { get; init; }
-    public List<string> Patterns { get; init; } = [];
+    public int PatternCount { get; init; }
+    public string PatternText { get; init; } = string.Empty;
+    public string PatternTextGzipBase64 { get; init; } = string.Empty;
 }

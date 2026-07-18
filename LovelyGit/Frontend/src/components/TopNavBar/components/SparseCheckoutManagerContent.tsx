@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { LovelySwitch } from "@/components/controls/LovelySwitch";
 import {
 	AlertTriangle,
@@ -32,10 +32,12 @@ export function SparseCheckoutManagerContent({
 	repositoryId: string;
 }) {
 	const controller = useSparseCheckoutManager(repositoryId);
-	const [draft, setDraft] = useState("");
+	const editorRef = useRef<HTMLTextAreaElement>(null);
+	const [hasPatterns, setHasPatterns] = useState(false);
 	const [coneMode, setConeMode] = useState(true);
 	const [confirmDisable, setConfirmDisable] = useState(false);
 	const { state } = controller;
+	const stateDraft = useMemo(() => state?.patternText ?? "", [state]);
 
 	// This content mounts once per dialog opening; depending on load would loop.
 	// biome-ignore lint/correctness/useExhaustiveDependencies: mount is the open event
@@ -44,14 +46,11 @@ export function SparseCheckoutManagerContent({
 	}, []);
 	useEffect(() => {
 		if (!state) return;
-		setDraft(state.patterns.join("\n"));
+		if (editorRef.current) editorRef.current.value = stateDraft;
+		setHasPatterns(state.patternCount > 0);
 		setConeMode(state.enabled ? state.coneMode : true);
-	}, [state]);
+	}, [state, stateDraft]);
 
-	const patterns = draft
-		.split(/\r?\n/)
-		.map((value) => value.trim())
-		.filter(Boolean);
 	const busy = controller.busyAction !== null;
 	return (
 		<>
@@ -87,7 +86,7 @@ export function SparseCheckoutManagerContent({
 						</p>
 						<p className="mt-1 text-muted-foreground text-xs">
 							{state?.enabled
-								? `${state.patterns.length} selection${state.patterns.length === 1 ? "" : "s"} checked out`
+								? `${state.patternCount} selection${state.patternCount === 1 ? "" : "s"} checked out`
 								: "Every tracked path is present on disk."}
 						</p>
 					</div>
@@ -100,13 +99,16 @@ export function SparseCheckoutManagerContent({
 						</label>
 						<textarea
 							className="custom-scrollbar min-h-36 resize-y rounded-md border border-input bg-background px-3 py-2 font-mono text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+							defaultValue={stateDraft}
 							disabled={busy || controller.isLoading}
 							id="sparse-checkout-patterns"
-							onInput={(event) => setDraft(event.currentTarget.value)}
+							onInput={(event) =>
+								setHasPatterns(hasNonWhitespace(event.currentTarget.value))
+							}
 							placeholder={
 								coneMode ? "src\ndocs\napps/desktop" : "/*\n!/vendor/"
 							}
-							value={draft}
+							ref={editorRef}
 						/>
 						<p className="text-muted-foreground text-xs">
 							One {coneMode ? "repository-relative directory" : "pattern"} per
@@ -144,8 +146,12 @@ export function SparseCheckoutManagerContent({
 						Restore full checkout
 					</Button>
 					<Button
-						disabled={patterns.length === 0 || busy || controller.isLoading}
-						onClick={() => void controller.run("Set", coneMode, patterns)}
+						disabled={!hasPatterns || busy || controller.isLoading}
+						onClick={() => {
+							const patternText = editorRef.current?.value ?? "";
+							if (hasNonWhitespace(patternText))
+								void controller.run("Set", coneMode, patternText);
+						}}
 					>
 						{busy ? (
 							<LoaderCircle aria-hidden="true" className="animate-spin" />
@@ -175,7 +181,7 @@ export function SparseCheckoutManagerContent({
 						</AlertDialogCancel>
 						<AlertDialogAction
 							disabled={busy}
-							onClick={() => void controller.run("Disable", false, [])}
+							onClick={() => void controller.run("Disable", false, "")}
 						>
 							Restore all files
 						</AlertDialogAction>
@@ -184,4 +190,11 @@ export function SparseCheckoutManagerContent({
 			</AlertDialog>
 		</>
 	);
+}
+
+function hasNonWhitespace(value: string) {
+	for (let index = 0; index < value.length; index++) {
+		if (!/\s/.test(value[index] ?? "")) return true;
+	}
+	return false;
 }

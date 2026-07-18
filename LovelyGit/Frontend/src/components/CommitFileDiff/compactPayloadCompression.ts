@@ -2,6 +2,26 @@ export async function decodeGzipBase64(value: string) {
 	return new TextDecoder().decode(await decodeGzipBase64Bytes(value));
 }
 
+export async function encodeGzipBase64(value: string) {
+	const stream = new Blob([value])
+		.stream()
+		.pipeThrough(new CompressionStream("gzip"));
+	const bytes = new Uint8Array(await new Response(stream).arrayBuffer());
+	const nativeEncoder = (
+		bytes as Uint8Array<ArrayBuffer> & { toBase64?: () => string }
+	).toBase64;
+	if (nativeEncoder) return nativeEncoder.call(bytes);
+
+	let binary = "";
+	const chunkSize = 32_768;
+	for (let offset = 0; offset < bytes.length; offset += chunkSize) {
+		binary += String.fromCharCode(
+			...bytes.subarray(offset, offset + chunkSize),
+		);
+	}
+	return btoa(binary);
+}
+
 export async function decodeGzipBase64Bytes(value: string) {
 	const bytes = decodeBase64Bytes(value);
 	const stream = new Blob([bytes])

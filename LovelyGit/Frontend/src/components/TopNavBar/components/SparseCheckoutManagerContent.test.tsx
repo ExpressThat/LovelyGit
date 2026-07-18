@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Dialog } from "@/components/ui/dialog";
@@ -28,7 +28,7 @@ describe("SparseCheckoutManagerContent", () => {
 			screen.getByRole("button", { name: "Enable sparse checkout" }),
 		);
 
-		expect(run).toHaveBeenCalledWith("Set", true, ["src", "apps/desktop"]);
+		expect(run).toHaveBeenCalledWith("Set", true, "src\napps/desktop");
 	});
 
 	it("requires confirmation before restoring the full working tree", async () => {
@@ -37,7 +37,13 @@ describe("SparseCheckoutManagerContent", () => {
 		vi.mocked(useSparseCheckoutManager).mockReturnValue(
 			controller({
 				run,
-				state: { coneMode: true, enabled: true, patterns: ["src"] },
+				state: {
+					coneMode: true,
+					enabled: true,
+					patternCount: 1,
+					patternText: "src",
+					patternTextGzipBase64: "",
+				},
 			}),
 		);
 		renderContent();
@@ -53,7 +59,7 @@ describe("SparseCheckoutManagerContent", () => {
 		).toBeVisible();
 		await user.click(screen.getByRole("button", { name: "Restore all files" }));
 
-		expect(run).toHaveBeenCalledWith("Disable", false, []);
+		expect(run).toHaveBeenCalledWith("Disable", false, "");
 	});
 
 	it("supports non-cone Git patterns", async () => {
@@ -71,7 +77,7 @@ describe("SparseCheckoutManagerContent", () => {
 			screen.getByRole("button", { name: "Enable sparse checkout" }),
 		);
 
-		expect(run).toHaveBeenCalledWith("Set", false, ["/*", "!/vendor/"]);
+		expect(run).toHaveBeenCalledWith("Set", false, "/*\n!/vendor/");
 	});
 
 	it("locks controls during mutation", () => {
@@ -84,6 +90,36 @@ describe("SparseCheckoutManagerContent", () => {
 		expect(
 			screen.getByRole("button", { name: "Enable sparse checkout" }),
 		).toBeDisabled();
+	});
+
+	it("keeps a large specification compact and editable when applied", async () => {
+		const user = userEvent.setup();
+		const patterns = Array.from(
+			{ length: 100_000 },
+			(_, index) => `path-${index}`,
+		);
+		const run = vi.fn().mockResolvedValue(true);
+		vi.mocked(useSparseCheckoutManager).mockReturnValue(
+			controller({
+				run,
+				state: {
+					coneMode: false,
+					enabled: true,
+					patternCount: patterns.length,
+					patternText: patterns.join("\n"),
+					patternTextGzipBase64: "",
+				},
+			}),
+		);
+		renderContent();
+		const editor = screen.getByRole("textbox") as HTMLTextAreaElement;
+
+		fireEvent.input(editor, { target: { value: `${editor.value}\nextra` } });
+		await user.click(screen.getByRole("button", { name: "Apply selection" }));
+
+		const applied = run.mock.calls[0]?.[2] as string;
+		expect(applied).toMatch(/^path-0\n/);
+		expect(applied).toMatch(/path-99999\nextra$/);
 	});
 });
 
@@ -102,7 +138,13 @@ function controller(overrides: Record<string, unknown> = {}) {
 		isLoading: false,
 		load: vi.fn().mockResolvedValue(undefined),
 		run: vi.fn().mockResolvedValue(true),
-		state: { coneMode: false, enabled: false, patterns: [] },
+		state: {
+			coneMode: false,
+			enabled: false,
+			patternCount: 0,
+			patternText: "",
+			patternTextGzipBase64: "",
+		},
 		...overrides,
 	} as ReturnType<typeof useSparseCheckoutManager>;
 }
