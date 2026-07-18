@@ -10,6 +10,7 @@ internal sealed partial class GitPackIndex : IDisposable
     private readonly uint[] _fanout;
     private readonly int _hashBytes;
     private readonly FileStream _file;
+    private readonly long _fileLength;
     private bool _disposed;
 
     private GitPackIndex(string indexPath, uint[] fanout, int hashBytes, FileStream file)
@@ -19,6 +20,7 @@ internal sealed partial class GitPackIndex : IDisposable
         _fanout = fanout;
         _hashBytes = hashBytes;
         _file = file;
+        _fileLength = file.Length;
     }
 
     public string IndexPath { get; }

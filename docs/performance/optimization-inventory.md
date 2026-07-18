@@ -68,6 +68,7 @@ This ledger records shipped performance work by feature area. Update it in the s
 - Converted binary SHA-1/SHA-256 identities through a stack character buffer instead of allocating an intermediate `char[]` before the result string (`bb89ffc`).
 - Demand-read native monolithic and split commit-graph chains for ancestry painting instead of inflating every packed commit; the reader stays unopened for unrelated repository features and safely falls back for missing, corrupt, shallow, grafted, replaced, or disabled histories (`dfb379a`).
 - Reused native commit-graph ancestry in deep file-history and blame walks while preserving authoritative tree, blob, author, rename, and attribution reads (`3ca172f`).
+- Removed per-object pack-path and pack-index-length metadata syscalls from native traversal, retaining bounded 25 ms stale-pack validation plus failure-driven reload. Replaced SharpZipLib's per-object inflater state with .NET's built-in zlib path and removed its 258 KB runtime dependency (current packed-search checkpoint).
 - Opened history and blame against the object database alone and resolved only the worktree-scoped HEAD when no explicit start was supplied, so unrelated refs no longer affect either interaction (`391cd62`).
 - Read submodule status from the parent HEAD/tree plus each initialized submodule's worktree-aware HEAD, avoiding complete parent and nested ref models (`7c4539a`).
 - Virtualized submodule-manager cards and disabled per-row layout motion above 20 definitions, preserving small-list motion without animating every card during large-list scrolling (`ca12cbc`).
@@ -97,6 +98,7 @@ This ledger records shipped performance work by feature area. Update it in the s
 - Virtualized maximum-size file-history results against the dialog's existing scroll viewport, retained keyboard navigation by virtual index, and restored deep traversal whenever a completed native scan returned a truncated result set (`f815567`).
 - Virtualized maximum-size commit-search results, moved selection scrolling onto virtual indexes, and restored the deep-search result cap from 50 to 100 without retaining 100 rich result rows (`7d1dbba`).
 - Released active and retained native commit-search sessions as soon as the dialog closes, while preserving the warm continuation when the user deliberately selects Search deeper (current commit-search checkpoint).
+- Reduced a complete packed 50,000-commit native scan from 4.47-4.89 s to 0.87-0.97 s and from 305-309 MB to 131-134 MB allocated, with the real WebView Search deeper journey falling from 4.92-5.03 s to 1.45 s (current packed-search checkpoint).
 
 ### Working Tree, Staging, and Status
 

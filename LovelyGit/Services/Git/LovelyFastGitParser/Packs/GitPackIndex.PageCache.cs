@@ -13,7 +13,7 @@ internal sealed partial class GitPackIndex
         static page => page.LongLength);
     private static long _nextCacheGeneration;
     private readonly long _cacheGeneration = Interlocked.Increment(ref _nextCacheGeneration);
-    private bool UsePageCache => _file.Length <= MaximumPageCachedIndexBytes;
+    private bool UsePageCache => _fileLength <= MaximumPageCachedIndexBytes;
 
     internal static long CachedIndexBytes => IndexPages.CurrentWeight;
 
@@ -62,7 +62,7 @@ internal sealed partial class GitPackIndex
         }
 
         var offset = pageIndex * IndexPageBytes;
-        var remaining = _file.Length - offset;
+        var remaining = _fileLength - offset;
         if (remaining <= 0)
         {
             throw new EndOfStreamException();

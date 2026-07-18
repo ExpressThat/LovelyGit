@@ -36,6 +36,15 @@ internal sealed partial class GitObjectStore
         CancellationToken cancellationToken)
     {
         using var indexes = await AcquirePackIndexesAsync(cancellationToken).ConfigureAwait(false);
+        if (indexes.TryBeginValidation()
+            && indexes.Indexes.Any(index => !File.Exists(index.PackPath)))
+        {
+            return new PackedObjectReadResult(
+                null,
+                PackIndexesStale: true,
+                indexes.Generation);
+        }
+
         foreach (var index in indexes.Indexes)
         {
             var offset = index.TryFindOffset(id, cancellationToken);
@@ -44,28 +53,31 @@ internal sealed partial class GitObjectStore
                 continue;
             }
 
-            if (!File.Exists(index.PackPath))
+            try
+            {
+                var objectData = await _packReader
+                    .ReadObjectAtAsync(
+                        index.PackPath,
+                        offset.Value,
+                        cacheObject
+                            ? (objectId, token) => new ValueTask<GitObjectData>(ReadObjectAsync(objectId, token))
+                            : ReadObjectWithoutCachingAsync,
+                        cacheObject,
+                        cancellationToken)
+                    .ConfigureAwait(false);
+                return new PackedObjectReadResult(
+                    objectData,
+                    PackIndexesStale: false,
+                    indexes.Generation);
+            }
+            catch (Exception exception) when (
+                exception is FileNotFoundException or DirectoryNotFoundException)
             {
                 return new PackedObjectReadResult(
                     null,
                     PackIndexesStale: true,
                     indexes.Generation);
             }
-
-            var objectData = await _packReader
-                .ReadObjectAtAsync(
-                    index.PackPath,
-                    offset.Value,
-                    cacheObject
-                        ? (objectId, token) => new ValueTask<GitObjectData>(ReadObjectAsync(objectId, token))
-                        : ReadObjectWithoutCachingAsync,
-                    cacheObject,
-                    cancellationToken)
-                .ConfigureAwait(false);
-            return new PackedObjectReadResult(
-                objectData,
-                PackIndexesStale: false,
-                indexes.Generation);
         }
 
         return new PackedObjectReadResult(null, PackIndexesStale: false, indexes.Generation);

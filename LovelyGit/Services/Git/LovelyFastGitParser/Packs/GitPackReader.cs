@@ -1,5 +1,3 @@
-using ICSharpCode.SharpZipLib.Zip.Compression;
-
 namespace ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser.Packs;
 
 internal sealed partial class GitPackReader : IDisposable

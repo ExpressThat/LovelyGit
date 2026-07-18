@@ -47,7 +47,6 @@
 	  <PackageReference Include="spkl.Diffs" Version="2.1.0" />
 	  <PackageReference Include="InfiniLore.InfiniFrame.WebServer" Version="0.13.1" />
 	  <PackageReference Include="Microsoft.Extensions.DependencyInjection.AutoActivation" Version="10.6.0" />
-	  <PackageReference Include="SharpZipLib" Version="1.4.2" />
 	  <PackageReference Include="Velopack" Version="1.0.1" />
 	</ItemGroup>
 

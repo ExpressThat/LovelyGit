@@ -1,9 +1,12 @@
+using System.Diagnostics;
 using ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser.Packs;
 
 namespace ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser;
 
 internal sealed partial class GitObjectStore
 {
+    private static readonly long PackValidationIntervalTicks =
+        Math.Max(1, Stopwatch.Frequency / 40);
     private static long _nextPackIndexGeneration;
     private int _openPackIndexCount;
 
@@ -45,11 +48,24 @@ internal sealed partial class GitObjectStore
 
     private sealed class PackIndexSnapshot(long generation, IReadOnlyList<GitPackIndex> indexes)
     {
+        private long _nextValidationAt;
+
         public long Generation { get; } = generation;
         public IReadOnlyList<GitPackIndex> Indexes { get; } = indexes;
         public int ActiveReaders { get; set; }
         public bool Disposed { get; set; }
         public bool Retired { get; set; }
+
+        public bool TryBeginValidation()
+        {
+            var now = Stopwatch.GetTimestamp();
+            var next = Volatile.Read(ref _nextValidationAt);
+            return now >= next
+                && Interlocked.CompareExchange(
+                    ref _nextValidationAt,
+                    now + PackValidationIntervalTicks,
+                    next) == next;
+        }
     }
 
     private readonly struct PackIndexLease(
@@ -58,6 +74,7 @@ internal sealed partial class GitObjectStore
     {
         public long Generation => snapshot.Generation;
         public IReadOnlyList<GitPackIndex> Indexes => snapshot.Indexes;
+        public bool TryBeginValidation() => snapshot.TryBeginValidation();
 
         public void Dispose() => owner.ReleasePackIndexes(snapshot);
     }
