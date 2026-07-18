@@ -65,6 +65,36 @@ describe("repositoryRefsCache", () => {
 		expect(send).toHaveBeenCalledTimes(2);
 	});
 
+	it("serves cached refs while a forced refresh is pending", async () => {
+		const cached = refs("cached");
+		let finishRefresh: (value: RepositoryRefsResponse) => void = () =>
+			undefined;
+		setCachedRepositoryRefs("repo", cached);
+		send.mockReturnValueOnce(
+			new Promise((resolve) => {
+				finishRefresh = resolve;
+			}),
+		);
+
+		const refresh = loadRepositoryRefs("repo", true);
+		await expect(loadRepositoryRefs("repo")).resolves.toBe(cached);
+		finishRefresh(refs("fresh"));
+		await expect(refresh).resolves.toEqual(refs("fresh"));
+		await expect(loadRepositoryRefs("repo")).resolves.toEqual(refs("fresh"));
+		expect(send).toHaveBeenCalledTimes(1);
+	});
+
+	it("retains cached refs when a background refresh fails", async () => {
+		const cached = refs("cached");
+		setCachedRepositoryRefs("repo", cached);
+		send.mockRejectedValueOnce(new Error("refresh failed"));
+
+		await expect(loadRepositoryRefs("repo", true)).rejects.toThrow(
+			"refresh failed",
+		);
+		await expect(loadRepositoryRefs("repo")).resolves.toBe(cached);
+	});
+
 	it("retains refs for eight recently used repositories", () => {
 		for (const repositoryId of ["a", "b", "c", "d", "e", "f", "g", "h"]) {
 			setCachedRepositoryRefs(repositoryId, refs(repositoryId));
@@ -89,6 +119,7 @@ describe("repositoryRefsCache", () => {
 function refs(branch: string, refCount = 0): RepositoryRefsResponse {
 	return {
 		branchUpstreams: [],
+		compactRefsGzipBase64: null,
 		currentBranchName: branch,
 		refs: Array.from({ length: refCount }, (_, index) => ({
 			commitHash: `${index}`,

@@ -12,11 +12,12 @@ internal static partial class GitRefReader
     {
         var refs = new Dictionary<string, GitRawRef>(StringComparer.Ordinal);
         var tagCount = 0;
-        foreach (var file in GitLooseRefFileEnumerator.Enumerate(
-                     gitDirectory,
-                     objectFormat,
-                     maxTags,
-                     cancellationToken))
+        var looseRefs = await GitLooseRefFileEnumerator.ReadSummaryRefsAsync(
+            gitDirectory,
+            objectFormat,
+            maxTags,
+            cancellationToken).ConfigureAwait(false);
+        foreach (var file in looseRefs)
         {
             cancellationToken.ThrowIfCancellationRequested();
             var kind = GetRefKind(file.FullName);

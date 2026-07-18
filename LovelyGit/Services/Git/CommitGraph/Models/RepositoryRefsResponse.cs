@@ -8,6 +8,7 @@ public sealed record RepositoryRefsResponse
     public string? CurrentBranchName { get; init; }
     public List<string> RemotePrefixes { get; init; } = new();
     public List<RepositoryRefItem> Refs { get; init; } = new();
+    public string? CompactRefsGzipBase64 { get; init; }
     public List<RepositoryWorktreeItem> Worktrees { get; init; } = new();
     public List<RepositoryStashItem> Stashes { get; init; } = new();
     public List<RepositoryBranchUpstreamItem> BranchUpstreams { get; init; } = new();

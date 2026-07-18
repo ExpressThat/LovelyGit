@@ -5,6 +5,7 @@ import {
 	MAX_CACHED_REFERENCE_ITEMS,
 	MAX_CACHED_REPOSITORIES,
 } from "@/lib/repositoryCacheLimits";
+import { expandRepositoryRefsPayload } from "@/lib/repositoryRefsPayload";
 
 const entries = new Map<string, CacheEntry>();
 
@@ -12,16 +13,20 @@ export function loadRepositoryRefs(
 	repositoryId: string,
 	forceRefresh = false,
 ): Promise<RepositoryRefsResponse> {
-	if (forceRefresh) entries.delete(repositoryId);
 	const cached = entries.get(repositoryId);
-	if (cached?.response) return Promise.resolve(cached.response);
-	if (cached?.pending) return cached.pending;
+	if (!forceRefresh) {
+		if (cached?.response) return Promise.resolve(cached.response);
+		if (cached?.pending) return cached.pending;
+	}
 
-	const entry: CacheEntry = {};
+	const entry: CacheEntry = cached?.response
+		? { response: cached.response, weight: cached.weight }
+		: {};
 	const pending = sendRequestWithResponse({
 		arguments: { knownRepositoryId: repositoryId },
 		commandType: NativeMessageType.GetRepositoryRefs,
 	})
+		.then(expandRepositoryRefsPayload)
 		.then((response) => {
 			if (entries.get(repositoryId) === entry) {
 				setEntry(repositoryId, { response });
@@ -30,7 +35,14 @@ export function loadRepositoryRefs(
 		})
 		.catch((error: unknown) => {
 			if (entries.get(repositoryId) === entry) {
-				entries.delete(repositoryId);
+				if (entry.response) {
+					setEntry(repositoryId, {
+						response: entry.response,
+						weight: entry.weight,
+					});
+				} else {
+					entries.delete(repositoryId);
+				}
 			}
 			throw error;
 		});

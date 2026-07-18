@@ -78,6 +78,23 @@ public sealed class GitRefSummaryLooseRefTests
     }
 
     [Fact]
+    public async Task ReadAsync_ReturnsEveryValidBranchAcrossConcurrentReads()
+    {
+        using var directory = new TemporaryGitDirectory();
+        for (var index = 0; index < 64; index++)
+        {
+            directory.WriteRef($"heads/group/branch-{index:D2}", $"{ObjectId}\n");
+        }
+        directory.WriteRef("heads/group/malformed", "not-an-object-id\n");
+
+        var summary = await directory.ReadAsync(maxTags: 10);
+
+        Assert.Equal(64, summary.Refs.Count);
+        Assert.Contains(summary.Refs, reference => reference.Name == "group/branch-63");
+        Assert.DoesNotContain(summary.Refs, reference => reference.Name.EndsWith("malformed"));
+    }
+
+    [Fact]
     public async Task LoadRefsAsync_ExcludesLooseTagsBeyondRequestedLimit()
     {
         using var directory = new TemporaryGitDirectory();

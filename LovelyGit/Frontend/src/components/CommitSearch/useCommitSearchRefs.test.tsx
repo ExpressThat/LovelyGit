@@ -39,6 +39,7 @@ describe("useCommitSearchRefs", () => {
 function response() {
 	return {
 		branchUpstreams: [],
+		compactRefsGzipBase64: null,
 		currentBranchName: "main",
 		refs: [
 			{

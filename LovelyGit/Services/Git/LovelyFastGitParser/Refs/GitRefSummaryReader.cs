@@ -11,16 +11,14 @@ internal static class GitRefSummaryReader
         var refs = new List<GitRef>();
         var seenFullNames = new HashSet<string>(StringComparer.Ordinal);
         var remotePrefixes = new HashSet<string>(StringComparer.Ordinal);
-        var tagCount = 0;
-        ReadLooseRefs(
+        var tagCount = await ReadLooseRefsAsync(
             gitDirectory,
             objectFormat,
             refs,
             seenFullNames,
             remotePrefixes,
             maxTags,
-            ref tagCount,
-            cancellationToken);
+            cancellationToken).ConfigureAwait(false);
         await ReadPackedRefsAsync(gitDirectory, objectFormat, refs, seenFullNames, remotePrefixes, maxTags, tagCount, cancellationToken)
             .ConfigureAwait(false);
         await ReadStashRefAsync(gitDirectory, objectFormat, refs, cancellationToken).ConfigureAwait(false);
@@ -33,21 +31,22 @@ internal static class GitRefSummaryReader
             refs.OrderBy(reference => reference.Kind).ThenBy(reference => reference.Name, StringComparer.Ordinal).ToArray());
     }
 
-    private static void ReadLooseRefs(
+    private static async Task<int> ReadLooseRefsAsync(
         string gitDirectory,
         GitObjectFormat objectFormat,
         List<GitRef> refs,
         HashSet<string> seenFullNames,
         HashSet<string> remotePrefixes,
         int maxTags,
-        ref int tagCount,
         CancellationToken cancellationToken)
     {
-        foreach (var file in GitLooseRefFileEnumerator.Enumerate(
-                     gitDirectory,
-                     objectFormat,
-                     maxTags,
-                     cancellationToken))
+        var tagCount = 0;
+        var looseRefs = await GitLooseRefFileEnumerator.ReadSummaryRefsAsync(
+            gitDirectory,
+            objectFormat,
+            maxTags,
+            cancellationToken).ConfigureAwait(false);
+        foreach (var file in looseRefs)
         {
             cancellationToken.ThrowIfCancellationRequested();
             AddRef(
@@ -59,6 +58,8 @@ internal static class GitRefSummaryReader
                 maxTags,
                 ref tagCount);
         }
+
+        return tagCount;
     }
 
     private static async Task ReadPackedRefsAsync(

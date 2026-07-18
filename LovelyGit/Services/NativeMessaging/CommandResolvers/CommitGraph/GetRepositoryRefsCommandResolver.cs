@@ -40,7 +40,7 @@ internal sealed class GetRepositoryRefsCommandResolver
                 CommandUniqueId = command.CommandUniqueId,
                 CommandType = command.CommandType,
                 IsSuccess = true,
-                Result = result,
+                Result = RepositoryRefsPayloadCompactor.CompactIfUseful(result),
             };
     }
 

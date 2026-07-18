@@ -98,12 +98,12 @@ internal static partial class GitRefReader
         AddFile(Path.Combine(gitDirectory, "packed-refs"), ref hash);
         AddFile(Path.Combine(gitDirectory, "logs", "refs", "stash"), ref hash);
         var count = 0;
-        foreach (var file in GitLooseRefFileEnumerator.Enumerate(
+        foreach (var path in GitLooseRefFileEnumerator.EnumerateFingerprintPaths(
                      gitDirectory,
                      objectFormat,
                      maxTags))
         {
-            AddFile(file.Path, ref hash);
+            AddFile(path, ref hash);
             count++;
         }
 

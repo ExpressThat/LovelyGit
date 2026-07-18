@@ -25,6 +25,7 @@ describe("CreateWorktreeDialog", () => {
 				}
 				repositoryRefs={{
 					branchUpstreams: [],
+					compactRefsGzipBase64: null,
 					currentBranchName: "main",
 					refs: [localRef("main")],
 					remotePrefixes: [],

@@ -122,6 +122,7 @@ async function flushPromises() {
 function refs(branch: string): RepositoryRefsResponse {
 	return {
 		branchUpstreams: [],
+		compactRefsGzipBase64: null,
 		currentBranchName: branch,
 		refs: [],
 		remotePrefixes: [],
