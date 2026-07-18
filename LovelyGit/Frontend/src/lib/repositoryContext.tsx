@@ -28,8 +28,9 @@ type RepositoryContextValue = {
 const RepositoryContext = createContext<RepositoryContextValue | null>(null);
 
 export function RepositoryProvider({ children }: { children: ReactNode }) {
-	const currentRepositoryId = useSetting("CurrentGitRepositoryId");
+	const storedCurrentRepositoryId = useSetting("CurrentGitRepositoryId");
 	const [repositories, setRepositories] = useState<KnownGitRepository[]>([]);
+	const [hasLoadedRepositories, setHasLoadedRepositories] = useState(false);
 	const [isLoadingRepositories, setIsLoadingRepositories] = useState(true);
 
 	const reloadRepositories = useCallback(async () => {
@@ -40,6 +41,7 @@ export function RepositoryProvider({ children }: { children: ReactNode }) {
 					commandType: "KnownGitRepositorys",
 				})) ?? [];
 			setRepositories(knownRepositories);
+			setHasLoadedRepositories(true);
 		} finally {
 			setIsLoadingRepositories(false);
 		}
@@ -70,10 +72,25 @@ export function RepositoryProvider({ children }: { children: ReactNode }) {
 	const currentRepository = useMemo(
 		() =>
 			repositories.find(
-				(repository) => repository.id === currentRepositoryId,
+				(repository) => repository.id === storedCurrentRepositoryId,
 			) ?? null,
-		[currentRepositoryId, repositories],
+		[storedCurrentRepositoryId, repositories],
 	);
+	const currentRepositoryId = resolveCurrentRepositoryId(
+		storedCurrentRepositoryId,
+		currentRepository,
+		hasLoadedRepositories,
+	);
+
+	useEffect(() => {
+		if (
+			hasLoadedRepositories &&
+			storedCurrentRepositoryId &&
+			!currentRepository
+		) {
+			void setSetting("CurrentGitRepositoryId", null);
+		}
+	}, [currentRepository, hasLoadedRepositories, storedCurrentRepositoryId]);
 
 	const value = useMemo<RepositoryContextValue>(
 		() => ({
@@ -101,6 +118,15 @@ export function RepositoryProvider({ children }: { children: ReactNode }) {
 			{children}
 		</RepositoryContext.Provider>
 	);
+}
+
+export function resolveCurrentRepositoryId(
+	storedRepositoryId: string | null,
+	currentRepository: KnownGitRepository | null,
+	hasLoadedRepositories: boolean,
+) {
+	if (!hasLoadedRepositories) return storedRepositoryId;
+	return currentRepository?.id ?? null;
 }
 
 export function useRepositoryContext() {

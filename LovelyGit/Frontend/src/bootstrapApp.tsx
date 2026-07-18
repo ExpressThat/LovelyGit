@@ -3,6 +3,7 @@ import App from "./App";
 import { installLovelyIconSprite } from "./components/icons/LovelyIcon";
 import { TooltipProvider } from "./components/ui/tooltip";
 import { LazyMotion } from "./lib/motion";
+import { RepositoryProvider } from "./lib/repositoryContext";
 import { applyFontsToDocument } from "./lib/settings/font/fontUtils";
 import { getSetting, initSettingsStore } from "./lib/settings/settingsStore";
 import {
@@ -52,7 +53,9 @@ export async function bootstrapApp(rootElement: HTMLElement) {
 	ReactDOM.createRoot(rootElement).render(
 		<LazyMotion features={loadMotionFeatures} strict>
 			<TooltipProvider>
-				<App />
+				<RepositoryProvider>
+					<App />
+				</RepositoryProvider>
 			</TooltipProvider>
 		</LazyMotion>,
 	);

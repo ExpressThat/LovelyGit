@@ -11,9 +11,8 @@ import { workspaceDrillInLayerClassName } from "./components/layout/workspaceLay
 import { TopNavBar } from "./components/TopNavBar/TopNavBar";
 import { useWorkingTreeChanges } from "./components/WorkingChanges/useWorkingTreeChanges";
 import type { CommitGraphRow } from "./generated/types";
-import { RepositoryProvider } from "./lib/repositoryContext";
+import { useRepositoryContext } from "./lib/repositoryContext";
 import { useApplyFont } from "./lib/settings/font/useApplyFont";
-import { useSetting } from "./lib/settings/settingsStore";
 import { useApplyTheme } from "./lib/settings/theme/useApplyTheme";
 import { NewTabSurface } from "./NewTabSurface";
 import { useAppOverlayState } from "./useAppOverlayState";
@@ -24,7 +23,8 @@ import { useRepositoryScopedDetailsPanel } from "./useRepositoryScopedDetailsPan
 function App() {
 	useApplyTheme();
 	useApplyFont();
-	const currentGitRepositoryId = useSetting("CurrentGitRepositoryId");
+	const { currentRepositoryId: currentGitRepositoryId } =
+		useRepositoryContext();
 	const [commitGraphRefreshToken, setCommitGraphRefreshToken] = useState(0);
 	const overlays = useAppOverlayState(Boolean(currentGitRepositoryId));
 	const fileDiscovery = useFileDiscoveryTargets();
@@ -53,7 +53,7 @@ function App() {
 		setDetailsPanel({ commitHash: row.commit.hash, kind: "commit" });
 	};
 	return (
-		<RepositoryProvider>
+		<>
 			<main className="app-shell">
 				<TopNavBar
 					currentBranchName={currentBranchName}
@@ -241,7 +241,7 @@ function App() {
 				setCurrentBranchName={setCurrentBranchName}
 				setDetailsPanel={setDetailsPanel}
 			/>
-		</RepositoryProvider>
+		</>
 	);
 }
 export default App;

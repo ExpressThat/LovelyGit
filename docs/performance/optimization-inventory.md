@@ -26,6 +26,7 @@ This ledger records shipped performance work by feature area. Update it in the s
 - Switched the desktop process to workstation GC and moved process-memory sampling off interaction paths (`b0d124b`, `c7241dc`).
 - Reduced native interaction metrics overhead (`efcd0a7`).
 - Verified the compiled desktop baseline at 145.8 ms navigation, 9.40 MB post-GC page heap, and 309.45 MB private memory for the complete seven-process WebView2 tree; the LovelyGit host accounts for 53.37 MB (current compiled-runtime checkpoint).
+- Reconciled a persisted current-repository ID only after the known-repository list loads successfully. Removed IDs now reach New Tab by the first 350.3-474.0 ms CMG attachment instead of retaining a permanent 1,508-node / 33.42 MB graph skeleton, while transient list failures preserve the user's valid selection (current stale-repository checkpoint).
 
 ### Commit Graph, Refs, and Tabs
 
