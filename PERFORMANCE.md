@@ -31,6 +31,8 @@ A fresh retained-memory audit after warming four disposable repositories leaves 
 
 Maximum sparse-checkout mutation preparation now scans cone paths directly and sizes its bounded deduplication table once. Normalizing 100,000 paths falls from 40.02 ms / 34.17 MiB allocated to 22.02 ms / 18.36 MiB, reducing pre-Git latency 44.98% and allocation 46.27% while retaining exact validation.
 
+A real 5,000-file submodule Initialize paints disabled feedback in 1.1 ms and reaches authoritative `Current` state in 3.64 seconds, including Git and the native refresh. Direct Git took 6.20 seconds in the same disposable fixture, confirming the existing asynchronous LovelyGit path is not the bottleneck and should not gain an artificial paint delay.
+
 ## Measurement Rules
 
 - Measure from a healthy runner state and use disposable repositories only.
