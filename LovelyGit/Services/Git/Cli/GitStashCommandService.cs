@@ -43,9 +43,9 @@ internal sealed partial class GitStashCommandService
         var arguments = action switch
         {
             StashAction.Create => BuildCreateArguments(message, includeUntracked, selectedPaths.Count > 0),
-            StashAction.Apply => BuildExistingArguments("apply", selector, restoreIndex),
-            StashAction.Pop => BuildExistingArguments("pop", selector, restoreIndex),
-            StashAction.Drop => BuildExistingArguments("drop", selector, restoreIndex: false),
+            StashAction.Apply => BuildExistingArguments("apply", selector, restoreIndex, quiet: true),
+            StashAction.Pop => BuildExistingArguments("pop", selector, restoreIndex, quiet: true),
+            StashAction.Drop => BuildExistingArguments("drop", selector, restoreIndex: false, quiet: true),
             _ => throw new ArgumentOutOfRangeException(nameof(action), action, null),
         };
 
@@ -108,7 +108,8 @@ internal sealed partial class GitStashCommandService
         var arguments = BuildExistingArguments(
             "branch",
             selector,
-            restoreIndex: false).ToList();
+            restoreIndex: false,
+            quiet: false).ToList();
         arguments.Insert(2, normalizedBranchName);
         return RunAsync(repositoryPath, StashAction.Branch, arguments, [], cancellationToken);
     }
@@ -180,10 +181,11 @@ internal sealed partial class GitStashCommandService
         return arguments;
     }
 
-    private static IReadOnlyList<string> BuildExistingArguments(
+    internal static IReadOnlyList<string> BuildExistingArguments(
         string operation,
         string? selector,
-        bool restoreIndex)
+        bool restoreIndex,
+        bool quiet)
     {
         var normalizedSelector = selector?.Trim() ?? string.Empty;
         if (!StashSelectorRegex().IsMatch(normalizedSelector))
@@ -192,6 +194,11 @@ internal sealed partial class GitStashCommandService
         }
 
         var arguments = new List<string> { "stash", operation };
+        if (quiet)
+        {
+            arguments.Add("--quiet");
+        }
+
         if (restoreIndex)
         {
             arguments.Add("--index");
