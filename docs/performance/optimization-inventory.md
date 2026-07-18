@@ -37,7 +37,7 @@ This ledger records shipped performance work by feature area. Update it in the s
 - Read tiny worktree `HEAD`, `gitdir`, and lock files through stack buffers while preserving the existing bounded concurrency (`48a56ad`).
 - Reset scroll on tab switches and reduced virtualized graph overscan (`6b0fcf6`, `ca11dfd`, `7180d47`).
 - Reused already-normalized commit refs, accumulated group ordering/current/kind state in one pass, and maintained a compact loaded ref-tip index so the sidebar no longer scans the graph's total sparse row space (`4542deb`).
-- Retained graph positions and rows for the bounded 100-commit operation selection, making cherry-pick, revert, comparison, and patch-series actions independent of total graph size while preserving their required history order (`this commit`).
+- Retained graph positions and rows for the bounded 100-commit operation selection, making cherry-pick, revert, comparison, and patch-series actions independent of total graph size while preserving their required history order (`667288d`).
 
 ### Native Git Parser and Object Storage
 
