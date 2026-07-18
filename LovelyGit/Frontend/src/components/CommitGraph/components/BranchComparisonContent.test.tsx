@@ -52,6 +52,24 @@ describe("BranchComparisonContent", () => {
 		).toBeInTheDocument();
 		expect(screen.queryByRole("button")).toBeNull();
 	});
+
+	it("bounds the maximum commit comparison payload", () => {
+		const comparison = comparisonWithFiles(0);
+		comparison.aheadCommits = Array.from({ length: 100 }, (_, index) => ({
+			authorName: `Author ${index}`,
+			authorUnixSeconds: index,
+			hash: index.toString(16).padStart(40, "0"),
+			subject: `Commit subject ${index}`,
+		}));
+		render(<BranchComparisonContent comparison={comparison} section="ahead" />);
+
+		expect(
+			document.querySelector("[data-branch-comparison-commits='virtual']"),
+		).toBeInTheDocument();
+		expect(screen.getAllByRole("listitem")).toHaveLength(12);
+		expect(screen.getByText("Commit subject 0")).toBeInTheDocument();
+		expect(screen.queryByText("Commit subject 99")).toBeNull();
+	});
 });
 
 function comparisonWithFiles(count: number): BranchComparisonResponse {

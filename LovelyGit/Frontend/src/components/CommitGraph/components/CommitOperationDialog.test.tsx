@@ -73,6 +73,27 @@ describe("CommitOperationDialog", () => {
 		await waitFor(() => expect(onOpenWorkingChanges).toHaveBeenCalledOnce());
 		expect(sendRequestWithResponse).toHaveBeenCalledTimes(2);
 	});
+
+	it("bounds the maximum selected commit preview", () => {
+		const view = renderDialog({
+			commits: Array.from({ length: 100 }, (_, index) =>
+				row(index.toString(16).padStart(2, "0"), `Commit ${index}`),
+			),
+		});
+
+		expect(
+			view.container.ownerDocument.querySelector(
+				"[data-commit-operation-list='virtual']",
+			),
+		).toBeInTheDocument();
+		expect(
+			view.container.ownerDocument.querySelectorAll(
+				"[data-commit-operation-row]",
+			).length,
+		).toBeLessThanOrEqual(8);
+		expect(screen.getByText("Commit 0")).toBeVisible();
+		expect(screen.queryByText("Commit 99")).toBeNull();
+	});
 });
 
 function renderDialog(

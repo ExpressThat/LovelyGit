@@ -19,6 +19,7 @@ import { sendRequestWithResponse } from "@/lib/commands";
 import { gitMutationTimeoutMs } from "@/lib/gitMutationTimeout";
 import { NativeMessageType } from "@/lib/nativeMessaging";
 import { shortHash } from "../utils/format";
+import { CommitOperationCommitList } from "./CommitOperationCommitList";
 
 type CommitOperationMode = "cherry-pick" | "revert";
 
@@ -115,25 +116,7 @@ export function CommitOperationDialog({
 						</DialogDescription>
 					</DialogHeader>
 					<div className="grid gap-3 py-4">
-						<div className="custom-scrollbar max-h-52 overflow-y-auto rounded-lg border bg-card">
-							{commits.map((commit, index) => (
-								<div
-									className="grid grid-cols-[2rem_1fr_auto] items-center gap-2 border-b px-3 py-2 last:border-b-0"
-									key={commit.commit.hash}
-								>
-									<span className="text-center text-muted-foreground text-xs">
-										{index + 1}
-									</span>
-									<span className="truncate font-medium text-sm">
-										{commit.commit.message.split(/\r?\n/, 1)[0] ||
-											"(no commit message)"}
-									</span>
-									<span className="font-mono text-muted-foreground text-xs">
-										{shortHash(commit.commit.hash)}
-									</span>
-								</div>
-							))}
-						</div>
+						<CommitOperationCommitList commits={commits} />
 						<p className="rounded-lg border bg-muted/40 p-3 text-muted-foreground text-xs">
 							Git keeps the existing history unchanged. If changes overlap, the
 							operation pauses so you can resolve conflicts and continue or

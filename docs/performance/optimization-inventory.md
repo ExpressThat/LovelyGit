@@ -49,6 +49,7 @@ This ledger records shipped performance work by feature area. Update it in the s
 - Compressed large ref collections before native transport, expanded them once in the shared frontend cache, retained stale refs during forced refreshes, and virtualized the branch switcher with full filtering and keyboard selection (`23e20e0`).
 - Replaced the unbounded Base UI selectors used by merge/rebase, worktree creation, and upstream assignment with one searchable externally virtualized branch picker. Closed dialogs no longer register every repository branch, while pointer, filtered, Home/End, arrow-key, and Enter selection retain native combobox semantics (`91a0b0e`).
 - Virtualized graph ref-group hover cards so maximum shared-tip commits retain only the visible reference pills while preserving the complete scroll range and each branch/tag context menu (`1198ee9a`).
+- Virtualized the capped 100-commit branch-comparison and cherry-pick/revert confirmation lists above 30 items, preserving ordinary fully mounted dialogs, operation ordering, exact hashes, and complete custom-scrollbar access (current commit-surface checkpoint).
 - Virtualized the top repository strip and New Tab's recent-repository list above 30 records, while preserving the existing Motion tab layout for ordinary collections, exact filtering, lazy row overlays, active-tab visibility, and both complete custom-scrollbar ranges (`e7cadd8`).
 
 ### Native Git Parser and Object Storage
