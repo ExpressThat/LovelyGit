@@ -22,6 +22,7 @@ This ledger records shipped performance work by feature area. Update it in the s
 - Virtualized command-palette results above 30 items while preserving the fully mounted ordinary layout, filtering, disabled-command skipping, active-row scrolling, pointer activation, and Arrow/Enter keyboard behavior (`f35d4d9`).
 - Applied immediate deferred reveal to meaningful bisect-session content while preserving its separate session chunk (`79a6057`).
 - Applied immediate deferred reveal to force-with-lease confirmation while preserving its separate safety-dialog chunk (`1f749da`).
+- Deferred derived palette and hex-color construction for all 98 catalog themes until a theme's color data is actually requested, while bootstrap metadata lookup and settings filtering remain immediately available (current theme-catalog checkpoint).
 - Switched the desktop process to workstation GC and moved process-memory sampling off interaction paths (`b0d124b`, `c7241dc`).
 - Reduced native interaction metrics overhead (`efcd0a7`).
 - Verified the compiled desktop baseline at 145.8 ms navigation, 9.40 MB post-GC page heap, and 309.45 MB private memory for the complete seven-process WebView2 tree; the LovelyGit host accounts for 53.37 MB (current compiled-runtime checkpoint).

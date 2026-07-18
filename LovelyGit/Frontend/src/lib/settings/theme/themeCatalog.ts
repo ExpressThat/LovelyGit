@@ -49,6 +49,74 @@ type ThemeSeed = {
 	value: string;
 };
 
+type ResolvedThemeOption = Pick<
+	ThemeOption,
+	"accent" | "background" | "card" | "foreground" | "variables"
+>;
+
+class LazyThemeOption implements ThemeOption {
+	readonly aliases: string;
+	private resolved?: ResolvedThemeOption;
+	private readonly seed: ThemeSeed;
+
+	constructor(seed: ThemeSeed) {
+		this.seed = seed;
+		this.aliases =
+			`${seed.aliases ?? ""} ${seed.label} ${seed.description}`.toLowerCase();
+	}
+
+	get accent() {
+		return this.resolve().accent;
+	}
+
+	get background() {
+		return this.resolve().background;
+	}
+
+	get card() {
+		return this.resolve().card;
+	}
+
+	get description() {
+		return this.seed.description;
+	}
+
+	get foreground() {
+		return this.resolve().foreground;
+	}
+
+	get isDark() {
+		return this.seed.isDark;
+	}
+
+	get label() {
+		return this.seed.label;
+	}
+
+	get value() {
+		return this.seed.value;
+	}
+
+	get variables() {
+		return this.resolve().variables;
+	}
+
+	private resolve(): ResolvedThemeOption {
+		if (this.resolved) return this.resolved;
+		const variables = this.seed.isDark
+			? createDarkVariables(this.seed.baseHue, this.seed.accentHue)
+			: createLightVariables(this.seed.baseHue, this.seed.accentHue);
+		this.resolved = {
+			accent: okLchToHex(variables.primary),
+			background: okLchToHex(variables.background),
+			card: okLchToHex(variables.card),
+			foreground: okLchToHex(variables.foreground),
+			variables,
+		};
+		return this.resolved;
+	}
+}
+
 const coreThemeOptions: ThemeOption[] = [
 	createThemeOption({
 		accentHue: 248,
@@ -960,22 +1028,7 @@ export function getThemeOption(value: string, fallbackValue = "Morning") {
 }
 
 function createThemeOption(seed: ThemeSeed): ThemeOption {
-	const variables = seed.isDark
-		? createDarkVariables(seed.baseHue, seed.accentHue)
-		: createLightVariables(seed.baseHue, seed.accentHue);
-	return {
-		accent: okLchToHex(variables.primary),
-		aliases:
-			`${"aliases" in seed ? seed.aliases : ""} ${seed.label} ${seed.description}`.toLowerCase(),
-		background: okLchToHex(variables.background),
-		card: okLchToHex(variables.card),
-		description: seed.description,
-		foreground: okLchToHex(variables.foreground),
-		isDark: seed.isDark,
-		label: seed.label,
-		value: seed.value,
-		variables,
-	};
+	return new LazyThemeOption(seed);
 }
 
 function createLightVariables(
