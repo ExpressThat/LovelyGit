@@ -23,6 +23,8 @@ A fresh two-repository, 50,000-commit audit opens the first native graph rows in
 
 Large branch integrations keep the desktop responsive while Git updates the worktree. In a disposable 1,000-file plus 100,000-line fixture, Merge and Rebase painted their disabled busy states in 19.4-26.9 ms and 22.8 ms respectively, remained protected until completion, and produced the exact clean Git state. Native Merge samples reported 169-189 MB host working set and 51-67 MB private memory. Git Trace2 attributes the remaining 4.4-6.5 s completion time to Git's worktree checkout inside the desktop process rather than LovelyGit lookup, transport, or graph reconciliation; forcing one checkout worker regressed Merge to 7.36 s and was rejected.
 
+Large commit mutations use the same immediate protection. Cherry-pick, Revert, and destructive Hard Reset painted disabled feedback in 19.2 ms, 20.9 ms, and 16.2 ms while preserving confirmation and exact clean Git outcomes. Their 4.54 s, 1.18 s, and 1.09-4.30 s native completion times remain inside Git; direct four-worker Git completed the same fixtures in 0.99 s, 0.76 s, and 0.67 s. The host stayed below 205 MB working set and 67 MB private memory across the observed commands.
+
 ## Measurement Rules
 
 - Measure from a healthy runner state and use disposable repositories only.
@@ -47,6 +49,7 @@ Measured through the same Git commands LovelyGit uses, primarily in a disposable
 | Merge 500 changed files | 1.02 s |
 | Rebase 100 changed files | 894 ms |
 | Merge / rebase 1,000 files plus one 100,000-line file | Busy paint 19.4-26.9 ms / 22.8 ms; desktop completion 4.40-4.59 s / 6.52 s; exact direct Git 0.95-1.12 s / 1.72 s |
+| Cherry-pick / revert / hard reset 1,000 files plus one 100,000-line file | Busy paint 19.2 ms / 20.9 ms / 16.2 ms; native completion 4.54 s / 1.18 s / 1.09-4.30 s; exact direct Git 0.99 s / 0.76 s / 0.67 s |
 | Stage 1,000 of 20,000 tracked files | 7.18 s cold CMG completion; 0.70-0.90 s warm service runs |
 | Unstage 1,000 of 20,000 tracked files | 749 ms CMG completion; 0.31-0.47 s warm service runs |
 | Discard 1,000 of 20,000 tracked files | 87 ms warm CMG completion; 0.65-0.67 s cold service runs |
