@@ -27,6 +27,8 @@ Large commit mutations use the same immediate protection. Cherry-pick, Revert, a
 
 Apply Patch now relies on Git's atomic apply transaction instead of launching a separate `git apply --check` process before the identical real apply. A 3.97 MB patch spanning 1,001 files falls from 2,169.4 ms to 2,025.2 ms on average, saving 144.3 ms and one process launch. Multi-file regressions prove a later invalid hunk leaves an earlier valid file, the worktree, and the index unchanged in both staged and unstaged modes; reverse and pre-cancelled paths remain covered.
 
+A fresh retained-memory audit after warming four disposable repositories leaves only 8.93 MB in the managed heap and 8.48 MB in the page heap after forced collection, with 799 DOM nodes. The LovelyGit host uses 45.6-48.1 MB private and the packaged-app-equivalent host/WebView2 subtree uses 297.4 MB private; the separate `dotnet run` launcher is development overhead and is not counted. No large first-party retained graph remains, so the bounded interaction caches were preserved.
+
 ## Measurement Rules
 
 - Measure from a healthy runner state and use disposable repositories only.
