@@ -84,7 +84,7 @@ This ledger records shipped performance work by feature area. Update it in the s
 - Streamed large `.gitattributes` files through a pooled parser so non-LFS lines do not become managed strings while retaining the existing bounded result (`145b479`).
 - Streamed Git config and ignore sources through pooled line buffers and matched literal ignore rules directly instead of compiling one regex per rule, sharply reducing initial status GC pressure while retaining regex handling for actual glob rules (`6fed8fa`).
 - Matched common single-leading-asterisk suffix rules such as `*.pdb` directly per path segment, preserving compiled-regex fallback for complex globs while removing their dominant large-rule-set latency and memory cost (`fce25d8`).
-- Painted stash busy/disabled state before entering the synchronous desktop bridge and returned the authoritative reflog-only stash snapshot in the mutation response. This removes the racing full repository-refs follow-up request, keeps failure targets retryable, and makes a 501-file cold stash visibly respond in 1.2 ms (`this commit`).
+- Painted stash busy/disabled state before entering the synchronous desktop bridge and returned the authoritative reflog-only stash snapshot in the mutation response. This removes the racing full repository-refs follow-up request, keeps failure targets retryable, and makes a 501-file cold stash visibly respond in 1.2 ms (`4fd87da`).
 
 ### Diff Engine and File Diffs
 

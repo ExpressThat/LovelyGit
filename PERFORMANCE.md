@@ -28,6 +28,7 @@ Measured through the same Git commands LovelyGit uses, primarily in a disposable
 | Stash 501 changed files | 3.83 s cold; 1.33-1.39 s warm |
 | Restore 501-file stash | 1.06 s |
 | Create/remove 2,001-file worktree | 1.28-1.36 s / 586 ms after bounded parallelization |
+| Create/remove 20,000-file worktree | 5.45 s / 6.65 s direct Git; removal busy state paints in 3.8-4.4 ms |
 | Cherry-pick/revert 100 changed files | 251 ms / 183 ms |
 | Merge 500 changed files | 1.02 s |
 | Rebase 100 changed files | 894 ms |
