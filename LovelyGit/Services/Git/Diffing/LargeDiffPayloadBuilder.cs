@@ -36,7 +36,8 @@ internal static class LargeDiffPayloadBuilder
         CommitDiffViewMode viewMode,
         bool ignoreWhitespace,
         string oldText,
-        string newText)
+        string newText,
+        string? compressedSourceBundle = null)
     {
         if (oldText.Length == 0 && newText.Length > 0)
         {
@@ -56,7 +57,8 @@ internal static class LargeDiffPayloadBuilder
             viewMode,
             model,
             oldText,
-            newText);
+            newText,
+            compressedSourceBundle);
     }
 
     private static CommitFileDiffResponse BuildVirtualTextResponse(

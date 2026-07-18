@@ -35,7 +35,24 @@ internal sealed partial class CommitFileDiffService : IDisposable
                 .ConfigureAwait(false);
             _sourceCache.Set(key, source);
         }
-        return BuildResponseFromSource(commitHash, path, viewMode, ignoreWhitespace, source);
+        var hasCompressedSourceBundle = _sourceCache.TryGetCompressedSourceBundle(
+            key,
+            out var compressedSourceBundle);
+        var response = BuildResponseFromSource(
+            commitHash,
+            path,
+            viewMode,
+            ignoreWhitespace,
+            source,
+            hasCompressedSourceBundle ? compressedSourceBundle : null);
+        if (!string.IsNullOrEmpty(response.CompactSourceBundleGzipBase64)
+            && !hasCompressedSourceBundle)
+        {
+            _sourceCache.SetCompressedSourceBundle(
+                key,
+                response.CompactSourceBundleGzipBase64);
+        }
+        return response;
     }
 
     private static async Task<CommitFileDiffSource> BuildCommitFileDiffSourceAsync(
@@ -114,7 +131,8 @@ internal sealed partial class CommitFileDiffService : IDisposable
         string path,
         CommitDiffViewMode viewMode,
         bool ignoreWhitespace,
-        CommitFileDiffSource source)
+        CommitFileDiffSource source,
+        string? compressedSourceBundle = null)
     {
         if (source.IsBinary)
         {
@@ -139,7 +157,8 @@ internal sealed partial class CommitFileDiffService : IDisposable
                 viewMode,
                 ignoreWhitespace,
                 source.OldText,
-                source.NewText));
+                source.NewText,
+                compressedSourceBundle));
         }
 
         var response = viewMode == CommitDiffViewMode.SideBySide

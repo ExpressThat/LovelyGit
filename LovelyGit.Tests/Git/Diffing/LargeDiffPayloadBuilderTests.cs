@@ -49,6 +49,29 @@ public sealed class LargeDiffPayloadBuilderTests
     }
 
     [Fact]
+    public void Build_ReusesAPrecompressedSourceBundle()
+    {
+        const string oldText = "one\ntwo\nfour";
+        const string newText = "one\ntwo\nthree\nfour";
+        var bundle = ConflictTextBundleCodec.Compress(oldText, newText, null, null);
+
+        var response = LargeDiffPayloadBuilder.Build(
+            "hash",
+            "file.txt",
+            "Modified",
+            CommitDiffViewMode.SideBySide,
+            false,
+            oldText,
+            newText,
+            bundle);
+
+        Assert.Same(bundle, response.CompactSourceBundleGzipBase64);
+        var sources = ConflictTextBundleCodec.Expand(response.CompactSourceBundleGzipBase64);
+        Assert.Equal(oldText, sources.Base);
+        Assert.Equal(newText, sources.Ours);
+    }
+
+    [Fact]
     public void Build_KeepsLargeMostlyUnchangedPayloadBelowWebViewMessageBudget()
     {
         var oldLines = Enumerable.Range(1, 80_000)

@@ -17,7 +17,8 @@ internal static class ReferencedDiffPayloadBuilder
         CommitDiffViewMode viewMode,
         LineDiffModel model,
         string? oldText = null,
-        string? newText = null)
+        string? newText = null,
+        string? compressedSourceBundle = null)
     {
         var compact = Compress(model);
         var response = new CommitFileDiffResponse
@@ -34,12 +35,13 @@ internal static class ReferencedDiffPayloadBuilder
         if (oldText is not null && newText is not null)
         {
             response.CompactSourceSchema = SourceSchema;
-            response.CompactSourceBundleGzipBase64 = ConflictTextBundleCodec.Compress(
-                oldText,
-                newText,
-                null,
-                null,
-                CompressionLevel.Optimal);
+            response.CompactSourceBundleGzipBase64 = compressedSourceBundle
+                ?? ConflictTextBundleCodec.Compress(
+                    oldText,
+                    newText,
+                    null,
+                    null,
+                    CompressionLevel.Optimal);
         }
         return response;
     }

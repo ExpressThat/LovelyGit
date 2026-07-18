@@ -61,6 +61,9 @@ public sealed class CommitFileDiffPerformanceTests(ITestOutputHelper output)
 
             Assert.True(side.HasDifferences);
             Assert.True(combined.HasDifferences);
+            Assert.Same(
+                side.CompactSourceBundleGzipBase64,
+                combined.CompactSourceBundleGzipBase64);
             Assert.Equal(side.CommitHash, repeated.CommitHash);
             Assert.Equal(side.Path, repeated.Path);
             Assert.Equal(side.Status, repeated.Status);
