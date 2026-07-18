@@ -13,8 +13,6 @@ public record CommitDetailsResponse
     public string Subject { get; set; } = string.Empty;
     public string Body { get; set; } = string.Empty;
     public string Message { get; set; } = string.Empty;
-    public List<string> Branches { get; set; } = new();
-    public List<string> Tags { get; set; } = new();
     public CommitStats Stats { get; set; } = new();
     public List<CommitChangedFile> ChangedFiles { get; set; } = new();
     public bool HasLineStats { get; set; } = true;

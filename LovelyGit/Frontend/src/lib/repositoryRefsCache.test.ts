@@ -4,8 +4,10 @@ import { sendRequestWithResponse } from "@/lib/commands";
 import {
 	clearRepositoryRefsCache,
 	getCachedRepositoryRefs,
+	invalidateRepositoryRefs,
 	loadRepositoryRefs,
 	setCachedRepositoryRefs,
+	subscribeRepositoryRefs,
 } from "./repositoryRefsCache";
 
 vi.mock("@/lib/commands", () => ({ sendRequestWithResponse: vi.fn() }));
@@ -113,6 +115,38 @@ describe("repositoryRefsCache", () => {
 
 		expect(getCachedRepositoryRefs("old")).toBeNull();
 		expect(getCachedRepositoryRefs("new")?.refs).toHaveLength(2_500);
+	});
+
+	it("notifies subscribers only when their repository snapshot changes", () => {
+		const listener = vi.fn();
+		const unsubscribe = subscribeRepositoryRefs("repo", listener);
+		const response = refs("main");
+
+		setCachedRepositoryRefs("repo", response);
+		expect(listener).toHaveBeenCalledTimes(1);
+		expect(getCachedRepositoryRefs("repo")).toBe(response);
+		expect(listener).toHaveBeenCalledTimes(1);
+
+		invalidateRepositoryRefs("repo");
+		expect(listener).toHaveBeenCalledTimes(2);
+		unsubscribe();
+		setCachedRepositoryRefs("repo", refs("other"));
+		expect(listener).toHaveBeenCalledTimes(2);
+	});
+
+	it("notifies every repository subscriber when the cache is cleared", () => {
+		const first = vi.fn();
+		const second = vi.fn();
+		subscribeRepositoryRefs("first", first);
+		subscribeRepositoryRefs("second", second);
+		setCachedRepositoryRefs("first", refs("first"));
+		setCachedRepositoryRefs("second", refs("second"));
+		first.mockClear();
+		second.mockClear();
+
+		clearRepositoryRefsCache();
+		expect(first).toHaveBeenCalledOnce();
+		expect(second).toHaveBeenCalledOnce();
 	});
 });
 

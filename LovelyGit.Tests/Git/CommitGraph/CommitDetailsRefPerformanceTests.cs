@@ -16,7 +16,7 @@ public sealed class CommitDetailsRefPerformanceTests(ITestOutputHelper output)
         InitializeTemplate, prewarmCopies: 1);
 
     [Fact]
-    public async Task RefHeavyRepository_HasBoundedColdRead()
+    public async Task RefHeavyRepository_DoesNotScanRefsForDetails()
     {
         var (directory, commitId) = Template.CreateCopy("lovelygit-details-refs-");
         try
@@ -35,8 +35,8 @@ public sealed class CommitDetailsRefPerformanceTests(ITestOutputHelper output)
             output.WriteLine(
                 $"{UnrelatedRefCount:N0} unrelated refs: {elapsed.TotalMilliseconds:N2} ms; " +
                 $"{allocated:N0} bytes");
-            Assert.Equal(["main"], details.Branches);
-            Assert.True(elapsed < TimeSpan.FromMilliseconds(180));
+            Assert.Equal(commitId.ToString(), details.Hash);
+            Assert.True(elapsed < TimeSpan.FromMilliseconds(100));
         }
         finally
         {

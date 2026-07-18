@@ -38,7 +38,6 @@ function createDetails(
 	return {
 		author: "Ross",
 		body: "",
-		branches: [],
 		changedFiles: [],
 		date: 0,
 		email: "ross@example.com",
@@ -48,7 +47,6 @@ function createDetails(
 		signatureKind: "None",
 		stats: { additions: 0, deletions: 0 },
 		subject: "",
-		tags: [],
 		...overrides,
 		hasLineStats: overrides.hasLineStats ?? true,
 	};

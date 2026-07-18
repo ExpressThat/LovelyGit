@@ -8,6 +8,7 @@ import {
 import { expandRepositoryRefsPayload } from "@/lib/repositoryRefsPayload";
 
 const entries = new Map<string, CacheEntry>();
+const listeners = new Map<string, Set<() => void>>();
 
 export function loadRepositoryRefs(
 	repositoryId: string,
@@ -67,13 +68,34 @@ export function getCachedRepositoryRefs(repositoryId: string) {
 
 export function clearRepositoryRefsCache() {
 	entries.clear();
+	for (const repositoryListeners of listeners.values()) {
+		for (const listener of repositoryListeners) listener();
+	}
 }
 
 export function invalidateRepositoryRefs(repositoryId: string) {
 	entries.delete(repositoryId);
+	notify(repositoryId);
+}
+
+export function subscribeRepositoryRefs(
+	repositoryId: string,
+	listener: () => void,
+) {
+	let repositoryListeners = listeners.get(repositoryId);
+	if (!repositoryListeners) {
+		repositoryListeners = new Set();
+		listeners.set(repositoryId, repositoryListeners);
+	}
+	repositoryListeners.add(listener);
+	return () => {
+		repositoryListeners.delete(listener);
+		if (repositoryListeners.size === 0) listeners.delete(repositoryId);
+	};
 }
 
 function setEntry(repositoryId: string, entry: CacheEntry) {
+	const previousResponse = entries.get(repositoryId)?.response;
 	if (entry.response && entry.weight === undefined) {
 		entry.weight = referenceItemCount(entry.response);
 	}
@@ -88,6 +110,13 @@ function setEntry(repositoryId: string, entry: CacheEntry) {
 		if (oldest === undefined) break;
 		entries.delete(oldest);
 	}
+	if (entry.response !== previousResponse) notify(repositoryId);
+}
+
+function notify(repositoryId: string) {
+	const repositoryListeners = listeners.get(repositoryId);
+	if (!repositoryListeners) return;
+	for (const listener of repositoryListeners) listener();
 }
 
 function cachedReferenceItemCount() {

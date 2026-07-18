@@ -109,12 +109,6 @@ namespace ExpressThat.LovelyGit.Services.Data.Models.Git.CommitGraph
         [Column("message")]
         public string Message { get; set; } = string.Empty;
 
-        [Column("branches")]
-        public List<string> Branches { get; set; } = new();
-
-        [Column("tags")]
-        public List<string> Tags { get; set; } = new();
-
         [Column("stats")]
         public CommitStatsCache Stats { get; set; } = new();
 

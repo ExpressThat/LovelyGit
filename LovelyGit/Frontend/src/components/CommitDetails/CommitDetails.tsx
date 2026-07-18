@@ -1,12 +1,13 @@
 import { CommitSignatureBadge } from "@/components/CommitSignatureBadge";
-import { GitBranch } from "@/components/icons/lovelyIcons";
 import type { CommitChangedFile } from "@/generated/types";
 import { formatDate, shortHash } from "../CommitGraph/utils/format";
 import { CommitDetailsChangedFilesList } from "./CommitDetailsChangedFilesList";
 import { CommitDetailsCopyButtons } from "./CommitDetailsCopyButtons";
+import { CommitDetailsRefs } from "./CommitDetailsRefs";
 import { CommitDetailsStats } from "./CommitDetailsStats";
 import { CommitParentSelector } from "./CommitParentSelector";
 import { useCommitDetails } from "./useCommitDetails";
+import { useCommitDetailsRefs } from "./useCommitDetailsRefs";
 
 export function CommitDetails({
 	commitHash,
@@ -34,6 +35,7 @@ export function CommitDetails({
 		refreshToken,
 	);
 	const { state } = detailsState;
+	const refs = useCommitDetailsRefs(repositoryId, commitHash);
 
 	if (state.status === "loading") {
 		return (
@@ -105,20 +107,7 @@ export function CommitDetails({
 				stats={details.stats}
 			/>
 
-			{details.branches.length > 0 || details.tags.length > 0 ? (
-				<section className="flex flex-wrap gap-1.5">
-					{[...details.branches, ...details.tags].map((ref) => (
-						<span
-							className="inline-flex max-w-full items-center gap-1 rounded border bg-card px-1.5 py-0.5 text-xs text-muted-foreground"
-							key={ref}
-							title={ref}
-						>
-							<GitBranch aria-hidden="true" size={12} />
-							<span className="truncate">{ref}</span>
-						</span>
-					))}
-				</section>
-			) : null}
+			<CommitDetailsRefs refs={refs} />
 
 			<div
 				aria-busy={state.isRefreshing}

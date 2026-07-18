@@ -47,6 +47,7 @@ This ledger records shipped performance work by feature area. Update it in the s
 - Parallelized loose local/remote ref reads with a bounded eight-worker path, stopped parsing object IDs merely to fingerprint loose refs, and retained exact malformed-ref, tag-limit, cancellation, and cache semantics (`23e20e0`).
 - Compressed large ref collections before native transport, expanded them once in the shared frontend cache, retained stale refs during forced refreshes, and virtualized the branch switcher with full filtering and keyboard selection (`23e20e0`).
 - Replaced the unbounded Base UI selectors used by merge/rebase, worktree creation, and upstream assignment with one searchable externally virtualized branch picker. Closed dialogs no longer register every repository branch, while pointer, filtered, Home/End, arrow-key, and Enter selection retain native combobox semantics (`91a0b0e`).
+- Virtualized graph ref-group hover cards so maximum shared-tip commits retain only the visible reference pills while preserving the complete scroll range and each branch/tag context menu (current ref-surface checkpoint).
 
 ### Native Git Parser and Object Storage
 
@@ -83,6 +84,7 @@ This ledger records shipped performance work by feature area. Update it in the s
 - Prefetched details on hover intent and rendered prefetched details without suspense (`e346227`, `bda6b62`, `2cd7423`).
 - Moved details parsing/persistence off click paths, bulked cache writes, and reduced blob/parser allocations (`c03064b`, `7ce891c`, `ddc34cd`, `021b3dd`, `d461dc6`).
 - Opened commit details against the object database alone and streamed only branch, remote, and bounded tag refs that point to the selected commit, preserving packed, annotated-tag, and loose-override semantics without materializing unrelated refs (`2f4586d`).
+- Removed mutable branch/tag names from persisted commit details and derives them from the shared live ref snapshot instead. This eliminates the remaining backend ref scan, prevents stale cached labels, and bounds maximum details rendering behind a searchable virtual list (current ref-surface checkpoint).
 - Virtualized maximum-size file-history results against the dialog's existing scroll viewport, retained keyboard navigation by virtual index, and restored deep traversal whenever a completed native scan returned a truncated result set (`f815567`).
 - Virtualized maximum-size commit-search results, moved selection scrolling onto virtual indexes, and restored the deep-search result cap from 50 to 100 without retaining 100 rich result rows (`7d1dbba`).
 

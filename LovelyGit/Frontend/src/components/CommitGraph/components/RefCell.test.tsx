@@ -56,6 +56,27 @@ describe("RefCell", () => {
 		fireEvent.contextMenu(remoteRef);
 		expect(await screen.findByText("Check out as local branch…")).toBeVisible();
 	});
+
+	it("keeps a maximum grouped-ref hover bounded", async () => {
+		const user = userEvent.setup();
+		const value = row();
+		value.commit.refs = Array.from({ length: 10_000 }, (_, index) =>
+			ref("Local", `perf/ref-${index.toString().padStart(5, "0")}`),
+		);
+		render(<Cell row={value} />);
+
+		await user.hover(
+			screen.getByRole("button", { name: /Show 9999 grouped references/ }),
+		);
+		const popup = await screen.findByLabelText(/^References at/);
+		const virtualList = popup.querySelector(
+			"[data-ref-hover-list='virtual']",
+		);
+		expect(virtualList).toBeInTheDocument();
+		expect(virtualList?.querySelectorAll("[title]").length).toBeLessThanOrEqual(
+			12,
+		);
+	});
 });
 
 function Cell({ row: value }: { row: CommitGraphRow }) {

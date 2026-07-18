@@ -80,7 +80,6 @@ function details(fileCount: number): CommitDetailsResponse {
 	return {
 		author: "Ada",
 		body: "",
-		branches: [],
 		changedFiles: Array.from({ length: fileCount }, (_, index) => ({
 			additions: 1,
 			deletions: 0,
@@ -97,6 +96,5 @@ function details(fileCount: number): CommitDetailsResponse {
 		signatureKind: "None",
 		stats: { additions: fileCount, deletions: 0 },
 		subject: "Commit",
-		tags: [],
 	};
 }

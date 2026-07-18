@@ -163,8 +163,6 @@ internal sealed partial class CommitDetailsCacheRepository
             Subject = response.Subject ?? string.Empty,
             Body = response.Body ?? string.Empty,
             Message = response.Message ?? string.Empty,
-            Branches = response.Branches?.ToList() ?? [],
-            Tags = response.Tags?.ToList() ?? [],
             Stats = new CommitStatsCache
             {
                 Additions = response.Stats?.Additions ?? 0,
@@ -188,8 +186,6 @@ internal sealed partial class CommitDetailsCacheRepository
             Subject = cache.Subject ?? string.Empty,
             Body = cache.Body ?? string.Empty,
             Message = cache.Message ?? string.Empty,
-            Branches = cache.Branches?.ToList() ?? [],
-            Tags = cache.Tags?.ToList() ?? [],
             Stats = new CommitStats
             {
                 Additions = ToUInt32(cache.Stats?.Additions ?? 0),

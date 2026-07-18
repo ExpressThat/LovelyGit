@@ -127,7 +127,6 @@ function details(path: string): CommitDetailsResponse {
 	return {
 		author: "Ada",
 		body: "",
-		branches: [],
 		changedFiles: [
 			{ additions: 1, deletions: 0, isBinary: false, path, status: "A" },
 		],
@@ -140,6 +139,5 @@ function details(path: string): CommitDetailsResponse {
 		signatureKind: "None",
 		stats: { additions: 1, deletions: 0 },
 		subject: "Merge",
-		tags: [],
 	};
 }

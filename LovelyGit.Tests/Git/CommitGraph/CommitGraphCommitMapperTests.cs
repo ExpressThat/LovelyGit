@@ -35,26 +35,6 @@ public sealed class CommitGraphCommitMapperTests
     }
 
     [Fact]
-    public void BuildRefNames_DerivesDetailsListsFromTypedRefs()
-    {
-        var commit = CreateCommit();
-        commit.AddRefs(
-        [
-            new GitCommitRef("main", GitRefKind.Head),
-            new GitCommitRef("origin/main", GitRefKind.Remote),
-            new GitCommitRef("v1.0", GitRefKind.Tag),
-            new GitCommitRef("stash", GitRefKind.Stash),
-        ]);
-
-        Assert.Equal(
-            ["main", "origin/main"],
-            CommitDetailsBuilder.BuildRefNames(commit, includeBranches: true));
-        Assert.Equal(
-            ["v1.0"],
-            CommitDetailsBuilder.BuildRefNames(commit, includeBranches: false));
-    }
-
-    [Fact]
     public void BuildInfo_SerializesNonDefaultSignatureKind()
     {
         var commit = CreateCommit();

@@ -128,7 +128,6 @@ function details(
 	return {
 		author: "Tester",
 		body: "",
-		branches: [],
 		changedFiles,
 		date: 1,
 		email: "test@example.com",
@@ -139,7 +138,6 @@ function details(
 		signatureKind: "None",
 		stats: { additions: 1, deletions: 0 },
 		subject: "stash",
-		tags: [],
 	};
 }
 
