@@ -138,6 +138,7 @@ This ledger records shipped performance work by feature area. Update it in the s
 - Moved diff persistence off click paths and cached open variants (`b074af7`, `dc120ec`, `54cb0c7`, `3726952`).
 - Streamed patch previews through a pooled character buffer so large Apply Patch files no longer allocate one string per content line (`dfe357d`).
 - Virtualized Apply Patch previews above 30 files so the 5,000-file native safety limit retains only nine bootstrap rows while every parsed file remains reachable through the complete scroll range (`1b0d76b`).
+- Removed the redundant `git apply --check` process from Apply Patch and rely on Git's atomic apply transaction. A 3.97 MB, 1,001-file patch saves 144.3 ms / 6.7%; staged and unstaged partial-failure regressions prove no earlier file or index mutation survives a later invalid hunk (current patch-apply checkpoint).
 - Opened commit and series patch export against the object database alone, avoiding unrelated branch, remote, tag, and stash enumeration (`9b71ea5`).
 - Opened commit-file diff sources against the object database alone, keeping unrelated refs out of cold file inspection while preserving cached Side-by-Side, Combined, whitespace, and parent variants (`3d932ef`).
 

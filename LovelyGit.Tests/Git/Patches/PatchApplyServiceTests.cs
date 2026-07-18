@@ -8,19 +8,19 @@ public sealed class PatchApplyServiceTests
     [Theory]
     [InlineData(false, " M sample.txt")]
     [InlineData(true, "M  sample.txt")]
-    public async Task ApplyAsync_PreflightsAndAppliesToRequestedDestination(
+    public async Task ApplyAsync_AppliesToRequestedDestination(
         bool stageChanges,
         string expectedStatus)
     {
         using var repository = TestRepository.Create();
         repository.WriteFile("sample.txt", "old\n");
         repository.Commit("Initial");
-		using var patch = TemporaryPatch.Create(PatchText.ReplaceLineEndings("\n") + "\n");
+        using var patch = TemporaryPatch.Create(PatchText.ReplaceLineEndings("\n") + "\n");
         var service = new PatchApplyService(repository.Git);
 
         await service.ApplyAsync(
             repository.Path,
-			patch.Path,
+            patch.Path,
             stageChanges,
             reverse: false,
             CancellationToken.None);
@@ -30,17 +30,17 @@ public sealed class PatchApplyServiceTests
     }
 
     [Fact]
-    public async Task ApplyAsync_WhenPreflightFails_DoesNotChangeWorkingTree()
+    public async Task ApplyAsync_WhenPatchFails_DoesNotChangeWorkingTree()
     {
         using var repository = TestRepository.Create();
         repository.WriteFile("sample.txt", "different\n");
         repository.Commit("Initial");
-		using var patch = TemporaryPatch.Create(PatchText.ReplaceLineEndings("\n") + "\n");
+        using var patch = TemporaryPatch.Create(PatchText.ReplaceLineEndings("\n") + "\n");
         var service = new PatchApplyService(repository.Git);
 
         await Assert.ThrowsAsync<InvalidOperationException>(() => service.ApplyAsync(
             repository.Path,
-			patch.Path,
+            patch.Path,
             stageChanges: false,
             reverse: false,
             CancellationToken.None));
@@ -49,17 +49,83 @@ public sealed class PatchApplyServiceTests
         Assert.Empty(repository.RunGit(["status", "--short"]).StandardOutput);
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task ApplyAsync_WhenLaterFileFails_LeavesEarlierFileAndIndexUnchanged(
+        bool stageChanges)
+    {
+        using var repository = TestRepository.Create();
+        repository.WriteFile("sample.txt", "old\n");
+        repository.WriteFile("other.txt", "actual\n");
+        repository.Commit("Initial");
+        using var patch = TemporaryPatch.Create(
+            PartialFailurePatch.ReplaceLineEndings("\n") + "\n");
+        var service = new PatchApplyService(repository.Git);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => service.ApplyAsync(
+            repository.Path,
+            patch.Path,
+            stageChanges,
+            reverse: false,
+            CancellationToken.None));
+
+        Assert.Equal("old\n", File.ReadAllText(Path.Combine(repository.Path, "sample.txt")));
+        Assert.Equal("actual\n", File.ReadAllText(Path.Combine(repository.Path, "other.txt")));
+        Assert.Empty(repository.RunGit(["status", "--short"]).StandardOutput);
+    }
+
     [Fact]
-    public void BuildArguments_IncludesReverseAndCheckOptions()
+    public async Task ApplyAsync_ReverseRestoresOriginalContent()
+    {
+        using var repository = TestRepository.Create();
+        repository.WriteFile("sample.txt", "new\n");
+        repository.Commit("Initial");
+        using var patch = TemporaryPatch.Create(PatchText.ReplaceLineEndings("\n") + "\n");
+        var service = new PatchApplyService(repository.Git);
+
+        await service.ApplyAsync(
+            repository.Path,
+            patch.Path,
+            stageChanges: false,
+            reverse: true,
+            CancellationToken.None);
+
+        Assert.Equal("old", File.ReadAllText(Path.Combine(repository.Path, "sample.txt")).Trim());
+    }
+
+    [Fact]
+    public async Task ApplyAsync_PreCancelled_LeavesRepositoryUnchanged()
+    {
+        using var repository = TestRepository.Create();
+        repository.WriteFile("sample.txt", "old\n");
+        repository.Commit("Initial");
+        using var patch = TemporaryPatch.Create(PatchText.ReplaceLineEndings("\n") + "\n");
+        using var cancellation = new CancellationTokenSource();
+        cancellation.Cancel();
+        var service = new PatchApplyService(repository.Git);
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => service.ApplyAsync(
+            repository.Path,
+            patch.Path,
+            stageChanges: false,
+            reverse: false,
+            cancellation.Token));
+
+        Assert.Equal("old\n", File.ReadAllText(Path.Combine(repository.Path, "sample.txt")));
+        Assert.Empty(repository.RunGit(["status", "--short"]).StandardOutput);
+    }
+
+    [Fact]
+    public void BuildArguments_IncludesRequestedOptionsWithoutRedundantPreflight()
     {
         var arguments = PatchApplyService.BuildArguments(
             "C:/patches/change.patch",
             stageChanges: true,
-            reverse: true,
-            checkOnly: true);
+            reverse: true);
 
         Assert.Equal(
-            ["apply", "--check", "--index", "--reverse", "C:/patches/change.patch"],
+            ["apply", "--index", "--reverse", "C:/patches/change.patch"],
             arguments);
     }
 
@@ -71,6 +137,21 @@ public sealed class PatchApplyServiceTests
         @@ -1 +1 @@
         -old
         +new
+        """;
+
+    private const string PartialFailurePatch = """
+        diff --git a/sample.txt b/sample.txt
+        --- a/sample.txt
+        +++ b/sample.txt
+        @@ -1 +1 @@
+        -old
+        +new
+        diff --git a/other.txt b/other.txt
+        --- a/other.txt
+        +++ b/other.txt
+        @@ -1 +1 @@
+        -missing
+        +replacement
         """;
 
 	private sealed class TemporaryPatch : IDisposable

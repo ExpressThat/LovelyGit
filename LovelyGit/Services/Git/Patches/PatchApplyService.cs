@@ -24,20 +24,8 @@ internal sealed class PatchApplyService
             throw new FileNotFoundException("The selected patch no longer exists.", fullPatchPath);
         }
 
-        var arguments = BuildArguments(fullPatchPath, stageChanges, reverse, checkOnly: true);
-        var check = await _gitCliService
-            .ExecuteBufferedAsync(
-                arguments,
-                repositoryPath,
-                validateExitCode: false,
-                cancellationToken)
-            .ConfigureAwait(false);
-        if (check.ExitCode != 0)
-        {
-            throw new InvalidOperationException(FormatFailure(check.StandardError));
-        }
-
-        arguments = BuildArguments(fullPatchPath, stageChanges, reverse, checkOnly: false);
+        cancellationToken.ThrowIfCancellationRequested();
+        var arguments = BuildArguments(fullPatchPath, stageChanges, reverse);
         var apply = await _gitCliService
             .ExecuteBufferedAsync(
                 arguments,
@@ -54,11 +42,9 @@ internal sealed class PatchApplyService
     internal static IReadOnlyList<string> BuildArguments(
         string patchPath,
         bool stageChanges,
-        bool reverse,
-        bool checkOnly)
+        bool reverse)
     {
-        var arguments = new List<string>(5) { "apply" };
-        if (checkOnly) arguments.Add("--check");
+        var arguments = new List<string>(4) { "apply" };
         if (stageChanges) arguments.Add("--index");
         if (reverse) arguments.Add("--reverse");
         arguments.Add(patchPath);

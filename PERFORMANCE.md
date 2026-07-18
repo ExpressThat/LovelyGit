@@ -25,6 +25,8 @@ Large branch integrations keep the desktop responsive while Git updates the work
 
 Large commit mutations use the same immediate protection. Cherry-pick, Revert, and destructive Hard Reset painted disabled feedback in 19.2 ms, 20.9 ms, and 16.2 ms while preserving confirmation and exact clean Git outcomes. Their 4.54 s, 1.18 s, and 1.09-4.30 s native completion times remain inside Git; direct four-worker Git completed the same fixtures in 0.99 s, 0.76 s, and 0.67 s. The host stayed below 205 MB working set and 67 MB private memory across the observed commands.
 
+Apply Patch now relies on Git's atomic apply transaction instead of launching a separate `git apply --check` process before the identical real apply. A 3.97 MB patch spanning 1,001 files falls from 2,169.4 ms to 2,025.2 ms on average, saving 144.3 ms and one process launch. Multi-file regressions prove a later invalid hunk leaves an earlier valid file, the worktree, and the index unchanged in both staged and unstaged modes; reverse and pre-cancelled paths remain covered.
+
 ## Measurement Rules
 
 - Measure from a healthy runner state and use disposable repositories only.
@@ -50,6 +52,7 @@ Measured through the same Git commands LovelyGit uses, primarily in a disposable
 | Rebase 100 changed files | 894 ms |
 | Merge / rebase 1,000 files plus one 100,000-line file | Busy paint 19.4-26.9 ms / 22.8 ms; desktop completion 4.40-4.59 s / 6.52 s; exact direct Git 0.95-1.12 s / 1.72 s |
 | Cherry-pick / revert / hard reset 1,000 files plus one 100,000-line file | Busy paint 19.2 ms / 20.9 ms / 16.2 ms; native completion 4.54 s / 1.18 s / 1.09-4.30 s; exact direct Git 0.99 s / 0.76 s / 0.67 s |
+| Apply 3.97 MB / 1,001-file patch | 2,169.4 ms with redundant preflight to 2,025.2 ms atomic apply; 144.3 ms / 6.7% faster and one fewer Git process |
 | Stage 1,000 of 20,000 tracked files | 7.18 s cold CMG completion; 0.70-0.90 s warm service runs |
 | Unstage 1,000 of 20,000 tracked files | 749 ms CMG completion; 0.31-0.47 s warm service runs |
 | Discard 1,000 of 20,000 tracked files | 87 ms warm CMG completion; 0.65-0.67 s cold service runs |
