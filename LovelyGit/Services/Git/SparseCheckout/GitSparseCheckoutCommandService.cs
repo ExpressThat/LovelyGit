@@ -77,7 +77,7 @@ internal sealed class GitSparseCheckoutCommandService(
         }
 
         var result = new StringBuilder(patternText.Length + 1);
-        var seen = new HashSet<string>(StringComparer.Ordinal);
+        var seen = new HashSet<string>(EstimatePatternCapacity(patternText), StringComparer.Ordinal);
         var count = 0;
         var start = 0;
         for (var index = 0; index <= patternText.Length; index++)
@@ -103,6 +103,16 @@ internal sealed class GitSparseCheckoutCommandService(
         return result.ToString();
     }
 
+    private static int EstimatePatternCapacity(ReadOnlySpan<char> patternText)
+    {
+        var count = 1;
+        foreach (var character in patternText)
+        {
+            if (character == '\n' && count <= MaximumPatterns) count++;
+        }
+        return count;
+    }
+
     private static string ValidateConePath(string pattern)
     {
         if (Path.IsPathRooted(pattern))
@@ -111,10 +121,23 @@ internal sealed class GitSparseCheckoutCommandService(
         }
 
         pattern = pattern.Trim('/');
-        if (pattern.Length == 0 || pattern.Split('/').Any(segment => segment is ".." or ".git"))
+        if (pattern.Length == 0 || ContainsForbiddenConeSegment(pattern))
         {
             throw new ArgumentException("A cone-mode sparse path is invalid.");
         }
         return pattern;
+    }
+
+    private static bool ContainsForbiddenConeSegment(ReadOnlySpan<char> pattern)
+    {
+        while (!pattern.IsEmpty)
+        {
+            var separator = pattern.IndexOf('/');
+            var segment = separator < 0 ? pattern : pattern[..separator];
+            if (segment.SequenceEqual("..") || segment.SequenceEqual(".git")) return true;
+            if (separator < 0) break;
+            pattern = pattern[(separator + 1)..];
+        }
+        return false;
     }
 }

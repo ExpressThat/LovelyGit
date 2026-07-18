@@ -29,6 +29,8 @@ Apply Patch now relies on Git's atomic apply transaction instead of launching a 
 
 A fresh retained-memory audit after warming four disposable repositories leaves only 8.93 MB in the managed heap and 8.48 MB in the page heap after forced collection, with 799 DOM nodes. The LovelyGit host uses 45.6-48.1 MB private and the packaged-app-equivalent host/WebView2 subtree uses 297.4 MB private; the separate `dotnet run` launcher is development overhead and is not counted. No large first-party retained graph remains, so the bounded interaction caches were preserved.
 
+Maximum sparse-checkout mutation preparation now scans cone paths directly and sizes its bounded deduplication table once. Normalizing 100,000 paths falls from 40.02 ms / 34.17 MiB allocated to 22.02 ms / 18.36 MiB, reducing pre-Git latency 44.98% and allocation 46.27% while retaining exact validation.
+
 ## Measurement Rules
 
 - Measure from a healthy runner state and use disposable repositories only.
@@ -101,7 +103,7 @@ Measured through the same Git commands LovelyGit uses, primarily in a disposable
 
 ## Next Measurement Areas
 
-- Branch, tag, remote, stash, worktree, submodule, LFS, sparse checkout, bisect, rebase, merge, cherry-pick, revert, reset, and patch workflows.
-- App startup, repository activation, tab switching, settings, command palette, dialogs, and every lazy overlay.
-- Clone progress, authentication hand-off, cancellation, and large-transfer memory; repeat fetch/pull/push against a representative network remote where network variance can be isolated.
-- Cold/warm cache invalidation cost and long-session resource scaling beyond the measured overlay, tab, handle, and transaction baselines.
+- Large network clone/fetch/pull/push transfer memory, credential hand-off, and cancellation against a controlled remote where network variance can be isolated.
+- Destructive and failure-path timing for submodule, LFS, bisect, and interactive-rebase execution; their list rendering and cold dialogs are already measured.
+- Pack/cache invalidation under repeated remote repacks and long-session resource scaling beyond the measured 20-tab, overlay, handle, transaction, and four-repository heap baselines.
+- Packaged cold/warm startup across slower storage tiers and repository activation after operating-system file-cache eviction.
