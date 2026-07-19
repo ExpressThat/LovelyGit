@@ -34,7 +34,10 @@ export function AppOverlaysContainer({
 			fileHistoryTarget={fileDiscovery.historyTarget}
 			isCommandPaletteOpen={overlays.commandPaletteOpen}
 			isCommitSearchOpen={overlays.commitSearchOpen}
-			onBranchChanged={setCurrentBranchName}
+			onBranchChanged={(branchName) => {
+				setCurrentBranchName(branchName);
+				onRepositoryChanged();
+			}}
 			onCommandPaletteOpenChange={overlays.setCommandPaletteOpen}
 			onCreateBranchOpenChange={overlays.setCreateBranchOpen}
 			onFileBlameOpenChange={(open) => !open && fileDiscovery.closeBlame()}

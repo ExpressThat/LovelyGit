@@ -103,6 +103,30 @@ describe("CreateBranchDialog", () => {
 			}),
 		).toBeInTheDocument();
 	});
+
+	it("preserves the draft after failure and permits a successful retry", async () => {
+		const user = userEvent.setup();
+		const onBranchChanged = vi.fn();
+		mocks.sendRequestWithResponse
+			.mockRejectedValueOnce(new Error("Branch already exists"))
+			.mockResolvedValueOnce(undefined);
+		renderDialog({ onBranchChanged });
+		const input = screen.getByRole("textbox", { name: "Branch name" });
+
+		await user.type(input, "feature/retry");
+		await user.click(screen.getByRole("button", { name: "Create and switch" }));
+
+		expect(input).toHaveValue("feature/retry");
+		expect(
+			screen.getByRole("button", { name: "Create and switch" }),
+		).toBeEnabled();
+		expect(onBranchChanged).not.toHaveBeenCalled();
+
+		await user.click(screen.getByRole("button", { name: "Create and switch" }));
+
+		expect(mocks.sendRequestWithResponse).toHaveBeenCalledTimes(2);
+		expect(onBranchChanged).toHaveBeenCalledWith("feature/retry");
+	});
 });
 
 function renderDialog({
