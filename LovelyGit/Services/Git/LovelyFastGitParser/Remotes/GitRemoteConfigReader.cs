@@ -11,6 +11,27 @@ internal static class GitRemoteConfigReader
         return remotes;
     }
 
+    public static async Task<GitRemote?> ReadRemoteAsync(
+        string gitDirectory,
+        string remoteName,
+        CancellationToken cancellationToken)
+    {
+        var configPath = Path.Combine(gitDirectory, "config");
+        if (!File.Exists(configPath))
+        {
+            return null;
+        }
+
+        var state = new TargetRemoteParseState(remoteName);
+        await PooledTextLineReader.ReadAsync(
+                configPath,
+                state,
+                static (line, parseState) => parseState.ProcessLine(line),
+                cancellationToken)
+            .ConfigureAwait(false);
+        return state.CreateRemote();
+    }
+
     public static async Task<string?> ReadPrimaryRemoteUrlAsync(
         string gitDirectory,
         CancellationToken cancellationToken)
@@ -129,4 +150,51 @@ internal static class GitRemoteConfigReader
         FileShare.ReadWrite | FileShare.Delete,
         bufferSize: 4096,
         FileOptions.Asynchronous | FileOptions.SequentialScan);
+
+    private sealed class TargetRemoteParseState(string targetName)
+    {
+        private bool _inTargetSection;
+        private string? _pushUrl;
+        private string? _url;
+
+        public void ProcessLine(ReadOnlySpan<char> rawLine)
+        {
+            var line = rawLine.Trim();
+            if (line.IsEmpty || line[0] is '#' or ';')
+            {
+                return;
+            }
+
+            if (TryReadRemoteSectionName(line, out var name))
+            {
+                _inTargetSection = name.SequenceEqual(targetName);
+                return;
+            }
+
+            if (line[0] == '[' && line[^1] == ']')
+            {
+                _inTargetSection = false;
+                return;
+            }
+
+            if (!_inTargetSection)
+            {
+                return;
+            }
+
+            if (TryReadConfigValue(line, "url", out var url))
+            {
+                _url = url;
+            }
+            else if (TryReadConfigValue(line, "pushurl", out var pushUrl))
+            {
+                _pushUrl = pushUrl;
+            }
+        }
+
+        public GitRemote? CreateRemote() =>
+            string.IsNullOrEmpty(_url)
+                ? null
+                : new GitRemote { Name = targetName, PushUrl = _pushUrl, Url = _url };
+    }
 }

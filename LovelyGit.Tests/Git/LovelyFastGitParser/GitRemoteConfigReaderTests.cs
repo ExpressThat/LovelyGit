@@ -126,6 +126,79 @@ public sealed class GitRemoteConfigReaderTests
         Assert.Equal("https://github.com/example/origin.git", remote.Url);
     }
 
+    [Fact]
+    public async Task ReadRemoteAsync_ReturnsOnlyExactConfiguredRemote()
+    {
+        using var directory = TemporaryGitDirectory.Create(
+            """
+            [remote "origin-backup"]
+                url = https://example.invalid/backup.git
+            [remote "origin"]
+                url = https://example.invalid/origin.git
+                pushurl = ssh://example.invalid/origin.git
+            """);
+
+        var remote = await GitRemoteConfigReader.ReadRemoteAsync(
+            directory.Path, "origin", CancellationToken.None);
+
+        Assert.NotNull(remote);
+        Assert.Equal("origin", remote.Name);
+        Assert.Equal("https://example.invalid/origin.git", remote.Url);
+        Assert.Equal("ssh://example.invalid/origin.git", remote.PushUrl);
+    }
+
+    [Fact]
+    public async Task ReadRemoteAsync_PreservesValuesAcrossDuplicateTargetSections()
+    {
+        using var directory = TemporaryGitDirectory.Create(
+            """
+            [remote "origin"]
+                url = https://example.invalid/old.git
+            [remote "unrelated"]
+                url = https://example.invalid/unrelated.git
+            [remote "origin"]
+                pushurl = ssh://example.invalid/origin.git
+                url = https://example.invalid/new.git
+            [credential]
+                url = https://example.invalid/not-a-remote.git
+            """);
+
+        var remote = await GitRemoteConfigReader.ReadRemoteAsync(
+            directory.Path, "origin", CancellationToken.None);
+
+        Assert.NotNull(remote);
+        Assert.Equal("https://example.invalid/new.git", remote.Url);
+        Assert.Equal("ssh://example.invalid/origin.git", remote.PushUrl);
+    }
+
+    [Fact]
+    public async Task ReadRemoteAsync_WhenRemoteIsMissing_ReturnsNull()
+    {
+        using var directory = TemporaryGitDirectory.Create(
+            "[remote \"upstream\"]\n\turl = https://example.invalid/upstream.git\n");
+
+        var remote = await GitRemoteConfigReader.ReadRemoteAsync(
+            directory.Path, "origin", CancellationToken.None);
+
+        Assert.Null(remote);
+    }
+
+    [Fact]
+    public async Task ReadRemoteAsync_WhenCancelled_DoesNotChangeConfig()
+    {
+        using var directory = TemporaryGitDirectory.Create(
+            "[remote \"origin\"]\n\turl = https://example.invalid/origin.git\n");
+        var path = Path.Combine(directory.Path, "config");
+        var before = await File.ReadAllBytesAsync(path);
+        using var cancellation = new CancellationTokenSource();
+        cancellation.Cancel();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+            GitRemoteConfigReader.ReadRemoteAsync(directory.Path, "origin", cancellation.Token));
+
+        Assert.Equal(before, await File.ReadAllBytesAsync(path));
+    }
+
     private sealed class TemporaryGitDirectory : IDisposable
     {
         private readonly DirectoryInfo _directory;

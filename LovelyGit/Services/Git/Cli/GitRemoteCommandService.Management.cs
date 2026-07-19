@@ -48,11 +48,13 @@ internal sealed partial class GitRemoteCommandService
         var paths = await GitRepositoryDiscovery
             .ResolveRepositoryPathsAsync(repositoryPath, cancellationToken)
             .ConfigureAwait(false);
-        var configured = await GitRemoteConfigReader
-            .ReadRemotesAsync(paths.GitDirectory, cancellationToken)
+        var existing = await GitRemoteConfigReader
+            .ReadRemoteAsync(paths.GitDirectory, current, cancellationToken)
             .ConfigureAwait(false);
-        var existing = configured.Find(remote => remote.Name.Equals(current, StringComparison.Ordinal))
-            ?? throw new InvalidOperationException($"Remote '{current}' was not found.");
+        if (existing == null)
+        {
+            throw new InvalidOperationException($"Remote '{current}' was not found.");
+        }
         if (!current.Equals(next, StringComparison.Ordinal))
         {
             await RunRemoteCommandAsync(

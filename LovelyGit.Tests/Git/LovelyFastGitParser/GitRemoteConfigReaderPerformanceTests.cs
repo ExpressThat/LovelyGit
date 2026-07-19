@@ -49,6 +49,26 @@ public sealed class GitRemoteConfigReaderPerformanceTests(ITestOutputHelper outp
         Assert.True(allocated < 12_000_000, $"Read allocated {allocated:N0} bytes.");
     }
 
+    [Fact]
+    public async Task ReadRemoteAsync_DoesNotMaterializeUnrelatedLargeConfigEntries()
+    {
+        using var fixture = await RemoteConfigFixture.CreateAsync(10_000);
+        var allocatedBefore = GC.GetTotalAllocatedBytes(precise: true);
+        var startedAt = Stopwatch.GetTimestamp();
+
+        var remote = await GitRemoteConfigReader.ReadRemoteAsync(
+            fixture.Path, "remote-09999", CancellationToken.None);
+
+        var elapsed = Stopwatch.GetElapsedTime(startedAt);
+        var allocated = GC.GetTotalAllocatedBytes(true) - allocatedBefore;
+        output.WriteLine($"TargetElapsedMs={elapsed.TotalMilliseconds:F2}; AllocatedBytes={allocated:N0}");
+        Assert.NotNull(remote);
+        Assert.Equal("https://example.invalid/09999.git", remote.Url);
+        Assert.Equal("ssh://example.invalid/09999.git", remote.PushUrl);
+        Assert.True(elapsed < TimeSpan.FromMilliseconds(25), $"Read took {elapsed}.");
+        Assert.True(allocated < 250_000, $"Read allocated {allocated:N0} bytes.");
+    }
+
     private sealed class RemoteConfigFixture : IDisposable
     {
         private readonly DirectoryInfo _directory =
