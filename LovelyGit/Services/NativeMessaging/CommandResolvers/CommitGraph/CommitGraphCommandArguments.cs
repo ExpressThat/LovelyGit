@@ -67,4 +67,10 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Commit
         public string? StartCommitHash { get; set; }
         public bool Deep { get; set; }
     }
+
+    [TypeSharp]
+    public record CancelFileBlameCommandArguments
+    {
+        public Guid KnownRepositoryId { get; set; }
+    }
 }

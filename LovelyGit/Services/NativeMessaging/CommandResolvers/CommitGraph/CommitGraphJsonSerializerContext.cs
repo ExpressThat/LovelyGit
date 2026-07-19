@@ -50,6 +50,7 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Commit
 [JsonSerializable(typeof(FileHistoryResult))]
 [JsonSerializable(typeof(FileHistoryResponse))]
 [JsonSerializable(typeof(GetFileBlameCommandArguments))]
+[JsonSerializable(typeof(CancelFileBlameCommandArguments))]
 [JsonSerializable(typeof(FileBlameHunk))]
 [JsonSerializable(typeof(FileBlameResponse))]
 [JsonSerializable(typeof(GetCommitDetailsCommandArguments))]

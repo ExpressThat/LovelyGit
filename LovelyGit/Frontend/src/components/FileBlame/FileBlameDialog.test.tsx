@@ -4,10 +4,16 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { FileBlameResponse } from "@/generated/types";
-import { sendRequestWithResponse } from "@/lib/commands";
+import {
+	sendRequestWithoutResponse,
+	sendRequestWithResponse,
+} from "@/lib/commands";
 import { FileBlameDialog } from "./FileBlameDialog";
 
-vi.mock("@/lib/commands", () => ({ sendRequestWithResponse: vi.fn() }));
+vi.mock("@/lib/commands", () => ({
+	sendRequestWithoutResponse: vi.fn(),
+	sendRequestWithResponse: vi.fn(),
+}));
 
 describe("FileBlameDialog", () => {
 	beforeEach(() => vi.clearAllMocks());
@@ -62,6 +68,34 @@ describe("FileBlameDialog", () => {
 			}),
 			{ timeoutMs: 12_000 },
 		);
+	});
+
+	it("cancels native blame work when the dialog closes", () => {
+		vi.mocked(sendRequestWithResponse).mockReturnValueOnce(
+			new Promise(() => {}),
+		);
+		const { rerender } = render(
+			<FileBlameDialog
+				onOpenChange={vi.fn()}
+				onSelectCommit={vi.fn()}
+				repositoryId="repo"
+				target={{ path: "src/file.ts", startCommitHash: null }}
+			/>,
+		);
+
+		rerender(
+			<FileBlameDialog
+				onOpenChange={vi.fn()}
+				onSelectCommit={vi.fn()}
+				repositoryId="repo"
+				target={null}
+			/>,
+		);
+
+		expect(sendRequestWithoutResponse).toHaveBeenCalledWith({
+			arguments: { knownRepositoryId: "repo" },
+			commandType: "CancelFileBlame",
+		});
 	});
 });
 

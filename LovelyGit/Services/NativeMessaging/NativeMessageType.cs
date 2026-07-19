@@ -85,6 +85,8 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging
         CancelFileHistory,
         [NativeMessageContract(typeof(GetFileBlameCommandArguments), typeof(FileBlameResponse))]
         GetFileBlame,
+        [NativeMessageContract(typeof(CancelFileBlameCommandArguments))]
+        CancelFileBlame,
         [NativeMessageContract(typeof(GetCommitDetailsCommandArguments), typeof(CommitDetailsResponse))]
         GetCommitDetails,
         [NativeMessageContract(typeof(GetCommitFileDiffCommandArguments), typeof(CommitFileDiffResponse))]

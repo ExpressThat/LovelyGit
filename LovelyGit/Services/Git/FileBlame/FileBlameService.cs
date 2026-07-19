@@ -1,9 +1,38 @@
 namespace ExpressThat.LovelyGit.Services.Git.FileBlame;
 
+internal delegate Task<FileBlameResponse> FileBlameRead(
+    string repositoryPath,
+    string path,
+    string? startCommitHash,
+    int maximumCommits,
+    TimeSpan maximumDuration,
+    CancellationToken cancellationToken);
+
 internal sealed class FileBlameService : IDisposable
 {
     private readonly object _gate = new();
     private readonly Dictionary<Guid, CancellationTokenSource> _activeReads = new();
+    private readonly FileBlameRead _read;
+
+    public FileBlameService() : this(NativeFileBlameReader.ReadAsync)
+    {
+    }
+
+    internal FileBlameService(FileBlameRead read)
+    {
+        _read = read;
+    }
+
+    public void Cancel(Guid repositoryId)
+    {
+        CancellationTokenSource? activeRead;
+        lock (_gate)
+        {
+            _activeReads.Remove(repositoryId, out activeRead);
+        }
+
+        activeRead?.Cancel();
+    }
 
     public async Task<FileBlameResponse> ReadAsync(
         Guid repositoryId,
@@ -23,7 +52,7 @@ internal sealed class FileBlameService : IDisposable
         previous?.Cancel();
         try
         {
-            return await NativeFileBlameReader.ReadAsync(
+            return await _read(
                 repositoryPath,
                 path,
                 startCommitHash,

@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
 import type { FileBlameResponse } from "@/generated/types";
-import { sendRequestWithResponse } from "@/lib/commands";
+import {
+	sendRequestWithoutResponse,
+	sendRequestWithResponse,
+} from "@/lib/commands";
 import { expandFileBlamePayload } from "./fileBlamePayload";
 
 export function useFileBlame(
@@ -13,6 +16,16 @@ export function useFileBlame(
 	const [response, setResponse] = useState<FileBlameResponse | null>(null);
 	const [error, setError] = useState<string | null>(null);
 	const [isLoading, setIsLoading] = useState(false);
+
+	useEffect(() => {
+		if (!enabled || !repositoryId) return;
+		return () => {
+			sendRequestWithoutResponse({
+				arguments: { knownRepositoryId: repositoryId },
+				commandType: "CancelFileBlame",
+			});
+		};
+	}, [enabled, repositoryId]);
 
 	useEffect(() => {
 		if (!enabled || !repositoryId || !path) {

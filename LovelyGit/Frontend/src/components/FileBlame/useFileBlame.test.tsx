@@ -3,10 +3,16 @@
 import { renderHook, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { FileBlameResponse } from "@/generated/types";
-import { sendRequestWithResponse } from "@/lib/commands";
+import {
+	sendRequestWithoutResponse,
+	sendRequestWithResponse,
+} from "@/lib/commands";
 import { useFileBlame } from "./useFileBlame";
 
-vi.mock("@/lib/commands", () => ({ sendRequestWithResponse: vi.fn() }));
+vi.mock("@/lib/commands", () => ({
+	sendRequestWithoutResponse: vi.fn(),
+	sendRequestWithResponse: vi.fn(),
+}));
 
 describe("useFileBlame", () => {
 	beforeEach(() => vi.clearAllMocks());
@@ -52,6 +58,23 @@ describe("useFileBlame", () => {
 
 		expect(result.current.isLoading).toBe(false);
 		expect(sendRequestWithResponse).not.toHaveBeenCalled();
+	});
+
+	it("cancels native work when the viewer closes", () => {
+		vi.mocked(sendRequestWithResponse).mockReturnValueOnce(
+			new Promise(() => {}),
+		);
+		const { rerender } = renderHook(
+			({ enabled }) => useFileBlame("repo", "src/file.ts", null, enabled, true),
+			{ initialProps: { enabled: true } },
+		);
+
+		rerender({ enabled: false });
+
+		expect(sendRequestWithoutResponse).toHaveBeenCalledWith({
+			arguments: { knownRepositoryId: "repo" },
+			commandType: "CancelFileBlame",
+		});
 	});
 
 	it("surfaces native failures without retaining a stale response", async () => {
