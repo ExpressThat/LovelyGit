@@ -54,10 +54,7 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Settin
                 settings.Add(setting, settingValue.Value);
             }
 
-            foreach (var setting in settings)
-            {
-                await _settingsManager.SetSettingValue(setting.Key, setting.Value);
-            }
+            await _settingsManager.SetSettingValues(settings);
 
             return new CommandResponseBase
             {

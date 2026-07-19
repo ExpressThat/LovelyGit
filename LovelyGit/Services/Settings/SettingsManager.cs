@@ -58,6 +58,49 @@ namespace ExpressThat.LovelyGit.Services.Settings
             await _appDbContext.SaveChangesAsync(transaction);
         }
 
+        public async Task SetSettingValues(
+            IReadOnlyDictionary<ISettingDefinition, string> settings)
+        {
+            ArgumentNullException.ThrowIfNull(settings);
+            if (settings.Count == 0)
+            {
+                return;
+            }
+
+            var models = new SettingModel[settings.Count];
+            var index = 0;
+            foreach (var setting in settings)
+            {
+                var typedValue = JsonSerializer.Deserialize(
+                    setting.Value,
+                    setting.Key.JsonTypeInfo);
+                models[index++] = new SettingModel
+                {
+                    SettingName = setting.Key.Name,
+                    ValueJson = JsonSerializer.Serialize(
+                        typedValue,
+                        setting.Key.JsonTypeInfo),
+                };
+            }
+
+            using var transaction = _appDbContext.BeginTransaction();
+            using var transactionRetention = BLiteTransactionRetention.Track(transaction);
+            foreach (var model in models)
+            {
+                var existing = await _appDbContext.Settings.FindByIdAsync(model.SettingName);
+                if (existing == null)
+                {
+                    await _appDbContext.Settings.InsertAsync(model, transaction);
+                }
+                else
+                {
+                    await _appDbContext.Settings.UpdateAsync(model, transaction);
+                }
+            }
+
+            await _appDbContext.SaveChangesAsync(transaction);
+        }
+
         public async Task SetSetting<T>(SettingDefinition<T> setting, T value)
         {
             var model = new SettingModel

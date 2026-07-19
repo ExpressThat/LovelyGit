@@ -5,6 +5,7 @@ import {
 } from "@/lib/commands";
 import { DEFAULT_SETTINGS, type Settings, type SettingsKey } from "./Settings";
 import {
+	cancelPendingAppearanceSettings,
 	cancelPendingRepositorySetting,
 	persistSettingValue,
 } from "./settingPersistence";
@@ -146,6 +147,7 @@ export async function setSettings(patch: Partial<Settings>): Promise<void> {
 		if (updates.CurrentGitRepositoryId !== undefined) {
 			cancelPendingRepositorySetting();
 		}
+		cancelPendingAppearanceSettings(Object.keys(updates) as SettingsKey[]);
 		sendRequestWithoutResponse({
 			commandType: "SetMultipleSettings",
 			arguments: {

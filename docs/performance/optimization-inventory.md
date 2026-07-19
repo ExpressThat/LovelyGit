@@ -25,6 +25,7 @@ This ledger records shipped performance work by feature area. Update it in the s
 - Applied immediate deferred reveal to meaningful bisect-session content while preserving its separate session chunk (`79a6057`).
 - Applied immediate deferred reveal to force-with-lease confirmation while preserving its separate safety-dialog chunk (`1f749da`).
 - Deferred derived palette and hex-color construction for all 98 catalog themes until a theme's color data is actually requested, while bootstrap metadata lookup and settings filtering remain immediately available (`6d34303`).
+- Coalesced high-frequency appearance-colour persistence without delaying local theme feedback, reducing a 100-value gesture from 100 native messages / 11,100 bridge bytes to one 111-byte bulk message. Bulk settings now validate first and commit atomically in one transaction; 100 four-value writes fall from 29.62 ms / 8.24 MB to 9.27 ms / 2.34 MB (current appearance-persistence checkpoint).
 - Switched the desktop process to workstation GC and moved process-memory sampling off interaction paths (`b0d124b`, `c7241dc`).
 - Reduced native interaction metrics overhead (`efcd0a7`).
 - Verified the compiled desktop baseline at 145.8 ms navigation, 9.40 MB post-GC page heap, and 309.45 MB private memory for the complete seven-process WebView2 tree; the LovelyGit host accounts for 53.37 MB (current compiled-runtime checkpoint).
