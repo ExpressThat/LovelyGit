@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 
 import { act, renderHook, waitFor } from "@testing-library/react";
+import { toast } from "sonner";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { type RepositoryStashItem, StashAction } from "@/generated/types";
 import { sendRequestWithResponse } from "@/lib/commands";
@@ -119,4 +120,61 @@ describe("useStashDialog responsiveness", () => {
 		expect(result.current.stashes).toEqual([stash]);
 		expect(result.current.loadError).toBeNull();
 	});
+
+	it("publishes create success without waiting for repository reconciliation", async () => {
+		const reconciliation = deferred<void>();
+		const onRepositoryChanged = vi.fn(() => reconciliation.promise);
+		const onCreateSuccess = vi.fn();
+		send.mockResolvedValueOnce({ refs: [], stashes: [stash] });
+		const { result } = renderHook(() =>
+			useStashDialog(
+				"repo",
+				onRepositoryChanged,
+				undefined,
+				false,
+				[],
+				onCreateSuccess,
+			),
+		);
+
+		await act(() => result.current.runAction(StashAction.Create));
+
+		expect(onCreateSuccess).toHaveBeenCalledWith(false, [], true);
+		expect(onRepositoryChanged).toHaveBeenCalledOnce();
+		expect(result.current.busyAction).toBeNull();
+		expect(toast.success).toHaveBeenCalledWith("Stash changes complete", {
+			id: "stash-toast",
+		});
+		reconciliation.reject(new Error("status refresh failed"));
+		await act(async () => Promise.resolve());
+		expect(toast.error).not.toHaveBeenCalled();
+	});
+
+	it("does not relabel a successful create when reconciliation throws", async () => {
+		send.mockResolvedValueOnce({ refs: [], stashes: [stash] });
+		const onRepositoryChanged = vi.fn(() => {
+			throw new Error("refresh unavailable");
+		});
+		const { result } = renderHook(() =>
+			useStashDialog("repo", onRepositoryChanged),
+		);
+
+		await act(() => result.current.runAction(StashAction.Create));
+
+		expect(result.current.busyAction).toBeNull();
+		expect(toast.success).toHaveBeenCalledWith("Stash changes complete", {
+			id: "stash-toast",
+		});
+		expect(toast.error).not.toHaveBeenCalled();
+	});
 });
+
+function deferred<T>() {
+	let resolve!: (value: T) => void;
+	let reject!: (error: Error) => void;
+	const promise = new Promise<T>((complete, fail) => {
+		resolve = complete;
+		reject = fail;
+	});
+	return { promise, reject, resolve };
+}

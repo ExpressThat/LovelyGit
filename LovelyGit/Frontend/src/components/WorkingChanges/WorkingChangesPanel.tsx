@@ -5,6 +5,7 @@ import type {
 } from "@/generated/types";
 import { CommitStagedForm } from "./CommitStagedForm";
 import { DiscardWorkingTreeChangesDialog } from "./DiscardWorkingTreeChangesDialog";
+import { applyOptimisticStash } from "./OptimisticWorkingTreeStash";
 import { RepositoryOperationBanner } from "./RepositoryOperationBanner";
 import { StashDialog } from "./StashDialog";
 import { UndoLastCommitDialog } from "./UndoLastCommitDialog";
@@ -110,8 +111,24 @@ export function WorkingChangesPanel({
 			<WorkingChangesHeader
 				actions={
 					<StashDialog
-						canCreate={(changes?.totalCount ?? totalCount) > 0}
-						onRepositoryChanged={onCommitSuccess}
+						canCreate={visibleChanges.totalCount > 0}
+						onCreateSuccess={(selectedOnly, paths, includeUntracked) =>
+							setOptimisticChanges(
+								applyOptimisticStash(
+									visibleChanges,
+									selectedOnly,
+									paths,
+									includeUntracked,
+								),
+							)
+						}
+						onRepositoryChanged={async () => {
+							try {
+								await onCommitSuccess();
+							} finally {
+								setOptimisticChanges(null);
+							}
+						}}
 						repositoryId={repositoryId}
 						selectedPaths={stashPaths}
 					/>
@@ -119,7 +136,7 @@ export function WorkingChangesPanel({
 				isLoading={isLoading}
 				isStatusComplete={visibleChanges.isComplete}
 				onRefresh={onRefresh}
-				totalCount={changes?.totalCount ?? totalCount}
+				totalCount={visibleChanges.totalCount}
 			/>
 			{error || actionError ? (
 				<div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">

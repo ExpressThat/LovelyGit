@@ -1,6 +1,12 @@
 // @vitest-environment jsdom
 
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import {
+	act,
+	fireEvent,
+	render,
+	screen,
+	waitFor,
+} from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type {
 	WorkingTreeChangedFile,
@@ -69,6 +75,59 @@ describe("WorkingChangesPanel optimistic index state", () => {
 		).toBeDisabled();
 		expect(screen.getByText("Finding untracked files…")).toBeVisible();
 	});
+
+	it("releases a successful stash preview after authoritative refresh", async () => {
+		const refresh = deferred<void>();
+		vi.mocked(sendRequestWithResponse)
+			.mockResolvedValueOnce({ refs: [], stashes: [] })
+			.mockResolvedValueOnce({
+				stashes: [
+					{
+						commitHash: "abc",
+						createdAtUnixSeconds: 1,
+						message: "saved",
+						selector: "stash@{0}",
+					},
+				],
+			});
+		const props = createProps(() => Promise.resolve());
+		props.onCommitSuccess.mockReturnValue(refresh.promise);
+		const view = render(
+			<WorkingChangesPanel {...props} changes={response()} />,
+		);
+		fireEvent.click(screen.getByRole("button", { name: "Stash" }));
+		await waitFor(() => expect(screen.getByText("Changes to stash")).toBeVisible());
+
+		fireEvent.click(screen.getByRole("button", { name: "Stash changes" }));
+		await waitFor(() => expect(screen.getByText("0 changed files")).toBeVisible());
+
+		view.rerender(<WorkingChangesPanel {...props} changes={emptyResponse()} />);
+		await act(async () => refresh.resolve());
+		view.rerender(<WorkingChangesPanel {...props} changes={response()} />);
+		expect(screen.getByText("1 changed files")).toBeVisible();
+	});
+
+	it("releases a stash preview when authoritative refresh fails", async () => {
+		const refresh = deferred<void>();
+		vi.mocked(sendRequestWithResponse)
+			.mockResolvedValueOnce({ refs: [], stashes: [] })
+			.mockResolvedValueOnce({ stashes: [] });
+		const props = createProps(() => Promise.resolve());
+		props.onCommitSuccess.mockReturnValue(refresh.promise);
+		const view = render(
+			<WorkingChangesPanel {...props} changes={response()} />,
+		);
+		fireEvent.click(screen.getByRole("button", { name: "Stash" }));
+		await waitFor(() => expect(screen.getByText("Changes to stash")).toBeVisible());
+
+		fireEvent.click(screen.getByRole("button", { name: "Stash changes" }));
+		await waitFor(() => expect(screen.getByText("0 changed files")).toBeVisible());
+
+		refresh.reject(new Error("refresh unavailable"));
+		await waitFor(() => expect(screen.getByText("1 changed files")).toBeVisible());
+		view.rerender(<WorkingChangesPanel {...props} changes={response()} />);
+		expect(screen.getByText("1 changed files")).toBeVisible();
+	});
 });
 
 function createProps(onRefresh: () => Promise<void>) {
@@ -96,6 +155,17 @@ function response(): WorkingTreeChangesResponse {
 	};
 }
 
+function emptyResponse(): WorkingTreeChangesResponse {
+	return {
+		isComplete: true,
+		staged: [],
+		totalCount: 0,
+		unmerged: [],
+		unstaged: [],
+		untracked: [],
+	};
+}
+
 function file(): WorkingTreeChangedFile {
 	return {
 		additions: 1,
@@ -109,12 +179,11 @@ function file(): WorkingTreeChangedFile {
 }
 
 function deferred<T>() {
-	let resolve = (_value: T) => undefined;
-	const promise = new Promise<T>((complete) => {
-		resolve = (value) => {
-			complete(value);
-			return undefined;
-		};
+	let resolve!: (value: T) => void;
+	let reject!: (error: Error) => void;
+	const promise = new Promise<T>((complete, fail) => {
+		resolve = complete;
+		reject = fail;
 	});
-	return { promise, resolve };
+	return { promise, reject, resolve };
 }

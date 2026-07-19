@@ -23,6 +23,11 @@ export function useStashDialog(
 	},
 	createSelectedOnly = false,
 	createPaths: string[] = [],
+	onCreateSuccess?: (
+		selectedOnly: boolean,
+		paths: string[],
+		includeUntracked: boolean,
+	) => void,
 ) {
 	const [busyAction, setBusyAction] = useState<StashAction | null>(null);
 	const [branchNames, setBranchNames] = useState<string[]>([]);
@@ -127,7 +132,12 @@ export function useStashDialog(
 					current.filter((item) => item.selector !== stash.selector),
 				);
 			}
-			await onRepositoryChanged();
+			if (action === StashAction.Create) {
+				onCreateSuccess?.(createSelectedOnly, createPaths, includeUntracked);
+				reconcileWithoutBlocking(onRepositoryChanged);
+			} else {
+				await onRepositoryChanged();
+			}
 			toast.success(`${actionLabel} complete`, { id: toastId });
 		} catch (error) {
 			toast.error(
@@ -159,6 +169,14 @@ export function useStashDialog(
 		setRestoreIndex,
 		stashes,
 	};
+}
+
+function reconcileWithoutBlocking(callback: () => Promise<void> | void) {
+	try {
+		void Promise.resolve(callback()).catch(() => undefined);
+	} catch {
+		// The stash already succeeded; the normal working-tree error surface owns refresh failures.
+	}
 }
 
 function stashActionLabel(action: StashAction) {

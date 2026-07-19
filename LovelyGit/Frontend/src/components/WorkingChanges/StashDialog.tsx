@@ -21,6 +21,7 @@ import { useStashDialog } from "./useStashDialog";
 
 export function StashDialog({
 	canCreate,
+	onCreateSuccess,
 	onOpenChange,
 	onRepositoryChanged,
 	open: controlledOpen,
@@ -29,6 +30,11 @@ export function StashDialog({
 	showTrigger = true,
 }: {
 	canCreate: boolean;
+	onCreateSuccess?: (
+		selectedOnly: boolean,
+		paths: string[],
+		includeUntracked: boolean,
+	) => void;
 	onOpenChange?: (open: boolean) => void;
 	onRepositoryChanged: () => Promise<void> | void;
 	open?: boolean;
@@ -49,6 +55,7 @@ export function StashDialog({
 		controlled,
 		selectedOnly,
 		selectedOnly ? selectedPaths : [],
+		onCreateSuccess,
 	);
 	const [inspectionTarget, setInspectionTarget] =
 		useState<RepositoryStashItem | null>(null);
