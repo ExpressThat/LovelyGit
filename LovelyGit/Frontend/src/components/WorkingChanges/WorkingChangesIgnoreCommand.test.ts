@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { WorkingTreeChangesResponse } from "@/generated/types";
 import { sendRequestWithResponse } from "@/lib/commands";
-import { ignoreWorkingTreePath } from "./WorkingChangesPanelCommands";
+import { ignoreWorkingTreePath } from "./WorkingChangesIgnoreCommand";
 
 vi.mock("@/lib/commands", () => ({ sendRequestWithResponse: vi.fn() }));
 vi.mock("sonner", () => ({ toast: { success: vi.fn() } }));
@@ -102,13 +102,37 @@ describe("working changes ignore command", () => {
 		expect(harness.clearOptimisticChanges).toHaveBeenCalledOnce();
 		expect(harness.setIsMutating).toHaveBeenLastCalledWith(false);
 	});
+
+	it("settles a shared ignore after exact .gitignore status arrives", async () => {
+		mockIgnoreSuccess("Shared", changesWithGitIgnore());
+		let finishRefresh: (() => void) | undefined;
+		const harness = createHarness(
+			"Shared",
+			() => new Promise<void>((resolve) => (finishRefresh = resolve)),
+		);
+
+		await ignoreWorkingTreePath(harness);
+
+		expect(finishRefresh).toBeTypeOf("function");
+		expect(harness.setOptimisticChanges).toHaveBeenCalledTimes(2);
+		expect(harness.setIsMutating).toHaveBeenLastCalledWith(false);
+		expect(harness.clearOptimisticChanges).not.toHaveBeenCalled();
+		finishRefresh?.();
+		await vi.waitFor(() =>
+			expect(harness.clearOptimisticChanges).toHaveBeenCalledOnce(),
+		);
+	});
 });
 
-function mockIgnoreSuccess(target: "Local" | "Shared") {
+function mockIgnoreSuccess(
+	target: "Local" | "Shared",
+	targetChanges?: WorkingTreeChangesResponse,
+) {
 	vi.mocked(sendRequestWithResponse).mockResolvedValueOnce({
 		added: true,
 		pattern: "/notes.local",
 		target,
+		targetChanges: targetChanges ?? null,
 	});
 }
 
@@ -149,4 +173,10 @@ function changesWithUntracked(): WorkingTreeChangesResponse {
 			},
 		],
 	};
+}
+
+function changesWithGitIgnore(): WorkingTreeChangesResponse {
+	const changes = changesWithUntracked();
+	changes.untracked = [{ ...changes.untracked[0], path: ".gitignore" }];
+	return changes;
 }

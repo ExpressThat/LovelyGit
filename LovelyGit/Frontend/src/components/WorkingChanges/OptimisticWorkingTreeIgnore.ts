@@ -30,6 +30,47 @@ export function applyOptimisticIgnore(
 	};
 }
 
+export function mergeTargetedStatus(
+	changes: WorkingTreeChangesResponse,
+	targetChanges: WorkingTreeChangesResponse,
+	path: string,
+): WorkingTreeChangesResponse {
+	const staged = replacePath(changes.staged, targetChanges.staged, path);
+	const unstaged = replacePath(changes.unstaged, targetChanges.unstaged, path);
+	const untracked = replacePath(
+		changes.untracked,
+		targetChanges.untracked,
+		path,
+	);
+	const unmerged = replacePath(changes.unmerged, targetChanges.unmerged, path);
+	return {
+		...changes,
+		staged,
+		unstaged,
+		untracked,
+		unmerged,
+		totalCount:
+			staged.length + unstaged.length + untracked.length + unmerged.length,
+	};
+}
+
+function replacePath(
+	files: WorkingTreeChangesResponse["untracked"],
+	targetFiles: WorkingTreeChangesResponse["untracked"],
+	path: string,
+) {
+	const retained = removePath(files, path);
+	const replacements = targetFiles.filter((file) => file.path === path);
+	if (replacements.length === 0) return retained;
+
+	const index = lowerBound(retained, path);
+	return [
+		...retained.slice(0, index),
+		...replacements,
+		...retained.slice(index),
+	];
+}
+
 function removePath(
 	files: WorkingTreeChangesResponse["untracked"],
 	path: string,

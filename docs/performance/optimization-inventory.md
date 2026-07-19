@@ -123,7 +123,7 @@ This ledger records shipped performance work by feature area. Update it in the s
 
 ### Working Tree, Staging, and Status
 
-- Settled successful local ignores at the native write boundary and reconciled their exact optimistic projection in the background. In a 20,001-file / 5,000-change fixture, controls recover in 45.1 ms instead of 1,099.1 ms; token-safe clearing preserves any newer mutation (current maximum-ignore checkpoint).
+- Settled successful Local ignores at the native write boundary and Shared ignores after a path-scoped `.gitignore` status query, then reconciled the full list in the background. In a 20,001-file / 5,000-change fixture, Local controls recover in 45.1 ms instead of 1,099.1 ms and Shared controls in 90.9 ms instead of 1,110.6 ms; token-safe clearing preserves newer mutations (current shared-ignore checkpoint).
 
 - Removed the Suspense reveal delay from Working Changes and working-tree diffs while preserving their separate lazy chunks; the disposable diff opened in 53.1 ms and its display controls responded in 0.5–2.1 ms (`3cb31fa`).
 - Removed the nested Suspense reveal delay from stashed-file inspection while preserving the commit-diff chunk; its diff controls and add/remove colors remain shared with the verified diff surface (`95b00d5`).

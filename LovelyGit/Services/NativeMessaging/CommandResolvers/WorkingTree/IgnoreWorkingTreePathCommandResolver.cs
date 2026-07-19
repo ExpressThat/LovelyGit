@@ -3,6 +3,7 @@ using System.Text.Json.Serialization.Metadata;
 using ExpressThat.LovelyGit.Services.Data.Models;
 using ExpressThat.LovelyGit.Services.Data.Repositorys;
 using ExpressThat.LovelyGit.Services.Git.WorkingTree;
+using ExpressThat.LovelyGit.Services.Git.WorkingTree.Models;
 using ExpressThat.LovelyGit.Services.NativeMessaging.Commands;
 
 namespace ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.WorkingTree;
@@ -12,13 +13,16 @@ internal sealed class IgnoreWorkingTreePathCommandResolver
 {
     private readonly KnownGitRepositorysRepository _knownRepositories;
     private readonly GitIgnoreService _service;
+    private readonly WorkingTreeStatusListService _statusService;
 
     public IgnoreWorkingTreePathCommandResolver(
         KnownGitRepositorysRepository knownRepositories,
-        GitIgnoreService service)
+        GitIgnoreService service,
+        WorkingTreeStatusListService statusService)
     {
         _knownRepositories = knownRepositories;
         _service = service;
+        _statusService = statusService;
     }
 
     protected override JsonTypeInfo<IgnoreWorkingTreePathCommandArguments> ArgumentsJsonTypeInfo =>
@@ -50,6 +54,13 @@ internal sealed class IgnoreWorkingTreePathCommandResolver
                     command.Arguments.Target,
                     CancellationToken.None)
                 .ConfigureAwait(false);
+            if (result.Target == GitIgnoreTarget.Shared)
+            {
+                result.TargetChanges = await TryReadSharedIgnoreStatusAsync(
+                        repository.Path,
+                        CancellationToken.None)
+                    .ConfigureAwait(false);
+            }
             return new CommandResponse<GitIgnoreResult>
             {
                 CommandUniqueId = command.CommandUniqueId,
@@ -61,6 +72,26 @@ internal sealed class IgnoreWorkingTreePathCommandResolver
         catch (Exception exception)
         {
             return Failure(command, exception.Message);
+        }
+    }
+
+    private async Task<WorkingTreeChangesResponse?> TryReadSharedIgnoreStatusAsync(
+        string repositoryPath,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await _statusService
+                .GetChangesForPathAsync(repositoryPath, ".gitignore", cancellationToken)
+                .ConfigureAwait(false);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch
+        {
+            return null;
         }
     }
 

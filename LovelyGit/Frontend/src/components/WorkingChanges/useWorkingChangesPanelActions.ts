@@ -5,10 +5,10 @@ import type {
 } from "@/generated/types";
 import { useSetting } from "@/lib/settings/settingsStore";
 import { discardWorkingChanges } from "./WorkingChangesDiscardCommand";
+import { ignoreWorkingTreePath } from "./WorkingChangesIgnoreCommand";
 import {
 	commitStagedChanges,
 	type IndexCommandType,
-	ignoreWorkingTreePath,
 	loadHeadCommitMessage,
 	runIndexCommand,
 } from "./WorkingChangesPanelCommands";

@@ -6,6 +6,7 @@ import type {
 import {
 	applyOptimisticIgnore,
 	clearCompletedOptimisticIgnore,
+	mergeTargetedStatus,
 } from "./OptimisticWorkingTreeIgnore";
 
 describe("applyOptimisticIgnore", () => {
@@ -63,6 +64,38 @@ describe("applyOptimisticIgnore", () => {
 			),
 		).toEqual({ changes: newer, repositoryId: "repo" });
 	});
+
+	it("merges exact .gitignore status without rebuilding unrelated lists", () => {
+		const changes = response([file("notes.local")]);
+		changes.unstaged = [file("source.ts", "Unstaged")];
+		changes.totalCount = 2;
+		const targeted = response([file(".gitignore")]);
+
+		const result = mergeTargetedStatus(
+			applyOptimisticIgnore(changes, "notes.local"),
+			targeted,
+			".gitignore",
+		);
+
+		expect(result.untracked.map(({ path }) => path)).toEqual([".gitignore"]);
+		expect(result.unstaged).toBe(changes.unstaged);
+		expect(result.totalCount).toBe(2);
+	});
+
+	it("replaces stale .gitignore entries across every status group", () => {
+		const changes = response([file(".gitignore"), file("notes.local")]);
+		changes.staged = [file(".gitignore", "Staged")];
+		changes.unstaged = [file(".gitignore", "Unstaged")];
+		const targeted = response([]);
+		targeted.staged = [file(".gitignore", "Staged")];
+
+		const result = mergeTargetedStatus(changes, targeted, ".gitignore");
+
+		expect(result.staged).toHaveLength(1);
+		expect(result.unstaged).toHaveLength(0);
+		expect(result.untracked.map(({ path }) => path)).toEqual(["notes.local"]);
+		expect(result.totalCount).toBe(2);
+	});
 });
 
 function response(
@@ -78,11 +111,14 @@ function response(
 	};
 }
 
-function file(path: string): WorkingTreeChangedFile {
+function file(
+	path: string,
+	group: WorkingTreeChangedFile["group"] = "Untracked",
+): WorkingTreeChangedFile {
 	return {
 		additions: 0,
 		deletions: 0,
-		group: "Untracked",
+		group,
 		isBinary: false,
 		oldPath: null,
 		path,

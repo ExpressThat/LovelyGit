@@ -20,20 +20,45 @@ internal sealed partial class WorkingTreeStatusListService
             .ConfigureAwait(false);
     }
 
+    public async Task<WorkingTreeChangesResponse> GetChangesForPathAsync(
+        string repositoryPath,
+        string path,
+        CancellationToken cancellationToken)
+    {
+        var paths = await GitRepositoryDiscovery
+            .ResolveRepositoryPathsAsync(repositoryPath, cancellationToken)
+            .ConfigureAwait(false);
+        return await GetPorcelainChangesFromWorktreeAsync(
+                paths.WorkTreeDirectory,
+                trackedOnly: false,
+                cancellationToken,
+                path)
+            .ConfigureAwait(false);
+    }
+
     private async Task<WorkingTreeChangesResponse> GetPorcelainChangesFromWorktreeAsync(
         string workTreeDirectory,
         bool trackedOnly,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        string? path = null)
     {
+        var arguments = new List<string>
+        {
+            "--no-optional-locks",
+            "status",
+            "--porcelain=v1",
+            "-z",
+            trackedOnly ? "--untracked-files=no" : "--untracked-files=all",
+        };
+        if (path is not null)
+        {
+            arguments.Add("--");
+            arguments.Add(path);
+        }
+
         var result = await _gitCliService
             .ExecuteBufferedAsync(
-                [
-                    "--no-optional-locks",
-                    "status",
-                    "--porcelain=v1",
-                    "-z",
-                    trackedOnly ? "--untracked-files=no" : "--untracked-files=all",
-                ],
+                arguments,
                 workTreeDirectory,
                 validateExitCode: false,
                 cancellationToken)
