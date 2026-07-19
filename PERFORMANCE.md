@@ -19,6 +19,8 @@ Frontend wall-clock performance tests now run as a sequential Vitest project aft
 
 The 1,006-test backend runner now caps xUnit collection parallelism at 12 threads instead of the 32-logical-CPU default, balancing real-Git process contention against useful overlap. In the controlled full-gate comparison, testhost time falls from 61.57 to 57.78 seconds and wrapper wall time from 72.66 to 61.44 seconds, saving 3.79 and 11.22 seconds respectively. Reusing the initialized repository template removes 42 repeated Git setup processes from commit-graph and object-cache tests; focused summed durations fall from 10.30 to 8.31 seconds and from 5.42 to 4.78 seconds. Later profiled testhosts varied from 61.45 to 64.90 seconds as machine pressure increased, and the exact final plain wrapper completed in 63.75 seconds, so repeatable sub-minute wall time remains open rather than being overstated. Eight threads underfilled the suite, 20-24 threads restored contention, serializing the four hottest classes regressed testhost to 79.73 seconds, two prewarm workers regressed wall time to 69.44 seconds, and `--no-restore` did not help; all were rejected.
 
+Interactive-rebase conflict handling is now measured at the maximum 100-commit plan against 1,001 unmerged files, including a 100,000-line file. The real desktop commits its disabled state in 7.1-8.7 ms, paints it in 13.3-16.2 ms, and reaches the paused Working Changes surface in 11,031.1 ms on the traced warm run. Its exact Git child consumes 10,903.7 ms, leaving 127.4 ms / 1.2% for LovelyGit validation, IPC, operation-state detection, and presentation. Git itself varies from 3,754.8 to 10,903.7 ms as the filesystem cache changes; the four-worker trace peak remains 50.9 MB. A real conflict regression now proves the paused state retains its recovery plan, abort restores the exact branch, HEAD, worktree, and pre-existing status, and the operation can immediately be retried. No speculative engine or worker change was retained.
+
 Successful branch pushes now request the same authoritative repository refresh as other ref mutations. In the delayed local-transport fixture, the pushed remote branch appeared 62 ms after completion instead of 278 ms while busy feedback remained visible in 18-21 ms.
 
 Maximum-ref local mutations remain inexpensive: cold Create Tag opens in 12.9 ms, paints busy in 13.1 ms, completes Git in 55.5 ms, and presents the ref 60.7 ms later. Branch Rename opens in 22.4 ms, paints busy in 12.2 ms, completes in 88.8 ms, and presents the renamed ref 64.9 ms later. The audit also corrected native WebView input handling that had left Rename disabled despite visible text.
@@ -87,6 +89,7 @@ Measured through the same Git commands LovelyGit uses, primarily in a disposable
 | Merge 500 changed files | 1.02 s |
 | Rebase 100 changed files | 894 ms |
 | Interactive rebase of 100 commits / 1,010 files | Busy DOM 3.5 ms; visibly painted by 8.9 ms; completed in 273.5 ms versus 294.7 ms direct Git |
+| Interactive rebase paused by 1,001 conflicts | Busy DOM 7.1-8.7 ms; visibly painted by 13.3-16.2 ms; 11,031.1 ms desktop completion with 10,903.7 ms inside Git and 50.9 MB transient Git peak |
 | Git LFS Track / Untrack / Prune with 50,500 attributes | Busy paint 8.7-17.4 ms; desktop completion 739 / 612 / 416-450 ms; direct Git 645 / 472 / 352 ms |
 | Merge / rebase 1,000 files plus one 100,000-line file | Busy paint 19.4-26.9 ms / 22.8 ms; desktop completion 4.40-4.59 s / 6.52 s; exact direct Git 0.95-1.12 s / 1.72 s |
 | Cherry-pick / revert / hard reset 1,000 files plus one 100,000-line file | Busy paint 19.2 ms / 20.9 ms / 16.2 ms; native completion 4.54 s / 1.18 s / 1.09-4.30 s; exact direct Git 0.99 s / 0.76 s / 0.67 s |
@@ -149,5 +152,5 @@ Measured through the same Git commands LovelyGit uses, primarily in a disposable
 
 ## Next Measurement Areas
 
-- Failure-path timing for bisect and interactive-rebase execution; submodule and LFS failure, no-mutation, and immediate retry timing is now measured alongside their successful large workflows.
+- Failure-path timing for bisect execution; interactive rebase, submodule, and LFS failure, no-mutation, and immediate retry timing is now measured alongside their successful large workflows.
 - Packaged cold/warm startup across slower storage tiers and repository activation after operating-system file-cache eviction.

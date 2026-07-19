@@ -1,4 +1,5 @@
 using ExpressThat.LovelyGit.Services.Git.Cli;
+using ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser.Operations;
 using ExpressThat.LovelyGit.Services.Git.Rebase;
 using ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Rebase;
 using LovelyGit.Tests.Git.Branches;
@@ -65,6 +66,62 @@ public sealed class GitInteractiveRebaseServiceTests
             Assert.True(File.Exists(Path.Combine(repository.Path, path))));
     }
 
+    [Fact]
+    public async Task StartAsync_ConflictPausesAndAbortRestoresExactRepositoryForRetry()
+    {
+        using var repository = TemporaryGitRepository.Create();
+        await CommitFileAsync(repository, "conflict.txt", "base\n", "Conflict base");
+        var baseHash = (await RunAsync(repository, "rev-parse", "HEAD")).Trim();
+        await CommitFileAsync(repository, "conflict.txt", "current\n", "Current candidate");
+        await CommitFileAsync(repository, "conflict.txt", "incoming\n", "Incoming candidate");
+        var originalHead = (await RunAsync(repository, "rev-parse", "HEAD")).Trim();
+        var originalStatus = await RunAsync(repository, "status", "--porcelain");
+        var branchName = await CurrentBranchAsync(repository);
+        var current = await NativeInteractiveRebasePlanReader.ReadAsync(
+            repository.Path, baseHash, CancellationToken.None);
+        var plan = new[]
+        {
+            Item(current.Commits[1], InteractiveRebaseAction.Pick),
+            Item(current.Commits[0], InteractiveRebaseAction.Pick),
+        };
+        var operations = new GitOperationService(repository.GitCliService);
+        var service = new GitInteractiveRebaseService(operations);
+        var repositoryOperations = new GitRepositoryOperationService(operations);
+
+        try
+        {
+            var paused = await service.StartAsync(
+                repository.Path, baseHash, plan, CancellationToken.None);
+
+            Assert.False(paused.IsCompleted);
+            Assert.Equal(GitRepositoryOperationKind.Rebase, paused.Operation);
+            Assert.Contains("resolve and stage", paused.Message, StringComparison.OrdinalIgnoreCase);
+            Assert.Contains("<<<<<<<", await File.ReadAllTextAsync(
+                Path.Combine(repository.Path, "conflict.txt")));
+            AssertTemporaryPlanRetained(repository);
+
+            await repositoryOperations.AbortAsync(
+                repository.Path, GitRepositoryOperationKind.Rebase, CancellationToken.None);
+            await AssertRepositoryRestoredAsync(
+                repository, originalHead, branchName, originalStatus);
+
+            var retry = await service.StartAsync(
+                repository.Path, baseHash, plan, CancellationToken.None);
+            Assert.Equal(GitRepositoryOperationKind.Rebase, retry.Operation);
+        }
+        finally
+        {
+            if (await repositoryOperations.GetOperationAsync(
+                repository.Path, CancellationToken.None) == GitRepositoryOperationKind.Rebase)
+            {
+                await repositoryOperations.AbortAsync(
+                    repository.Path, GitRepositoryOperationKind.Rebase, CancellationToken.None);
+            }
+        }
+
+        await AssertRepositoryRestoredAsync(repository, originalHead, branchName, originalStatus);
+    }
+
     private static GitInteractiveRebaseService CreateService(TemporaryGitRepository repository) =>
         new(new GitOperationService(repository.GitCliService));
 
@@ -99,6 +156,23 @@ public sealed class GitInteractiveRebaseServiceTests
 
     private static void AssertTemporaryPlanRemoved(TemporaryGitRepository repository) =>
         Assert.False(Directory.Exists(Path.Combine(repository.Path, ".git", "lovelygit", "rebase")));
+
+    private static void AssertTemporaryPlanRetained(TemporaryGitRepository repository) =>
+        Assert.True(Directory.Exists(Path.Combine(repository.Path, ".git", "lovelygit", "rebase")));
+
+    private static async Task AssertRepositoryRestoredAsync(
+        TemporaryGitRepository repository,
+        string expectedHead,
+        string expectedBranch,
+        string expectedStatus)
+    {
+        Assert.Equal(expectedHead, (await RunAsync(repository, "rev-parse", "HEAD")).Trim());
+        Assert.Equal(expectedBranch, await CurrentBranchAsync(repository));
+        Assert.Equal(expectedStatus, await RunAsync(repository, "status", "--porcelain"));
+        Assert.Equal("incoming\n", await File.ReadAllTextAsync(
+            Path.Combine(repository.Path, "conflict.txt")));
+        AssertTemporaryPlanRemoved(repository);
+    }
 
     private static async Task<string> RunAsync(TemporaryGitRepository repository, params string[] arguments)
     {
