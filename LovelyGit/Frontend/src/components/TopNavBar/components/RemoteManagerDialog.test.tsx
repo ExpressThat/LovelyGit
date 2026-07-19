@@ -17,7 +17,7 @@ const origin = {
 describe("RemoteManagerDialog", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
-		vi.mocked(sendRequestWithResponse).mockResolvedValue([origin]);
+		vi.mocked(sendRequestWithResponse).mockResolvedValue(response([origin]));
 	});
 
 	it("renders native remote details and opens the add editor", async () => {
@@ -35,11 +35,13 @@ describe("RemoteManagerDialog", () => {
 
 	it("bounds rendering for repositories with many remotes", async () => {
 		vi.mocked(sendRequestWithResponse).mockResolvedValueOnce(
-			Array.from({ length: 500 }, (_, index) => ({
-				name: `remote-${index}`,
-				pushUrl: `ssh://example.invalid/${index}`,
-				url: `https://example.invalid/${index}`,
-			})),
+			response(
+				Array.from({ length: 500 }, (_, index) => ({
+					name: `remote-${index}`,
+					pushUrl: `ssh://example.invalid/${index}`,
+					url: `https://example.invalid/${index}`,
+				})),
+			),
 		);
 		renderDialog();
 
@@ -63,7 +65,7 @@ describe("RemoteManagerDialog", () => {
 	it("does not close while a mutation is active", async () => {
 		let resolveMutation: (() => void) | undefined;
 		vi.mocked(sendRequestWithResponse)
-			.mockResolvedValueOnce([origin])
+			.mockResolvedValueOnce(response([origin]))
 			.mockImplementationOnce(
 				() => new Promise<void>((resolve) => (resolveMutation = resolve)),
 			);
@@ -84,4 +86,8 @@ function renderDialog() {
 	render(
 		<RemoteManagerDialog onOpenChange={vi.fn()} open repositoryId="repo" />,
 	);
+}
+
+function response(remotes: (typeof origin)[]) {
+	return { compactRemotesGzipBase64: null, remotes };
 }

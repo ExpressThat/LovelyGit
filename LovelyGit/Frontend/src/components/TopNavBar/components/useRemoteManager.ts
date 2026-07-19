@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import type { GitRemote } from "@/generated/types";
 import { sendRequestWithResponse } from "@/lib/commands";
 import { gitMutationTimeoutMs } from "@/lib/gitMutationTimeout";
+import { expandRemotePayload } from "@/lib/remotePayload";
 
 export type RemoteDraft = {
 	name: string;
@@ -108,7 +109,7 @@ function loadRemotes(repositoryId: string) {
 	return sendRequestWithResponse({
 		arguments: { repositoryId },
 		commandType: "GetRemotes",
-	});
+	}).then(expandRemotePayload);
 }
 
 function mutateRemote(

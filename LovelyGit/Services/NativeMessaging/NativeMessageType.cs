@@ -181,7 +181,7 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging
         ManageWorktree,
 
         // Remote synchronization and branch/ref mutations.
-        [NativeMessageContract(typeof(GetRemotesCommandArguments), typeof(List<GitRemote>))]
+        [NativeMessageContract(typeof(GetRemotesCommandArguments), typeof(GetRemotesResponse))]
         GetRemotes,
         [NativeMessageContract(typeof(ManageRemoteCommandArguments), typeof(EmptyCommandArguments))]
         ManageRemote,

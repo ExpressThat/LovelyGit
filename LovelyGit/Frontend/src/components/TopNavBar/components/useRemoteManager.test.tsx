@@ -17,7 +17,9 @@ describe("useRemoteManager", () => {
 	beforeEach(() => vi.clearAllMocks());
 
 	it("loads remotes with the native read when opened", async () => {
-		vi.mocked(sendRequestWithResponse).mockResolvedValueOnce([origin]);
+		vi.mocked(sendRequestWithResponse).mockResolvedValueOnce(
+			response([origin]),
+		);
 		const { result } = renderManager();
 
 		await waitFor(() => expect(result.current.isLoading).toBe(false));
@@ -31,7 +33,7 @@ describe("useRemoteManager", () => {
 
 	it("adds a remote then refreshes the native list", async () => {
 		vi.mocked(sendRequestWithResponse)
-			.mockResolvedValueOnce([])
+			.mockResolvedValueOnce(response([]))
 			.mockResolvedValueOnce(undefined);
 		const { result } = renderManager();
 		await waitFor(() => expect(result.current.isLoading).toBe(false));
@@ -62,7 +64,7 @@ describe("useRemoteManager", () => {
 
 	it("removes the selected remote and refreshes", async () => {
 		vi.mocked(sendRequestWithResponse)
-			.mockResolvedValueOnce([origin])
+			.mockResolvedValueOnce(response([origin]))
 			.mockResolvedValueOnce(undefined);
 		const { result } = renderManager();
 		await waitFor(() => expect(result.current.remotes).toEqual([origin]));
@@ -86,7 +88,7 @@ describe("useRemoteManager", () => {
 
 	it("keeps the editor open and exposes mutation errors", async () => {
 		vi.mocked(sendRequestWithResponse)
-			.mockResolvedValueOnce([origin])
+			.mockResolvedValueOnce(response([origin]))
 			.mockRejectedValueOnce(new Error("remote already exists"));
 		const { result } = renderManager();
 		await waitFor(() => expect(result.current.remotes).toEqual([origin]));
@@ -108,4 +110,8 @@ describe("useRemoteManager", () => {
 
 function renderManager() {
 	return renderHook(() => useRemoteManager("repo", true));
+}
+
+function response(remotes: (typeof origin)[]) {
+	return { compactRemotesGzipBase64: null, remotes };
 }

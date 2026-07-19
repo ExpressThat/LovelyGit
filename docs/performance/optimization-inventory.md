@@ -208,6 +208,7 @@ This ledger records shipped performance work by feature area. Update it in the s
 ### Clone and Remote Transport
 
 - Virtualized remote-management rows and disabled per-row layout motion above 20 remotes, preserving small-list entrance motion without animating every row during large-list scrolling (`8847a07`).
+- Compressed large remote-list responses before the native bridge while retaining the direct small-list response path. A 10,000-remote manager that previously timed out beyond 12 seconds now opens in 108.6 ms, reaches the final remote, and retains only eight rows / 994 DOM nodes with clean diagnostics (current maximum-remote checkpoint).
 - Verified a full public-network clone reports separate monotonic overall and current-phase progress through enumeration, counting, compression, receive, delta resolution, checkout, and completion; the 20,693-object fixture opened in 4.91 seconds.
 - Verified active cancellation against an 824,255-object public remote reaches the canceling state in 6.2 seconds without freezing the WebView. The journey exposed a locked temporary pack that survived the old one-shot cleanup.
 - Retry partial-clone cleanup after Git releases locked files, remove read-only files when required, and surface a specific error if the destination still cannot be reclaimed. The folder-name field now handles direct WebView input consistently with the URL and destination fields (`d795e85`).

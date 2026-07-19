@@ -44,12 +44,12 @@ internal sealed class GetRemotesCommandResolver : CommandResponder<GetRemotesCom
             var remotes = await GitRemoteConfigReader
                 .ReadRemotesAsync(gitDirectory, CancellationToken.None)
                 .ConfigureAwait(false);
-            return new CommandResponse<List<GitRemote>>
+            return new CommandResponse<GetRemotesResponse>
             {
                 CommandUniqueId = command.CommandUniqueId,
                 CommandType = command.CommandType,
                 IsSuccess = true,
-                Result = remotes,
+                Result = RemotePayloadCompactor.CompactIfUseful(remotes),
             };
         }
         catch (Exception exception)
