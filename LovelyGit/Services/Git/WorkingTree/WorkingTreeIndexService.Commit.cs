@@ -45,11 +45,12 @@ internal sealed partial class WorkingTreeIndexService
 
     internal static string[] BuildCommitArguments(string title, string body, bool amend, bool sign)
     {
-        var arguments = new List<string>(amend ? 10 : 8)
+        var arguments = new List<string>(amend ? 11 : 9)
         {
             "-c",
             "maintenance.auto=false",
             "commit",
+            "--quiet",
         };
         if (amend)
         {

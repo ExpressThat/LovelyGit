@@ -88,7 +88,7 @@ public sealed class WorkingTreeCommitTests
     }
 
     [Fact]
-    public void BuildCommitArguments_DefersAutomaticMaintenance()
+    public void BuildCommitArguments_DefersMaintenanceAndUnusedSummaryOutput()
     {
         var arguments = WorkingTreeIndexService.BuildCommitArguments(
             "Title",
@@ -97,7 +97,7 @@ public sealed class WorkingTreeCommitTests
             sign: false);
 
         Assert.Equal(
-            ["-c", "maintenance.auto=false", "commit", "-m", "Title", "-m", "Body"],
+            ["-c", "maintenance.auto=false", "commit", "--quiet", "-m", "Title", "-m", "Body"],
             arguments);
     }
 
