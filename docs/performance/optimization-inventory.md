@@ -9,6 +9,7 @@ This ledger records shipped performance work by feature area. Update it in the s
 - Lazy-loaded settings, repository onboarding, graph operations, management dialogs, and toolbar workflows (`b0ddbf0`, `5ab026e`, `e63b974`, `350b9af`, `bd256d1`, `509e26c`).
 - Deferred Motion and the icon sprite, released closed overlays, and balanced overlay retention (`7068517`, `02b3c0e`, `2f58f61`).
 - Removed React Suspense's cold reveal delay from Settings, Command Palette, Commit Search, stash, history, and blame without eagerly loading those tools (`f017242`, `5378470`).
+- Removed the same cold reveal delay from exact commit comparison while preserving its separate lazy chunk. A 2,001-file comparison now appears in 94.1 ms instead of 366.6 ms and has its complete virtualized file list ready in 107.2 ms (current commit-comparison checkpoint).
 - Removed the same cold reveal delay from create-branch, merge/rebase, and remote-management dialogs while preserving their separate lazy chunks (`a4ac6fe`).
 - Applied immediate deferred reveal to branch comparison, upstream, rename, and delete dialogs (`7cff88b`).
 - Applied immediate deferred reveal to cherry-pick, revert, reset, detached checkout, and interactive-rebase dialogs (`5729cad`).

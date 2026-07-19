@@ -4,6 +4,7 @@ import { DeferredPrimaryOverlay } from "@/AppPrimaryOverlays";
 import { createDeferredLoader } from "@/lib/deferredLoader";
 import type { BranchComparisonDialog } from "./BranchComparisonDialog";
 import type { BranchUpstreamDialog } from "./BranchUpstreamDialog";
+import type { CommitComparisonDialog } from "./CommitComparisonDialog";
 import type { DeleteBranchDialog } from "./DeleteBranchDialog";
 import type { RenameBranchDialog } from "./RenameBranchDialog";
 
@@ -14,6 +15,10 @@ export const DeferredBranchComparisonDialog = createDialog(
 export const DeferredBranchUpstreamDialog = createDialog(
 	() => import("./BranchUpstreamDialog"),
 	"BranchUpstreamDialog",
+);
+export const DeferredCommitComparisonDialog = createDialog(
+	() => import("./CommitComparisonDialog"),
+	"CommitComparisonDialog",
 );
 export const DeferredDeleteBranchDialog = createDialog(
 	() => import("./DeleteBranchDialog"),
@@ -27,6 +32,7 @@ export const DeferredRenameBranchDialog = createDialog(
 type DialogModuleMap = {
 	BranchComparisonDialog: typeof BranchComparisonDialog;
 	BranchUpstreamDialog: typeof BranchUpstreamDialog;
+	CommitComparisonDialog: typeof CommitComparisonDialog;
 	DeleteBranchDialog: typeof DeleteBranchDialog;
 	RenameBranchDialog: typeof RenameBranchDialog;
 };

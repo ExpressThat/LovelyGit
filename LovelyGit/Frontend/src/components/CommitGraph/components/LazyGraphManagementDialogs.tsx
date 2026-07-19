@@ -3,12 +3,12 @@ import { SurfaceLoading } from "@/AppLazySurfaces";
 import type { BranchComparisonDialog } from "./BranchComparisonDialog";
 import type { BranchUpstreamDialog } from "./BranchUpstreamDialog";
 import type { CheckoutTagDialog } from "./CheckoutTagDialog";
-import type { CommitComparisonDialog } from "./CommitComparisonDialog";
 import type { CreateTagDialog } from "./CreateTagDialog";
 import type { CreateWorktreeDialog } from "./CreateWorktreeDialog";
 import {
 	DeferredBranchComparisonDialog,
 	DeferredBranchUpstreamDialog,
+	DeferredCommitComparisonDialog,
 	DeferredDeleteBranchDialog,
 	DeferredRenameBranchDialog,
 } from "./DeferredGraphManagementDialogs";
@@ -29,12 +29,6 @@ import type { LockWorktreeDialog } from "./LockWorktreeDialog";
 import type { RemoveWorktreeDialog } from "./RemoveWorktreeDialog";
 import type { RenameBranchDialog } from "./RenameBranchDialog";
 
-const CommitComparison = lazy(() =>
-	importDialog(
-		"CommitComparisonDialog",
-		() => import("./CommitComparisonDialog"),
-	),
-);
 const DeleteRemoteTag = lazy(() =>
 	importDialog(
 		"DeleteRemoteTagDialog",
@@ -55,9 +49,9 @@ export function LazyBranchUpstreamDialog(
 	return props.branchName ? <DeferredBranchUpstreamDialog {...props} /> : null;
 }
 export function LazyCommitComparisonDialog(
-	props: ComponentProps<typeof CommitComparisonDialog>,
+	props: ComponentProps<typeof DeferredCommitComparisonDialog>,
 ) {
-	return <Boundary>{<CommitComparison {...props} />}</Boundary>;
+	return <DeferredCommitComparisonDialog {...props} />;
 }
 export function LazyCheckoutTagDialog(
 	props: ComponentProps<typeof CheckoutTagDialog>,

@@ -2,8 +2,10 @@
 
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
+import type { CommitGraphRow } from "@/generated/types";
 import {
 	LazyCheckoutTagDialog,
+	LazyCommitComparisonDialog,
 	LazyCreateWorktreeDialog,
 	LazyDeleteTagDialog,
 	LazyRenameBranchDialog,
@@ -26,6 +28,20 @@ vi.mock("./RenameBranchDialog", () => ({
 vi.mock("./CreateWorktreeDialog", () => ({
 	CreateWorktreeDialog: ({ branchName }: { branchName: string }) => (
 		<div>Create worktree for {branchName} loaded</div>
+	),
+}));
+vi.mock("./DeferredGraphManagementDialogs", async (importOriginal) => ({
+	...(await importOriginal()),
+	DeferredCommitComparisonDialog: ({
+		base,
+		target,
+	}: {
+		base: CommitGraphRow;
+		target: CommitGraphRow;
+	}) => (
+		<div>
+			Deferred {base.commit.hash} with {target.commit.hash}
+		</div>
 	),
 }));
 
@@ -85,4 +101,23 @@ describe("LazyGraphManagementDialogs", () => {
 			await screen.findByText("Create worktree for topic loaded"),
 		).toBeVisible();
 	});
+
+	it("opens commit comparison through the immediate deferred overlay", () => {
+		render(
+			<LazyCommitComparisonDialog
+				base={row("a")}
+				onClose={vi.fn()}
+				repositoryId="repo"
+				target={row("b")}
+			/>,
+		);
+
+		expect(
+			screen.getByText(`Deferred ${"a".repeat(40)} with ${"b".repeat(40)}`),
+		).toBeVisible();
+	});
 });
+
+function row(digit: string) {
+	return { commit: { hash: digit.repeat(40) } } as CommitGraphRow;
+}
