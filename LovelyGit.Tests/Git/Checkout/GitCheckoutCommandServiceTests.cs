@@ -97,6 +97,28 @@ public sealed class GitCheckoutCommandServiceTests
     }
 
     [Fact]
+    public async Task CheckoutTagAsync_PreCancelledDoesNotMoveHeadOrChangeWorktree()
+    {
+        using var repository = TemporaryGitRepository.Create();
+        using var cancellation = new CancellationTokenSource();
+        cancellation.Cancel();
+        var checkoutService = new GitCheckoutCommandService(repository.GitCliService);
+        var originalHead = (await repository.GitCliService.ExecuteBufferedAsync(
+            ["rev-parse", "HEAD"], repository.Path)).StandardOutput.Trim();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+            checkoutService.CheckoutTagAsync(
+                repository.Path,
+                "v-test",
+                cancellation.Token));
+
+        var currentHead = (await repository.GitCliService.ExecuteBufferedAsync(
+            ["rev-parse", "HEAD"], repository.Path)).StandardOutput.Trim();
+        Assert.Equal(originalHead, currentHead);
+        Assert.Equal("second\n", File.ReadAllText(Path.Combine(repository.Path, "tracked.txt")));
+    }
+
+    [Fact]
     public async Task CheckoutTagAsync_InvalidTagDoesNotRunGitMutation()
     {
         var directory = Directory.CreateTempSubdirectory("lovelygit-invalid-tag-");

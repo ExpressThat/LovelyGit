@@ -66,4 +66,22 @@ describe("CheckoutTagDialog", () => {
 		await waitFor(() => expect(onClose).toHaveBeenCalledOnce());
 		expect(sendRequestWithResponse).toHaveBeenCalledTimes(2);
 	});
+
+	it("closes without requesting checkout when cancelled", async () => {
+		const user = userEvent.setup();
+		const onClose = vi.fn();
+		render(
+			<CheckoutTagDialog
+				onClose={onClose}
+				onRepositoryChanged={vi.fn()}
+				repositoryId="repo"
+				tagName="v2.0.0"
+			/>,
+		);
+
+		await user.keyboard("{Escape}");
+
+		await waitFor(() => expect(onClose).toHaveBeenCalledOnce());
+		expect(sendRequestWithResponse).not.toHaveBeenCalled();
+	});
 });
