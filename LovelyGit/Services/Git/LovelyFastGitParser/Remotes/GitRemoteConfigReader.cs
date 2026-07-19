@@ -42,68 +42,20 @@ internal static class GitRemoteConfigReader
         string gitDirectory,
         CancellationToken cancellationToken)
     {
-        var remotes = new Dictionary<string, GitRemote>(StringComparer.Ordinal);
         var configPath = Path.Combine(gitDirectory, "config");
         if (!File.Exists(configPath))
         {
             return [];
         }
 
-        string? remoteName = null;
-        await using var stream = OpenConfig(configPath);
-        using var reader = new StreamReader(stream);
-        while (await reader.ReadLineAsync(cancellationToken).ConfigureAwait(false) is { } rawLine)
-        {
-            var line = rawLine.AsSpan().Trim();
-            if (line.Length == 0 || line[0] is '#' or ';')
-            {
-                continue;
-            }
-
-            if (TryReadRemoteSection(line, out var name))
-            {
-                remoteName = name;
-                continue;
-            }
-
-            if (line[0] == '[' && line[^1] == ']')
-            {
-                remoteName = null;
-                continue;
-            }
-
-            if (remoteName == null)
-            {
-                continue;
-            }
-
-            if (!remotes.TryGetValue(remoteName, out var remote))
-            {
-                remote = new GitRemote { Name = remoteName };
-                remotes.Add(remoteName, remote);
-            }
-            if (TryReadConfigValue(line, "url", out var url))
-            {
-                remote.Url = url;
-            }
-            else if (TryReadConfigValue(line, "pushurl", out var pushUrl))
-            {
-                remote.PushUrl = pushUrl;
-            }
-        }
-
-        return remotes.Values.Where(remote => remote.Url.Length > 0).ToList();
-    }
-
-    private static bool TryReadRemoteSection(ReadOnlySpan<char> line, out string name)
-    {
-        if (TryReadRemoteSectionName(line, out var value))
-        {
-            name = value.ToString();
-            return true;
-        }
-        name = string.Empty;
-        return false;
+        var state = new RemoteListParseState();
+        await PooledTextLineReader.ReadAsync(
+                configPath,
+                state,
+                static (line, parseState) => parseState.ProcessLine(line),
+                cancellationToken)
+            .ConfigureAwait(false);
+        return state.CreateRemotes();
     }
 
     internal static bool TryReadRemoteSectionName(
@@ -143,13 +95,50 @@ internal static class GitRemoteConfigReader
         return value.Length > 0;
     }
 
-    private static FileStream OpenConfig(string path) => new(
-        path,
-        FileMode.Open,
-        FileAccess.Read,
-        FileShare.ReadWrite | FileShare.Delete,
-        bufferSize: 4096,
-        FileOptions.Asynchronous | FileOptions.SequentialScan);
+    private sealed class RemoteListParseState
+    {
+        private readonly Dictionary<string, GitRemote> _remotes = new(StringComparer.Ordinal);
+        private GitRemote? _current;
+
+        public void ProcessLine(ReadOnlySpan<char> rawLine)
+        {
+            var line = rawLine.Trim();
+            if (line.IsEmpty || line[0] is '#' or ';')
+            {
+                return;
+            }
+            if (TryReadRemoteSectionName(line, out var name))
+            {
+                var key = name.ToString();
+                if (!_remotes.TryGetValue(key, out _current))
+                {
+                    _current = new GitRemote { Name = key };
+                    _remotes.Add(key, _current);
+                }
+                return;
+            }
+            if (line[0] == '[' && line[^1] == ']')
+            {
+                _current = null;
+                return;
+            }
+            if (_current == null)
+            {
+                return;
+            }
+            if (TryReadConfigValue(line, "url", out var url))
+            {
+                _current.Url = url;
+            }
+            else if (TryReadConfigValue(line, "pushurl", out var pushUrl))
+            {
+                _current.PushUrl = pushUrl;
+            }
+        }
+
+        public List<GitRemote> CreateRemotes() =>
+            _remotes.Values.Where(remote => remote.Url.Length > 0).ToList();
+    }
 
     private sealed class TargetRemoteParseState(string targetName)
     {

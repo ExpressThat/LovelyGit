@@ -46,7 +46,7 @@ public sealed class GitRemoteConfigReaderPerformanceTests(ITestOutputHelper outp
         Assert.Equal(10_001, remotes.Count);
         Assert.Equal("origin", remotes[0].Name);
         Assert.True(elapsed < TimeSpan.FromMilliseconds(40), $"Read took {elapsed}.");
-        Assert.True(allocated < 12_000_000, $"Read allocated {allocated:N0} bytes.");
+        Assert.True(allocated < 5_000_000, $"Read allocated {allocated:N0} bytes.");
     }
 
     [Fact]
