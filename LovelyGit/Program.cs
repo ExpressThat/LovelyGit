@@ -28,8 +28,7 @@ public static class Program
 #if !DEBUG
         Directory.SetCurrentDirectory(AppContext.BaseDirectory);
 #endif
-        AppDbContext.RegisterBsonKeys();
-        GitRepoCacheDbContext.EnsureCacheReady();
+        var databaseInitialization = StartupDatabaseInitialization.Start();
         VelopackApp.Build().Run();
         var startupUpdates = StartupUpdateCoordinator.Create(() => new VelopackUpdateClient());
         startupUpdates.ApplyPendingUpdate(args);
@@ -58,6 +57,7 @@ public static class Program
 
         ApplyInitialWindowPlacement(windowBuilder);
 
+        databaseInitialization.GetAwaiter().GetResult();
         var application = appBuilder.Build();
         application.WebApp.Services
             .GetRequiredService<InfiniFrameWindowProvider>()

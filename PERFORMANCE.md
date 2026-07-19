@@ -11,6 +11,8 @@ Latest verified checkpoint: the compiled desktop navigates in 145.8 ms, idles at
 
 Native command responders are now resolved from an O(1) command catalog on first use instead of constructing all 92 responders while dependency injection creates the resolver. On the same compiled empty-state launch, process-start-to-first-contentful-paint falls from 1,199.3 ms to 1,064.8-1,082.7 ms and host private memory falls from 40.09 MB to 38.00-38.50 MB. A 5,001-commit packed repository with 2,002 files still reaches first paint in 1,180.3 ms versus the 1,167 ms committed baseline, within run-to-run noise, so the startup work was not displaced into graph activation. The real WebView opened the lazily resolved remote manager correctly with clean diagnostics.
 
+Packaged database preparation now overlaps Velopack, web-host builder creation, and dependency registration on a short-lived dedicated startup worker, then rejoins before the application is built. In alternating exact-package trials, median process-start-to-first-contentful-paint improves from 1,005.9 to 971.5 ms with the active packed 5,001-commit / 2,002-file repository, and from 1,014.8 to 994.5 ms across fresh empty databases. The 34.4 ms warm-active and 20.3 ms fresh-database savings do not defer repository work: traced graph delivery remains effectively neutral at 977 ms before and 984 ms after in representative runs. Median host private memory remains within 0.3 MB measurement noise.
+
 Repeated remote pack replacement also remains bounded. Twelve real Fetch operations each transferred a newly repacked commit containing 200 files plus a 2 MiB incompressible blob in 493-1,324 ms, followed by twenty unchanged Fetch operations in 358-457 ms. The no-op phase retained a fixed 1,036-node DOM and added only 0.33 MB of JavaScript heap; host handles settled at 608-613 rather than growing per operation, and a post-run dump found only 6.08 MB of live managed objects. The native regression now repeats six pack generations through one object store and proves that exactly one pack and index remain open after every replacement.
 
 Fetch, Pull, and Push now await their native Git process instead of reporting success after dispatch. With a deterministic 3.1-second local transport delay, their controls painted disabled in 1-5 ms and remained protected for 3.37-3.50 seconds until Git actually completed.
@@ -175,4 +177,4 @@ Measured through the same Git commands LovelyGit uses, primarily in a disposable
 
 ## Next Measurement Areas
 
-- Packaged cold/warm startup across slower storage tiers and repository activation after operating-system file-cache eviction.
+- Repeat packaged startup on a genuinely slower storage tier and after safe operating-system file-cache eviction; the available machine exposes only its NVMe system volume, while alternating cold-database and warm-active NVMe packages are now measured.

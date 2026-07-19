@@ -30,6 +30,7 @@ This ledger records shipped performance work by feature area. Update it in the s
 - Verified the compiled desktop baseline at 145.8 ms navigation, 9.40 MB post-GC page heap, and 309.45 MB private memory for the complete seven-process WebView2 tree; the LovelyGit host accounts for 53.37 MB (current compiled-runtime checkpoint).
 - Reconciled a persisted current-repository ID only after the known-repository list loads successfully. Removed IDs now reach New Tab by the first 350.3-474.0 ms CMG attachment instead of retaining a permanent 1,508-node / 33.42 MB graph skeleton, while transient list failures preserve the user's valid selection (current stale-repository checkpoint).
 - Replaced eager enumeration of all 92 native command responders with an O(1) command-to-type catalog and singleton first-use resolution. Empty-state first contentful paint improves by 116.6-134.5 ms and host private memory by 1.59-2.09 MB, while a packed 5,001-commit repository retains its baseline activation time (current lazy-responder checkpoint).
+- Overlapped mandatory application/cache database preparation with Velopack and host-builder setup on a short-lived dedicated worker, rejoining before the application build. Alternating self-contained package trials save 34.4 ms at the median with an active 5,001-commit repository and 20.3 ms across fresh databases without shifting graph delivery or retaining a worker (current packaged-startup checkpoint).
 
 ### Commit Graph, Refs, and Tabs
 
