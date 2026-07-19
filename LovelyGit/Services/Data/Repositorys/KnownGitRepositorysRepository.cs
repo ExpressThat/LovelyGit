@@ -66,13 +66,28 @@ namespace ExpressThat.LovelyGit.Services.Data.Repositorys
             await _orderRepository.RemoveRepositoryAsync(repositoryId);
         }
 
-        public async Task<KnownGitRepository> FindByIdAsync(Guid repositoryId)
+        public ValueTask<KnownGitRepository> FindByIdAsync(Guid repositoryId)
         {
-            return await _appDbContext.KnownGitRepositorys.AsQueryable().FirstAsync(entry => entry.Id == repositoryId);
+            var lookup = _appDbContext.KnownGitRepositorys.FindByIdAsync(repositoryId);
+            if (!lookup.IsCompletedSuccessfully)
+            {
+                return CompleteLookupAsync(lookup);
+            }
+
+            return lookup.Result is { } repository
+                ? new ValueTask<KnownGitRepository>(repository)
+                : ValueTask.FromException<KnownGitRepository>(MissingRepositoryException());
         }
 
         public ValueTask<KnownGitRepository?> TryFindByIdAsync(Guid repositoryId) =>
             _appDbContext.KnownGitRepositorys.FindByIdAsync(repositoryId);
+
+        private static async ValueTask<KnownGitRepository> CompleteLookupAsync(
+            ValueTask<KnownGitRepository?> lookup) =>
+            await lookup.ConfigureAwait(false) ?? throw MissingRepositoryException();
+
+        private static InvalidOperationException MissingRepositoryException() =>
+            new("Sequence contains no elements.");
 
     }
 }

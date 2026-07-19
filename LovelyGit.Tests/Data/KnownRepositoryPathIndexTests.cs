@@ -23,6 +23,20 @@ public sealed class KnownRepositoryPathIndexTests
     }
 
     [Fact]
+    public async Task FindById_PreservesExistingAndMissingContracts()
+    {
+        using var fixture = new DataFixture();
+        var expected = await fixture.Repositories.AddAsync(Repository(fixture.RepositoryPath));
+
+        var found = await fixture.Repositories.FindByIdAsync(expected.Id);
+        var error = await Assert.ThrowsAsync<InvalidOperationException>(async () =>
+            await fixture.Repositories.FindByIdAsync(Guid.NewGuid()));
+
+        Assert.Equal(expected, found);
+        Assert.Equal("Sequence contains no elements.", error.Message);
+    }
+
+    [Fact]
     public async Task LegacyRepositories_AreIndexedOnceAndConcurrentLookupsRemainExact()
     {
         using var fixture = new DataFixture();
