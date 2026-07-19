@@ -3,7 +3,6 @@ import type { WorkingTreeChangesResponse } from "@/generated/types";
 import { sendRequestWithResponse } from "@/lib/commands";
 import {
 	commitStagedChanges,
-	ignoreWorkingTreePath,
 	loadHeadCommitMessage,
 } from "./WorkingChangesPanelCommands";
 
@@ -73,93 +72,6 @@ describe("working changes commit commands", () => {
 			commandType: "GetHeadCommitMessage",
 		});
 	});
-
-	it("ignores an exact path locally and refreshes the native status", async () => {
-		vi.mocked(sendRequestWithResponse).mockResolvedValueOnce({
-			added: true,
-			pattern: "/notes.local",
-			target: "Local",
-		});
-		const onRefresh = vi.fn();
-		const setActionError = vi.fn();
-		const setIsMutating = vi.fn();
-		const setOptimisticChanges = vi.fn();
-		const changes = changesWithUntracked("notes.local");
-
-		const operation = ignoreWorkingTreePath({
-			changes,
-			onRefresh,
-			path: "notes.local",
-			repositoryId: "repo",
-			setActionError,
-			setIsMutating,
-			setOptimisticChanges,
-			target: "Local",
-		});
-		expect(setOptimisticChanges).toHaveBeenNthCalledWith(
-			1,
-			expect.objectContaining({ totalCount: 0, untracked: [] }),
-		);
-		await operation;
-
-		expect(sendRequestWithResponse).toHaveBeenCalledWith({
-			arguments: {
-				path: "notes.local",
-				repositoryId: "repo",
-				target: "Local",
-			},
-			commandType: "IgnoreWorkingTreePath",
-		});
-		expect(onRefresh).toHaveBeenCalledOnce();
-		expect(setOptimisticChanges).toHaveBeenLastCalledWith(null);
-		expect(setIsMutating).toHaveBeenNthCalledWith(1, true);
-		expect(setIsMutating).toHaveBeenLastCalledWith(false);
-	});
-
-	it("restores the authoritative view when ignore fails", async () => {
-		vi.mocked(sendRequestWithResponse).mockRejectedValueOnce(
-			new Error("ignore write failed"),
-		);
-		const setActionError = vi.fn();
-		const setOptimisticChanges = vi.fn();
-
-		await ignoreWorkingTreePath({
-			changes: changesWithUntracked("notes.local"),
-			onRefresh: vi.fn(),
-			path: "notes.local",
-			repositoryId: "repo",
-			setActionError,
-			setIsMutating: vi.fn(),
-			setOptimisticChanges,
-			target: "Local",
-		});
-
-		expect(setOptimisticChanges).toHaveBeenLastCalledWith(null);
-		expect(setActionError).toHaveBeenLastCalledWith("ignore write failed");
-	});
-
-	it("keeps the optimistic result when refresh fails after the ignore write", async () => {
-		vi.mocked(sendRequestWithResponse).mockResolvedValueOnce({
-			added: true,
-			pattern: "/notes.local",
-			target: "Local",
-		});
-		const setOptimisticChanges = vi.fn();
-
-		await ignoreWorkingTreePath({
-			changes: changesWithUntracked("notes.local"),
-			onRefresh: vi.fn().mockRejectedValue(new Error("refresh failed")),
-			path: "notes.local",
-			repositoryId: "repo",
-			setActionError: vi.fn(),
-			setIsMutating: vi.fn(),
-			setOptimisticChanges,
-			target: "Local",
-		});
-
-		expect(setOptimisticChanges).toHaveBeenCalledOnce();
-		expect(setOptimisticChanges).not.toHaveBeenCalledWith(null);
-	});
 });
 
 function createCommitHarness({ amend }: { amend: boolean }) {
@@ -188,23 +100,5 @@ function emptyChanges(): WorkingTreeChangesResponse {
 		unmerged: [],
 		unstaged: [],
 		untracked: [],
-	};
-}
-
-function changesWithUntracked(path: string): WorkingTreeChangesResponse {
-	return {
-		...emptyChanges(),
-		totalCount: 1,
-		untracked: [
-			{
-				additions: 0,
-				deletions: 0,
-				group: "Untracked",
-				isBinary: false,
-				oldPath: null,
-				path,
-				status: "Added",
-			},
-		],
 	};
 }

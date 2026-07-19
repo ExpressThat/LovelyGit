@@ -1,5 +1,20 @@
 import type { WorkingTreeChangesResponse } from "@/generated/types";
 
+export type OptimisticWorkingTreeView = {
+	changes: WorkingTreeChangesResponse;
+	repositoryId: string;
+};
+
+export function clearCompletedOptimisticIgnore(
+	current: OptimisticWorkingTreeView | null,
+	repositoryId: string,
+	expected: WorkingTreeChangesResponse,
+) {
+	return current?.repositoryId === repositoryId && current.changes === expected
+		? null
+		: current;
+}
+
 export function applyOptimisticIgnore(
 	changes: WorkingTreeChangesResponse,
 	path: string,

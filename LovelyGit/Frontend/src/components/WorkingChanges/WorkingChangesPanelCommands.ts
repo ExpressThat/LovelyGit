@@ -16,7 +16,9 @@ export type IndexCommandType =
 	| "UnstageWorkingTreeFiles";
 
 export async function ignoreWorkingTreePath({
+	clearOptimisticChanges,
 	changes,
+	isOptimisticChangesCurrent,
 	onRefresh,
 	path,
 	repositoryId,
@@ -25,7 +27,9 @@ export async function ignoreWorkingTreePath({
 	setOptimisticChanges,
 	target,
 }: {
+	clearOptimisticChanges: (expected: WorkingTreeChangesResponse) => void;
 	changes: WorkingTreeChangesResponse | null;
+	isOptimisticChangesCurrent: (expected: WorkingTreeChangesResponse) => boolean;
 	onRefresh: () => Promise<void> | void;
 	path: string;
 	repositoryId: string;
@@ -34,10 +38,13 @@ export async function ignoreWorkingTreePath({
 	setOptimisticChanges: (changes: WorkingTreeChangesResponse | null) => void;
 	target: GitIgnoreTarget;
 }) {
+	const optimisticChanges = changes
+		? applyOptimisticIgnore(changes, path)
+		: null;
 	flushSync(() => {
 		setIsMutating(true);
 		setActionError(null);
-		if (changes) setOptimisticChanges(applyOptimisticIgnore(changes, path));
+		if (optimisticChanges) setOptimisticChanges(optimisticChanges);
 	});
 	await waitForWorkingTreePaint();
 	let ignoreUpdated = false;
@@ -53,8 +60,17 @@ export async function ignoreWorkingTreePath({
 				? `Ignored ${path} in ${destination}`
 				: `${path} is already listed in ${destination}`,
 		);
+		if (target === "Local" && optimisticChanges) {
+			void reconcileLocalIgnore(
+				onRefresh,
+				() => isOptimisticChangesCurrent(optimisticChanges),
+				() => clearOptimisticChanges(optimisticChanges),
+				setActionError,
+			);
+			return;
+		}
 		await onRefresh();
-		setOptimisticChanges(null);
+		if (optimisticChanges) clearOptimisticChanges(optimisticChanges);
 	} catch (error) {
 		if (!ignoreUpdated) setOptimisticChanges(null);
 		setActionError(
@@ -66,6 +82,24 @@ export async function ignoreWorkingTreePath({
 		);
 	} finally {
 		setIsMutating(false);
+	}
+}
+
+async function reconcileLocalIgnore(
+	onRefresh: () => Promise<void> | void,
+	isCurrent: () => boolean,
+	onSuccess: () => void,
+	setActionError: (message: string | null) => void,
+) {
+	try {
+		await onRefresh();
+		if (isCurrent()) onSuccess();
+	} catch {
+		if (isCurrent()) {
+			setActionError(
+				"The path was ignored, but its status could not be refreshed.",
+			);
+		}
 	}
 }
 

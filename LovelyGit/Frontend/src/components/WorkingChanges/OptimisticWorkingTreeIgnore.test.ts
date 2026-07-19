@@ -3,7 +3,10 @@ import type {
 	WorkingTreeChangedFile,
 	WorkingTreeChangesResponse,
 } from "@/generated/types";
-import { applyOptimisticIgnore } from "./OptimisticWorkingTreeIgnore";
+import {
+	applyOptimisticIgnore,
+	clearCompletedOptimisticIgnore,
+} from "./OptimisticWorkingTreeIgnore";
 
 describe("applyOptimisticIgnore", () => {
 	it("removes every untracked entry for the ignored path", () => {
@@ -39,6 +42,26 @@ describe("applyOptimisticIgnore", () => {
 
 		expect(result.totalCount).toBe(19_999);
 		expect(elapsed).toBeLessThan(10);
+	});
+
+	it("clears only the optimistic view owned by the completed ignore", () => {
+		const ignored = response([]);
+		const newer = response([file("later.txt")]);
+
+		expect(
+			clearCompletedOptimisticIgnore(
+				{ changes: ignored, repositoryId: "repo" },
+				"repo",
+				ignored,
+			),
+		).toBeNull();
+		expect(
+			clearCompletedOptimisticIgnore(
+				{ changes: newer, repositoryId: "repo" },
+				"repo",
+				ignored,
+			),
+		).toEqual({ changes: newer, repositoryId: "repo" });
 	});
 });
 

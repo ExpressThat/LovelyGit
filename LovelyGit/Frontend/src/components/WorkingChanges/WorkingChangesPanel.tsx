@@ -1,10 +1,14 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import type {
 	WorkingTreeChangedFile,
 	WorkingTreeChangesResponse,
 } from "@/generated/types";
 import { CommitStagedForm } from "./CommitStagedForm";
 import { DiscardWorkingTreeChangesDialog } from "./DiscardWorkingTreeChangesDialog";
+import {
+	clearCompletedOptimisticIgnore,
+	type OptimisticWorkingTreeView,
+} from "./OptimisticWorkingTreeIgnore";
 import { applyOptimisticStash } from "./OptimisticWorkingTreeStash";
 import { RepositoryOperationBanner } from "./RepositoryOperationBanner";
 import { StashDialog } from "./StashDialog";
@@ -45,16 +49,30 @@ export function WorkingChangesPanel({
 }) {
 	const [optimisticView, setOptimisticView] =
 		useState<OptimisticWorkingTreeView | null>(null);
+	const optimisticViewRef = useRef<OptimisticWorkingTreeView | null>(null);
+	const activeRepositoryIdRef = useRef(repositoryId);
+	activeRepositoryIdRef.current = repositoryId;
 	const optimisticChanges =
 		optimisticView?.repositoryId === repositoryId
 			? optimisticView.changes
 			: null;
 	const setOptimisticChanges = (
 		nextChanges: WorkingTreeChangesResponse | null,
-	) =>
-		setOptimisticView(
-			nextChanges ? { changes: nextChanges, repositoryId } : null,
+	) => {
+		const next = nextChanges ? { changes: nextChanges, repositoryId } : null;
+		optimisticViewRef.current = next;
+		setOptimisticView(next);
+	};
+	const clearOptimisticChanges = (expected: WorkingTreeChangesResponse) => {
+		optimisticViewRef.current = clearCompletedOptimisticIgnore(
+			optimisticViewRef.current,
+			repositoryId,
+			expected,
 		);
+		setOptimisticView((current) =>
+			clearCompletedOptimisticIgnore(current, repositoryId, expected),
+		);
+	};
 	const visibleChanges = optimisticChanges ??
 		changes ?? {
 			isComplete: true,
@@ -90,7 +108,12 @@ export function WorkingChangesPanel({
 		toggleSelected,
 		toggleAmend,
 	} = useWorkingChangesPanelActions({
+		clearOptimisticChanges,
 		changes: visibleChanges,
+		isOptimisticChangesCurrent: (expected) =>
+			activeRepositoryIdRef.current === repositoryId &&
+			optimisticViewRef.current?.repositoryId === repositoryId &&
+			optimisticViewRef.current.changes === expected,
 		onCommitSuccess,
 		onRefresh,
 		repositoryId,
@@ -210,8 +233,3 @@ export function WorkingChangesPanel({
 		</div>
 	);
 }
-
-type OptimisticWorkingTreeView = {
-	changes: WorkingTreeChangesResponse;
-	repositoryId: string;
-};

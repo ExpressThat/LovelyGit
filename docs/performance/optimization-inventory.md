@@ -123,6 +123,8 @@ This ledger records shipped performance work by feature area. Update it in the s
 
 ### Working Tree, Staging, and Status
 
+- Settled successful local ignores at the native write boundary and reconciled their exact optimistic projection in the background. In a 20,001-file / 5,000-change fixture, controls recover in 45.1 ms instead of 1,099.1 ms; token-safe clearing preserves any newer mutation (current maximum-ignore checkpoint).
+
 - Removed the Suspense reveal delay from Working Changes and working-tree diffs while preserving their separate lazy chunks; the disposable diff opened in 53.1 ms and its display controls responded in 0.5–2.1 ms (`3cb31fa`).
 - Removed the nested Suspense reveal delay from stashed-file inspection while preserving the commit-diff chunk; its diff controls and add/remove colors remain shared with the verified diff surface (`95b00d5`).
 - Virtualized saved-stash cards and reused one date formatter so large stash reflogs no longer retain every card and its five actions in the WebView (`89e7d3d`).
@@ -180,6 +182,7 @@ This ledger records shipped performance work by feature area. Update it in the s
 - Removed the redundant `git apply --check` process from Apply Patch and rely on Git's atomic apply transaction. A 3.97 MB, 1,001-file patch saves 144.3 ms / 6.7%; staged and unstaged partial-failure regressions prove no earlier file or index mutation survives a later invalid hunk (current patch-apply checkpoint).
 - Deferred Apply Patch's synchronous native bridge until its protected state can paint, promoted it to the shared 120-second Git-mutation timeout, and bounded retained stderr to the first two actionable lines. A 4.50 MB / 1,001-file desktop apply remains exact; a repeated-patch failure completes in 110 ms and returns 355 bytes instead of forwarding roughly 92 KB of repetitive Git diagnostics. Watcher suppression did not materially improve Git's file-write phase and was reverted (current desktop patch-apply checkpoint).
 - Opened commit and series patch export against the object database alone, avoiding unrelated branch, remote, tag, and stash enumeration (`9b71ea5`).
+- Audited commit archive export at 20,001 files and retained Git's single direct-to-temporary-file archive path; ZIP averages 463.0 ms, while the existing TAR choice averages 140.2 ms. Uncompressed ZIP was rejected because an 81.8 ms saving enlarged output by 82% (current maximum-ignore checkpoint).
 - Bounded unified patch rendering before appending an over-budget line, returned metadata-only truncation responses, skipped all blob/diff work when the 200-file copy limit is already exceeded, stopped patch-series work after the first unsafe commit, and gzip-compacted valid large patch/series clipboard payloads under the native bridge limit. A formerly unresolved 5.3 MB patch now rejects in 174.6 ms while exact 1.62M-character patches and 2.16M-character series copy in 141-180.3 ms (current large-patch checkpoint).
 - Opened commit-file diff sources against the object database alone, keeping unrelated refs out of cold file inspection while preserving cached Side-by-Side, Combined, whitespace, and parent variants (`3d932ef`).
 

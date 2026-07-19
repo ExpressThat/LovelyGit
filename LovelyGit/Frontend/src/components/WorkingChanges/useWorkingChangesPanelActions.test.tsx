@@ -71,7 +71,9 @@ describe("useWorkingChangesPanelActions amend state", () => {
 function renderActions() {
 	return renderHook(() =>
 		useWorkingChangesPanelActions({
+			clearOptimisticChanges: vi.fn(),
 			changes: null,
+			isOptimisticChangesCurrent: vi.fn(() => true),
 			onCommitSuccess: vi.fn(),
 			onRefresh: vi.fn(),
 			repositoryId: "repo",

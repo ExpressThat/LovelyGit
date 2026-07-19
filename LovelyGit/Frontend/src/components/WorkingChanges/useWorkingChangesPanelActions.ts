@@ -15,13 +15,17 @@ import {
 import { fileKey } from "./WorkingChangesPanelParts";
 
 export function useWorkingChangesPanelActions({
+	clearOptimisticChanges,
 	changes,
+	isOptimisticChangesCurrent,
 	onCommitSuccess,
 	onRefresh,
 	repositoryId,
 	setOptimisticChanges,
 }: {
+	clearOptimisticChanges: (expected: WorkingTreeChangesResponse) => void;
 	changes: WorkingTreeChangesResponse | null;
+	isOptimisticChangesCurrent: (expected: WorkingTreeChangesResponse) => boolean;
 	onCommitSuccess: () => Promise<void> | void;
 	onRefresh: () => Promise<void> | void;
 	repositoryId: string;
@@ -104,7 +108,9 @@ export function useWorkingChangesPanelActions({
 		isBusy: isMutating || isCommitting || isLoadingAmendMessage,
 		ignorePath: (path: string, target: "Local" | "Shared") =>
 			ignoreWorkingTreePath({
+				clearOptimisticChanges,
 				changes,
+				isOptimisticChangesCurrent,
 				onRefresh,
 				path,
 				repositoryId,
