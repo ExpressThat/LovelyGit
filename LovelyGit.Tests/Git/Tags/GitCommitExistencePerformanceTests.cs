@@ -75,10 +75,7 @@ public sealed class GitCommitExistencePerformanceTests(ITestOutputHelper output)
 
     private static string InitializeTemplate(DirectoryInfo directory)
     {
-        InitializedRepositoryTemplate.CopyInto(directory);
-        var git = new GitCliService();
-        var head = git.ExecuteBufferedAsync(["rev-parse", "HEAD"], directory.FullName)
-            .GetAwaiter().GetResult().StandardOutput.Trim();
+        var head = InitializedRepositoryTemplate.CopyInto(directory);
         PackedRefFixture.AddBranchRemoteTagSets(directory.FullName, head, RefCountPerKind);
 
         return head;

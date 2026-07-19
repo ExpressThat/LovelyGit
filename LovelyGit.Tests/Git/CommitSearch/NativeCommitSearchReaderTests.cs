@@ -10,13 +10,14 @@ public sealed partial class NativeCommitSearchReaderTests
     public async Task SearchAsync_FindsSubjectAndBodyAndReturnsNewestFirst()
     {
         using var repository = TemporaryGitRepository.Create();
-        await CommitAsync(repository, "2020-01-01T00:00:00Z", "First needle");
-        await CommitAsync(
+        var hashes = await SeedAsync(
             repository,
-            "2025-01-01T00:00:00Z",
-            "Latest search result",
-            "The detailed body contains the needle users need.");
-        await RunGitAsync(repository, "branch", "search-marker");
+            new("2020-01-01T00:00:00Z", "First needle"),
+            new(
+                "2025-01-01T00:00:00Z",
+                "Latest search result",
+                "The detailed body contains the needle users need."));
+        WriteBranchRef(repository, "search-marker", hashes[^1]);
 
         var response = await SearchAsync(repository, "needle", limit: 10);
 
@@ -32,17 +33,10 @@ public sealed partial class NativeCommitSearchReaderTests
     public async Task SearchAsync_MatchesAuthorEmailAndHashPrefix()
     {
         using var repository = TemporaryGitRepository.Create();
-        await RunGitAsync(
+        var hash = Assert.Single(await SeedAsync(
             repository,
-            "-c",
-            "user.name=Alice Searcher",
-            "-c",
-            "user.email=alice.searcher@example.invalid",
-            "commit",
-            "--allow-empty",
-            "-m",
-            "Authored result");
-        var hash = (await RunGitAsync(repository, "rev-parse", "HEAD")).Trim();
+            new GitTestCommit(
+                "2024-01-01T00:00:00Z", "Authored result", Author: "Alice Searcher")));
 
         var byAuthor = await SearchAsync(repository, "Alice Searcher", limit: 10);
         var byEmail = await SearchAsync(repository, "alice.searcher@", limit: 10);
@@ -57,8 +51,9 @@ public sealed partial class NativeCommitSearchReaderTests
     public async Task SearchAsync_ResolvesPackedSevenCharacterHashWithoutWalkingHistory()
     {
         using var repository = TemporaryGitRepository.Create();
-        await CommitAsync(repository, "2025-01-01T00:00:00Z", "packed hash result");
-        var hash = (await RunGitAsync(repository, "rev-parse", "HEAD")).Trim();
+        var hash = Assert.Single(await SeedAsync(
+            repository,
+            new GitTestCommit("2025-01-01T00:00:00Z", "packed hash result")));
         await RunGitAsync(repository, "gc", "--prune=now");
 
         var response = await NativeCommitSearchReader.SearchAsync(
@@ -82,9 +77,11 @@ public sealed partial class NativeCommitSearchReaderTests
     public async Task SearchAsync_BoundsResultsAndReportsPartialTraversal()
     {
         using var repository = TemporaryGitRepository.Create();
-        await CommitAsync(repository, "2020-01-01T00:00:00Z", "bounded match one");
-        await CommitAsync(repository, "2021-01-01T00:00:00Z", "bounded match two");
-        await CommitAsync(repository, "2022-01-01T00:00:00Z", "bounded match three");
+        await SeedAsync(
+            repository,
+            new("2020-01-01T00:00:00Z", "bounded match one"),
+            new("2021-01-01T00:00:00Z", "bounded match two"),
+            new("2022-01-01T00:00:00Z", "bounded match three"));
 
         var bounded = await SearchAsync(repository, "bounded match", limit: 1);
         var partial = await NativeCommitSearchReader.SearchAsync(
@@ -127,7 +124,9 @@ public sealed partial class NativeCommitSearchReaderTests
     public async Task SearchAsync_PrioritizesHeadHistoryAheadOfManyTagTips()
     {
         using var repository = TemporaryGitRepository.Create();
-        await CommitAsync(repository, "2024-01-01T00:00:00Z", "head-history needle");
+        await SeedAsync(
+            repository,
+            new GitTestCommit("2024-01-01T00:00:00Z", "head-history needle"));
         await GitFastImportFixtureSeeder.SeedIndependentTagTipsAsync(repository.Path, 12);
 
         var response = await NativeCommitSearchReader.SearchAsync(
@@ -184,39 +183,24 @@ public sealed partial class NativeCommitSearchReaderTests
             maximumDuration: Timeout.InfiniteTimeSpan,
             CancellationToken.None);
 
-    private static Task<string> CommitAsync(
+    private static Task<IReadOnlyList<string>> SeedAsync(
         TemporaryGitRepository repository,
-        string date,
-        string subject,
-        string? body = null)
+        params GitTestCommit[] commits) =>
+        GitFastImportFixtureSeeder.SeedLinearCommitsAsync(
+            repository.Path,
+            "refs/heads/master",
+            repository.HeadCommitHash,
+            commits);
+
+    private static void WriteBranchRef(
+        TemporaryGitRepository repository,
+        string branch,
+        string hash)
     {
-        var arguments = new List<string>
-        {
-            "commit",
-            "--allow-empty",
-            $"--date={date}",
-            "-m",
-            subject,
-        };
-        if (body != null)
-        {
-            arguments.Add("-m");
-            arguments.Add(body);
-        }
-
-        return RunGitAsync(repository, arguments.ToArray());
+        var refs = Directory.CreateDirectory(
+            System.IO.Path.Combine(repository.Path, ".git", "refs", "heads"));
+        File.WriteAllText(System.IO.Path.Combine(refs.FullName, branch), hash + "\n");
     }
-
-    private static Task<string> CommitAsAsync(
-        TemporaryGitRepository repository,
-        string author,
-        string date,
-        string subject) =>
-        RunGitAsync(
-            repository,
-            "-c", $"user.name={author}",
-            "-c", $"user.email={author.ToLowerInvariant()}@example.invalid",
-            "commit", "--allow-empty", $"--date={date}", "-m", subject);
 
     private static async Task<string> RunGitAsync(
         TemporaryGitRepository repository,

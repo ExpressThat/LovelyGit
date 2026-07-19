@@ -87,10 +87,7 @@ public sealed class UntrackedDiffPerformanceTests(ITestOutputHelper output)
 
     private static bool InitializeTemplate(DirectoryInfo directory)
     {
-        InitializedRepositoryTemplate.CopyInto(directory);
-        var git = new GitCliService();
-        var head = git.ExecuteBufferedAsync(["rev-parse", "HEAD"], directory.FullName)
-            .GetAwaiter().GetResult().StandardOutput.Trim();
+        var head = InitializedRepositoryTemplate.CopyInto(directory);
         var gitDirectory = Path.Combine(directory.FullName, ".git");
         for (var index = 0; index < RefCountPerKind; index++)
         {

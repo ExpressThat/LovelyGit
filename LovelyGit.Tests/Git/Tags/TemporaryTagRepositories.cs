@@ -72,11 +72,7 @@ internal sealed class TemporaryTagGitRepository : IDisposable
 
     private static string InitializeTemplate(DirectoryInfo directory)
     {
-        var gitCliService = new GitCliService();
-        InitializedRepositoryTemplate.CopyInto(directory, "master");
-        var head = RunGit(gitCliService, directory.FullName, ["rev-parse", "HEAD"])
-            .StandardOutput.Trim();
-        return head;
+        return InitializedRepositoryTemplate.CopyInto(directory, "master");
     }
 
     public async Task<string> ResolveHeadAsync()
@@ -90,10 +86,4 @@ internal sealed class TemporaryTagGitRepository : IDisposable
 
     public void Dispose() => TemporaryBareRepository.DeleteDirectory(_directory);
 
-    private static CliWrap.Buffered.BufferedCommandResult RunGit(
-        GitCliService gitCliService,
-        string workingDirectory,
-        IReadOnlyList<string> arguments) =>
-        gitCliService.ExecuteBufferedAsync(arguments, workingDirectory)
-            .GetAwaiter().GetResult();
 }

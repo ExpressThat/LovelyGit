@@ -63,12 +63,10 @@ public sealed class PackedObjectReadPerformanceTests
 
     private static GitObjectId CreateTemplate(DirectoryInfo directory)
     {
-        InitializedRepositoryTemplate.CopyInto(directory);
+        var head = InitializedRepositoryTemplate.CopyInto(directory);
         var git = new GitCliService();
         git.ExecuteBufferedAsync(
             ["gc", "--prune=now"], directory.FullName).GetAwaiter().GetResult();
-        var hash = git.ExecuteBufferedAsync(
-            ["rev-parse", "HEAD"], directory.FullName).GetAwaiter().GetResult();
-        return GitObjectId.Parse(hash.StandardOutput.Trim());
+        return GitObjectId.Parse(head);
     }
 }

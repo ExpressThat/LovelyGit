@@ -171,19 +171,15 @@ public sealed class GitBisectServicesTests
 
     private static async Task<List<string>> CreateHistoryAsync(string repositoryPath)
     {
-        InitializedRepositoryTemplate.CopyInto(new DirectoryInfo(repositoryPath));
-        var commits = new List<string>();
-        for (var index = 0; index < 5; index++)
-        {
-            await File.WriteAllTextAsync(
-                Path.Combine(repositoryPath, "behavior.txt"),
-                $"{(index < 2 ? "good" : "bad")} revision {index}\n");
-            await GitTestProcess.RunAsync(repositoryPath, "add", "behavior.txt");
-            await GitTestProcess.RunAsync(repositoryPath, "commit", "-m", $"Revision {index + 1}");
-            commits.Add((await GitTestProcess.RunAsync(repositoryPath, "rev-parse", "HEAD")).Trim());
-        }
-
-        return commits;
+        var baseHash = InitializedRepositoryTemplate.CopyInto(
+            new DirectoryInfo(repositoryPath));
+        var contents = Enumerable.Range(0, 5)
+            .Select(index => $"{(index < 2 ? "good" : "bad")} revision {index}\n")
+            .ToArray();
+        var commits = await GitFastImportFixtureSeeder.SeedLinearFileHistoryAsync(
+            repositoryPath, "refs/heads/main", baseHash, "behavior.txt", contents);
+        await GitTestProcess.RunAsync(repositoryPath, "reset", "--hard", "main");
+        return commits.ToList();
     }
 
     private sealed class BisectRepository : IDisposable

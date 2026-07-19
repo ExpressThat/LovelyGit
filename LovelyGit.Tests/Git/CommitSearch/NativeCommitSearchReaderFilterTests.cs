@@ -5,14 +5,20 @@ namespace LovelyGit.Tests.Git.CommitSearch;
 
 public sealed partial class NativeCommitSearchReaderTests
 {
+    private static readonly RepositoryTemplate<string> ScopeTemplate = new(
+        "lovelygit-search-scope-template-",
+        InitializeScopeTemplate);
+
     [Fact]
     public async Task SearchAsync_CombinesAuthorAndInclusiveCalendarDateFilters()
     {
         using var repository = TemporaryGitRepository.Create();
-        await CommitAsAsync(repository, "Alice", "2024-01-01T12:00:00Z", "older match");
-        await CommitAsAsync(repository, "Bob", "2024-06-15T12:00:00Z", "other author");
-        await CommitAsAsync(repository, "Alice", "2024-06-30T23:30:00Z", "wanted match");
-        await CommitAsAsync(repository, "Alice", "2024-07-01T00:00:00Z", "too new");
+        await SeedAsync(
+            repository,
+            new("2024-01-01T12:00:00Z", "older match", Author: "Alice"),
+            new("2024-06-15T12:00:00Z", "other author", Author: "Bob"),
+            new("2024-06-30T23:30:00Z", "wanted match", Author: "Alice"),
+            new("2024-07-01T00:00:00Z", "too new", Author: "Alice"));
 
         var response = await NativeCommitSearchReader.SearchAsync(
             repository.Path,
@@ -33,8 +39,10 @@ public sealed partial class NativeCommitSearchReaderTests
     public async Task SearchAsync_SupportsFilterOnlySearchWithoutEmptyHashMatching()
     {
         using var repository = TemporaryGitRepository.Create();
-        await CommitAsAsync(repository, "Alice", "2024-01-01T00:00:00Z", "alice result");
-        await CommitAsAsync(repository, "Bob", "2024-02-01T00:00:00Z", "bob result");
+        await SeedAsync(
+            repository,
+            new("2024-01-01T00:00:00Z", "alice result", Author: "Alice"),
+            new("2024-02-01T00:00:00Z", "bob result", Author: "Bob"));
 
         var response = await NativeCommitSearchReader.SearchAsync(
             repository.Path, string.Empty, "Alice", string.Empty, null, null, 10, 100,
@@ -50,15 +58,8 @@ public sealed partial class NativeCommitSearchReaderTests
     [InlineData("refs/heads/topic")]
     public async Task SearchAsync_ScopesTraversalToLocalRemoteAndTagRefs(string scope)
     {
-        using var repository = TemporaryGitRepository.Create();
-        var main = (await RunGitAsync(repository, "branch", "--show-current")).Trim();
-        await RunGitAsync(repository, "switch", "-c", "topic");
-        await RunGitAsync(repository, "commit", "--allow-empty", "-m", "topic needle");
-        var topicHash = (await RunGitAsync(repository, "rev-parse", "HEAD")).Trim();
-        await RunGitAsync(repository, "tag", "topic-tag");
-        await RunGitAsync(repository, "update-ref", "refs/remotes/origin/topic", topicHash);
-        await RunGitAsync(repository, "switch", main);
-        await RunGitAsync(repository, "commit", "--allow-empty", "-m", "main needle");
+        var (directory, head) = ScopeTemplate.CreateCopy("lovelygit-search-scope-");
+        using var repository = TemporaryGitRepository.CreateFromCopy(directory, head);
 
         var response = await NativeCommitSearchReader.SearchAsync(
             repository.Path, "needle", string.Empty, scope, null, null, 10, 100,
@@ -79,5 +80,33 @@ public sealed partial class NativeCommitSearchReaderTests
                 10, 100, Timeout.InfiniteTimeSpan, CancellationToken.None));
 
         Assert.Contains("Git ref not found", error.Message);
+    }
+
+    private static string InitializeScopeTemplate(DirectoryInfo directory)
+    {
+        var baseHash = InitializedRepositoryTemplate.CopyInto(directory, "master");
+        var topicHash = Assert.Single(GitFastImportFixtureSeeder.SeedLinearCommitsAsync(
+            directory.FullName,
+            "refs/heads/topic",
+            baseHash,
+            [new("2024-01-01T00:00:00Z", "topic needle")]).GetAwaiter().GetResult());
+        var mainHash = Assert.Single(GitFastImportFixtureSeeder.SeedLinearCommitsAsync(
+            directory.FullName,
+            "refs/heads/master",
+            baseHash,
+            [new("2024-01-02T00:00:00Z", "main needle")]).GetAwaiter().GetResult());
+        WriteRef(directory, "refs/tags/topic-tag", topicHash);
+        WriteRef(directory, "refs/remotes/origin/topic", topicHash);
+        return mainHash;
+    }
+
+    private static void WriteRef(DirectoryInfo directory, string name, string hash)
+    {
+        var path = System.IO.Path.Combine(
+            directory.FullName,
+            ".git",
+            name.Replace('/', System.IO.Path.DirectorySeparatorChar));
+        Directory.CreateDirectory(System.IO.Path.GetDirectoryName(path)!);
+        File.WriteAllText(path, hash + "\n");
     }
 }

@@ -11,10 +11,8 @@ public sealed class PackedRefFixtureTests
         var directory = Directory.CreateTempSubdirectory("lovelygit-packed-ref-fixture-");
         try
         {
-            InitializedRepositoryTemplate.CopyInto(directory, "master");
+            var head = InitializedRepositoryTemplate.CopyInto(directory, "master");
             var git = new GitCliService();
-            var head = (await git.ExecuteBufferedAsync(
-                ["rev-parse", "HEAD"], directory.FullName)).StandardOutput.Trim();
 
             PackedRefFixture.AddBranches(directory.FullName, head, 20);
             PackedRefFixture.AddBranchRemoteTagSets(directory.FullName, head, 10);

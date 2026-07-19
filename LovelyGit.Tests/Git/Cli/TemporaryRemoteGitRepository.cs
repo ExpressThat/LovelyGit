@@ -4,6 +4,11 @@ namespace LovelyGit.Tests.Git.Cli;
 
 internal sealed class TemporaryRemoteGitRepository : IDisposable
 {
+    private static readonly string[] SeedFileNames =
+    [
+        "readme.txt", "local.txt", "remote.txt", "first.txt", "replacement.txt",
+        "ahead.txt", "behind.txt", "diverged.txt",
+    ];
     private static readonly RepositoryTemplate<string> Template = new(
         "lovelygit-remote-template-",
         InitializeTemplate);
@@ -43,11 +48,43 @@ internal sealed class TemporaryRemoteGitRepository : IDisposable
             ? remote.PushUrl
             : remote.Url;
 
+    public string CreateBareRemoteCopy(string name, string branchName)
+    {
+        var path = Path.Combine(_directory.FullName, $"{name}.git");
+        CopyDirectory(new DirectoryInfo(BarePath), Directory.CreateDirectory(path));
+        WriteRef(path, $"refs/heads/{branchName}", Head(ClonePath));
+        return path;
+    }
+
+    public void AddRemoteConfig(string name, string url) => File.AppendAllText(
+        Path.Combine(ClonePath, ".git", "config"),
+        $"\n[remote \"{name}\"]\n\turl = {EscapeConfigValue(url)}\n" +
+        $"\tfetch = +refs/heads/*:refs/remotes/{name}/*\n");
+
+    public void WriteRemoteTrackingRef(string name, string branchName) =>
+        WriteRef(
+            Path.Combine(ClonePath, ".git"),
+            $"refs/remotes/{name}/{branchName}",
+            Head(ClonePath));
+
+    public bool HasRef(string path, string refName)
+    {
+        var gitDirectory = Directory.Exists(Path.Combine(path, ".git"))
+            ? Path.Combine(path, ".git")
+            : path;
+        var loosePath = Path.Combine(
+            gitDirectory,
+            refName.Replace('/', Path.DirectorySeparatorChar));
+        return File.Exists(loosePath) ||
+               File.Exists(Path.Combine(gitDirectory, "packed-refs")) &&
+               File.ReadLines(Path.Combine(gitDirectory, "packed-refs"))
+                   .Any(line => line.EndsWith($" {refName}", StringComparison.Ordinal));
+    }
+
     public void Commit(string path, string fileName, string message)
     {
         File.WriteAllText(Path.Combine(path, fileName), message);
-        RunGit(path, ["add", "."]);
-        RunGit(path, ["commit", "-m", message]);
+        RunGit(path, ["commit", "--all", "-m", message]);
     }
 
     public void CommitAndPushFromUpdater(string fileName, string message)
@@ -75,7 +112,12 @@ internal sealed class TemporaryRemoteGitRepository : IDisposable
         repository.RunGit(directory.FullName, ["init", "--bare", repository.BarePath]);
         repository.RunGit(directory.FullName, ["init", repository.UpdaterPath]);
         repository.ConfigureIdentity(repository.UpdaterPath);
-        repository.Commit(repository.UpdaterPath, "readme.txt", "initial");
+        foreach (var fileName in SeedFileNames)
+        {
+            File.WriteAllText(Path.Combine(repository.UpdaterPath, fileName), "initial");
+        }
+        repository.RunGit(repository.UpdaterPath, ["add", "."]);
+        repository.RunGit(repository.UpdaterPath, ["commit", "-m", "initial"]);
         var branch = repository.RunGit(repository.UpdaterPath, ["branch", "--show-current"])
             .StandardOutput.Trim();
         repository.RunGit(
@@ -128,6 +170,32 @@ internal sealed class TemporaryRemoteGitRepository : IDisposable
             }
         }
         throw new InvalidOperationException($"Ref {refName} was not found.");
+    }
+
+    private static void WriteRef(string gitDirectory, string refName, string hash)
+    {
+        var path = Path.Combine(gitDirectory, refName.Replace('/', Path.DirectorySeparatorChar));
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        File.WriteAllText(path, hash + "\n");
+    }
+
+    private static string EscapeConfigValue(string value) =>
+        value.Replace("\\", "\\\\", StringComparison.Ordinal);
+
+    private static void CopyDirectory(DirectoryInfo source, DirectoryInfo destination)
+    {
+        foreach (var directory in source.EnumerateDirectories("*", SearchOption.AllDirectories))
+        {
+            Directory.CreateDirectory(Path.Combine(
+                destination.FullName,
+                Path.GetRelativePath(source.FullName, directory.FullName)));
+        }
+        foreach (var file in source.EnumerateFiles("*", SearchOption.AllDirectories))
+        {
+            file.CopyTo(Path.Combine(
+                destination.FullName,
+                Path.GetRelativePath(source.FullName, file.FullName)));
+        }
     }
 
     private Dictionary<string, RemoteConfiguration> ReadRemotes()

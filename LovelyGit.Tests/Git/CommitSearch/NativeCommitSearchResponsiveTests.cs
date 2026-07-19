@@ -18,9 +18,11 @@ public sealed partial class NativeCommitSearchReaderTests
     public async Task SearchAsync_ReturnsRecentMatchesAfterResponsiveScanWindow()
     {
         using var repository = TemporaryGitRepository.Create();
-        await CommitAsync(repository, "2020-01-01T00:00:00Z", "older commit");
-        await CommitAsync(repository, "2021-01-01T00:00:00Z", "responsive needle");
-        await CommitAsync(repository, "2022-01-01T00:00:00Z", "newest commit");
+        await SeedAsync(
+            repository,
+            new("2020-01-01T00:00:00Z", "older commit"),
+            new("2021-01-01T00:00:00Z", "responsive needle"),
+            new("2022-01-01T00:00:00Z", "newest commit"));
 
         var response = await NativeCommitSearchReader.SearchAsync(
             repository.Path,
@@ -44,8 +46,10 @@ public sealed partial class NativeCommitSearchReaderTests
     public async Task SearchAsync_DoesNotStopResponsiveWindowWithoutAMatch()
     {
         using var repository = TemporaryGitRepository.Create();
-        await CommitAsync(repository, "2021-01-01T00:00:00Z", "first commit");
-        await CommitAsync(repository, "2022-01-01T00:00:00Z", "second commit");
+        await SeedAsync(
+            repository,
+            new("2021-01-01T00:00:00Z", "first commit"),
+            new("2022-01-01T00:00:00Z", "second commit"));
 
         var response = await NativeCommitSearchReader.SearchAsync(
             repository.Path,

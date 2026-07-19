@@ -206,6 +206,8 @@ This ledger records shipped performance work by feature area. Update it in the s
 - Added application dependency-graph validation without launching the desktop host (`525a3c2`).
 - Isolated frontend wall-clock performance files from ordinary parallel workers while retaining parallel execution for the rest of the suite. Two complete 709-test gates passed in 50.69 and 49.76 seconds with every latency ceiling unchanged (`43b1057`).
 - Replaced 63 repeated Git fixture commands across tagged-history search, octopus commit-graph, and repeated pack-retirement setup with real `fast-import` streams. Contended tagged-history/octopus time falls from 9.88 to 1.22 seconds and repacking from 5.48 to 3.95 seconds; the 1,024-test testhost falls from 62.81 to 55.71 seconds and two exact wrappers pass in 59.36/58.93 seconds with every object/ref/order/pack assertion intact (current backend-gate checkpoint).
+- Batched commit-search histories and prepared its scoped-ref graph once; its full-contention class time falls from 18.33 to 5.00-6.05 seconds while preserving author, date, ref, hash, ordering, partial-traversal, cancellation, and stale-session contracts (current test-gate checkpoint).
+- Removed assertion-only Git processes from repository-operation, remote, conflict-tool, and template fixtures. Two consecutive complete 1,043-test testhosts now pass in 59.20 and 58.94 seconds instead of 66.22-67.78 seconds, with zero fixture-root leaks and unchanged timing/allocation ceilings (current test-gate checkpoint).
 
 ### Runtime Memory and Resource Lifetime
 

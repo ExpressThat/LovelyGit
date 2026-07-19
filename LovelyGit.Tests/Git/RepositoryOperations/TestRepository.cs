@@ -53,7 +53,16 @@ internal sealed class TestRepository : IDisposable
         string content,
         string message)
     {
-        await File.WriteAllTextAsync(System.IO.Path.Combine(Path, relativePath), content);
+        var filePath = System.IO.Path.Combine(Path, relativePath);
+        var wasTracked = File.Exists(filePath);
+        await File.WriteAllTextAsync(filePath, content);
+
+        if (wasTracked)
+        {
+            await RunAsync("commit", "-m", message, "--only", "--", relativePath);
+            return;
+        }
+
         await RunAsync("add", "--", relativePath);
         await RunAsync("commit", "-m", message);
     }
@@ -63,19 +72,36 @@ internal sealed class TestRepository : IDisposable
         string relativePath,
         string content)
     {
-        await RunAsync("switch", "--create", branchName);
-        await CommitFileAsync(relativePath, content, $"{branchName} change");
+        var head = await GetHeadHashAsync();
+        await GitFastImportFixtureSeeder.SeedLinearCommitsAsync(
+            Path,
+            $"refs/heads/{branchName}",
+            head,
+            [new(
+                "2024-01-01T00:00:00Z",
+                $"{branchName} change",
+                Path: relativePath,
+                Content: content)]);
+        await RunAsync("switch", branchName);
     }
 
     public Task SwitchAsync(string branchName) => RunAsync("switch", branchName);
 
     public async Task<string> GetHeadHashAsync()
     {
-        var result = await Git.ExecuteBufferedAsync(
-            ["rev-parse", "HEAD"],
-            Path,
-            cancellationToken: CancellationToken.None);
-        return result.StandardOutput.Trim();
+        var gitDirectory = System.IO.Path.Combine(Path, ".git");
+        var head = (await File.ReadAllTextAsync(
+            System.IO.Path.Combine(gitDirectory, "HEAD"))).Trim();
+        const string refPrefix = "ref:";
+        if (!head.StartsWith(refPrefix, StringComparison.Ordinal))
+        {
+            return head;
+        }
+
+        var refName = head[refPrefix.Length..].Trim();
+        return (await File.ReadAllTextAsync(System.IO.Path.Combine(
+            gitDirectory,
+            refName.Replace('/', System.IO.Path.DirectorySeparatorChar)))).Trim();
     }
 
     public Task RunGitAsync(params string[] arguments) => RunAsync(arguments);

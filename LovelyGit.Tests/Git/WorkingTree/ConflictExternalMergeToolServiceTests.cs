@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser;
 using ExpressThat.LovelyGit.Services.Git.WorkingTree;
 using LovelyGit.Tests.Git.RepositoryOperations;
 
@@ -24,7 +25,7 @@ public sealed class ConflictExternalMergeToolServiceTests
         await CreateService(repository).OpenAsync(repository.Path, "shared.txt", CancellationToken.None);
 
         Assert.Equal("main", await File.ReadAllTextAsync(Path.Combine(repository.Path, "shared.txt")));
-        Assert.Equal(string.Empty, await ReadUnmergedAsync(repository));
+        Assert.Empty(await ReadUnmergedEntriesAsync(repository));
     }
 
     [Fact]
@@ -110,7 +111,7 @@ public sealed class ConflictExternalMergeToolServiceTests
 
         Assert.Contains("<<<<<<<", await File.ReadAllTextAsync(
             Path.Combine(second.Path, "shared.txt")));
-        Assert.NotEmpty(await ReadUnmergedAsync(second));
+        Assert.NotEmpty(await ReadUnmergedEntriesAsync(second));
     }
 
     [Fact]
@@ -149,34 +150,34 @@ public sealed class ConflictExternalMergeToolServiceTests
 
     private static async Task ConfigureToolAsync(TestRepository repository, string command)
     {
-        await repository.Git.ExecuteBufferedAsync(
-            ["config", "merge.tool", "lovelygit-test"], repository.Path);
-        await repository.Git.ExecuteBufferedAsync(
-            ["config", "mergetool.lovelygit-test.cmd", command], repository.Path);
-        await repository.Git.ExecuteBufferedAsync(
-            ["config", "mergetool.lovelygit-test.trustExitCode", "true"], repository.Path);
+        await File.AppendAllTextAsync(
+            Path.Combine(repository.Path, ".git", "config"),
+            $"\n[merge]\n\ttool = lovelygit-test\n" +
+            $"[mergetool \"lovelygit-test\"]\n\tcmd = {command}\n\ttrustExitCode = true\n");
     }
 
-    private static async Task<(byte[] File, byte[] Index, string Unmerged)> CaptureStateAsync(
+    private static async Task<(byte[] File, byte[] Index)> CaptureStateAsync(
         TestRepository repository) =>
         (
             await File.ReadAllBytesAsync(Path.Combine(repository.Path, "shared.txt")),
-            await File.ReadAllBytesAsync(Path.Combine(repository.Path, ".git", "index")),
-            await ReadUnmergedAsync(repository)
+            await File.ReadAllBytesAsync(Path.Combine(repository.Path, ".git", "index"))
         );
 
     private static async Task AssertStateUnchangedAsync(
         TestRepository repository,
-        (byte[] File, byte[] Index, string Unmerged) state)
+        (byte[] File, byte[] Index) state)
     {
         Assert.Equal(state.File, await File.ReadAllBytesAsync(Path.Combine(repository.Path, "shared.txt")));
         Assert.Equal(state.Index, await File.ReadAllBytesAsync(Path.Combine(repository.Path, ".git", "index")));
-        Assert.Equal(state.Unmerged, await ReadUnmergedAsync(repository));
     }
 
-    private static async Task<string> ReadUnmergedAsync(TestRepository repository) =>
-        (await repository.Git.ExecuteBufferedAsync(
-            ["ls-files", "--unmerged"], repository.Path)).StandardOutput;
+    private static async Task<IReadOnlyList<GitIndexEntry>> ReadUnmergedEntriesAsync(
+        TestRepository repository) =>
+        (await new GitIndexReader().ReadEntriesForPathAsync(
+            Path.Combine(repository.Path, ".git"),
+            GitObjectFormat.Sha1,
+            "shared.txt",
+            CancellationToken.None)).Where(entry => entry.Stage != 0).ToArray();
 
     private static void SeedUnrelatedRefs(string repositoryPath, string commit, int count)
     {

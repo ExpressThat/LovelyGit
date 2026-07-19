@@ -1,4 +1,3 @@
-using ExpressThat.LovelyGit.Services.Git.Cli;
 using ExpressThat.LovelyGit.Services.Git.CommitSearch;
 using LovelyGit.Tests.Git.Branches;
 
@@ -10,9 +9,7 @@ public sealed class NativeCommitSearchSessionTests
     public async Task ScanAsync_ContinuesFromPreviousFrontier()
     {
         using var repository = TemporaryGitRepository.Create();
-        await CommitAsync(repository, "first commit");
-        await CommitAsync(repository, "continuation needle");
-        await CommitAsync(repository, "newest commit");
+        await CommitAsync(repository, "first commit", "continuation needle", "newest commit");
         using var session = await OpenAsync(repository, "continuation needle");
 
         var initial = await session.ScanAsync(
@@ -73,11 +70,14 @@ public sealed class NativeCommitSearchSessionTests
             10,
             CancellationToken.None);
 
-    private static async Task CommitAsync(TemporaryGitRepository repository, string subject)
-    {
-        await new GitCliService().ExecuteBufferedAsync(
-            ["commit", "--allow-empty", "-m", subject],
+    private static Task<IReadOnlyList<string>> CommitAsync(
+        TemporaryGitRepository repository,
+        params string[] subjects) =>
+        GitFastImportFixtureSeeder.SeedLinearCommitsAsync(
             repository.Path,
-            cancellationToken: CancellationToken.None);
-    }
+            "refs/heads/master",
+            repository.HeadCommitHash,
+            subjects.Select((subject, index) => new GitTestCommit(
+                $"2024-01-{index + 1:00}T00:00:00Z",
+                subject)).ToArray());
 }

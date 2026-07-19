@@ -29,17 +29,9 @@ public sealed class GitRemoteCommandServiceTests
     {
         using var repository = TemporaryRemoteGitRepository.Create();
         var service = new GitRemoteCommandService(repository.GitCliService);
-        var backupPath = Path.Combine(Path.GetDirectoryName(repository.BarePath)!, "backup.git");
-        repository.RunGit(repository.ClonePath, ["init", "--bare", backupPath]);
-        repository.RunGit(repository.ClonePath, ["remote", "add", "backup", backupPath]);
-        repository.RunGit(
-            repository.ClonePath,
-            ["push", "backup", "HEAD:refs/heads/backup-only"]);
-        repository.RunGit(
-            repository.ClonePath,
-            ["push", "origin", "HEAD:refs/heads/obsolete"]);
-        repository.RunGit(repository.ClonePath, ["fetch", "origin"]);
-        repository.RunGit(repository.ClonePath, ["push", "origin", "--delete", "obsolete"]);
+        var backupPath = repository.CreateBareRemoteCopy("backup", "backup-only");
+        repository.AddRemoteConfig("backup", backupPath);
+        repository.WriteRemoteTrackingRef("origin", "obsolete");
 
         await service.FetchAsync(
             repository.ClonePath,
@@ -47,10 +39,10 @@ public sealed class GitRemoteCommandServiceTests
             prune: true,
             CancellationToken.None);
 
-        var remoteBranches = repository.RunGit(repository.ClonePath, ["branch", "--remotes"])
-            .StandardOutput;
-        Assert.Contains("backup/backup-only", remoteBranches, StringComparison.Ordinal);
-        Assert.DoesNotContain("origin/obsolete", remoteBranches, StringComparison.Ordinal);
+        Assert.True(repository.HasRef(
+            repository.ClonePath, "refs/remotes/backup/backup-only"));
+        Assert.False(repository.HasRef(
+            repository.ClonePath, "refs/remotes/origin/obsolete"));
     }
 
     [Fact]
@@ -192,7 +184,6 @@ public sealed class GitRemoteCommandServiceTests
         using var repository = TemporaryRemoteGitRepository.Create();
         var service = new GitRemoteCommandService(repository.GitCliService);
         var pushPath = Path.Combine(Path.GetDirectoryName(repository.BarePath)!, "push.git");
-        repository.RunGit(repository.ClonePath, ["init", "--bare", pushPath]);
 
         await service.AddAsync(
             repository.ClonePath,
