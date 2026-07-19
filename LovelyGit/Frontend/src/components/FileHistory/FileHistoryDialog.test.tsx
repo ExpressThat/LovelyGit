@@ -4,10 +4,16 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { FileHistoryResponse, FileHistoryResult } from "@/generated/types";
-import { sendRequestWithResponse } from "@/lib/commands";
+import {
+	sendRequestWithoutResponse,
+	sendRequestWithResponse,
+} from "@/lib/commands";
 import { FileHistoryDialog } from "./FileHistoryDialog";
 
-vi.mock("@/lib/commands", () => ({ sendRequestWithResponse: vi.fn() }));
+vi.mock("@/lib/commands", () => ({
+	sendRequestWithoutResponse: vi.fn(),
+	sendRequestWithResponse: vi.fn(),
+}));
 
 describe("FileHistoryDialog", () => {
 	beforeEach(() => vi.clearAllMocks());
@@ -145,6 +151,34 @@ describe("FileHistoryDialog", () => {
 		expect(
 			screen.queryByRole("button", { name: /Historical change 249/ }),
 		).toBeNull();
+	});
+
+	it("cancels native history work when the dialog closes", async () => {
+		vi.mocked(sendRequestWithResponse).mockReturnValueOnce(
+			new Promise(() => {}),
+		);
+		const { rerender } = render(
+			<FileHistoryDialog
+				onOpenChange={vi.fn()}
+				onSelectCommit={vi.fn()}
+				repositoryId="repo"
+				target={{ path: "src/file.ts", startCommitHash: null }}
+			/>,
+		);
+
+		rerender(
+			<FileHistoryDialog
+				onOpenChange={vi.fn()}
+				onSelectCommit={vi.fn()}
+				repositoryId="repo"
+				target={null}
+			/>,
+		);
+
+		expect(sendRequestWithoutResponse).toHaveBeenCalledWith({
+			arguments: { knownRepositoryId: "repo" },
+			commandType: "CancelFileHistory",
+		});
 	});
 });
 

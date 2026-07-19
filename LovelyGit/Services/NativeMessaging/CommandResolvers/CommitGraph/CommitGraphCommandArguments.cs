@@ -54,6 +54,12 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.Commit
     }
 
     [TypeSharp]
+    public record CancelFileHistoryCommandArguments
+    {
+        public Guid KnownRepositoryId { get; set; }
+    }
+
+    [TypeSharp]
     public record GetFileBlameCommandArguments
     {
         public Guid KnownRepositoryId { get; set; }

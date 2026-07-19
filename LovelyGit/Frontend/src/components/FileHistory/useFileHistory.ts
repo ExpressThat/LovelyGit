@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
 import type { FileHistoryResponse } from "@/generated/types";
-import { sendRequestWithResponse } from "@/lib/commands";
+import {
+	sendRequestWithoutResponse,
+	sendRequestWithResponse,
+} from "@/lib/commands";
 
 export function useFileHistory(
 	repositoryId: string | null,
@@ -12,6 +15,16 @@ export function useFileHistory(
 	const [response, setResponse] = useState<FileHistoryResponse | null>(null);
 	const [error, setError] = useState<string | null>(null);
 	const [isLoading, setIsLoading] = useState(false);
+
+	useEffect(() => {
+		if (!enabled || !repositoryId) return;
+		return () => {
+			sendRequestWithoutResponse({
+				arguments: { knownRepositoryId: repositoryId },
+				commandType: "CancelFileHistory",
+			});
+		};
+	}, [enabled, repositoryId]);
 
 	useEffect(() => {
 		if (!enabled || !repositoryId || !path) {

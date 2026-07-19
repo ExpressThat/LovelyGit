@@ -42,6 +42,7 @@ internal static class CommitGraphServiceCollectionExtensions
         services.AddSingleton<ICommandResponder, SearchCommitsCommandResolver>();
         services.AddSingleton<ICommandResponder, CancelCommitSearchCommandResolver>();
         services.AddSingleton<ICommandResponder, GetFileHistoryCommandResolver>();
+        services.AddSingleton<ICommandResponder, CancelFileHistoryCommandResolver>();
         services.AddSingleton<ICommandResponder, GetFileBlameCommandResolver>();
 
         return services;

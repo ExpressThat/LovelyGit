@@ -1,9 +1,39 @@
 namespace ExpressThat.LovelyGit.Services.Git.FileHistory;
 
+internal delegate Task<FileHistoryResponse> FileHistoryRead(
+    string repositoryPath,
+    string path,
+    string? startCommitHash,
+    int limit,
+    int maximumCommits,
+    TimeSpan maximumDuration,
+    CancellationToken cancellationToken);
+
 internal sealed class FileHistoryService : IDisposable
 {
     private readonly object _gate = new();
     private readonly Dictionary<Guid, CancellationTokenSource> _activeReads = new();
+    private readonly FileHistoryRead _read;
+
+    public FileHistoryService() : this(NativeFileHistoryReader.ReadAsync)
+    {
+    }
+
+    internal FileHistoryService(FileHistoryRead read)
+    {
+        _read = read;
+    }
+
+    public void Cancel(Guid repositoryId)
+    {
+        CancellationTokenSource? activeRead;
+        lock (_gate)
+        {
+            _activeReads.Remove(repositoryId, out activeRead);
+        }
+
+        activeRead?.Cancel();
+    }
 
     public async Task<FileHistoryResponse> ReadAsync(
         Guid repositoryId,
@@ -24,7 +54,7 @@ internal sealed class FileHistoryService : IDisposable
         previous?.Cancel();
         try
         {
-            return await NativeFileHistoryReader.ReadAsync(
+            return await _read(
                 repositoryPath,
                 path,
                 startCommitHash,
