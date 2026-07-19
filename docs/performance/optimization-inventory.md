@@ -212,7 +212,7 @@ This ledger records shipped performance work by feature area. Update it in the s
 
 ### Runtime Memory and Resource Lifetime
 
-- Verified Settings, Bisect, and Force Push overlays plateau after warm-up rather than retaining linearly; a second 60-interaction pass added only 0.22 MB post-GC with no DOM growth (`9913036`).
+- Verified Settings, Bisect, and Force Push overlays plateau after warm-up rather than retaining linearly; a second 60-interaction pass added only 0.22 MB post-GC with no DOM growth (`9913036`). The compiled 20,000-file guarded-force-push journey also opens its menu/dialog in 1.6/12.5 ms, rejects a stale lease without mutation in 127.7 ms, recovers controls by 197.8 ms, and transfers/reconciles a 2,001-file rewritten commit in 375.8-377.4 ms while retaining 10.67 MB observed page heap; no production rewrite was justified (current guarded-force-push checkpoint).
 - Verified Working Changes open/close cycles plateau after the status/cache warm-up; the second ten-cycle pass added only 0.08 MB post-GC with no DOM growth (`9913036`).
 - Verified repeated native bisect-state reads do not leak process handles, and recorded the warmed four-tab host/WebView2 footprint as the next memory-reduction baseline (`9913036`).
 - Diagnosed the warmed host with a managed heap dump: 74,804 BLite transactions were retained by the dependency registry, accounting for 14.96 MB of transaction, change-list, and dictionary-node objects plus a 1.86 MB expanded bucket table.
