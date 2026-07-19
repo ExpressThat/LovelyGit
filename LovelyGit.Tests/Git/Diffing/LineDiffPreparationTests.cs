@@ -102,10 +102,11 @@ public sealed class LineDiffPreparationTests(ITestOutputHelper output)
 
     private static Measurement Measure(Action action)
     {
+        const int repetitions = 5;
         GC.Collect();
         var before = GC.GetAllocatedBytesForCurrentThread();
         var started = Stopwatch.GetTimestamp();
-        action();
+        for (var index = 0; index < repetitions; index++) action();
         return new(Stopwatch.GetElapsedTime(started), GC.GetAllocatedBytesForCurrentThread() - before);
     }
 

@@ -137,11 +137,41 @@ public sealed class GitBranchCommandServiceTests
     }
 
     [Fact]
-    public async Task DeleteBranchAsync_ForceDeletesUnmergedBranch()
+    public async Task DeleteBranchAsync_SafeFailurePreservesStateAndForceRetryDeletesBranch()
     {
         using var repository = TemporaryGitRepository.Create();
         var branchService = new GitBranchCommandService(repository.GitCliService);
         await repository.CreateUnmergedBranchAsync("feature/force-delete-me");
+        var headBefore = await repository.GitCliService.ExecuteBufferedAsync(
+            ["rev-parse", "HEAD"],
+            repository.Path,
+            cancellationToken: CancellationToken.None);
+        var statusBefore = await repository.GitCliService.ExecuteBufferedAsync(
+            ["status", "--porcelain=v1"],
+            repository.Path,
+            cancellationToken: CancellationToken.None);
+
+        var error = await Assert.ThrowsAsync<GitOperationException>(() =>
+            branchService.DeleteBranchAsync(
+                repository.Path,
+                "feature/force-delete-me",
+                force: false,
+                CancellationToken.None));
+
+        var preservedRef = await repository.GitCliService.ExecuteBufferedAsync(
+            ["show-ref", "--verify", "refs/heads/feature/force-delete-me"],
+            repository.Path,
+            cancellationToken: CancellationToken.None);
+        Assert.Contains("not fully merged", error.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.NotEmpty(preservedRef.StandardOutput);
+        Assert.Equal(headBefore.StandardOutput, (await repository.GitCliService.ExecuteBufferedAsync(
+            ["rev-parse", "HEAD"],
+            repository.Path,
+            cancellationToken: CancellationToken.None)).StandardOutput);
+        Assert.Equal(statusBefore.StandardOutput, (await repository.GitCliService.ExecuteBufferedAsync(
+            ["status", "--porcelain=v1"],
+            repository.Path,
+            cancellationToken: CancellationToken.None)).StandardOutput);
 
         await branchService.DeleteBranchAsync(
             repository.Path,

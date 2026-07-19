@@ -63,6 +63,7 @@ This ledger records shipped performance work by feature area. Update it in the s
 - Virtualized the top repository strip and New Tab's recent-repository list above 30 records, while preserving the existing Motion tab layout for ordinary collections, exact filtering, lazy row overlays, active-tab visibility, and both complete custom-scrollbar ranges (`e7cadd8`).
 - Replaced the ordinary 2-30 repository strip's browser-default horizontal scrollbar with a two-pixel semantic scrollbar, preventing the native gutter from displacing and clipping the tab buttons while preserving user scrolling and access to every tab (`faa310d`).
 - Verified local tag creation and branch rename against 500 tags and 102 branches. Dialog/busy feedback stays within 12.2-22.4 ms, Git completes in 55.5-88.8 ms, and refreshed refs appear 60.7-64.9 ms later. Added the missing native `input` event path so WebView-driven rename text enables submission instead of leaving React state stale (`edb5ae7`).
+- Audited safe and force local-branch deletion against 104 branches and 500 tags. Safe deletion paints in 40.4 ms and removes the ref in 100.9 ms; an unmerged failure settles without mutation in 77.0 ms and the same dialog force-retries to authoritative removal in 116.6 ms. The page retains 9.09 MB post-GC heap, and the strengthened real-Git regression proves failed safe deletion preserves the ref, HEAD, index/worktree status, and retry contract (current local-delete checkpoint).
 
 ### Native Git Parser and Object Storage
 
