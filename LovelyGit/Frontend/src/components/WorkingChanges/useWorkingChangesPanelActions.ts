@@ -104,11 +104,13 @@ export function useWorkingChangesPanelActions({
 		isBusy: isMutating || isCommitting || isLoadingAmendMessage,
 		ignorePath: (path: string, target: "Local" | "Shared") =>
 			ignoreWorkingTreePath({
+				changes,
 				onRefresh,
 				path,
 				repositoryId,
 				setActionError,
 				setIsMutating,
+				setOptimisticChanges,
 				target,
 			}),
 		isAmending,

@@ -6,6 +6,7 @@ import type {
 	WorkingTreeChangesResponse,
 } from "@/generated/types";
 import { sendRequestWithResponse } from "@/lib/commands";
+import { applyOptimisticIgnore } from "./OptimisticWorkingTreeIgnore";
 import { applyOptimisticIndexMutation } from "./OptimisticWorkingTreeIndex";
 import { uniquePaths } from "./WorkingChangesPanelParts";
 import { waitForWorkingTreePaint } from "./WorkingTreePaintBoundary";
@@ -15,27 +16,37 @@ export type IndexCommandType =
 	| "UnstageWorkingTreeFiles";
 
 export async function ignoreWorkingTreePath({
+	changes,
 	onRefresh,
 	path,
 	repositoryId,
 	setActionError,
 	setIsMutating,
+	setOptimisticChanges,
 	target,
 }: {
+	changes: WorkingTreeChangesResponse | null;
 	onRefresh: () => Promise<void> | void;
 	path: string;
 	repositoryId: string;
 	setActionError: (message: string | null) => void;
 	setIsMutating: (isMutating: boolean) => void;
+	setOptimisticChanges: (changes: WorkingTreeChangesResponse | null) => void;
 	target: GitIgnoreTarget;
 }) {
-	setIsMutating(true);
-	setActionError(null);
+	flushSync(() => {
+		setIsMutating(true);
+		setActionError(null);
+		if (changes) setOptimisticChanges(applyOptimisticIgnore(changes, path));
+	});
+	await waitForWorkingTreePaint();
+	let ignoreUpdated = false;
 	try {
 		const result = await sendRequestWithResponse({
 			commandType: "IgnoreWorkingTreePath",
 			arguments: { path, repositoryId, target },
 		});
+		ignoreUpdated = true;
 		const destination = target === "Local" ? ".git/info/exclude" : ".gitignore";
 		toast.success(
 			result.added
@@ -43,9 +54,15 @@ export async function ignoreWorkingTreePath({
 				: `${path} is already listed in ${destination}`,
 		);
 		await onRefresh();
+		setOptimisticChanges(null);
 	} catch (error) {
+		if (!ignoreUpdated) setOptimisticChanges(null);
 		setActionError(
-			error instanceof Error ? error.message : "Failed to ignore this path.",
+			error instanceof Error
+				? error.message
+				: ignoreUpdated
+					? "The path was ignored, but its status could not be refreshed."
+					: "Failed to ignore this path.",
 		);
 	} finally {
 		setIsMutating(false);
