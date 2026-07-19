@@ -182,6 +182,9 @@ public sealed class SparseCheckoutServicesTests
 
 internal sealed class SparseRepository : IDisposable
 {
+    private static readonly RepositoryTemplate<bool> Template = new(
+        "lovelygit-sparse-template-",
+        InitializeTemplate);
     private readonly DirectoryInfo _directory;
     private readonly GitCliService _git = new();
 
@@ -195,8 +198,15 @@ internal sealed class SparseRepository : IDisposable
 
     public static SparseRepository Create()
     {
-        var repository = new SparseRepository(
-            Directory.CreateTempSubdirectory("lovelygit-sparse-"));
+        var (directory, _) = Template.CreateCopy("lovelygit-sparse-");
+        var repository = new SparseRepository(directory);
+        repository.Run(["update-index", "--refresh"]);
+        return repository;
+    }
+
+    private static bool InitializeTemplate(DirectoryInfo directory)
+    {
+        var repository = new SparseRepository(directory);
         repository.Run(["init", "-b", "main"]);
         repository.Run(["config", "user.name", "LovelyGit Test"]);
         repository.Run(["config", "user.email", "test@example.invalid"]);
@@ -205,7 +215,7 @@ internal sealed class SparseRepository : IDisposable
         repository.Write("docs/readme.md");
         repository.Run(["add", "."]);
         repository.Run(["commit", "-m", "Initial"]);
-        return repository;
+        return true;
     }
 
     public void Dispose()

@@ -85,6 +85,9 @@ public sealed class GitCheckoutRemoteCommandServiceTests
 
     private sealed class TemporaryRemoteGitRepository : IDisposable
     {
+        private static readonly RepositoryTemplate<string> Template = new(
+            "lovelygit-remote-checkout-template-",
+            InitializeTemplate);
         private readonly DirectoryInfo _directory;
 
         private TemporaryRemoteGitRepository(DirectoryInfo directory)
@@ -106,7 +109,18 @@ public sealed class GitCheckoutRemoteCommandServiceTests
 
         public static TemporaryRemoteGitRepository Create()
         {
-            var directory = Directory.CreateTempSubdirectory("lovelygit-remote-checkout-");
+            var (directory, templateRoot) = Template.CreateCopy("lovelygit-remote-checkout-");
+            var repository = new TemporaryRemoteGitRepository(directory);
+            RemoteRepositoryTemplate.RetargetConfig(
+                repository.UpdaterPath, templateRoot, directory.FullName);
+            RemoteRepositoryTemplate.RetargetConfig(
+                repository.ClonePath, templateRoot, directory.FullName);
+
+            return repository;
+        }
+
+        private static string InitializeTemplate(DirectoryInfo directory)
+        {
             var repository = new TemporaryRemoteGitRepository(directory);
             var gitCliService = repository.GitCliService;
 
@@ -121,7 +135,7 @@ public sealed class GitCheckoutRemoteCommandServiceTests
             RunGit(gitCliService, directory.FullName, ["clone", repository.BarePath, repository.ClonePath]);
             ConfigureIdentity(gitCliService, repository.ClonePath);
 
-            return repository;
+            return directory.FullName;
         }
 
         public void Dispose()

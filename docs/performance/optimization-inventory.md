@@ -229,6 +229,9 @@ This ledger records shipped performance work by feature area. Update it in the s
 
 ### Clone and Remote Transport
 
+- Reused immutable real-Git seeds for remote checkout, patch generation/application, sparse checkout, and repository operations; replaced assertion-only remote/head/config Git processes with direct state reads. The remote suite falls from 16.79 to 10.28 seconds under full contention while retaining production Git mutations and exact repository-state assertions (current test-gate checkpoint).
+- Grouped repository seed templates under one PID/start-time-owned testhost root and taught the official gate to reclaim inactive roots after the child exits. A one-time cleanup removed 10,623 abandoned template roots; complete gates now leave zero, while per-test repositories remain exclusive short-path copies and inherited read-only attributes are normalized once (current test-gate checkpoint).
+
 - Reconciled a successfully initialized repository directly into the frontend's known-repository state instead of issuing a redundant full-list request before opening it. Warm WebView2 dialog completion falls from 237.9 to 225.2 ms and the initial commit appears in 251.0 ms instead of 259.2 ms, while direct Git's required init and empty commit consume a 221.1 ms median (current initialization checkpoint).
 - Virtualized remote-management rows and disabled per-row layout motion above 20 remotes, preserving small-list entrance motion without animating every row during large-list scrolling (`8847a07`).
 - Compressed large remote-list responses before the native bridge while retaining the direct small-list response path. A 10,000-remote manager that previously timed out beyond 12 seconds now opens in 108.6 ms, reaches the final remote, and retains only eight rows / 994 DOM nodes with clean diagnostics (current maximum-remote checkpoint).

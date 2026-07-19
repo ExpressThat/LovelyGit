@@ -4,9 +4,9 @@ namespace LovelyGit.Tests.Git.RepositoryOperations;
 
 internal sealed class TestRepository : IDisposable
 {
-    private static readonly Lazy<DirectoryInfo> Template = new(
-        CreateTemplate,
-        LazyThreadSafetyMode.ExecutionAndPublication);
+    private static readonly RepositoryTemplate<bool> Template = new(
+        "lovelygit-integration-template-",
+        InitializeTemplate);
     private readonly DirectoryInfo _directory;
 
     private TestRepository(DirectoryInfo directory, GitCliService git)
@@ -25,14 +25,12 @@ internal sealed class TestRepository : IDisposable
 
     public static TestRepository Create()
     {
-        var directory = Directory.CreateTempSubdirectory("lovelygit-integration-");
-        CopyDirectory(Template.Value, directory);
+        var (directory, _) = Template.CreateCopy("lovelygit-integration-");
         return new TestRepository(directory, new GitCliService());
     }
 
-    private static DirectoryInfo CreateTemplate()
+    private static bool InitializeTemplate(DirectoryInfo directory)
     {
-        var directory = Directory.CreateTempSubdirectory("lovelygit-integration-template-");
         var repository = new TestRepository(directory, new GitCliService());
         repository.RunAsync("init", "--initial-branch=main").GetAwaiter().GetResult();
         repository.RunAsync("config", "user.name", "LovelyGit Test").GetAwaiter().GetResult();
@@ -40,7 +38,7 @@ internal sealed class TestRepository : IDisposable
         File.WriteAllText(System.IO.Path.Combine(repository.Path, "shared.txt"), "base");
         repository.RunAsync("add", ".").GetAwaiter().GetResult();
         repository.RunAsync("commit", "-m", "initial").GetAwaiter().GetResult();
-        return directory;
+        return true;
     }
 
     public TestRepository Copy()
@@ -117,4 +115,5 @@ internal sealed class TestRepository : IDisposable
             file.CopyTo(target);
         }
     }
+
 }

@@ -4,7 +4,7 @@ namespace LovelyGit.Tests.Git.Cli;
 
 internal sealed class TemporaryRemoteGitRepository : IDisposable
 {
-    private static readonly RepositoryTemplate<bool> Template = new(
+    private static readonly RepositoryTemplate<string> Template = new(
         "lovelygit-remote-template-",
         InitializeTemplate);
     private readonly DirectoryInfo _directory;
@@ -23,19 +23,25 @@ internal sealed class TemporaryRemoteGitRepository : IDisposable
     public GitCliService GitCliService { get; }
     private string UpdaterPath { get; }
 
-    public string Head(string path) =>
-        RunGit(path, ["rev-parse", "HEAD"]).StandardOutput.Trim();
+    public string Head(string path)
+    {
+        var gitDirectory = Directory.Exists(Path.Combine(path, ".git"))
+            ? Path.Combine(path, ".git")
+            : path;
+        var head = File.ReadAllText(Path.Combine(gitDirectory, "HEAD")).Trim();
+        const string prefix = "ref:";
+        return head.StartsWith(prefix, StringComparison.Ordinal)
+            ? ReadRef(gitDirectory, head[prefix.Length..].Trim())
+            : head;
+    }
 
     public string[] RemoteNames() =>
-        RunGit(ClonePath, ["remote"])
-            .StandardOutput
-            .Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries);
+        ReadRemotes().Keys.Order(StringComparer.Ordinal).ToArray();
 
     public string RemoteUrl(string name, bool push = false) =>
-        RunGit(ClonePath, push
-                ? ["remote", "get-url", "--push", name]
-                : ["remote", "get-url", name])
-            .StandardOutput.Trim();
+        ReadRemotes()[name] is var remote && push && remote.PushUrl != null
+            ? remote.PushUrl
+            : remote.Url;
 
     public void Commit(string path, string fileName, string message)
     {
@@ -52,15 +58,17 @@ internal sealed class TemporaryRemoteGitRepository : IDisposable
 
     public static TemporaryRemoteGitRepository Create()
     {
-        var (directory, _) = Template.CreateCopy("lovelygit-remote-");
+        var (directory, templateRoot) = Template.CreateCopy("lovelygit-remote-");
         var repository = new TemporaryRemoteGitRepository(directory);
 
-        repository.RunGit(repository.ClonePath, ["remote", "set-url", "origin", repository.BarePath]);
-        repository.RunGit(repository.UpdaterPath, ["remote", "set-url", "origin", repository.BarePath]);
+        RemoteRepositoryTemplate.RetargetConfig(
+            repository.ClonePath, templateRoot, directory.FullName);
+        RemoteRepositoryTemplate.RetargetConfig(
+            repository.UpdaterPath, templateRoot, directory.FullName);
         return repository;
     }
 
-    private static bool InitializeTemplate(DirectoryInfo directory)
+    private static string InitializeTemplate(DirectoryInfo directory)
     {
         var repository = new TemporaryRemoteGitRepository(directory);
 
@@ -77,7 +85,7 @@ internal sealed class TemporaryRemoteGitRepository : IDisposable
         repository.RunGit(directory.FullName, ["clone", repository.BarePath, repository.ClonePath]);
         repository.ConfigureIdentity(repository.ClonePath);
 
-        return true;
+        return directory.FullName;
     }
 
     public void Dispose()
@@ -105,4 +113,56 @@ internal sealed class TemporaryRemoteGitRepository : IDisposable
         RunGit(path, ["config", "user.name", "LovelyGit Test"]);
         RunGit(path, ["config", "user.email", "test@example.invalid"]);
     }
+
+    private static string ReadRef(string gitDirectory, string refName)
+    {
+        var loosePath = Path.Combine(
+            gitDirectory,
+            refName.Replace('/', Path.DirectorySeparatorChar));
+        if (File.Exists(loosePath)) return File.ReadAllText(loosePath).Trim();
+        foreach (var line in File.ReadLines(Path.Combine(gitDirectory, "packed-refs")))
+        {
+            if (line.EndsWith($" {refName}", StringComparison.Ordinal))
+            {
+                return line[..line.IndexOf(' ')];
+            }
+        }
+        throw new InvalidOperationException($"Ref {refName} was not found.");
+    }
+
+    private Dictionary<string, RemoteConfiguration> ReadRemotes()
+    {
+        var remotes = new Dictionary<string, RemoteConfiguration>(StringComparer.Ordinal);
+        string? currentName = null;
+        foreach (var rawLine in File.ReadLines(Path.Combine(ClonePath, ".git", "config")))
+        {
+            var line = rawLine.Trim();
+            if (line.StartsWith("[remote \"", StringComparison.Ordinal) && line.EndsWith("\"]"))
+            {
+                currentName = line[9..^2];
+                remotes.TryAdd(currentName, new RemoteConfiguration(string.Empty, null));
+                continue;
+            }
+            if (line.Length > 0 && line[0] == '[')
+            {
+                currentName = null;
+                continue;
+            }
+            if (currentName == null) continue;
+            var separator = line.IndexOf('=');
+            if (separator < 0) continue;
+            var key = line[..separator].Trim();
+            var value = line[(separator + 1)..].Trim().Replace("\\\\", "\\");
+            var current = remotes[currentName];
+            remotes[currentName] = key switch
+            {
+                "url" => current with { Url = value },
+                "pushurl" => current with { PushUrl = value },
+                _ => current,
+            };
+        }
+        return remotes;
+    }
+
+    private sealed record RemoteConfiguration(string Url, string? PushUrl);
 }

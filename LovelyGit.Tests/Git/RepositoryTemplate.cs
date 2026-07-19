@@ -60,8 +60,10 @@ internal sealed class RepositoryTemplate<TState>
         string prefix,
         Func<DirectoryInfo, TState> initializer)
     {
-        var directory = Directory.CreateTempSubdirectory(prefix);
-        return new TemplateState(directory, initializer(directory));
+        var directory = RepositoryTemplateLifetime.CreateDirectory(prefix);
+        var state = initializer(directory);
+        RepositoryTemplateLifetime.NormalizeFiles(directory);
+        return new TemplateState(directory, state);
     }
 
     private void RegisterPrewarm(int copyCount)
@@ -109,4 +111,108 @@ internal sealed class RepositoryTemplate<TState>
     }
 
     private sealed record TemplateState(DirectoryInfo Directory, TState State);
+}
+
+internal static class RepositoryTemplateLifetime
+{
+    private const string RootPrefix = "lovelygit-template-process-";
+    private const string OwnershipFileName = ".owner";
+    private static readonly DirectoryInfo Root = CreateRoot();
+
+    static RepositoryTemplateLifetime() => AppDomain.CurrentDomain.ProcessExit += (_, _) =>
+    {
+        try
+        {
+            DeleteDirectory(Root);
+        }
+        catch (IOException)
+        {
+            // The gate wrapper reclaims roots after the testhost releases native readers.
+        }
+        catch (UnauthorizedAccessException)
+        {
+            // The gate wrapper reclaims roots after the testhost releases native readers.
+        }
+    };
+
+    public static DirectoryInfo CreateDirectory(string prefix) =>
+        Directory.CreateDirectory(Path.Combine(Root.FullName, $"{prefix}{Guid.NewGuid():N}"));
+
+    internal static void DeleteDirectory(DirectoryInfo directory)
+    {
+        if (!directory.Exists) return;
+        try
+        {
+            directory.Delete(recursive: true);
+            return;
+        }
+        catch (UnauthorizedAccessException)
+        {
+            directory.Refresh();
+            if (!directory.Exists) return;
+        }
+        NormalizeFiles(directory);
+        directory.Delete(recursive: true);
+    }
+
+    internal static void NormalizeFiles(DirectoryInfo directory)
+    {
+        foreach (var file in directory.EnumerateFiles("*", SearchOption.AllDirectories))
+        {
+            file.Attributes = FileAttributes.Normal;
+        }
+    }
+
+    internal static bool TryDeleteRoot(DirectoryInfo directory, TimeSpan minimumAge)
+    {
+        directory.Refresh();
+        if (!directory.Exists || DateTime.UtcNow - directory.CreationTimeUtc < minimumAge)
+        {
+            return false;
+        }
+        if (IsOwnerActive(Path.Combine(directory.FullName, OwnershipFileName)))
+        {
+            return false;
+        }
+        DeleteDirectory(directory);
+        return true;
+    }
+
+    private static DirectoryInfo CreateRoot()
+    {
+        var directory = Directory.CreateTempSubdirectory(RootPrefix);
+        using var process = System.Diagnostics.Process.GetCurrentProcess();
+        File.WriteAllText(
+            Path.Combine(directory.FullName, OwnershipFileName),
+            $"{process.Id}|{process.StartTime.ToUniversalTime().Ticks}");
+        return directory;
+    }
+
+    private static bool IsOwnerActive(string ownerPath)
+    {
+        if (!File.Exists(ownerPath)) return false;
+        var parts = File.ReadAllText(ownerPath).Split('|');
+        if (parts.Length != 2 || !int.TryParse(parts[0], out var processId) ||
+            !long.TryParse(parts[1], out var startTicks))
+        {
+            return true;
+        }
+        try
+        {
+            using var process = System.Diagnostics.Process.GetProcessById(processId);
+            return process.StartTime.ToUniversalTime().Ticks == startTicks;
+        }
+        catch (ArgumentException)
+        {
+            return false;
+        }
+        catch (InvalidOperationException)
+        {
+            return false;
+        }
+        catch (System.ComponentModel.Win32Exception)
+        {
+            return true;
+        }
+    }
 }

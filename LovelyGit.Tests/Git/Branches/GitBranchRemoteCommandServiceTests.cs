@@ -131,7 +131,7 @@ public sealed class GitBranchRemoteCommandServiceTests
 
     private sealed class TemporaryRemoteGitRepository : IDisposable
     {
-        private static readonly RepositoryTemplate<string> Template = new(
+        private static readonly RepositoryTemplate<(string Branch, string Root)> Template = new(
             "lovelygit-remote-pull-template-",
             InitializeTemplate);
         private readonly DirectoryInfo _directory;
@@ -176,18 +176,20 @@ public sealed class GitBranchRemoteCommandServiceTests
 
         public static TemporaryRemoteGitRepository Create()
         {
-            var (directory, defaultBranchName) = Template.CreateCopy("lovelygit-remote-pull-");
+            var (directory, state) = Template.CreateCopy("lovelygit-remote-pull-");
             var gitCliService = new GitCliService();
             var repository = new TemporaryRemoteGitRepository(
                 directory,
                 gitCliService,
-                defaultBranchName);
-            RunGit(gitCliService, repository.ClonePath, ["remote", "set-url", "origin", repository.BarePath]);
-            RunGit(gitCliService, repository.UpdaterPath, ["remote", "set-url", "origin", repository.BarePath]);
+                state.Branch);
+            RemoteRepositoryTemplate.RetargetConfig(
+                repository.ClonePath, state.Root, directory.FullName);
+            RemoteRepositoryTemplate.RetargetConfig(
+                repository.UpdaterPath, state.Root, directory.FullName);
             return repository;
         }
 
-        private static string InitializeTemplate(DirectoryInfo directory)
+        private static (string Branch, string Root) InitializeTemplate(DirectoryInfo directory)
         {
             var gitCliService = new GitCliService();
             var repository = new TemporaryRemoteGitRepository(directory, gitCliService, "");
@@ -207,7 +209,7 @@ public sealed class GitBranchRemoteCommandServiceTests
             RunGit(gitCliService, directory.FullName, ["clone", repository.BarePath, repository.ClonePath]);
             ConfigureIdentity(gitCliService, repository.ClonePath);
 
-            return defaultBranchName;
+            return (defaultBranchName, directory.FullName);
         }
 
         public void Dispose()

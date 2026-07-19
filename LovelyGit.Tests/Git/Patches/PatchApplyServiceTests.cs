@@ -178,6 +178,9 @@ public sealed class PatchApplyServiceTests
 
     private sealed class TestRepository : IDisposable
     {
+        private static readonly RepositoryTemplate<bool> Template = new(
+            "lovelygit-apply-patch-template-",
+            InitializeTemplate);
         private readonly DirectoryInfo _directory;
 
         private TestRepository(DirectoryInfo directory)
@@ -192,12 +195,17 @@ public sealed class PatchApplyServiceTests
 
         public static TestRepository Create()
         {
-            var repository = new TestRepository(
-                Directory.CreateTempSubdirectory("lovelygit-apply-patch-"));
+            var (directory, _) = Template.CreateCopy("lovelygit-apply-patch-");
+            return new TestRepository(directory);
+        }
+
+        private static bool InitializeTemplate(DirectoryInfo directory)
+        {
+            var repository = new TestRepository(directory);
             repository.RunGit(["init"]);
             repository.RunGit(["config", "user.name", "LovelyGit Test"]);
             repository.RunGit(["config", "user.email", "test@example.invalid"]);
-            return repository;
+            return true;
         }
 
         public string Commit(string message)

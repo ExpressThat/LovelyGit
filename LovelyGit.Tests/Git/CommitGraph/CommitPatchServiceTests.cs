@@ -144,6 +144,9 @@ public sealed class CommitPatchServiceTests
 
     private sealed class TemporaryGitRepository : IDisposable
     {
+        private static readonly RepositoryTemplate<bool> Template = new(
+            "lovelygit-patch-template-",
+            InitializeTemplate);
         private readonly DirectoryInfo _directory;
         private readonly GitCliService _gitCliService = new();
 
@@ -164,13 +167,18 @@ public sealed class CommitPatchServiceTests
 
         public static TemporaryGitRepository Create()
         {
-            var directory = Directory.CreateTempSubdirectory("lovelygit-patch-");
+            var (directory, _) = Template.CreateCopy("lovelygit-patch-");
+            return new TemporaryGitRepository(directory);
+        }
+
+        private static bool InitializeTemplate(DirectoryInfo directory)
+        {
             var repository = new TemporaryGitRepository(directory);
             repository.RunGit(["init"]);
             repository.RunGit(["config", "user.name", "LovelyGit Test"]);
             repository.RunGit(["config", "user.email", "test@example.invalid"]);
             repository.RunGit(["config", "core.autocrlf", "false"]);
-            return repository;
+            return true;
         }
 
         public void Dispose()
