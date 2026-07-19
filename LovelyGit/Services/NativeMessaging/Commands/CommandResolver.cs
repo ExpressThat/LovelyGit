@@ -3,19 +3,22 @@ using ExpressThat.LovelyGit.Services.NativeMessaging;
 
 namespace ExpressThat.LovelyGit.Services.NativeMessaging.Commands
 {
-    public class CommandResolver
+    internal sealed class CommandResolver
     {
-        private readonly IEnumerable<ICommandResponder> _commandResponders;
+        private readonly CommandResponderCatalog _catalog;
+        private readonly IServiceProvider _services;
 
-        public CommandResolver(IEnumerable<ICommandResponder> commandResolvers)
+        public CommandResolver(
+            CommandResponderCatalog catalog,
+            IServiceProvider services)
         {
-            _commandResponders = commandResolvers;
+            _catalog = catalog;
+            _services = services;
         }
 
         public async Task<CommandResponseBase> ResolveCommand(NativeCommand<JsonElement> command)
         {
-            var responder = _commandResponders.FirstOrDefault(r => r.CanRespondTo(command));
-            if (responder == null)
+            if (!_catalog.TryGetResponderType(command.CommandType, out var responderType))
             {
                 return new CommandResponseBase
                 {
@@ -23,6 +26,17 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging.Commands
                     CommandType = command.CommandType,
                     IsSuccess = false,
                     ErrorMessage = $"No responder found for command type: {command.CommandType}",
+                };
+            }
+            var responder = (ICommandResponder)_services.GetRequiredService(responderType);
+            if (!responder.CanRespondTo(command))
+            {
+                return new CommandResponseBase
+                {
+                    CommandUniqueId = command.CommandUniqueId,
+                    CommandType = command.CommandType,
+                    IsSuccess = false,
+                    ErrorMessage = $"Responder mapping is invalid for command type: {command.CommandType}",
                 };
             }
             try

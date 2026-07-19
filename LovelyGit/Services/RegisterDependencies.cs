@@ -33,7 +33,8 @@ namespace ExpressThat.LovelyGit.Services
                 .AddLfsCommands()
                 .AddSparseCheckoutCommands()
                 .AddWorkingTreeCommands()
-                .AddSettingsCommands();
+                .AddSettingsCommands()
+                .DeferCommandResponders();
 
             return services;
         }
