@@ -6,6 +6,7 @@ import type { KnownGitRepository } from "@/generated/types";
 import {
 	RepositoryProvider,
 	resolveCurrentRepositoryId,
+	upsertRepository,
 	useRepositoryContext,
 } from "./repositoryContext";
 
@@ -76,6 +77,16 @@ describe("RepositoryProvider", () => {
 		expect(resolveCurrentRepositoryId("repository-1", null, false)).toBe(
 			"repository-1",
 		);
+	});
+
+	it("adds and replaces returned repositories without reloading the list", () => {
+		const first = repository("repository-1");
+		const replacement = { ...first, name: "Renamed" };
+		const repositories = [first];
+
+		expect(upsertRepository([], first)).toEqual([first]);
+		expect(upsertRepository(repositories, replacement)).toEqual([replacement]);
+		expect(upsertRepository(repositories, first)).toBe(repositories);
 	});
 });
 

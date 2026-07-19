@@ -8,6 +8,7 @@ import { nativeDialogTimeoutMs } from "@/lib/nativeDialogTimeout";
 import { useInitializeRepository } from "./useInitializeRepository";
 
 const repositories = vi.hoisted(() => ({
+	reconcileRepository: vi.fn(),
 	reloadRepositories: vi.fn(),
 	setCurrentRepositoryId: vi.fn(),
 }));
@@ -45,7 +46,12 @@ describe("useInitializeRepository", () => {
 		});
 		await act(() => result.current.initializeRepository());
 
-		expect(repositories.reloadRepositories).toHaveBeenCalledOnce();
+		expect(repositories.reconcileRepository).toHaveBeenCalledWith({
+			id: "new-repo",
+			name: "project",
+			path: "C:\\temp\\project",
+		});
+		expect(repositories.reloadRepositories).not.toHaveBeenCalled();
 		expect(repositories.setCurrentRepositoryId).toHaveBeenCalledWith(
 			"new-repo",
 		);
@@ -61,6 +67,32 @@ describe("useInitializeRepository", () => {
 
 		expect(send).not.toHaveBeenCalled();
 		expect(repositories.reloadRepositories).not.toHaveBeenCalled();
+	});
+
+	it("keeps the created repository visible when opening it fails", async () => {
+		const createdRepository = {
+			id: "new-repo",
+			name: "project",
+			path: "C:\\temp\\project",
+		};
+		send.mockResolvedValueOnce(createdRepository);
+		repositories.setCurrentRepositoryId.mockRejectedValueOnce(
+			new Error("Could not save the current repository"),
+		);
+		const { result } = renderHook(() => useInitializeRepository());
+		populate(result.current);
+
+		await act(() => result.current.initializeRepository());
+
+		expect(repositories.reconcileRepository).toHaveBeenCalledWith(
+			createdRepository,
+		);
+		expect(repositories.reloadRepositories).not.toHaveBeenCalled();
+		expect(result.current.open).toBe(true);
+		expect(result.current.directoryName).toBe("project");
+		expect(toast.error).toHaveBeenCalledWith(
+			"Could not save the current repository",
+		);
 	});
 
 	it("chooses a parent folder and surfaces picker failures", async () => {

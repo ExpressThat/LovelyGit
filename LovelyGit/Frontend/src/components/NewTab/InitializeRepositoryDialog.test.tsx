@@ -7,6 +7,7 @@ import { sendRequestWithResponse } from "@/lib/commands";
 import { InitializeRepositoryDialog } from "./InitializeRepositoryDialog";
 
 const repositories = vi.hoisted(() => ({
+	reconcileRepository: vi.fn(),
 	reloadRepositories: vi.fn(),
 	setCurrentRepositoryId: vi.fn(),
 }));

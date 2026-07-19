@@ -20,6 +20,7 @@ type RepositoryContextValue = {
 	currentRepository: KnownGitRepository | null;
 	currentRepositoryId: string | null;
 	isLoadingRepositories: boolean;
+	reconcileRepository: (repository: KnownGitRepository) => void;
 	reloadRepositories: () => Promise<void>;
 	repositories: KnownGitRepository[];
 	setCurrentRepositoryId: (repositoryId: string | null) => Promise<void>;
@@ -63,6 +64,9 @@ export function RepositoryProvider({ children }: { children: ReactNode }) {
 		},
 		[reloadRepositories],
 	);
+	const reconcileRepository = useCallback((repository: KnownGitRepository) => {
+		setRepositories((current) => upsertRepository(current, repository));
+	}, []);
 
 	useEffect(() => {
 		void initSettingsStore();
@@ -98,6 +102,7 @@ export function RepositoryProvider({ children }: { children: ReactNode }) {
 			currentRepositoryId,
 			closeRepository,
 			isLoadingRepositories,
+			reconcileRepository,
 			reloadRepositories,
 			repositories,
 			setCurrentRepositoryId: (repositoryId) =>
@@ -108,6 +113,7 @@ export function RepositoryProvider({ children }: { children: ReactNode }) {
 			currentRepository,
 			currentRepositoryId,
 			isLoadingRepositories,
+			reconcileRepository,
 			reloadRepositories,
 			repositories,
 		],
@@ -118,6 +124,21 @@ export function RepositoryProvider({ children }: { children: ReactNode }) {
 			{children}
 		</RepositoryContext.Provider>
 	);
+}
+
+export function upsertRepository(
+	repositories: KnownGitRepository[],
+	repository: KnownGitRepository,
+) {
+	const existingIndex = repositories.findIndex(
+		(current) => current.id === repository.id,
+	);
+	if (existingIndex < 0) return [...repositories, repository];
+	if (repositories[existingIndex] === repository) return repositories;
+
+	const nextRepositories = [...repositories];
+	nextRepositories[existingIndex] = repository;
+	return nextRepositories;
 }
 
 export function resolveCurrentRepositoryId(

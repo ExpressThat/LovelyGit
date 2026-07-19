@@ -44,7 +44,7 @@ export function useInitializeRepository() {
 				},
 				commandType: NativeMessageType.InitializeRepository,
 			});
-			await repositories.reloadRepositories();
+			repositories.reconcileRepository(repository);
 			await repositories.setCurrentRepositoryId(repository.id);
 			setOpen(false);
 			toast.success(`Created ${repository.name || directoryName.trim()}`);

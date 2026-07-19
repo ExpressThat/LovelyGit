@@ -228,6 +228,7 @@ This ledger records shipped performance work by feature area. Update it in the s
 
 ### Clone and Remote Transport
 
+- Reconciled a successfully initialized repository directly into the frontend's known-repository state instead of issuing a redundant full-list request before opening it. Warm WebView2 dialog completion falls from 237.9 to 225.2 ms and the initial commit appears in 251.0 ms instead of 259.2 ms, while direct Git's required init and empty commit consume a 221.1 ms median (current initialization checkpoint).
 - Virtualized remote-management rows and disabled per-row layout motion above 20 remotes, preserving small-list entrance motion without animating every row during large-list scrolling (`8847a07`).
 - Compressed large remote-list responses before the native bridge while retaining the direct small-list response path. A 10,000-remote manager that previously timed out beyond 12 seconds now opens in 108.6 ms, reaches the final remote, and retains only eight rows / 994 DOM nodes with clean diagnostics (current maximum-remote checkpoint).
 - Streamed remote-list configuration through the shared pooled span reader, eliminating temporary strings for ignored refspec and section lines. A 10,001-remote native read falls from 18.02 ms / 8.92 MB allocated to 12.00 ms / 3.89 MB, and the compiled manager now presents in 68.8 ms with 930 DOM nodes while preserving duplicate-section, long-line, cancellation, ordering, and exact final-remote behavior (current remote-list hydration checkpoint).
