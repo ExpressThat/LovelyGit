@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import {
@@ -34,6 +34,28 @@ describe("CheckoutRemoteBranchDialog", () => {
 			screen.getByRole("button", { name: "Create tracking branch" }),
 		);
 		expect(onConfirm).toHaveBeenCalledWith("feature/local");
+	});
+
+	it("accepts the native input event emitted by the desktop WebView", () => {
+		const onConfirm = vi.fn();
+		render(
+			<CheckoutRemoteBranchDialog
+				existingBranchNames={["main"]}
+				isBusy={false}
+				onConfirm={onConfirm}
+				onOpenChange={vi.fn()}
+				remoteBranchName="origin/main"
+			/>,
+		);
+
+		fireEvent.input(screen.getByLabelText("Local branch name"), {
+			target: { value: "perf/remote-checkout" },
+		});
+		fireEvent.click(
+			screen.getByRole("button", { name: "Create tracking branch" }),
+		);
+
+		expect(onConfirm).toHaveBeenCalledWith("perf/remote-checkout");
 	});
 });
 

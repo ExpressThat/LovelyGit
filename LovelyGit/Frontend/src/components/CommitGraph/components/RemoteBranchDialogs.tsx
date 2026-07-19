@@ -76,6 +76,7 @@ export function CheckoutRemoteBranchDialog({
 							onChange={(event) =>
 								setLocalBranchName(event.currentTarget.value)
 							}
+							onInput={(event) => setLocalBranchName(event.currentTarget.value)}
 							value={localBranchName}
 						/>
 						<AnimatePresence initial={false}>
