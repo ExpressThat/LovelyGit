@@ -48,6 +48,49 @@ public sealed class GitOperationServiceTests
         Assert.Contains("Refresh tags", exception.Message);
     }
 
+    [Theory]
+    [InlineData(
+        "To C:/remote.git\n ! [rejected] tag -> tag (already exists)\nerror: failed to push some refs",
+        "! [rejected] tag -> tag (already exists)")]
+    [InlineData("transport header\nfatal: Could not read from remote", "fatal: Could not read from remote")]
+    [InlineData("transport header\nerror: failed to fetch", "error: failed to fetch")]
+    public void GitOperationException_PrefersActionableDiagnostic(
+        string standardError,
+        string expectedMessage)
+    {
+        var operation = FailedOperation(standardError);
+
+        var exception = new GitOperationException(operation);
+
+        Assert.StartsWith(expectedMessage, exception.Message);
+        Assert.Contains("Try again.", exception.Message);
+    }
+
+    [Fact]
+    public void GitOperationException_RetainsFirstLineFallbackForUnstructuredErrors()
+    {
+        var operation = FailedOperation("transport unavailable\nconnection closed");
+
+        var exception = new GitOperationException(operation);
+
+        Assert.StartsWith("transport unavailable", exception.Message);
+    }
+
+    private static GitOperationResult FailedOperation(string standardError)
+    {
+        var now = DateTimeOffset.UtcNow;
+        return new GitOperationResult(
+            "Push tag",
+            "C:/repository",
+            ["push"],
+            string.Empty,
+            standardError,
+            1,
+            now,
+            now,
+            "Try again.");
+    }
+
     private sealed class TemporaryGitRepository : IDisposable
     {
         private readonly DirectoryInfo _directory;
