@@ -46,7 +46,7 @@ internal sealed partial class GitBranchCommandService
         return RunAsync(
             repositoryPath,
             "Delete remote branch",
-            ["push", "--delete", remote, $"refs/heads/{branch}"],
+            ["push", "--quiet", "--delete", remote, $"refs/heads/{branch}"],
             "Check authentication, remote permissions, and whether the remote branch still exists.",
             cancellationToken);
     }
