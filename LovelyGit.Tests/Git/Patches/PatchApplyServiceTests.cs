@@ -38,13 +38,14 @@ public sealed class PatchApplyServiceTests
         using var patch = TemporaryPatch.Create(PatchText.ReplaceLineEndings("\n") + "\n");
         var service = new PatchApplyService(repository.Git);
 
-        await Assert.ThrowsAsync<InvalidOperationException>(() => service.ApplyAsync(
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => service.ApplyAsync(
             repository.Path,
             patch.Path,
             stageChanges: false,
             reverse: false,
             CancellationToken.None));
 
+        Assert.Contains("sample.txt", exception.Message, StringComparison.Ordinal);
         Assert.Equal("different\n", File.ReadAllText(Path.Combine(repository.Path, "sample.txt")));
         Assert.Empty(repository.RunGit(["status", "--short"]).StandardOutput);
     }

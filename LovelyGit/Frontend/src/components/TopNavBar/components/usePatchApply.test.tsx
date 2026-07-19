@@ -3,13 +3,23 @@
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { sendRequestWithResponse } from "@/lib/commands";
+import { gitMutationTimeoutMs } from "@/lib/gitMutationTimeout";
 import { nativeDialogTimeoutMs } from "@/lib/nativeDialogTimeout";
 import { usePatchApply } from "./usePatchApply";
 
 vi.mock("@/lib/commands", () => ({ sendRequestWithResponse: vi.fn() }));
+const waitForPaint = vi.hoisted(() =>
+	vi.fn<() => Promise<void>>(async () => undefined),
+);
+vi.mock("@/lib/waitForBrowserPaint", () => ({
+	waitForBrowserPaint: waitForPaint,
+}));
 
 describe("usePatchApply", () => {
-	beforeEach(() => vi.clearAllMocks());
+	beforeEach(() => {
+		vi.clearAllMocks();
+		waitForPaint.mockResolvedValue(undefined);
+	});
 
 	it("opens a native patch preview", async () => {
 		vi.mocked(sendRequestWithResponse).mockResolvedValue(preview);
@@ -52,10 +62,38 @@ describe("usePatchApply", () => {
 				},
 				commandType: "ApplyPatch",
 			},
-			{ timeoutMs: 30_000 },
+			{ timeoutMs: gitMutationTimeoutMs },
 		);
+		expect(waitForPaint).toHaveBeenCalledOnce();
 		expect(result.current.preview).toBeNull();
 		expect(onApplied).toHaveBeenCalledOnce();
+	});
+
+	it("paints the protected state before entering the native bridge", async () => {
+		vi.mocked(sendRequestWithResponse)
+			.mockResolvedValueOnce(preview)
+			.mockResolvedValueOnce(undefined);
+		let finishPaint: (() => void) | undefined;
+		waitForPaint.mockReturnValueOnce(
+			new Promise<void>((resolve) => {
+				finishPaint = resolve;
+			}),
+		);
+		const { result } = renderHook(() =>
+			usePatchApply("repository-id", vi.fn()),
+		);
+		await act(() => result.current.choosePatch());
+
+		let apply: Promise<void> | undefined;
+		act(() => {
+			apply = result.current.applyPatch();
+		});
+
+		expect(result.current.isApplying).toBe(true);
+		expect(sendRequestWithResponse).toHaveBeenCalledOnce();
+		finishPaint?.();
+		await act(() => apply);
+		expect(sendRequestWithResponse).toHaveBeenCalledTimes(2);
 	});
 
 	it("does nothing without a repository", async () => {

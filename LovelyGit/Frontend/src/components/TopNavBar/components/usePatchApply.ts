@@ -2,8 +2,10 @@ import { useState } from "react";
 import { toast } from "sonner";
 import type { PatchPreviewResponse } from "@/generated/types";
 import { sendRequestWithResponse } from "@/lib/commands";
+import { gitMutationTimeoutMs } from "@/lib/gitMutationTimeout";
 import { nativeDialogTimeoutMs } from "@/lib/nativeDialogTimeout";
 import { NativeMessageType } from "@/lib/nativeMessaging";
+import { waitForBrowserPaint } from "@/lib/waitForBrowserPaint";
 
 export function usePatchApply(
 	repositoryId: string | null,
@@ -39,6 +41,7 @@ export function usePatchApply(
 		if (!repositoryId || !preview?.path || isApplying) return;
 		setIsApplying(true);
 		try {
+			await waitForBrowserPaint();
 			await sendRequestWithResponse(
 				{
 					commandType: NativeMessageType.ApplyPatch,
@@ -49,7 +52,7 @@ export function usePatchApply(
 						stageChanges,
 					},
 				},
-				{ timeoutMs: 30_000 },
+				{ timeoutMs: gitMutationTimeoutMs },
 			);
 			toast.success(
 				stageChanges ? "Patch applied and staged" : "Patch applied",

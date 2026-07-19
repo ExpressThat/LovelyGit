@@ -1,3 +1,4 @@
+using CliWrap;
 using ExpressThat.LovelyGit.Services.Git.Cli;
 
 namespace ExpressThat.LovelyGit.Services.Git.Patches;
@@ -26,16 +27,15 @@ internal sealed class PatchApplyService
 
         cancellationToken.ThrowIfCancellationRequested();
         var arguments = BuildArguments(fullPatchPath, stageChanges, reverse);
+        var errors = new PatchApplyErrorCollector();
         var apply = await _gitCliService
-            .ExecuteBufferedAsync(
-                arguments,
-                repositoryPath,
-                validateExitCode: false,
-                cancellationToken)
+            .CreateCommand(arguments, repositoryPath, validateExitCode: false)
+            .WithStandardErrorPipe(PipeTarget.ToDelegate(errors.Add))
+            .ExecuteAsync(cancellationToken)
             .ConfigureAwait(false);
         if (apply.ExitCode != 0)
         {
-            throw new InvalidOperationException(FormatFailure(apply.StandardError));
+            throw new InvalidOperationException(errors.FormatFailure());
         }
     }
 
@@ -51,11 +51,4 @@ internal sealed class PatchApplyService
         return arguments;
     }
 
-    private static string FormatFailure(string standardError)
-    {
-        var message = standardError.Trim();
-        return string.IsNullOrEmpty(message)
-            ? "Git could not apply this patch to the current repository state."
-            : message;
-    }
 }
