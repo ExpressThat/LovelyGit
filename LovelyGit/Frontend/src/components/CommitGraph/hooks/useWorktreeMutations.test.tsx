@@ -7,12 +7,17 @@ import { sendRequestWithResponse } from "@/lib/commands";
 import { nativeDialogTimeoutMs } from "@/lib/nativeDialogTimeout";
 import { useWorktreeMutations } from "./useWorktreeMutations";
 
-const reloadRepositories = vi.fn(async () => undefined);
+const reconcileRepository = vi.fn();
+const reconcileRepositoryRemoval = vi.fn();
 const setCurrentRepositoryId = vi.fn(async () => undefined);
 
 vi.mock("@/lib/commands", () => ({ sendRequestWithResponse: vi.fn() }));
 vi.mock("@/lib/repositoryContext", () => ({
-	useRepositoryContext: () => ({ reloadRepositories, setCurrentRepositoryId }),
+	useRepositoryContext: () => ({
+		reconcileRepository,
+		reconcileRepositoryRemoval,
+		setCurrentRepositoryId,
+	}),
 }));
 
 describe("useWorktreeMutations", () => {
@@ -79,18 +84,52 @@ describe("useWorktreeMutations", () => {
 		expect(result.current.lockTarget).toBeNull();
 	});
 
-	it("registers and selects a worktree opened in LovelyGit", async () => {
+	it("reconciles and selects a worktree without reloading all repositories", async () => {
+		const opened = {
+			id: "linked-id",
+			name: "repo-demo",
+			path: "C:/repo-demo",
+		};
+		vi.mocked(sendRequestWithResponse).mockResolvedValueOnce(opened);
+		const { result } = renderController(vi.fn());
+
+		await act(() => result.current.mutate("Open", linkedWorktree()));
+
+		expect(reconcileRepository).toHaveBeenCalledWith(opened);
+		expect(setCurrentRepositoryId).toHaveBeenCalledWith("linked-id");
+	});
+
+	it("forgets a removed registered worktree without reloading all repositories", async () => {
 		vi.mocked(sendRequestWithResponse).mockResolvedValueOnce({
 			id: "linked-id",
 			name: "repo-demo",
 			path: "C:/repo-demo",
 		});
+		const worktree = linkedWorktree();
 		const { result } = renderController(vi.fn());
+		act(() => result.current.manage("Remove", worktree));
 
-		await act(() => result.current.mutate("Open", linkedWorktree()));
+		await act(() => result.current.mutate("Remove", worktree));
 
-		expect(reloadRepositories).toHaveBeenCalledOnce();
-		expect(setCurrentRepositoryId).toHaveBeenCalledWith("linked-id");
+		expect(reconcileRepositoryRemoval).toHaveBeenCalledWith("linked-id");
+		expect(result.current.removeTarget).toBeNull();
+	});
+
+	it("keeps a failed removal retryable without changing repositories", async () => {
+		vi.mocked(sendRequestWithResponse)
+			.mockRejectedValueOnce(new Error("worktree is dirty"))
+			.mockResolvedValueOnce(null);
+		const worktree = linkedWorktree();
+		const { result } = renderController(vi.fn());
+		act(() => result.current.manage("Remove", worktree));
+
+		await act(() => result.current.mutate("Remove", worktree));
+
+		expect(reconcileRepositoryRemoval).not.toHaveBeenCalled();
+		expect(result.current.removeTarget).toEqual(worktree);
+		expect(result.current.busyPath).toBeNull();
+		await act(() => result.current.mutate("Remove", worktree, { force: true }));
+		expect(sendRequestWithResponse).toHaveBeenCalledTimes(2);
 	});
 });
 

@@ -17,7 +17,11 @@ export function useWorktreeMutations({
 	onRepositoryChanged: () => void;
 	repositoryId: string | null;
 }) {
-	const { reloadRepositories, setCurrentRepositoryId } = useRepositoryContext();
+	const {
+		reconcileRepository,
+		reconcileRepositoryRemoval,
+		setCurrentRepositoryId,
+	} = useRepositoryContext();
 	const [busyPath, setBusyPath] = useState<string | null>(null);
 	const [createBranchName, setCreateBranchName] = useState<string | null>(null);
 	const [lockTarget, setLockTarget] = useState<RepositoryWorktreeItem | null>(
@@ -82,7 +86,8 @@ export function useWorktreeMutations({
 			await afterSuccess(
 				action,
 				opened,
-				reloadRepositories,
+				reconcileRepository,
+				reconcileRepositoryRemoval,
 				setCurrentRepositoryId,
 			);
 			if (action === "Lock") setLockTarget(null);
@@ -127,12 +132,13 @@ export function useWorktreeMutations({
 async function afterSuccess(
 	action: WorktreeMutationAction,
 	opened: KnownGitRepository | null,
-	reload: () => Promise<void>,
+	reconcile: (repository: KnownGitRepository) => void,
+	remove: (repositoryId: string) => void,
 	select: (repositoryId: string | null) => Promise<void>,
 ) {
-	if (action === "Remove") await reload();
+	if (action === "Remove" && opened) remove(opened.id);
 	if (action === "Open" && opened) {
-		await reload();
+		reconcile(opened);
 		await select(opened.id);
 	}
 }

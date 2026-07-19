@@ -104,7 +104,7 @@ internal sealed class ManageWorktreeCommandResolver : CommandResponder<ManageWor
                 {
                     await _repositories.RemoveAsync(registered.Id).ConfigureAwait(false);
                 }
-                return null;
+                return registered;
             default:
                 throw new ArgumentOutOfRangeException(nameof(arguments), "Worktree action is not supported.");
         }

@@ -157,6 +157,21 @@ describe("RepositoryProvider", () => {
 			"repository-1,repository-2",
 		);
 	});
+
+	it("reconciles an already-completed removal without a native request", async () => {
+		state.sendRequestWithResponse.mockResolvedValueOnce(
+			directResponse([repository("repository-1"), repository("repository-2")]),
+		);
+		renderProvider();
+		await screen.findByText("repository-1,repository-2");
+
+		act(() => screen.getByRole("button", { name: "Forget second" }).click());
+
+		expect(screen.getByTestId("repositories")).toHaveTextContent(
+			"repository-1",
+		);
+		expect(state.sendRequestWithResponse).toHaveBeenCalledOnce();
+	});
 });
 
 function renderProvider() {
@@ -172,6 +187,7 @@ function CurrentRepositoryProbe() {
 		closeRepository,
 		currentRepositoryId,
 		reconcileRepository,
+		reconcileRepositoryRemoval,
 		repositories,
 	} = useRepositoryContext();
 	return (
@@ -195,6 +211,12 @@ function CurrentRepositoryProbe() {
 				type="button"
 			>
 				Add third
+			</button>
+			<button
+				onClick={() => reconcileRepositoryRemoval("repository-2")}
+				type="button"
+			>
+				Forget second
 			</button>
 		</>
 	);

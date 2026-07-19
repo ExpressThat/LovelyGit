@@ -22,6 +22,7 @@ type RepositoryContextValue = {
 	currentRepositoryId: string | null;
 	isLoadingRepositories: boolean;
 	reconcileRepository: (repository: KnownGitRepository) => void;
+	reconcileRepositoryRemoval: (repositoryId: string) => void;
 	reloadRepositories: () => Promise<void>;
 	repositories: KnownGitRepository[];
 	setCurrentRepositoryId: (repositoryId: string | null) => Promise<void>;
@@ -64,6 +65,11 @@ export function RepositoryProvider({ children }: { children: ReactNode }) {
 	const reconcileRepository = useCallback((repository: KnownGitRepository) => {
 		setRepositories((current) => upsertRepository(current, repository));
 	}, []);
+	const reconcileRepositoryRemoval = useCallback((repositoryId: string) => {
+		setRepositories((current) =>
+			current.filter((repository) => repository.id !== repositoryId),
+		);
+	}, []);
 
 	useEffect(() => {
 		void initSettingsStore();
@@ -100,6 +106,7 @@ export function RepositoryProvider({ children }: { children: ReactNode }) {
 			closeRepository,
 			isLoadingRepositories,
 			reconcileRepository,
+			reconcileRepositoryRemoval,
 			reloadRepositories,
 			repositories,
 			setCurrentRepositoryId: (repositoryId) =>
@@ -111,6 +118,7 @@ export function RepositoryProvider({ children }: { children: ReactNode }) {
 			currentRepositoryId,
 			isLoadingRepositories,
 			reconcileRepository,
+			reconcileRepositoryRemoval,
 			reloadRepositories,
 			repositories,
 		],
