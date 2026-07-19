@@ -4,6 +4,7 @@ import { DeferredPrimaryOverlay } from "@/AppPrimaryOverlays";
 import { createDeferredLoader } from "@/lib/deferredLoader";
 import type { CheckoutTagDialog } from "./CheckoutTagDialog";
 import type { CreateTagDialog } from "./CreateTagDialog";
+import type { DeleteRemoteTagDialog } from "./DeleteRemoteTagDialog";
 import type { DeleteTagDialog } from "./DeleteTagDialog";
 
 export const DeferredCheckoutTagDialog = createDialog(
@@ -18,10 +19,15 @@ export const DeferredDeleteTagDialog = createDialog(
 	() => import("./DeleteTagDialog"),
 	"DeleteTagDialog",
 );
+export const DeferredDeleteRemoteTagDialog = createDialog(
+	() => import("./DeleteRemoteTagDialog"),
+	"DeleteRemoteTagDialog",
+);
 
 type DialogModuleMap = {
 	CheckoutTagDialog: typeof CheckoutTagDialog;
 	CreateTagDialog: typeof CreateTagDialog;
+	DeleteRemoteTagDialog: typeof DeleteRemoteTagDialog;
 	DeleteTagDialog: typeof DeleteTagDialog;
 };
 

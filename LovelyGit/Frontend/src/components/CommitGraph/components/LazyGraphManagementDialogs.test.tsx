@@ -7,6 +7,7 @@ import {
 	LazyCheckoutTagDialog,
 	LazyCommitComparisonDialog,
 	LazyCreateWorktreeDialog,
+	LazyDeleteRemoteTagDialog,
 	LazyDeleteTagDialog,
 	LazyRenameBranchDialog,
 } from "./LazyGraphManagementDialogs";
@@ -14,6 +15,10 @@ import {
 vi.mock("./DeleteTagDialog", () => ({
 	DeleteTagDialog: ({ tagName }: { tagName: string | null }) =>
 		tagName ? <div>Delete tag dialog loaded</div> : null,
+}));
+vi.mock("./DeleteRemoteTagDialog", () => ({
+	DeleteRemoteTagDialog: ({ tagName }: { tagName: string | null }) =>
+		tagName ? <div>Delete remote tag dialog loaded</div> : null,
 }));
 vi.mock("./CheckoutTagDialog", () => ({
 	CheckoutTagDialog: ({ tagName }: { tagName: string }) => (
@@ -59,6 +64,21 @@ describe("LazyGraphManagementDialogs", () => {
 		).not.toBeInTheDocument();
 		view.rerender(<LazyDeleteTagDialog {...props} tagName="v1.0.0" />);
 		expect(await screen.findByText("Delete tag dialog loaded")).toBeVisible();
+	});
+
+	it("reveals remote-tag deletion through the immediate deferred overlay", async () => {
+		render(
+			<LazyDeleteRemoteTagDialog
+				isBusy={false}
+				onConfirm={vi.fn()}
+				onOpenChange={vi.fn()}
+				remoteName="origin"
+				tagName="v1.0.0"
+			/>,
+		);
+		expect(
+			await screen.findByText("Delete remote tag dialog loaded"),
+		).toBeVisible();
 	});
 
 	it("reveals the rename dialog after selecting a branch", async () => {

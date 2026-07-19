@@ -1,5 +1,4 @@
-import { type ComponentProps, lazy, type ReactNode, Suspense } from "react";
-import { SurfaceLoading } from "@/AppLazySurfaces";
+import type { ComponentProps } from "react";
 import type { BranchComparisonDialog } from "./BranchComparisonDialog";
 import type { BranchUpstreamDialog } from "./BranchUpstreamDialog";
 import type { CheckoutTagDialog } from "./CheckoutTagDialog";
@@ -15,6 +14,7 @@ import {
 import {
 	DeferredCheckoutTagDialog,
 	DeferredCreateTagDialog,
+	DeferredDeleteRemoteTagDialog,
 	DeferredDeleteTagDialog,
 } from "./DeferredTagManagementDialogs";
 import {
@@ -28,13 +28,6 @@ import type { DeleteTagDialog } from "./DeleteTagDialog";
 import type { LockWorktreeDialog } from "./LockWorktreeDialog";
 import type { RemoveWorktreeDialog } from "./RemoveWorktreeDialog";
 import type { RenameBranchDialog } from "./RenameBranchDialog";
-
-const DeleteRemoteTag = lazy(() =>
-	importDialog(
-		"DeleteRemoteTagDialog",
-		() => import("./DeleteRemoteTagDialog"),
-	),
-);
 
 export function LazyBranchComparisonDialog(
 	props: ComponentProps<typeof BranchComparisonDialog>,
@@ -78,9 +71,7 @@ export function LazyDeleteBranchDialog(
 export function LazyDeleteRemoteTagDialog(
 	props: ComponentProps<typeof DeleteRemoteTagDialog>,
 ) {
-	return props.tagName ? (
-		<Boundary>{<DeleteRemoteTag {...props} />}</Boundary>
-	) : null;
+	return props.tagName ? <DeferredDeleteRemoteTagDialog {...props} /> : null;
 }
 export function LazyDeleteTagDialog(
 	props: ComponentProps<typeof DeleteTagDialog>,
@@ -101,22 +92,4 @@ export function LazyRenameBranchDialog(
 	props: ComponentProps<typeof RenameBranchDialog>,
 ) {
 	return props.branchName ? <DeferredRenameBranchDialog {...props} /> : null;
-}
-
-function Boundary({ children }: { children: ReactNode }) {
-	return (
-		<Suspense
-			fallback={<SurfaceLoading label="Opening Git operation" overlay />}
-		>
-			{children}
-		</Suspense>
-	);
-}
-
-async function importDialog<
-	TName extends string,
-	TModule extends Record<TName, unknown>,
->(name: TName, load: () => Promise<TModule>) {
-	const module = await load();
-	return { default: module[name] as TModule[TName] };
 }
