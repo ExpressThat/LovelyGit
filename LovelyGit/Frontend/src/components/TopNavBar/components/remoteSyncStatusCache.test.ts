@@ -3,7 +3,9 @@ import type { RemoteSyncStatusResponse } from "@/generated/types";
 import {
 	clearRemoteSyncStatusCache,
 	getCachedRemoteSyncStatus,
+	invalidateRemoteSyncStatus,
 	setCachedRemoteSyncStatus,
+	subscribeRemoteSyncStatus,
 } from "./remoteSyncStatusCache";
 
 describe("remoteSyncStatusCache", () => {
@@ -26,6 +28,24 @@ describe("remoteSyncStatusCache", () => {
 
 		expect(getCachedRemoteSyncStatus("b")).toBeNull();
 		expect(getCachedRemoteSyncStatus("a")?.branchName).toBe("a");
+	});
+
+	it("invalidates only the requested repository and notifies its subscribers", () => {
+		setCachedRemoteSyncStatus("repo", status("main"));
+		setCachedRemoteSyncStatus("other", status("other"));
+		let notifications = 0;
+		const unsubscribe = subscribeRemoteSyncStatus(
+			"repo",
+			() => notifications++,
+		);
+
+		invalidateRemoteSyncStatus("repo");
+		unsubscribe();
+		invalidateRemoteSyncStatus("repo");
+
+		expect(notifications).toBe(1);
+		expect(getCachedRemoteSyncStatus("repo")).toBeNull();
+		expect(getCachedRemoteSyncStatus("other")?.branchName).toBe("other");
 	});
 });
 

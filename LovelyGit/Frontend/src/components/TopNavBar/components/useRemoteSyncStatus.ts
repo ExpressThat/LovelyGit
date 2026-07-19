@@ -7,6 +7,7 @@ import {
 import {
 	getCachedRemoteSyncStatus,
 	setCachedRemoteSyncStatus,
+	subscribeRemoteSyncStatus,
 } from "./remoteSyncStatusCache";
 
 export const CACHED_SYNC_REFRESH_DELAY_MS = 500;
@@ -112,6 +113,11 @@ export function useRemoteSyncStatus(
 			}),
 		[load],
 	);
+
+	useEffect(() => {
+		if (!repositoryId) return;
+		return subscribeRemoteSyncStatus(repositoryId, () => void load());
+	}, [load, repositoryId]);
 
 	return { reload: load, status };
 }

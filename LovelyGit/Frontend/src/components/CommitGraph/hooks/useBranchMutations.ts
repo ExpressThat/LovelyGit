@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { invalidateRemoteSyncStatus } from "@/components/TopNavBar/components/remoteSyncStatusCache";
 import { NativeMessageType } from "@/lib/nativeMessaging";
 import type { BranchAction } from "../components/BranchContextMenu";
 import { useBranchMutationRunner } from "./useBranchMutationRunner";
@@ -103,7 +104,9 @@ export function useBranchMutations({
 			() => {
 				onUpstreamChanged(branchName, upstreamName);
 				setUpstreamBranchName(null);
-				onRepositoryChanged();
+				if (branchName === currentBranchName && repositoryId) {
+					invalidateRemoteSyncStatus(repositoryId);
+				}
 			},
 		);
 	};

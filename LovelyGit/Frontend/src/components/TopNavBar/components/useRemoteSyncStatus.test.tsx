@@ -9,6 +9,7 @@ import {
 } from "@/lib/commands";
 import {
 	clearRemoteSyncStatusCache,
+	invalidateRemoteSyncStatus,
 	setCachedRemoteSyncStatus,
 } from "./remoteSyncStatusCache";
 import {
@@ -84,6 +85,19 @@ describe("useRemoteSyncStatus", () => {
 			commandType: "GetRemoteSyncStatus",
 			arguments: { repositoryId: "repo-1" },
 		});
+	});
+
+	it("reloads after a targeted sync-status invalidation", async () => {
+		send
+			.mockResolvedValueOnce(status(1, 0))
+			.mockResolvedValueOnce(status(0, 2));
+		const { result } = renderHook(() => useRemoteSyncStatus("repo-1", "main"));
+		await waitFor(() => expect(result.current.status?.aheadCount).toBe(1));
+
+		act(() => invalidateRemoteSyncStatus("repo-1"));
+
+		await waitFor(() => expect(result.current.status?.behindCount).toBe(2));
+		expect(send).toHaveBeenCalledTimes(2);
 	});
 
 	it("ignores a stale response after switching repositories", async () => {
