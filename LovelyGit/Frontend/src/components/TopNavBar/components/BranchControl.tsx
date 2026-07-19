@@ -18,6 +18,7 @@ import {
 import { sendRequestWithResponse } from "@/lib/commands";
 import { gitMutationTimeoutMs } from "@/lib/gitMutationTimeout";
 import { NativeMessageType } from "@/lib/nativeMessaging";
+import { waitForBrowserPaint } from "@/lib/waitForBrowserPaint";
 import type { BranchIntegrationMode } from "./BranchIntegrationDialog";
 import { BranchMenuContent } from "./BranchMenuContent";
 import {
@@ -88,6 +89,7 @@ export function BranchControl({
 		setBusyBranch(branchName);
 		const toastId = toast.loading(`Switching to ${branchName}`);
 		try {
+			await waitForBrowserPaint();
 			await sendRequestWithResponse(
 				{
 					arguments: { branchName, repositoryId },

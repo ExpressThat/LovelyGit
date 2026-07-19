@@ -80,6 +80,7 @@ describe("useBranchMutations", () => {
 
 		act(() => result.current.manageBranch("checkout", "feature"));
 		await waitFor(() => expect(result.current.busyBranch).toBe("feature"));
+		await waitFor(() => expect(send).toHaveBeenCalledOnce());
 		act(() => result.current.manageBranch("checkout", "other"));
 
 		expect(send).toHaveBeenCalledOnce();

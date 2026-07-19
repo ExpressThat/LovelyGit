@@ -2,6 +2,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { sendRequestWithResponse } from "@/lib/commands";
 import { gitMutationTimeoutMs } from "@/lib/gitMutationTimeout";
+import { waitForBrowserPaint } from "@/lib/waitForBrowserPaint";
 
 export type BranchMutate = (
 	branchName: string,
@@ -25,6 +26,7 @@ export function useBranchMutationRunner(repositoryId: string | null) {
 		setBusyBranch(branchName);
 		const toastId = toast.loading(loadingMessage);
 		try {
+			await waitForBrowserPaint();
 			await sendRequestWithResponse(request, {
 				timeoutMs: gitMutationTimeoutMs,
 			});
