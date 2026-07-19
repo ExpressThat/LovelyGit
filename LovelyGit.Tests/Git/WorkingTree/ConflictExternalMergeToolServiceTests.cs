@@ -183,10 +183,8 @@ public sealed class ConflictExternalMergeToolServiceTests
     {
         var heads = Directory.CreateDirectory(
             Path.Combine(repositoryPath, ".git", "refs", "heads", "perf"));
-        for (var index = 0; index < count; index++)
-        {
-            File.WriteAllText(Path.Combine(heads.FullName, $"branch-{index:D4}"), commit + "\n");
-        }
+        Parallel.For(0, count, new ParallelOptions { MaxDegreeOfParallelism = 32 }, index =>
+            File.WriteAllText(Path.Combine(heads.FullName, $"branch-{index:D4}"), commit + "\n"));
     }
 
     private sealed class StubConflictMergeToolRunner(

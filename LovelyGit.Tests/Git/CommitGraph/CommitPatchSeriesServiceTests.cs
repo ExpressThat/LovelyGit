@@ -150,11 +150,6 @@ public sealed class CommitPatchSeriesServiceTests
         private CliWrap.Buffered.BufferedCommandResult Run(IReadOnlyList<string> args) =>
             _git.ExecuteBufferedAsync(args, Path).GetAwaiter().GetResult();
 
-        public void Dispose()
-        {
-            foreach (var file in _directory.EnumerateFiles("*", SearchOption.AllDirectories))
-                file.Attributes = FileAttributes.Normal;
-            _directory.Delete(true);
-        }
+        public void Dispose() => RepositoryTemplateLifetime.DeleteDirectory(_directory);
     }
 }

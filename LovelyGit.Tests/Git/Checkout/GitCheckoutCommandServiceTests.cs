@@ -193,15 +193,7 @@ public sealed class GitCheckoutCommandServiceTests
             return firstCommitHash;
         }
 
-        public void Dispose()
-        {
-            foreach (var file in _directory.EnumerateFiles("*", SearchOption.AllDirectories))
-            {
-                file.Attributes = FileAttributes.Normal;
-            }
-
-            _directory.Delete(recursive: true);
-        }
+        public void Dispose() => RepositoryTemplateLifetime.DeleteDirectory(_directory);
 
         private static CliWrap.Buffered.BufferedCommandResult RunGit(
             GitCliService gitCliService,

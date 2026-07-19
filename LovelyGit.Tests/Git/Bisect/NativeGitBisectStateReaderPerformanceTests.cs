@@ -45,11 +45,7 @@ public sealed class NativeGitBisectStateReaderPerformanceTests(ITestOutputHelper
         }
         finally
         {
-            foreach (var file in directory.EnumerateFiles("*", SearchOption.AllDirectories))
-            {
-                file.Attributes = FileAttributes.Normal;
-            }
-            directory.Delete(recursive: true);
+            RepositoryTemplateLifetime.DeleteDirectory(directory);
         }
     }
 
@@ -79,9 +75,7 @@ public sealed class NativeGitBisectStateReaderPerformanceTests(ITestOutputHelper
         }
         finally
         {
-            foreach (var file in directory.EnumerateFiles("*", SearchOption.AllDirectories))
-                file.Attributes = FileAttributes.Normal;
-            directory.Delete(recursive: true);
+            RepositoryTemplateLifetime.DeleteDirectory(directory);
         }
     }
 

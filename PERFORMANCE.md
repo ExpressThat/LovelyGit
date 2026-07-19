@@ -188,6 +188,7 @@ Measured through the same Git commands LovelyGit uses, primarily in a disposable
 | Update one of 10,001 configured remotes | Prerequisite config read 15.30 ms / 8.90 MB allocated to 3.74 ms / 97 KB; desktop feedback paints in 4.9 ms while total remains about 0.99 s inside Git-heavy mutation work |
 | Open exact comparison across 2,001 files | 366.6 ms cold reveal to 94.1 ms; complete list 107.2 ms, 100,000-line diff 502.7 ms, controls 118-204 ms |
 | Open/delete a remote tag among 500 tags | 311.3 ms cold DOM / 316.7 ms paint to 17.6 / 23.2 ms; deletion busy paint 17.6 ms and exact completion 241.8 ms |
+| Complete backend regression gate | 1,054 tests in 64.87 s to 58.38-55.97 s; ref-heavy external-mergetool preflight fixture 2.75 s to 0.92 s |
 
 ## Rejected or Deferred Experiments
 

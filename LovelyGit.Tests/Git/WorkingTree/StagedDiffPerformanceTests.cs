@@ -157,11 +157,5 @@ public sealed class StagedDiffPerformanceTests(ITestOutputHelper output)
     }
 
     private static void DeleteDirectory(DirectoryInfo directory)
-    {
-        foreach (var file in directory.EnumerateFiles("*", SearchOption.AllDirectories))
-        {
-            file.Attributes = FileAttributes.Normal;
-        }
-        directory.Delete(true);
-    }
+        => RepositoryTemplateLifetime.DeleteDirectory(directory);
 }

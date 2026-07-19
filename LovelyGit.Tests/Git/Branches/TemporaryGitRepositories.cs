@@ -100,13 +100,6 @@ internal sealed class TemporaryBareGitRepository : IDisposable
 
 internal static class TemporaryGitDirectory
 {
-    public static void Delete(DirectoryInfo directory)
-    {
-        foreach (var file in directory.EnumerateFiles("*", SearchOption.AllDirectories))
-        {
-            file.Attributes = FileAttributes.Normal;
-        }
-
-        directory.Delete(recursive: true);
-    }
+    public static void Delete(DirectoryInfo directory) =>
+        RepositoryTemplateLifetime.DeleteDirectory(directory);
 }

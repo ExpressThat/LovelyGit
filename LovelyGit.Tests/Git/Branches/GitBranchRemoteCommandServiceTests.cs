@@ -212,15 +212,7 @@ public sealed class GitBranchRemoteCommandServiceTests
             return (defaultBranchName, directory.FullName);
         }
 
-        public void Dispose()
-        {
-            foreach (var file in _directory.EnumerateFiles("*", SearchOption.AllDirectories))
-            {
-                file.Attributes = FileAttributes.Normal;
-            }
-
-            _directory.Delete(recursive: true);
-        }
+        public void Dispose() => RepositoryTemplateLifetime.DeleteDirectory(_directory);
     }
 
     private static void ConfigureIdentity(GitCliService gitCliService, string path)

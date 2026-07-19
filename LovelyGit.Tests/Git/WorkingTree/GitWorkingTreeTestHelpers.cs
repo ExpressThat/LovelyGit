@@ -17,15 +17,7 @@ internal sealed class TemporaryDirectory : IDisposable
     public static TemporaryDirectory Create(string prefix) =>
         new(Directory.CreateTempSubdirectory(prefix));
 
-    public void Dispose()
-    {
-        foreach (var file in _directory.EnumerateFiles("*", SearchOption.AllDirectories))
-        {
-            file.Attributes &= ~FileAttributes.ReadOnly;
-        }
-
-        _directory.Delete(recursive: true);
-    }
+    public void Dispose() => RepositoryTemplateLifetime.DeleteDirectory(_directory);
 }
 
 internal static class GitTestProcess

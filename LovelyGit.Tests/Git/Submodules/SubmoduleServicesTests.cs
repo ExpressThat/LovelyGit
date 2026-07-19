@@ -135,15 +135,7 @@ public sealed class SubmoduleServicesTests
             return new SubmoduleFixture(root);
         }
 
-        public void Dispose()
-        {
-            foreach (var file in _root.EnumerateFiles("*", SearchOption.AllDirectories))
-            {
-                file.Attributes = FileAttributes.Normal;
-            }
-
-            _root.Delete(recursive: true);
-        }
+        public void Dispose() => RepositoryTemplateLifetime.DeleteDirectory(_root);
 
         private CliWrap.Buffered.BufferedCommandResult RunGit(
             string path,

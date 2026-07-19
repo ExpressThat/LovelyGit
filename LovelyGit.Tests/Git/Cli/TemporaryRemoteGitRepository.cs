@@ -130,15 +130,7 @@ internal sealed class TemporaryRemoteGitRepository : IDisposable
         return directory.FullName;
     }
 
-    public void Dispose()
-    {
-        foreach (var file in _directory.EnumerateFiles("*", SearchOption.AllDirectories))
-        {
-            file.Attributes = FileAttributes.Normal;
-        }
-
-        _directory.Delete(recursive: true);
-    }
+    public void Dispose() => RepositoryTemplateLifetime.DeleteDirectory(_directory);
 
     public CliWrap.Buffered.BufferedCommandResult RunGit(
         string workingDirectory,
