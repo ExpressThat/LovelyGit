@@ -12,7 +12,6 @@ internal sealed partial class WorkingTreeWatcherService : IDisposable
 {
     private void QueueInvalidation(WorkingTreeChangedFile? observedChange = null)
     {
-        CancellationTokenSource cancellation;
         lock (_lock)
         {
             if (_disposed || _activeRepositoryId == null)
@@ -28,32 +27,16 @@ internal sealed partial class WorkingTreeWatcherService : IDisposable
                 }
                 AddPendingObservedChange(observedChange);
             }
-
-            _debounceCancellation?.Cancel();
-            _debounceCancellation?.Dispose();
-            _debounceCancellation = new CancellationTokenSource();
-            cancellation = _debounceCancellation;
+            _workTreeDebounceTimer.Change(WorkTreeDebounceDelay, Timeout.InfiniteTimeSpan);
         }
-
-        _ = Task.Run(async () =>
-        {
-            try
-            {
-                await Task.Delay(WorkTreeDebounceDelay, cancellation.Token).ConfigureAwait(false);
-                await SendInvalidationAsync(cancellation).ConfigureAwait(false);
-            }
-            catch (OperationCanceledException)
-            {
-            }
-        }, CancellationToken.None);
     }
 
-    private async Task SendInvalidationAsync(CancellationTokenSource cancellation)
+    private void SendInvalidation()
     {
         WorkingTreeChangedNotification notification;
         lock (_lock)
         {
-            if (_disposed || _activeRepositoryId == null || !ReferenceEquals(_debounceCancellation, cancellation))
+            if (_disposed || _activeRepositoryId == null || _notificationsSuppressed)
             {
                 return;
             }
@@ -61,27 +44,46 @@ internal sealed partial class WorkingTreeWatcherService : IDisposable
             notification = new WorkingTreeChangedNotification
             {
                 Generation = unchecked(++_generation),
-                ObservedChanges = [.. _pendingObservedChanges],
+                ObservedChanges = _pendingObservedChangesOverflowed
+                    ? []
+                    : [.. _pendingObservedChanges],
             };
-            var timestamp = Stopwatch.GetTimestamp();
-            foreach (var change in _pendingObservedChanges)
+            if (!_pendingObservedChangesOverflowed)
             {
-                RememberRecentObservedChange(change, timestamp);
+                var timestamp = Stopwatch.GetTimestamp();
+                foreach (var change in _pendingObservedChanges)
+                {
+                    RememberRecentObservedChange(change, timestamp);
+                }
             }
             _pendingObservedChanges.Clear();
+            _pendingObservedChangesOverflowed = false;
         }
 
         _nativeMessaging.Send(
             NativeMessageType.WorkingTreeChanged,
             notification,
             NativeMessagingJsonContext.Default.NativeMessageResponseWorkingTreeChangedNotification);
-
-        await Task.CompletedTask.ConfigureAwait(false);
     }
 
     private void AddPendingObservedChange(WorkingTreeChangedFile change)
     {
-        MergePendingObservedChange(_pendingObservedChanges, change);
+        _pendingObservedChangesOverflowed = AccumulatePendingObservedChange(
+            _pendingObservedChanges,
+            _pendingObservedChangesOverflowed,
+            change);
+    }
+
+    internal static bool AccumulatePendingObservedChange(
+        List<WorkingTreeChangedFile> pendingChanges,
+        bool overflowed,
+        WorkingTreeChangedFile change)
+    {
+        if (overflowed) return true;
+        MergePendingObservedChange(pendingChanges, change);
+        if (pendingChanges.Count <= MaximumOptimisticObservedChanges) return false;
+        pendingChanges.Clear();
+        return true;
     }
 
     internal static void MergePendingObservedChange(
@@ -112,7 +114,7 @@ internal sealed partial class WorkingTreeWatcherService : IDisposable
         CancellationTokenSource cancellation;
         lock (_lock)
         {
-            if (_disposed || _activeRepositoryId == null)
+            if (_disposed || _activeRepositoryId == null || _notificationsSuppressed)
             {
                 return;
             }
@@ -193,9 +195,8 @@ internal sealed partial class WorkingTreeWatcherService : IDisposable
 
     private void StopActiveWatchersCore()
     {
-        _debounceCancellation?.Cancel();
-        _debounceCancellation?.Dispose();
-        _debounceCancellation = null;
+        _notificationsSuppressed = false;
+        _workTreeDebounceTimer.Change(Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
         _graphDebounceCancellation?.Cancel();
         _graphDebounceCancellation?.Dispose();
         _graphDebounceCancellation = null;
@@ -223,6 +224,7 @@ internal sealed partial class WorkingTreeWatcherService : IDisposable
         _commitGraphSnapshot = null;
         _workTreeSnapshot = null;
         _pendingObservedChanges.Clear();
+        _pendingObservedChangesOverflowed = false;
         _recentObservedChanges.Clear();
         _recentObservedChangesCleanupTimer.Change(
             Timeout.InfiniteTimeSpan,

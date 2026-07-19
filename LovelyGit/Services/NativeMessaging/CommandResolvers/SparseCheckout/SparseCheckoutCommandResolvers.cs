@@ -3,6 +3,7 @@ using System.Text.Json.Serialization.Metadata;
 using ExpressThat.LovelyGit.Services.Data.Models;
 using ExpressThat.LovelyGit.Services.Data.Repositorys;
 using ExpressThat.LovelyGit.Services.Git.SparseCheckout;
+using ExpressThat.LovelyGit.Services.Git.WorkingTree;
 using ExpressThat.LovelyGit.Services.NativeMessaging.Commands;
 
 namespace ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.SparseCheckout;
@@ -69,7 +70,8 @@ internal sealed class GetSparseCheckoutStateCommandResolver(
 
 internal sealed class ManageSparseCheckoutCommandResolver(
     KnownGitRepositorysRepository knownRepositories,
-    GitSparseCheckoutCommandService commandService)
+    GitSparseCheckoutCommandService commandService,
+    WorkingTreeWatcherSuppressionCoordinator watcherSuppression)
     : CommandResponder<ManageSparseCheckoutCommandArguments>
 {
     protected override JsonTypeInfo<ManageSparseCheckoutCommandArguments> ArgumentsJsonTypeInfo =>
@@ -91,6 +93,7 @@ internal sealed class ManageSparseCheckoutCommandResolver(
 
         try
         {
+            using var suppression = watcherSuppression.Suppress(repository.Id);
             var state = await commandService.ExecuteAsync(
                     repository.Path!,
                     command.Arguments.Action,

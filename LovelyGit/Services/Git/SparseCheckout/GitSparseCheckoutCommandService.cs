@@ -11,6 +11,7 @@ internal sealed class GitSparseCheckoutCommandService(
 {
     private const int MaximumPatterns = 250_000;
     private const int MaximumPatternLength = 4_096;
+    private const string RestoreCheckoutWorkerCount = "checkout.workers=6";
     internal const int MaximumPatternTextLength = 64 * 1024 * 1024;
 
     public async Task<SparseCheckoutState> ExecuteAsync(
@@ -52,7 +53,7 @@ internal sealed class GitSparseCheckoutCommandService(
     {
         if (action == SparseCheckoutAction.Disable)
         {
-            return ["sparse-checkout", "disable"];
+            return ["-c", RestoreCheckoutWorkerCount, "sparse-checkout", "disable"];
         }
 
         if (action != SparseCheckoutAction.Set)

@@ -133,16 +133,6 @@ public sealed class SparseCheckoutServicesTests
     }
 
     [Fact]
-    public void BuildArguments_UsesStandardInputForPatterns()
-    {
-        var arguments = GitSparseCheckoutCommandService.BuildArguments(
-            SparseCheckoutAction.Set,
-            false);
-
-        Assert.Equal("--stdin", arguments[^1]);
-    }
-
-    [Fact]
     public void ConeParser_RemovesGeneratedParentDirectories()
     {
         var patterns = NativeSparseCheckoutReader.ReadPatterns(

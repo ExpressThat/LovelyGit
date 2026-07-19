@@ -50,6 +50,7 @@ internal static class WorkingTreeServiceCollectionExtensions
         services.AddSingleton<PatchApplyService>();
         services.AddSingleton<NativeSubmoduleReader>();
         services.AddSingleton<SubmoduleCommandService>();
+        services.AddSingleton<WorkingTreeWatcherSuppressionCoordinator>();
         services.AddSingleton<WorkingTreeWatcherService>();
         services.AddHostedService<ActiveRepositorySettingsWatcher>();
         services.AddSingleton<ICommandResponder, GetWorkingTreeChangesCommandResolver>();

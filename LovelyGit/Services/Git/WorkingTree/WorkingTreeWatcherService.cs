@@ -15,18 +15,22 @@ internal sealed partial class WorkingTreeWatcherService : IDisposable
     private static readonly TimeSpan DuplicateChangeSuppressionWindow = TimeSpan.FromMilliseconds(100);
     private static readonly TimeSpan GraphDebounceDelay = TimeSpan.FromMilliseconds(200);
     private static readonly TimeSpan LargeWorkTreePollInterval = TimeSpan.FromSeconds(5);
+    private const int MaximumOptimisticObservedChanges = 25;
     private const ulong FnvOffsetBasis = 14695981039346656037;
     private const ulong FnvPrime = 1099511628211;
     private readonly INativeMessaging _nativeMessaging;
     private readonly KnownGitRepositorysRepository _knownGitRepositorysRepository;
+    private readonly WorkingTreeWatcherSuppressionCoordinator _suppressionCoordinator;
+    private readonly IDisposable _suppressionSubscription;
     private readonly object _lock = new();
     private readonly List<FileSystemWatcher> _watchers = new();
     private readonly HashSet<string> _watchedWorkTreePaths = new(StringComparer.OrdinalIgnoreCase);
     private readonly GitIgnoreMatcherCache _ignoreMatcherCache = new();
-    private CancellationTokenSource? _debounceCancellation;
+    private readonly Timer _workTreeDebounceTimer;
     private CancellationTokenSource? _graphDebounceCancellation;
     private CancellationTokenSource? _workTreePollCancellation;
     private readonly List<WorkingTreeChangedFile> _pendingObservedChanges = new();
+    private bool _pendingObservedChangesOverflowed;
     private readonly Dictionary<string, RecentObservedChange> _recentObservedChanges =
         new(StringComparer.Ordinal);
     private readonly Timer _recentObservedChangesCleanupTimer;
@@ -45,10 +49,18 @@ internal sealed partial class WorkingTreeWatcherService : IDisposable
 
     public WorkingTreeWatcherService(
         INativeMessaging nativeMessaging,
-        KnownGitRepositorysRepository knownGitRepositorysRepository)
+        KnownGitRepositorysRepository knownGitRepositorysRepository,
+        WorkingTreeWatcherSuppressionCoordinator? suppressionCoordinator = null)
     {
         _nativeMessaging = nativeMessaging;
         _knownGitRepositorysRepository = knownGitRepositorysRepository;
+        _suppressionCoordinator = suppressionCoordinator ?? new();
+        _suppressionSubscription = _suppressionCoordinator.Subscribe(ChangeNotificationSuppression);
+        _workTreeDebounceTimer = new Timer(
+            static state => ((WorkingTreeWatcherService)state!).SendInvalidation(),
+            this,
+            Timeout.InfiniteTimeSpan,
+            Timeout.InfiniteTimeSpan);
         _recentObservedChangesCleanupTimer = new Timer(
             static state => ((WorkingTreeWatcherService)state!).ExpireRecentObservedChanges(),
             this,
@@ -146,6 +158,9 @@ internal sealed partial class WorkingTreeWatcherService : IDisposable
                 AddWatcher(infoPath, "exclude", includeSubdirectories: false);
             }
 
+            _notificationsSuppressed = _suppressionCoordinator.IsSuppressed(repositoryId);
+            if (_notificationsSuppressed) SetWatchersEnabled(false);
+
         }
 
         _ = RefreshIgnoreMatcherAsync();
@@ -164,6 +179,8 @@ internal sealed partial class WorkingTreeWatcherService : IDisposable
             StopActiveWatchersCore();
         }
 
+        _suppressionSubscription.Dispose();
+        _workTreeDebounceTimer.Dispose();
         _recentObservedChangesCleanupTimer.Dispose();
     }
 

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Dialog } from "@/components/ui/dialog";
@@ -60,6 +60,43 @@ describe("SparseCheckoutManagerContent", () => {
 		await user.click(screen.getByRole("button", { name: "Restore all files" }));
 
 		expect(run).toHaveBeenCalledWith("Disable", false, "");
+		await waitFor(() =>
+			expect(
+				screen.queryByRole("heading", {
+					name: "Restore the full working tree?",
+				}),
+			).not.toBeInTheDocument(),
+		);
+	});
+
+	it("keeps restore confirmation open after failure for retry", async () => {
+		const user = userEvent.setup();
+		const run = vi.fn().mockResolvedValue(false);
+		vi.mocked(useSparseCheckoutManager).mockReturnValue(
+			controller({
+				run,
+				state: {
+					coneMode: true,
+					enabled: true,
+					patternCount: 1,
+					patternText: "src",
+					patternTextGzipBase64: "",
+				},
+			}),
+		);
+		renderContent();
+
+		await user.click(
+			screen.getByRole("button", { name: "Restore full checkout" }),
+		);
+		await user.click(screen.getByRole("button", { name: "Restore all files" }));
+
+		expect(run).toHaveBeenCalledWith("Disable", false, "");
+		expect(
+			screen.getByRole("heading", {
+				name: "Restore the full working tree?",
+			}),
+		).toBeVisible();
 	});
 
 	it("supports non-cone Git patterns", async () => {

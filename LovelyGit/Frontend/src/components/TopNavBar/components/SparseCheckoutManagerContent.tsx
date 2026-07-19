@@ -181,7 +181,10 @@ export function SparseCheckoutManagerContent({
 						</AlertDialogCancel>
 						<AlertDialogAction
 							disabled={busy}
-							onClick={() => void controller.run("Disable", false, "")}
+							onClick={async () => {
+								if (await controller.run("Disable", false, ""))
+									setConfirmDisable(false);
+							}}
 						>
 							Restore all files
 						</AlertDialogAction>
