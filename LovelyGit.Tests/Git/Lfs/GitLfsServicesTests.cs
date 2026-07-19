@@ -106,8 +106,8 @@ public sealed class GitLfsServicesTests
     public async Task TrackAndUntrack_UpdateAttributesAndNativeState()
     {
         using var repository = TemporaryRepository.Create();
-        var service = new GitLfsCommandService(repository.Git);
         var reader = new NativeGitLfsStateReader(repository.Git);
+        var service = new GitLfsCommandService(repository.Git, reader);
 
         var initial = await reader.ReadAsync(repository.Path, CancellationToken.None);
         Assert.False(initial.IsInitialized);
@@ -150,7 +150,8 @@ public sealed class GitLfsServicesTests
     public async Task InvalidTrackPattern_DoesNotCreateAttributesFile()
     {
         using var directory = new TemporaryDirectory();
-        var service = new GitLfsCommandService(new GitCliService());
+        var git = new GitCliService();
+        var service = new GitLfsCommandService(git, new NativeGitLfsStateReader(git));
 
         await Assert.ThrowsAsync<ArgumentException>(() => service.ExecuteAsync(
             directory.Path,
@@ -165,7 +166,8 @@ public sealed class GitLfsServicesTests
     public async Task PreCancelledTrack_DoesNotCreateAttributesFile()
     {
         using var directory = new TemporaryDirectory();
-        var service = new GitLfsCommandService(new GitCliService());
+        var git = new GitCliService();
+        var service = new GitLfsCommandService(git, new NativeGitLfsStateReader(git));
         using var cancellation = new CancellationTokenSource();
         cancellation.Cancel();
 

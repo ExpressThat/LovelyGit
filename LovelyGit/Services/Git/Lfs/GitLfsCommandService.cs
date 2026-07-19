@@ -6,13 +6,17 @@ internal sealed class GitLfsCommandService
 {
     private const int MaximumPatternLength = 4_096;
     private readonly GitCliService _gitCliService;
+    private readonly NativeGitLfsStateReader _stateReader;
 
-    public GitLfsCommandService(GitCliService gitCliService)
+    public GitLfsCommandService(
+        GitCliService gitCliService,
+        NativeGitLfsStateReader stateReader)
     {
         _gitCliService = gitCliService;
+        _stateReader = stateReader;
     }
 
-    public async Task ExecuteAsync(
+    public async Task<LfsRepositoryState> ExecuteAsync(
         string repositoryPath,
         GitLfsAction action,
         string? pattern,
@@ -22,7 +26,13 @@ internal sealed class GitLfsCommandService
         var result = await _gitCliService
             .ExecuteBufferedAsync(arguments, repositoryPath, false, cancellationToken)
             .ConfigureAwait(false);
-        if (result.ExitCode == 0) return;
+        if (result.ExitCode == 0)
+        {
+            var state = await _stateReader.ReadAsync(repositoryPath, cancellationToken)
+                .ConfigureAwait(false);
+            LfsMutationResultValidator.EnsureApplied(action, pattern, state);
+            return state;
+        }
 
         var error = result.StandardError.Trim();
         if (string.IsNullOrEmpty(error)) error = result.StandardOutput.Trim();

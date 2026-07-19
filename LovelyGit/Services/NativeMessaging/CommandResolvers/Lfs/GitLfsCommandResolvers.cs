@@ -80,16 +80,13 @@ internal sealed class ManageGitLfsCommandResolver
 {
     private readonly KnownGitRepositorysRepository _repositories;
     private readonly GitLfsCommandService _service;
-    private readonly NativeGitLfsStateReader _reader;
 
     public ManageGitLfsCommandResolver(
         KnownGitRepositorysRepository repositories,
-        GitLfsCommandService service,
-        NativeGitLfsStateReader reader)
+        GitLfsCommandService service)
     {
         _repositories = repositories;
         _service = service;
-        _reader = reader;
     }
 
     protected override JsonTypeInfo<ManageGitLfsCommandArguments> ArgumentsJsonTypeInfo =>
@@ -115,13 +112,11 @@ internal sealed class ManageGitLfsCommandResolver
 
         try
         {
-            await _service.ExecuteAsync(
+            var state = await _service.ExecuteAsync(
                     repository.Path,
                     command.Arguments.Action,
                     command.Arguments.Pattern,
                     CancellationToken.None)
-                .ConfigureAwait(false);
-            var state = await _reader.ReadAsync(repository.Path, CancellationToken.None)
                 .ConfigureAwait(false);
             return new CommandResponse<LfsRepositoryState>
             {
