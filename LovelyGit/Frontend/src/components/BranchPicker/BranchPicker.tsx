@@ -97,6 +97,7 @@ export function BranchPicker({
 							<Combobox.Input
 								aria-label={`Filter ${ariaLabel.toLocaleLowerCase()}`}
 								className="h-8 w-full rounded-md border border-input bg-transparent pr-2 pl-8 text-sm outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+								onInput={(event) => setQuery(event.currentTarget.value)}
 								placeholder="Filter branches"
 							/>
 						</div>

@@ -15,6 +15,8 @@ Packaged database preparation now overlaps Velopack, web-host builder creation, 
 
 Ignoring an untracked path now removes its visible row optimistically before the native write and authoritative status reconciliation. In the real desktop against a disposable 10,000-file repository, the row disappears in 4.8-6.8 ms instead of waiting 93.8 ms for the refreshed count. Failure restores the authoritative view, while a successful write followed by refresh failure preserves the valid optimistic result for retry. The implementation retains no cache and copies only the affected sorted untracked array.
 
+Maximum-ref upstream assignment now synchronizes the desktop WebView's native `input` event with the searchable branch picker. Previously, typing visibly changed the field but left the original results mounted, making a distant ref unreachable; against 10,002 remote refs, the exact final ref now appears as the sole mounted option in 2.7 ms. The surrounding path was already inexpensive: the branch context menu opens in 8.7 ms, the upstream dialog in 31.1 ms, the picker in 11.1 ms, Set paints busy in 14.4 ms and completes in 96.5 ms, and Unset paints busy in 9.5 ms and completes in 79.3 ms. The virtualized picker retains only 14 options before filtering and one afterward, so the fix adds no cache or unbounded UI model.
+
 Repeated remote pack replacement also remains bounded. Twelve real Fetch operations each transferred a newly repacked commit containing 200 files plus a 2 MiB incompressible blob in 493-1,324 ms, followed by twenty unchanged Fetch operations in 358-457 ms. The no-op phase retained a fixed 1,036-node DOM and added only 0.33 MB of JavaScript heap; host handles settled at 608-613 rather than growing per operation, and a post-run dump found only 6.08 MB of live managed objects. The native regression now repeats six pack generations through one object store and proves that exactly one pack and index remain open after every replacement.
 
 Fetch, Pull, and Push now await their native Git process instead of reporting success after dispatch. With a deterministic 3.1-second local transport delay, their controls painted disabled in 1-5 ms and remained protected for 3.37-3.50 seconds until Git actually completed.
@@ -142,6 +144,7 @@ Measured through the same Git commands LovelyGit uses, primarily in a disposable
 
 | Experiment | Observed benefit | Reason not shipped |
 | --- | --- | --- |
+| Replace the existing ref-view helpers with one maximum-ref projection pass | 0.3143 ms to 0.0497 ms per isolated 10,601-ref projection, saving only 0.2646 ms | The real context menu, dialog, and picker already open in 8.7, 31.1, and 11.1 ms, so the small absolute saving does not justify changing established grouping semantics. |
 | Enable Git FSMonitor for checkout | Chromium checkout improved from about 2.1 s to 0.85–0.90 s warm | Persistent daemon retained about 37.8 MB per repository and the first full status scan regressed to about 3.5 s. |
 | Enable Git untracked cache automatically | Warm status reached about 0.41–0.44 s | Initial warm-up was about 3.6 s and mutating user repository configuration was not justified. |
 | Suppress working-tree watchers during checkout | No repeatable improvement | Added lifecycle complexity without measurable value; reverted. |

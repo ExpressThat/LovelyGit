@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useState } from "react";
 import { describe, expect, it, vi } from "vitest";
@@ -33,6 +33,21 @@ describe("BranchPicker", () => {
 			await screen.findByRole("option", { name: "perf/branch-09999" }),
 		);
 		expect(onValueChange).toHaveBeenCalledWith("perf/branch-09999");
+	});
+
+	it("filters from the native input event used by the desktop WebView", async () => {
+		const user = userEvent.setup();
+		renderPicker({ options: manyBranches() });
+		await user.click(screen.getByRole("combobox", { name: "Local branch" }));
+
+		fireEvent.input(
+			await screen.findByRole("combobox", { name: "Filter local branch" }),
+			{ target: { value: "branch-09999" } },
+		);
+
+		expect(
+			await screen.findByRole("option", { name: "perf/branch-09999" }),
+		).toBeVisible();
 	});
 
 	it("supports keyboard selection from the focused search input", async () => {
