@@ -11,6 +11,7 @@ import {
 } from "./repositoryContext";
 
 const state = vi.hoisted(() => ({
+	closeError: vi.fn(),
 	currentRepositoryId: "missing" as string | null,
 	initSettingsStore: vi.fn(async () => undefined),
 	sendRequestWithResponse: vi.fn(),
@@ -109,6 +110,53 @@ describe("RepositoryProvider", () => {
 		expect(upsertRepository(repositories, replacement)).toEqual([replacement]);
 		expect(upsertRepository(repositories, first)).toBe(repositories);
 	});
+
+	it("removes locally after native success without reloading the full list", async () => {
+		state.currentRepositoryId = "repository-1";
+		const pending = deferred<void>();
+		state.sendRequestWithResponse
+			.mockResolvedValueOnce(
+				directResponse([
+					repository("repository-1"),
+					repository("repository-2"),
+				]),
+			)
+			.mockReturnValueOnce(pending.promise);
+		renderProvider();
+		await screen.findByText("repository-1,repository-2");
+
+		act(() => screen.getByRole("button", { name: "Remove second" }).click());
+		act(() => screen.getByRole("button", { name: "Add third" }).click());
+		await act(async () => pending.resolve());
+
+		await screen.findByText("repository-1,repository-3");
+		expect(state.sendRequestWithResponse).toHaveBeenCalledTimes(2);
+		expect(state.sendRequestWithResponse).toHaveBeenLastCalledWith({
+			arguments: { knownRepositoryId: "repository-2" },
+			commandType: "RemoveKnownGitRepositorys",
+		});
+	});
+
+	it("preserves the local repository when native removal fails", async () => {
+		state.currentRepositoryId = "repository-1";
+		state.sendRequestWithResponse
+			.mockResolvedValueOnce(
+				directResponse([
+					repository("repository-1"),
+					repository("repository-2"),
+				]),
+			)
+			.mockRejectedValueOnce(new Error("Database unavailable"));
+		renderProvider();
+		await screen.findByText("repository-1,repository-2");
+
+		act(() => screen.getByRole("button", { name: "Remove second" }).click());
+
+		await waitFor(() => expect(state.closeError).toHaveBeenCalled());
+		expect(screen.getByTestId("repositories")).toHaveTextContent(
+			"repository-1,repository-2",
+		);
+	});
 });
 
 function renderProvider() {
@@ -120,12 +168,48 @@ function renderProvider() {
 }
 
 function CurrentRepositoryProbe() {
-	const { currentRepositoryId } = useRepositoryContext();
+	const {
+		closeRepository,
+		currentRepositoryId,
+		reconcileRepository,
+		repositories,
+	} = useRepositoryContext();
 	return (
-		<span data-testid="current-repository">
-			{currentRepositoryId ?? "none"}
-		</span>
+		<>
+			<span data-testid="current-repository">
+				{currentRepositoryId ?? "none"}
+			</span>
+			<span data-testid="repositories">
+				{repositories.map((item) => item.id).join(",")}
+			</span>
+			<button
+				onClick={() =>
+					void closeRepository("repository-2").catch(state.closeError)
+				}
+				type="button"
+			>
+				Remove second
+			</button>
+			<button
+				onClick={() => reconcileRepository(repository("repository-3"))}
+				type="button"
+			>
+				Add third
+			</button>
+		</>
 	);
+}
+
+function directResponse(repositories: KnownGitRepository[]) {
+	return { compactRepositoriesGzipBase64: null, repositories };
+}
+
+function deferred<T>() {
+	let resolve!: (value: T) => void;
+	const promise = new Promise<T>((resolvePromise) => {
+		resolve = resolvePromise;
+	});
+	return { promise, resolve };
 }
 
 function repository(id: string): KnownGitRepository {

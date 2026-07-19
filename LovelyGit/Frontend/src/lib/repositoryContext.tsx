@@ -49,22 +49,18 @@ export function RepositoryProvider({ children }: { children: ReactNode }) {
 		}
 	}, []);
 
-	const closeRepository = useCallback(
-		async (repositoryId: string) => {
-			await sendRequestWithResponse({
-				commandType: "RemoveKnownGitRepositorys",
-				arguments: {
-					knownRepositoryId: repositoryId,
-				},
-			});
+	const closeRepository = useCallback(async (repositoryId: string) => {
+		await sendRequestWithResponse({
+			commandType: "RemoveKnownGitRepositorys",
+			arguments: {
+				knownRepositoryId: repositoryId,
+			},
+		});
 
-			setRepositories((current) =>
-				current.filter((repository) => repository.id !== repositoryId),
-			);
-			await reloadRepositories();
-		},
-		[reloadRepositories],
-	);
+		setRepositories((current) =>
+			current.filter((repository) => repository.id !== repositoryId),
+		);
+	}, []);
 	const reconcileRepository = useCallback((repository: KnownGitRepository) => {
 		setRepositories((current) => upsertRepository(current, repository));
 	}, []);
