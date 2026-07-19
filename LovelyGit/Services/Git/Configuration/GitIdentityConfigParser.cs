@@ -1,5 +1,5 @@
-using System.Text;
 using ExpressThat.LovelyGit.Services.Diagnostics;
+using ExpressThat.LovelyGit.Services.Git.LovelyFastGitParser;
 
 namespace ExpressThat.LovelyGit.Services.Git.Configuration;
 
@@ -21,80 +21,42 @@ internal sealed class GitIdentityConfigParser
         _homeDirectory = homeDirectory;
     }
 
-    public Task ReadAsync(
+    public Task<bool> ReadAsync(
         string path,
         GitIdentityValueSource source,
         GitIdentityAccumulator identity,
-        CancellationToken cancellationToken) =>
-        ReadAsync(path, source, identity, 0, cancellationToken);
+        CancellationToken cancellationToken,
+        bool detectWorktreeConfig = false) =>
+        ReadAsync(path, source, identity, 0, cancellationToken, detectWorktreeConfig);
 
-    private async Task ReadAsync(
+    private async Task<bool> ReadAsync(
         string path,
         GitIdentityValueSource source,
         GitIdentityAccumulator identity,
         int depth,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        bool detectWorktreeConfig)
     {
-        if (depth >= MaximumIncludeDepth || !File.Exists(path))
-        {
-            return;
-        }
+        if (depth >= MaximumIncludeDepth || !File.Exists(path)) return false;
 
         var fullPath = Path.GetFullPath(path);
-        if (!_activeIncludes.Add(fullPath))
-        {
-            return;
-        }
+        if (!_activeIncludes.Add(fullPath)) return false;
 
         try
         {
             using var trace = LovelyGitTrace.Time(
                 "git.identity.config", $"{source} {Path.GetFileName(fullPath)}");
-            using var stream = new FileStream(
-                fullPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete,
-                bufferSize: 4096, FileOptions.Asynchronous | FileOptions.SequentialScan);
-            using var reader = new StreamReader(stream, detectEncodingFromByteOrderMarks: true);
-            var section = string.Empty;
-            string? subsection = null;
-            while (await reader.ReadLineAsync(cancellationToken).ConfigureAwait(false) is { } rawLine)
-            {
-                var line = rawLine.AsSpan().Trim();
-                if (line.Length == 0 || line[0] is '#' or ';')
-                {
-                    continue;
-                }
-
-                if (TryReadSection(line, out var nextSection, out var nextSubsection))
-                {
-                    section = nextSection;
-                    subsection = nextSubsection;
-                    continue;
-                }
-
-                if (!TryReadValue(line, out var key, out var value))
-                {
-                    continue;
-                }
-
-                if (section.Equals("user", StringComparison.OrdinalIgnoreCase))
-                {
-                    ApplyIdentity(key, value, source, identity);
-                }
-                else if (section.Equals("include", StringComparison.OrdinalIgnoreCase) &&
-                         key.Equals("path", StringComparison.OrdinalIgnoreCase))
-                {
-                    await ReadIncludeAsync(value, fullPath, source, identity, depth, cancellationToken)
-                        .ConfigureAwait(false);
-                }
-                else if (section.Equals("includeif", StringComparison.OrdinalIgnoreCase) &&
-                         subsection is not null && key.Equals("path", StringComparison.OrdinalIgnoreCase) &&
-                         GitConfigConditionMatcher.Matches(
-                             subsection, _gitDirectory, _branchName, _homeDirectory, fullPath))
-                {
-                    await ReadIncludeAsync(value, fullPath, source, identity, depth, cancellationToken)
-                        .ConfigureAwait(false);
-                }
-            }
+            var state = new ConfigFileState(
+                this, fullPath, detectWorktreeConfig);
+            await PooledTextLineReader.ReadAsync(
+                fullPath,
+                state,
+                static (line, fileState) => fileState.ProcessLine(line),
+                cancellationToken).ConfigureAwait(false);
+            await ApplyOperationsAsync(
+                state.Operations, source, identity, depth, cancellationToken)
+                .ConfigureAwait(false);
+            return state.WorktreeConfigEnabled;
         }
         finally
         {
@@ -102,141 +64,124 @@ internal sealed class GitIdentityConfigParser
         }
     }
 
-    private Task ReadIncludeAsync(
-        string value,
-        string includingPath,
+    private async Task ApplyOperationsAsync(
+        List<ConfigOperation> operations,
         GitIdentityValueSource source,
         GitIdentityAccumulator identity,
         int depth,
         CancellationToken cancellationToken)
     {
-        var includePath = GitConfigConditionMatcher.ResolveIncludePath(
-            value, _homeDirectory, includingPath);
-        return ReadAsync(includePath, source, identity, depth + 1, cancellationToken);
-    }
-
-    private static void ApplyIdentity(
-        string key,
-        string value,
-        GitIdentityValueSource source,
-        GitIdentityAccumulator identity)
-    {
-        if (key.Equals("name", StringComparison.OrdinalIgnoreCase))
+        foreach (var operation in operations)
         {
-            identity.ApplyName(value, source);
-        }
-        else if (key.Equals("email", StringComparison.OrdinalIgnoreCase))
-        {
-            identity.ApplyEmail(value, source);
-        }
-    }
-
-    private static bool TryReadSection(
-        ReadOnlySpan<char> line,
-        out string section,
-        out string? subsection)
-    {
-        section = string.Empty;
-        subsection = null;
-        if (line.Length < 3 || line[0] != '[' || line[^1] != ']')
-        {
-            return false;
-        }
-
-        var content = line[1..^1].Trim();
-        var separator = content.IndexOfAny(' ', '\t');
-        if (separator < 0)
-        {
-            section = content.ToString();
-            return true;
-        }
-
-        section = content[..separator].ToString();
-        subsection = Unquote(content[(separator + 1)..].Trim());
-        return true;
-    }
-
-    private static bool TryReadValue(
-        ReadOnlySpan<char> line,
-        out string key,
-        out string value)
-    {
-        key = string.Empty;
-        value = string.Empty;
-        var separator = line.IndexOf('=');
-        if (separator <= 0)
-        {
-            return false;
-        }
-
-        key = line[..separator].Trim().ToString();
-        value = Unquote(StripComment(line[(separator + 1)..].Trim()));
-        return key.Length > 0;
-    }
-
-    private static ReadOnlySpan<char> StripComment(ReadOnlySpan<char> value)
-    {
-        var quoted = false;
-        var escaped = false;
-        for (var index = 0; index < value.Length; index++)
-        {
-            var character = value[index];
-            if (escaped)
+            switch (operation.Kind)
             {
-                escaped = false;
+                case ConfigOperationKind.Name:
+                    identity.ApplyName(operation.Value, source);
+                    break;
+                case ConfigOperationKind.Email:
+                    identity.ApplyEmail(operation.Value, source);
+                    break;
+                case ConfigOperationKind.Include:
+                    await ReadAsync(
+                        operation.Value, source, identity, depth + 1,
+                        cancellationToken, detectWorktreeConfig: false)
+                        .ConfigureAwait(false);
+                    break;
             }
-            else if (character == '\\')
+        }
+    }
+
+    private sealed class ConfigFileState
+    {
+        private readonly GitIdentityConfigParser _parser;
+        private readonly string _path;
+        private readonly bool _detectWorktreeConfig;
+        private GitIdentityConfigSection _section;
+        private string? _subsection;
+        private bool _worktreeConfigObserved;
+
+        public ConfigFileState(
+            GitIdentityConfigParser parser,
+            string path,
+            bool detectWorktreeConfig)
+        {
+            _parser = parser;
+            _path = path;
+            _detectWorktreeConfig = detectWorktreeConfig;
+        }
+
+        public List<ConfigOperation> Operations { get; } = [];
+        public bool WorktreeConfigEnabled { get; private set; }
+
+        public void ProcessLine(ReadOnlySpan<char> rawLine)
+        {
+            var line = rawLine.Trim();
+            if (line.IsEmpty || line[0] is '#' or ';') return;
+            if (GitIdentityConfigSyntax.TryReadSection(
+                    line, out var section, out var subsection))
             {
-                escaped = true;
+                _section = section;
+                _subsection = subsection;
+                return;
             }
-            else if (character == '"')
+
+            if (_section == GitIdentityConfigSection.Other ||
+                !GitIdentityConfigSyntax.TryReadValue(line, out var key, out var value))
             {
-                quoted = !quoted;
+                return;
             }
-            else if (!quoted && character is '#' or ';' &&
-                     (index == 0 || char.IsWhiteSpace(value[index - 1])))
+
+            if (_section == GitIdentityConfigSection.User)
             {
-                return value[..index].TrimEnd();
+                AddIdentity(key, value);
+            }
+            else if (IsMatchingInclude(key))
+            {
+                var includePath = GitConfigConditionMatcher.ResolveIncludePath(
+                    GitIdentityConfigSyntax.Unquote(value), _parser._homeDirectory, _path);
+                Operations.Add(new(ConfigOperationKind.Include, includePath));
+            }
+            else if (_detectWorktreeConfig && !_worktreeConfigObserved &&
+                     _section == GitIdentityConfigSection.Extensions &&
+                     key.Equals("worktreeconfig", StringComparison.OrdinalIgnoreCase))
+            {
+                _worktreeConfigObserved = true;
+                WorktreeConfigEnabled = GitIdentityConfigSyntax.IsEnabled(value);
             }
         }
 
-        return value;
-    }
-
-    private static string Unquote(ReadOnlySpan<char> value)
-    {
-        if (value.Length < 2 || value[0] != '"' || value[^1] != '"')
+        private void AddIdentity(ReadOnlySpan<char> key, ReadOnlySpan<char> value)
         {
-            return value.ToString();
-        }
-
-        var builder = new StringBuilder(value.Length - 2);
-        var escaped = false;
-        foreach (var character in value[1..^1])
-        {
-            if (!escaped && character == '\\')
+            var kind = key.Equals("name", StringComparison.OrdinalIgnoreCase)
+                ? ConfigOperationKind.Name
+                : key.Equals("email", StringComparison.OrdinalIgnoreCase)
+                    ? ConfigOperationKind.Email
+                    : ConfigOperationKind.None;
+            if (kind != ConfigOperationKind.None)
             {
-                escaped = true;
-                continue;
+                Operations.Add(new(kind, GitIdentityConfigSyntax.Unquote(value)));
             }
-
-            builder.Append(escaped ? Unescape(character) : character);
-            escaped = false;
         }
 
-        if (escaped)
+        private bool IsMatchingInclude(ReadOnlySpan<char> key)
         {
-            builder.Append('\\');
+            if (!key.Equals("path", StringComparison.OrdinalIgnoreCase)) return false;
+            if (_section == GitIdentityConfigSection.Include) return true;
+            return _section == GitIdentityConfigSection.IncludeIf &&
+                   _subsection is not null &&
+                   GitConfigConditionMatcher.Matches(
+                       _subsection, _parser._gitDirectory, _parser._branchName,
+                       _parser._homeDirectory, _path);
         }
-
-        return builder.ToString();
     }
 
-    private static char Unescape(char value) => value switch
+    private readonly record struct ConfigOperation(ConfigOperationKind Kind, string Value);
+
+    private enum ConfigOperationKind
     {
-        'n' => '\n',
-        't' => '\t',
-        'b' => '\b',
-        _ => value,
-    };
+        None,
+        Name,
+        Email,
+        Include,
+    }
 }

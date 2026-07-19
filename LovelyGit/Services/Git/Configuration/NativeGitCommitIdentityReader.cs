@@ -61,12 +61,13 @@ internal sealed class NativeGitCommitIdentityReader
                 .ConfigureAwait(false);
         }
 
-        await parser.ReadAsync(
+        var worktreeConfigEnabled = await parser.ReadAsync(
             Path.Combine(paths.GitDirectory, "config"),
             GitIdentityValueSource.Repository,
             identity,
-            cancellationToken).ConfigureAwait(false);
-        if (IsWorktreeConfigEnabled(paths.GitDirectory))
+            cancellationToken,
+            detectWorktreeConfig: true).ConfigureAwait(false);
+        if (worktreeConfigEnabled)
         {
             await parser.ReadAsync(
                 Path.Combine(paths.WorktreeGitDirectory, "config.worktree"),
@@ -156,44 +157,4 @@ internal sealed class NativeGitCommitIdentityReader
             : null;
     }
 
-    private static bool IsWorktreeConfigEnabled(
-        string gitDirectory)
-    {
-        var path = Path.Combine(gitDirectory, "config");
-        if (!File.Exists(path))
-        {
-            return false;
-        }
-
-        var section = string.Empty;
-        foreach (var rawLine in File.ReadLines(path))
-        {
-            var line = rawLine.AsSpan().Trim();
-            if (line.Length > 2 && line[0] == '[' && line[^1] == ']')
-            {
-                section = line[1..^1].Trim().ToString();
-                continue;
-            }
-
-            if (!section.Equals("extensions", StringComparison.OrdinalIgnoreCase))
-            {
-                continue;
-            }
-
-            var separator = line.IndexOf('=');
-            if (separator <= 0 ||
-                !line[..separator].Trim().Equals("worktreeconfig", StringComparison.OrdinalIgnoreCase))
-            {
-                continue;
-            }
-
-            return line[(separator + 1)..].Trim() is var value &&
-                   (value.Equals("true", StringComparison.OrdinalIgnoreCase) ||
-                    value.Equals("yes", StringComparison.OrdinalIgnoreCase) ||
-                    value.Equals("on", StringComparison.OrdinalIgnoreCase) ||
-                    value.Equals("1", StringComparison.Ordinal));
-        }
-
-        return false;
-    }
 }

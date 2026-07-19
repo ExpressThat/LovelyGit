@@ -62,6 +62,27 @@ public sealed class NativeGitCommitIdentityReaderTests
     }
 
     [Fact]
+    public async Task ReadAsync_PreservesIdentityAndIncludeOrdering()
+    {
+        using var repository = TestIdentityRepository.Create();
+        await File.WriteAllTextAsync(
+            repository.GlobalConfigPath,
+            "[include]\n\tpath = ./included.inc\n" +
+            "[user]\n\tname = After Include\n");
+        await File.WriteAllTextAsync(
+            Path.Combine(repository.HomePath, "included.inc"),
+            "[user]\n\tname = Included User\n\temail = included@example.test\n");
+
+        var identity = await new NativeGitCommitIdentityReader().ReadAsync(
+            repository.Path,
+            repository.CreateOptions(),
+            CancellationToken.None);
+
+        Assert.Equal("After Include", identity.Name);
+        Assert.Equal("included@example.test", identity.Email);
+    }
+
+    [Fact]
     public async Task ReadAsync_EnvironmentWinsWithoutHidingLocalOverride()
     {
         using var repository = TestIdentityRepository.Create();
@@ -129,6 +150,37 @@ public sealed class NativeGitCommitIdentityReaderTests
         Assert.Equal("Worktree User", enabled.Name);
         Assert.Equal(GitIdentityValueSource.Worktree, enabled.NameSource);
         Assert.True(enabled.HasRepositoryOverride);
+    }
+
+    [Fact]
+    public async Task ReadAsync_StopsRecursiveIncludesWithoutLosingLaterValues()
+    {
+        using var repository = TestIdentityRepository.Create();
+        await File.WriteAllTextAsync(
+            repository.GlobalConfigPath,
+            "[include]\n\tpath = ./.gitconfig\n" +
+            "[user]\n\tname = Cycle Safe\n\temail = cycle@example.test\n");
+
+        var identity = await new NativeGitCommitIdentityReader().ReadAsync(
+            repository.Path, repository.CreateOptions(), CancellationToken.None);
+
+        Assert.Equal("Cycle Safe", identity.Name);
+        Assert.Equal("cycle@example.test", identity.Email);
+    }
+
+    [Fact]
+    public async Task ConfigParser_HonorsPreCanceledReads()
+    {
+        using var repository = TestIdentityRepository.Create();
+        await File.WriteAllTextAsync(repository.GlobalConfigPath, "[user]\nname = Canceled\n");
+        var parser = new GitIdentityConfigParser(
+            repository.GitDirectory, "main", repository.HomePath);
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => parser.ReadAsync(
+            repository.GlobalConfigPath,
+            GitIdentityValueSource.Global,
+            new GitIdentityAccumulator(),
+            new CancellationToken(canceled: true)));
     }
 
     private static string Normalize(string path) => path.Replace('\\', '/');

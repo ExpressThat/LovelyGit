@@ -55,6 +55,7 @@ export function CommitIdentityControl({
 							identity.error,
 							identity.isLoading,
 						)}
+						transition={{ duration: reduceMotion ? 0 : 0.1 }}
 					>
 						<p className="truncate font-medium text-xs">
 							{identityTitle(
