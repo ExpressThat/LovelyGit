@@ -3,7 +3,7 @@ using ExpressThat.LovelyGit.Services.Data.Models;
 
 namespace ExpressThat.LovelyGit.Services.Data.Repositorys
 {
-    public class KnownGitRepositorysRepository
+    public partial class KnownGitRepositorysRepository
     {
         private readonly AppDbContext _appDbContext;
         private readonly KnownGitRepositoryOrderRepository _orderRepository;
@@ -24,9 +24,24 @@ namespace ExpressThat.LovelyGit.Services.Data.Repositorys
 
         public async Task<KnownGitRepository> AddAsync(KnownGitRepository repository)
         {
+            var pathKey = CreatePathKey(repository.Path);
+            var existingPath = await _appDbContext.KnownGitRepositoryPaths.FindByIdAsync(pathKey);
             using var transaction = _appDbContext.BeginTransaction();
             using var transactionRetention = BLiteTransactionRetention.Track(transaction);
             await _appDbContext.KnownGitRepositorys.InsertAsync(repository, transaction);
+            var pathEntry = new KnownGitRepositoryPath
+            {
+                Id = pathKey,
+                RepositoryId = repository.Id,
+            };
+            if (existingPath == null)
+            {
+                await _appDbContext.KnownGitRepositoryPaths.InsertAsync(pathEntry, transaction);
+            }
+            else
+            {
+                await _appDbContext.KnownGitRepositoryPaths.UpdateAsync(pathEntry, transaction);
+            }
             await _appDbContext.SaveChangesAsync(transaction);
             await _orderRepository.AppendRepositoryAsync(repository.Id);
 
@@ -35,9 +50,18 @@ namespace ExpressThat.LovelyGit.Services.Data.Repositorys
 
         public async Task RemoveAsync(Guid repositoryId)
         {
+            var repository = await TryFindByIdAsync(repositoryId);
+            var pathKey = repository?.Path is { } path ? CreatePathKey(path) : null;
+            var pathEntry = pathKey == null
+                ? null
+                : await _appDbContext.KnownGitRepositoryPaths.FindByIdAsync(pathKey);
             using var transaction = _appDbContext.BeginTransaction();
             using var transactionRetention = BLiteTransactionRetention.Track(transaction);
             await _appDbContext.KnownGitRepositorys.DeleteAsync(repositoryId, transaction);
+            if (pathEntry?.RepositoryId == repositoryId)
+            {
+                await _appDbContext.KnownGitRepositoryPaths.DeleteAsync(pathKey!, transaction);
+            }
             await _appDbContext.SaveChangesAsync(transaction);
             await _orderRepository.RemoveRepositoryAsync(repositoryId);
         }
@@ -50,28 +74,5 @@ namespace ExpressThat.LovelyGit.Services.Data.Repositorys
         public ValueTask<KnownGitRepository?> TryFindByIdAsync(Guid repositoryId) =>
             _appDbContext.KnownGitRepositorys.FindByIdAsync(repositoryId);
 
-        public async Task<KnownGitRepository?> FindByPathAsync(string repositoryPath)
-        {
-            var normalizedRepositoryPath = NormalizePath(repositoryPath);
-            var repositories = await GetAllAsync();
-
-            return repositories.FirstOrDefault(repository =>
-                repository.Path != null
-                && PathsEqual(NormalizePath(repository.Path), normalizedRepositoryPath));
-        }
-
-        private static string NormalizePath(string path)
-        {
-            return Path.TrimEndingDirectorySeparator(Path.GetFullPath(path));
-        }
-
-        private static bool PathsEqual(string left, string right)
-        {
-            var comparison = OperatingSystem.IsWindows()
-                ? StringComparison.OrdinalIgnoreCase
-                : StringComparison.Ordinal;
-
-            return string.Equals(left, right, comparison);
-        }
     }
 }
