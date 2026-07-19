@@ -160,6 +160,7 @@ Measured through the same Git commands LovelyGit uses, primarily in a disposable
 | Create/remove 2,001-file worktree | 1.28-1.36 s / 586 ms after bounded parallelization |
 | Create/remove 20,000-file worktree | 5.45 s / 6.65 s direct Git; removal busy state paints in 3.8-4.4 ms |
 | Open a linked worktree with 10,001 known repositories | Cold 487.3 to 388.5 ms; warm median 286.2 to 275.5 ms; avoids a 55.6 ms / 7.58 MB follow-up hydration |
+| Clone and open with 10,001 known repositories | Warm median 364.4 to 303.4 ms by reconciling the returned repository locally; avoids a 55.6 ms / 7.58 MB follow-up hydration |
 | Cherry-pick/revert 100 changed files | 251 ms / 183 ms |
 | Merge 500 changed files | 1.02 s |
 | Rebase 100 changed files | 894 ms |
@@ -192,7 +193,7 @@ Measured through the same Git commands LovelyGit uses, primarily in a disposable
 | Open exact comparison across 2,001 files | 366.6 ms cold reveal to 94.1 ms; complete list 107.2 ms, 100,000-line diff 502.7 ms, controls 118-204 ms |
 | Open/delete a remote tag among 500 tags | 311.3 ms cold DOM / 316.7 ms paint to 17.6 / 23.2 ms; deletion busy paint 17.6 ms and exact completion 241.8 ms |
 | Complete backend regression gate | 1,054 tests in 64.87 s to 58.38-55.97 s; ref-heavy external-mergetool preflight fixture 2.75 s to 0.92 s |
-| Hydrate/remove among 10,001 known repositories | Hydration: >10 s timeout / missing tabs to 55.6 ms exact native round trip; removal: 86.6 ms baseline sample to 26.2 ms repeated median by eliminating the 55.6 ms / 7.58 MB follow-up hydration |
+| Hydrate/mutate among 10,001 known repositories | Hydration: >10 s timeout / missing tabs to 55.6 ms exact native round trip; removal settles at a 26.2 ms repeated median; worktree open and Clone/Open Repo reconcile authoritative responses locally instead of repeating the 55.6 ms / 7.58 MB hydration |
 
 ## Rejected or Deferred Experiments
 

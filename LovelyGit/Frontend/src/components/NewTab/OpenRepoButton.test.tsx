@@ -6,16 +6,18 @@ import { toast } from "sonner";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { sendRequestWithResponse } from "@/lib/commands";
 import { nativeDialogTimeoutMs } from "@/lib/nativeDialogTimeout";
-import { setSetting } from "@/lib/settings/settingsStore";
 import { OpenRepoButton } from "./OpenRepoButton";
 
-const repositories = vi.hoisted(() => ({ reloadRepositories: vi.fn() }));
+const repositories = vi.hoisted(() => ({
+	reconcileRepository: vi.fn(),
+	reloadRepositories: vi.fn(),
+	setCurrentRepositoryId: vi.fn(),
+}));
 
 vi.mock("@/lib/repositoryContext", () => ({
 	useRepositoryContext: () => repositories,
 }));
 vi.mock("@/lib/commands", () => ({ sendRequestWithResponse: vi.fn() }));
-vi.mock("@/lib/settings/settingsStore", () => ({ setSetting: vi.fn() }));
 vi.mock("sonner", () => ({ toast: { error: vi.fn() } }));
 
 const send = vi.mocked(sendRequestWithResponse);
@@ -38,9 +40,16 @@ describe("OpenRepoButton", () => {
 
 		selection.resolve({ id: "repo-1", name: "demo", path: "C:/demo" });
 		await waitFor(() =>
-			expect(repositories.reloadRepositories).toHaveBeenCalled(),
+			expect(repositories.setCurrentRepositoryId).toHaveBeenCalledWith(
+				"repo-1",
+			),
 		);
-		expect(setSetting).toHaveBeenCalledWith("CurrentGitRepositoryId", "repo-1");
+		expect(repositories.reconcileRepository).toHaveBeenCalledWith({
+			id: "repo-1",
+			name: "demo",
+			path: "C:/demo",
+		});
+		expect(repositories.reloadRepositories).not.toHaveBeenCalled();
 		expect(screen.getByRole("button", { name: "Open Repo" })).toBeEnabled();
 	});
 
@@ -55,6 +64,25 @@ describe("OpenRepoButton", () => {
 		);
 		expect(repositories.reloadRepositories).not.toHaveBeenCalled();
 		expect(toast.error).not.toHaveBeenCalled();
+	});
+
+	it("retains the added repository when automatic opening fails", async () => {
+		const user = userEvent.setup();
+		const repository = { id: "repo-1", name: "demo", path: "C:/demo" };
+		send.mockResolvedValueOnce(repository);
+		repositories.setCurrentRepositoryId.mockRejectedValueOnce(
+			new Error("Could not select repository"),
+		);
+		render(<OpenRepoButton />);
+
+		await user.click(screen.getByRole("button", { name: "Open Repo" }));
+
+		await waitFor(() =>
+			expect(toast.error).toHaveBeenCalledWith("Could not select repository"),
+		);
+		expect(repositories.reconcileRepository).toHaveBeenCalledWith(repository);
+		expect(repositories.reloadRepositories).not.toHaveBeenCalled();
+		expect(screen.getByRole("button", { name: "Open Repo" })).toBeEnabled();
 	});
 
 	it("surfaces a picker failure and permits retry", async () => {

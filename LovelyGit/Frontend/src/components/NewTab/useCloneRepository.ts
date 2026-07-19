@@ -104,7 +104,7 @@ export function useCloneRepository() {
 				},
 				{ timeoutMs: cloneTimeoutMs },
 			);
-			await repositories.reloadRepositories();
+			repositories.reconcileRepository(repository);
 			await repositories.setCurrentRepositoryId(repository.id);
 			setOpen(false);
 			toast.success(`Cloned ${repository.name || directoryName.trim()}`);

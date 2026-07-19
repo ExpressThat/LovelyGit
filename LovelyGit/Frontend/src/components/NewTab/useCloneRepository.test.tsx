@@ -11,6 +11,7 @@ import { nativeDialogTimeoutMs } from "@/lib/nativeDialogTimeout";
 import { useCloneRepository } from "./useCloneRepository";
 
 const repositoryMocks = vi.hoisted(() => ({
+	reconcileRepository: vi.fn(),
 	reloadRepositories: vi.fn(),
 	setCurrentRepositoryId: vi.fn(),
 }));
@@ -71,7 +72,12 @@ describe("useCloneRepository", () => {
 		});
 		await act(() => result.current.cloneRepository());
 
-		expect(repositoryMocks.reloadRepositories).toHaveBeenCalledOnce();
+		expect(repositoryMocks.reconcileRepository).toHaveBeenCalledWith({
+			id: "new-repo",
+			name: "repo",
+			path: "C:\\temp\\repo",
+		});
+		expect(repositoryMocks.reloadRepositories).not.toHaveBeenCalled();
 		expect(repositoryMocks.setCurrentRepositoryId).toHaveBeenCalledWith(
 			"new-repo",
 		);
@@ -129,6 +135,30 @@ describe("useCloneRepository", () => {
 		expect(toast.info).toHaveBeenCalledWith("Clone canceled");
 		expect(result.current.status).toBe("idle");
 		expect(result.current.open).toBe(true);
+	});
+
+	it("retains the cloned repository when automatic opening fails", async () => {
+		const repository = {
+			id: "new-repo",
+			name: "repo",
+			path: "C:\\temp\\repo",
+		};
+		send.mockResolvedValueOnce(repository);
+		repositoryMocks.setCurrentRepositoryId.mockRejectedValueOnce(
+			new Error("Could not select repository"),
+		);
+		const { result } = renderHook(() => useCloneRepository());
+		populateForm(result.current);
+
+		await act(() => result.current.cloneRepository());
+
+		expect(repositoryMocks.reconcileRepository).toHaveBeenCalledWith(
+			repository,
+		);
+		expect(repositoryMocks.reloadRepositories).not.toHaveBeenCalled();
+		expect(result.current.open).toBe(true);
+		expect(result.current.remoteUrl).toBe("https://example.test/team/repo.git");
+		expect(toast.error).toHaveBeenCalledWith("Could not select repository");
 	});
 
 	it("restores cloning state when cancellation itself fails", async () => {

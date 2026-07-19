@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { sendRequestWithResponse } from "@/lib/commands";
 import { nativeDialogTimeoutMs } from "@/lib/nativeDialogTimeout";
 import { useRepositoryContext } from "@/lib/repositoryContext";
-import { setSetting } from "@/lib/settings/settingsStore";
 
 export function OpenRepoButton() {
 	const knownRepositorys = useRepositoryContext();
@@ -19,8 +18,8 @@ export function OpenRepoButton() {
 				{ timeoutMs: nativeDialogTimeoutMs },
 			);
 			if (result != null) {
-				await knownRepositorys.reloadRepositories();
-				await setSetting("CurrentGitRepositoryId", result.id);
+				knownRepositorys.reconcileRepository(result);
+				await knownRepositorys.setCurrentRepositoryId(result.id);
 			}
 		} catch (error) {
 			toast.error(
