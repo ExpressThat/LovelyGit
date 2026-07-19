@@ -78,6 +78,7 @@ describe("ConflictResolutionView", () => {
 						path: "src/file.txt",
 						expectedFingerprint: "ABC123",
 						resultText: "before\ncurrent\nafter\n",
+						resultTextGzipBase64: "",
 						source: null,
 						deleteResult: false,
 					},
@@ -214,36 +215,6 @@ describe("ConflictResolutionView", () => {
 				arguments: { repositoryId: "repo-1", path: "src/file.txt" },
 			},
 			{ timeoutMs: gitMutationTimeoutMs },
-		);
-	});
-
-	it("uses a whole incoming file for binary conflicts", async () => {
-		const user = userEvent.setup();
-		const binary = response();
-		binary.currentComparison = null;
-		binary.incomingComparison = null;
-		binary.ours = { ...binary.ours, isBinary: true, text: null };
-		binary.theirs = { ...binary.theirs, isBinary: true, text: null };
-		binary.result = { ...binary.result, isBinary: true, text: null };
-		send.mockResolvedValueOnce(binary).mockResolvedValueOnce(undefined);
-		renderConflictView(vi.fn(), vi.fn());
-
-		await user.click(
-			await screen.findByRole("button", { name: "Use incoming branch" }),
-		);
-		await user.click(screen.getByRole("button", { name: "Save & stage" }));
-		await waitFor(() =>
-			expect(send).toHaveBeenLastCalledWith(
-				expect.objectContaining({
-					commandType: "ResolveConflict",
-					arguments: expect.objectContaining({
-						resultText: null,
-						source: "Theirs",
-						deleteResult: false,
-					}),
-				}),
-				{ timeoutMs: gitMutationTimeoutMs },
-			),
 		);
 	});
 });

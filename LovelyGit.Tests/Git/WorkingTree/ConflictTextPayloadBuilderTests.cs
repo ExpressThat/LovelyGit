@@ -1,11 +1,44 @@
 using System.Text;
 using ExpressThat.LovelyGit.Services.Git.WorkingTree;
 using ExpressThat.LovelyGit.Services.Git.WorkingTree.Models;
+using Xunit.Abstractions;
 
 namespace LovelyGit.Tests.Git.WorkingTree;
 
-public sealed class ConflictTextPayloadBuilderTests
+public sealed class ConflictTextPayloadBuilderTests(ITestOutputHelper output)
 {
+    [Fact]
+    public void Compact_KeepsMaximumMostlySharedConflictInsideBridgeBudget()
+    {
+        const int lineCount = 100_000;
+        var baseText = BuildLines(lineCount, static index => $"base line {index}");
+        var oursText = BuildLines(
+            lineCount,
+            static index => index == 50_000 ? "current changed line 50000" : $"base line {index}");
+        var theirsText = BuildLines(
+            lineCount,
+            static index => index % 1_000 == 0 ? $"target changed line {index}" : $"base line {index}");
+        var resultText = theirsText.Replace(
+            "target changed line 50000\n",
+            "<<<<<<< HEAD\ncurrent changed line 50000\n=======\n" +
+            "target changed line 50000\n>>>>>>> comparison-target\n",
+            StringComparison.Ordinal);
+        var response = new ConflictResolutionResponse
+        {
+            Base = Version(baseText),
+            Ours = Version(oursText),
+            Theirs = Version(theirsText),
+            Result = Version(resultText),
+        };
+
+        ConflictTextPayloadBuilder.Compact(response);
+
+        var bundle = Assert.IsType<string>(response.CompactTextBundleGzipBase64);
+        output.WriteLine($"BundleCharacters={bundle.Length:N0}");
+        Assert.True(bundle.Length < 800_000, $"Bundle has {bundle.Length:N0} characters.");
+        Assert.Equal(new[] { baseText, oursText, theirsText, resultText }, Expand(response));
+    }
+
     [Fact]
     public void Compact_CompressesEveryLargeVersionWithoutChangingItsText()
     {
@@ -100,6 +133,13 @@ public sealed class ConflictTextPayloadBuilderTests
         Text = text,
         SizeBytes = Encoding.UTF8.GetByteCount(text),
     };
+
+    private static string BuildLines(int count, Func<int, string> line)
+    {
+        var text = new StringBuilder(count * 16);
+        for (var index = 1; index <= count; index++) text.AppendLine(line(index));
+        return text.ToString();
+    }
 
     private static string?[] Expand(ConflictResolutionResponse response)
     {

@@ -18,6 +18,16 @@ import {
 } from "./conflictDiffItems";
 import type { ConflictChoice } from "./conflictDocument";
 import { filterConflictLines } from "./conflictLineFilter";
+import {
+	buildConflictScrollRows,
+	conflictItemLine,
+	findConflictScrollRow,
+	findMeasurementAtOffset,
+} from "./conflictScrollSync";
+import type {
+	ConflictScrollAnchor,
+	ConflictScrollApi,
+} from "./conflictScrollSyncApi";
 import { useConflictDiffLines } from "./useConflictDiffLines";
 
 export function ConflictSourcePane({
@@ -31,6 +41,7 @@ export function ConflictSourcePane({
 	lineDisplayMode,
 	metadata,
 	onChoice,
+	onRegister,
 	onScroll,
 	side,
 	sourceText,
@@ -47,7 +58,8 @@ export function ConflictSourcePane({
 	lineDisplayMode: "Changes" | "FullFile";
 	metadata: ConflictSourceMetadata;
 	onChoice: (id: number, choice: ConflictChoice) => void;
-	onScroll: (side: ConflictSide, element: HTMLDivElement) => void;
+	onRegister: (side: ConflictSide, api: ConflictScrollApi | null) => void;
+	onScroll: (side: ConflictSide, anchor: ConflictScrollAnchor) => void;
 	side: ConflictSide;
 	sourceText: string;
 	viewportRef: RefObject<HTMLDivElement | null>;
@@ -80,6 +92,24 @@ export function ConflictSourcePane({
 		measureElement: (element) => element.getBoundingClientRect().height,
 		overscan: 16,
 	});
+	const scrollRows = useMemo(
+		() => buildConflictScrollRows(items, side),
+		[items, side],
+	);
+	useEffect(() => {
+		onRegister(side, {
+			scrollTo: (anchor) => {
+				const row = findConflictScrollRow(scrollRows, anchor.line);
+				const offset = row
+					? virtualizer.getOffsetForIndex(row.index, "start")?.[0]
+					: null;
+				if (offset === null || offset === undefined || !row) return;
+				const size = items[row.index]?.kind === "hunk" ? 34 : 18;
+				virtualizer.scrollToOffset(offset + size * anchor.offsetRatio);
+			},
+		});
+		return () => onRegister(side, null);
+	}, [items, onRegister, scrollRows, side, virtualizer]);
 	useEffect(() => {
 		const index = items.findIndex(
 			(item) => item.kind === "hunk" && item.hunk.id === activeConflict,
@@ -93,6 +123,22 @@ export function ConflictSourcePane({
 		virtualizer.getTotalSize(),
 		estimatedHeight(items),
 	);
+	const handleScroll = (element: HTMLDivElement) => {
+		const measurement = findMeasurementAtOffset(
+			virtualizer.getVirtualItems(),
+			element.scrollTop,
+		);
+		if (!measurement) return;
+		const line = conflictItemLine(items[measurement.index], side);
+		if (line === null) return;
+		onScroll(side, {
+			line,
+			offsetRatio: Math.max(
+				0,
+				Math.min(1, (element.scrollTop - measurement.start) / measurement.size),
+			),
+		});
+	};
 
 	return (
 		<section
@@ -113,7 +159,7 @@ export function ConflictSourcePane({
 			</div>
 			<div
 				className="custom-scrollbar min-h-0 flex-1 overflow-auto bg-background font-mono text-[12px] leading-[18px]"
-				onScroll={(event) => onScroll(side, event.currentTarget)}
+				onScroll={(event) => handleScroll(event.currentTarget)}
 				ref={viewportRef}
 			>
 				{loaded.status === "loading" ? (

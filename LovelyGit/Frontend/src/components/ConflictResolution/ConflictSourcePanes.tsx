@@ -4,6 +4,10 @@ import { motion, useReducedMotion } from "@/lib/motion";
 import { ConflictSourcePane } from "./ConflictSourcePane";
 import type { ConflictSide } from "./conflictDiffItems";
 import type { ConflictChoice } from "./conflictDocument";
+import type {
+	ConflictScrollAnchor,
+	ConflictScrollApi,
+} from "./conflictScrollSyncApi";
 
 export function ConflictSourcePanes({
 	activeConflict,
@@ -27,16 +31,19 @@ export function ConflictSourcePanes({
 	const currentRef = useRef<HTMLDivElement>(null);
 	const incomingRef = useRef<HTMLDivElement>(null);
 	const syncing = useRef(false);
+	const currentApi = useRef<ConflictScrollApi | null>(null);
+	const incomingApi = useRef<ConflictScrollApi | null>(null);
 	const reduceMotion = useReducedMotion();
-	const synchronize = (side: ConflictSide, source: HTMLDivElement) => {
+	const register = (side: ConflictSide, api: ConflictScrollApi | null) => {
+		if (side === "ours") currentApi.current = api;
+		else incomingApi.current = api;
+	};
+	const synchronize = (side: ConflictSide, anchor: ConflictScrollAnchor) => {
 		if (syncing.current) return;
-		const target = side === "ours" ? incomingRef.current : currentRef.current;
+		const target = side === "ours" ? incomingApi.current : currentApi.current;
 		if (!target) return;
-		const sourceRange = source.scrollHeight - source.clientHeight;
-		const targetRange = target.scrollHeight - target.clientHeight;
-		const progress = sourceRange <= 0 ? 0 : source.scrollTop / sourceRange;
 		syncing.current = true;
-		target.scrollTop = progress * Math.max(0, targetRange);
+		target.scrollTo(anchor);
 		requestAnimationFrame(() => {
 			syncing.current = false;
 		});
@@ -63,6 +70,7 @@ export function ConflictSourcePanes({
 				metadata={conflict.currentSource}
 				lineDisplayMode={lineDisplayMode}
 				onChoice={onChoice}
+				onRegister={register}
 				onScroll={synchronize}
 				side="ours"
 				sourceText={conflict.ours.text ?? ""}
@@ -80,6 +88,7 @@ export function ConflictSourcePanes({
 				metadata={conflict.incomingSource}
 				lineDisplayMode={lineDisplayMode}
 				onChoice={onChoice}
+				onRegister={register}
 				onScroll={synchronize}
 				side="theirs"
 				sourceText={conflict.theirs.text ?? ""}

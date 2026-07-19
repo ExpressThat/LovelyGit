@@ -25,7 +25,8 @@ internal static class ConflictTextPayloadBuilder
             response.Base.Text,
             response.Ours.Text,
             response.Theirs.Text,
-            response.Result.Text);
+            response.Result.Text,
+            CompressionLevel.Optimal);
         foreach (var version in versions)
         {
             version.Text = null;

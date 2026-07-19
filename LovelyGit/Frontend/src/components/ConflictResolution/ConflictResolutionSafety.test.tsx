@@ -1,9 +1,10 @@
 // @vitest-environment jsdom
 
-import { screen } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { sendRequestWithResponse } from "@/lib/commands";
+import { gitMutationTimeoutMs } from "@/lib/gitMutationTimeout";
 import { ConflictResolutionView } from "./ConflictResolutionView";
 import {
 	conflictFile,
@@ -148,6 +149,37 @@ describe("ConflictResolutionView safety states", () => {
 		);
 		expect(await screen.findByLabelText("Editable result preview")).toHaveValue(
 			"before\ncurrent\nafter\n",
+		);
+	});
+
+	it("uses a whole incoming file for binary conflicts", async () => {
+		const user = userEvent.setup();
+		const binary = response();
+		binary.currentComparison = null;
+		binary.incomingComparison = null;
+		binary.ours = { ...binary.ours, isBinary: true, text: null };
+		binary.theirs = { ...binary.theirs, isBinary: true, text: null };
+		binary.result = { ...binary.result, isBinary: true, text: null };
+		send.mockResolvedValueOnce(binary).mockResolvedValueOnce(undefined);
+		renderConflictView(vi.fn(), vi.fn());
+
+		await user.click(
+			await screen.findByRole("button", { name: "Use incoming branch" }),
+		);
+		await user.click(screen.getByRole("button", { name: "Save & stage" }));
+		await waitFor(() =>
+			expect(send).toHaveBeenLastCalledWith(
+				expect.objectContaining({
+					commandType: "ResolveConflict",
+					arguments: expect.objectContaining({
+						resultText: null,
+						resultTextGzipBase64: "",
+						source: "Theirs",
+						deleteResult: false,
+					}),
+				}),
+				{ timeoutMs: gitMutationTimeoutMs },
+			),
 		);
 	});
 });

@@ -20,6 +20,7 @@ public record ResolveConflictCommandArguments
     public string Path { get; set; } = string.Empty;
     public string ExpectedFingerprint { get; set; } = string.Empty;
     public string? ResultText { get; set; }
+    public string ResultTextGzipBase64 { get; set; } = string.Empty;
     public ConflictResolutionSource? Source { get; set; }
     public bool DeleteResult { get; set; }
 }

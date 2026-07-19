@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import type {
-	ConflictResolutionResponse,
 	ConflictResolutionSource,
 	WorkingTreeChangedFile,
 } from "@/generated/types";
@@ -16,10 +15,15 @@ import {
 	renderConflictResult,
 } from "./conflictDocument";
 import {
+	conflictErrorMessage,
+	requiresWholeFileChoice,
+} from "./conflictResolutionUtils";
+import {
 	ConflictDocumentCache,
 	type ConflictLoadState,
 	ConflictResolutionVariantCache,
 } from "./conflictResolutionVariantCache";
+import { prepareConflictResultPayload } from "./conflictResultPayload";
 import { loadConflictTextPayloads } from "./conflictTextPayload";
 import { verifyExternalConflictResolved } from "./externalConflictVerification";
 
@@ -97,7 +101,8 @@ export function useConflictResolution({
 				setState({ status: "loaded", conflict, document: preparedDocument });
 			})
 			.catch((error: unknown) => {
-				if (active) setState({ status: "error", message: errorMessage(error) });
+				if (active)
+					setState({ status: "error", message: conflictErrorMessage(error) });
 			});
 		return () => {
 			active = false;
@@ -152,6 +157,9 @@ export function useConflictResolution({
 		setBusyAction("save");
 		setActionError(null);
 		try {
+			const resultPayload = await prepareConflictResultPayload(
+				wholeFile ? null : resultText,
+			);
 			await sendRequestWithResponse(
 				{
 					commandType: "ResolveConflict",
@@ -159,7 +167,7 @@ export function useConflictResolution({
 						repositoryId,
 						path: file.path,
 						expectedFingerprint: state.conflict.worktreeFingerprint,
-						resultText: wholeFile ? null : resultText,
+						...resultPayload,
 						source:
 							wholeFile && wholeFileSelection !== "delete"
 								? wholeFileSelection
@@ -173,7 +181,7 @@ export function useConflictResolution({
 			toast.success(`Resolved and staged ${file.path}`);
 			onClose();
 		} catch (error) {
-			setActionError(errorMessage(error));
+			setActionError(conflictErrorMessage(error));
 		} finally {
 			setBusyAction(null);
 		}
@@ -196,7 +204,7 @@ export function useConflictResolution({
 			toast.success(`Resolved ${file.path} in the external merge tool`);
 			onClose();
 		} catch (error) {
-			setActionError(errorMessage(error));
+			setActionError(conflictErrorMessage(error));
 		} finally {
 			setBusyAction(null);
 		}
@@ -232,17 +240,4 @@ export function useConflictResolution({
 		wholeFileSelection,
 		wrapLines,
 	};
-}
-
-function requiresWholeFileChoice(conflict: ConflictResolutionResponse) {
-	if (!conflict.ours.exists || !conflict.theirs.exists) return true;
-	return [conflict.ours, conflict.theirs, conflict.result].some(
-		(version) => version.isBinary || version.isTooLarge,
-	);
-}
-
-function errorMessage(error: unknown) {
-	return error instanceof Error
-		? error.message
-		: "Failed to resolve the conflict.";
 }

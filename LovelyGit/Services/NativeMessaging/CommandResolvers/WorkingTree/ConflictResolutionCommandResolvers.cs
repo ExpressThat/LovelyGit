@@ -113,7 +113,9 @@ internal sealed class ResolveConflictCommandResolver : ConflictCommandResolver<R
                 repository.Path!,
                 arguments.Path,
                 arguments.ExpectedFingerprint,
-                arguments.ResultText,
+                ConflictResultPayload.Expand(
+                    arguments.ResultText,
+                    arguments.ResultTextGzipBase64),
                 arguments.Source,
                 arguments.DeleteResult,
                 CancellationToken.None).ConfigureAwait(false);

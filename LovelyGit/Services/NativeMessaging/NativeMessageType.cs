@@ -121,9 +121,9 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging
         GetRemoteSyncStatus,
         [NativeMessageContract(typeof(GetConflictResolutionCommandArguments), typeof(ConflictResolutionResponse))]
         GetConflictResolution,
-        [NativeMessageContract(typeof(ResolveConflictCommandArguments))]
+        [NativeMessageContract(typeof(ResolveConflictCommandArguments), typeof(EmptyCommandArguments))]
         ResolveConflict,
-        [NativeMessageContract(typeof(OpenConflictInMergeToolCommandArguments))]
+        [NativeMessageContract(typeof(OpenConflictInMergeToolCommandArguments), typeof(EmptyCommandArguments))]
         OpenConflictInMergeTool,
         [NativeMessageContract(typeof(RevealWorkingTreeFileCommandArguments), typeof(EmptyCommandArguments))]
         RevealWorkingTreeFile,
