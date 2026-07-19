@@ -170,6 +170,7 @@ This ledger records shipped performance work by feature area. Update it in the s
 - Virtualized and bounded large/long-line rendering and halved side-by-side row work (`30404a9`, `4dd7b33`, `6c4a42b`, `4429b34`, `df83dfe`).
 - Compacted, compressed, referenced, and reused large colored diff payloads across layouts (`b55def8`, `f4f6d53`, `46af1fd`, `80d6769`, `ac7fb8a`, `df0c41b`, `d10ac7b`).
 - Shared immutable empty syntax/change metadata between hydrated rows and released oversized decoded row/intermediate caches when a diff unmounts, while retaining the compact response for fast reopening (current large-diff checkpoint).
+- Released decoded full-source arrays immediately after projecting compact delta rows, even when a few displayed changes reference a 100,000-line file. A staged four-line view falls from 75.53 to 33.94 MB observed page heap without delaying 25.0-28.5 ms line/hunk feedback; failed untracked line staging also rolls back its temporary intent-to-add entry (current partial-staging checkpoint).
 - Bounded decoded/source/result cache weight and skipped uncacheable prewarming (`15ce59d`, `9f613ed`, `c4e610c`, `70eecfd`).
 - Moved diff persistence off click paths and cached open variants (`b074af7`, `dc120ec`, `54cb0c7`, `3726952`).
 - Streamed patch previews through a pooled character buffer so large Apply Patch files no longer allocate one string per content line (`dfe357d`).

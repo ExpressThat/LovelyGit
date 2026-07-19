@@ -156,7 +156,8 @@ internal sealed partial class WorkingTreeIndexService
             .ConfigureAwait(false);
         var normalizedPath = NormalizeSelectedPaths([path])[0];
 
-        if (string.Equals(group, "Untracked", StringComparison.Ordinal))
+        var addedIntent = string.Equals(group, "Untracked", StringComparison.Ordinal);
+        if (addedIntent)
         {
             await _gitCliService
                 .CreateCommand(["add", "-N", "--", normalizedPath], repositoryPaths.WorkTreeDirectory)
@@ -174,13 +175,28 @@ internal sealed partial class WorkingTreeIndexService
             oldLineEnding,
             newLineEnding);
 
-        await _gitCliService
-            .CreateCommand(
-                ["apply", "--cached", "--unidiff-zero", "--whitespace=nowarn", "-"],
-                repositoryPaths.WorkTreeDirectory)
-            .WithStandardInputPipe(PipeSource.FromString(patch, Encoding.UTF8))
-            .ExecuteAsync(cancellationToken)
-            .ConfigureAwait(false);
+        try
+        {
+            await _gitCliService
+                .CreateCommand(
+                    ["apply", "--cached", "--unidiff-zero", "--whitespace=nowarn", "-"],
+                    repositoryPaths.WorkTreeDirectory)
+                .WithStandardInputPipe(PipeSource.FromString(patch, Encoding.UTF8))
+                .ExecuteAsync(cancellationToken)
+                .ConfigureAwait(false);
+        }
+        catch
+        {
+            if (addedIntent)
+            {
+                await _gitCliService
+                    .CreateCommand(["reset", "--", normalizedPath], repositoryPaths.WorkTreeDirectory)
+                    .ExecuteAsync(CancellationToken.None)
+                    .ConfigureAwait(false);
+            }
+
+            throw;
+        }
     }
 
     public async Task UnstageLineAsync(

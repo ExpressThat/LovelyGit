@@ -100,7 +100,8 @@ async function decodeCompactLines(
 				diff.viewMode === "Combined",
 			);
 		} finally {
-			if (isOversizedDecodedPayload(diff)) releaseDeltaIntermediates(diff);
+			releaseDeltaSources(diff);
+			if (isOversizedDecodedPayload(diff)) releaseDeltaTuples(diff);
 		}
 	}
 	if (
@@ -170,9 +171,16 @@ function loadDeltaSources(diff: CommitFileDiffResponse) {
 }
 
 function releaseDeltaIntermediates(diff: CommitFileDiffResponse) {
-	const identity = getCompactDiffPayloadIdentity(diff);
-	decodedDeltaTupleCache.delete(identity);
-	decodedSourceCache.delete(identity);
+	releaseDeltaTuples(diff);
+	releaseDeltaSources(diff);
+}
+
+function releaseDeltaTuples(diff: CommitFileDiffResponse) {
+	decodedDeltaTupleCache.delete(getCompactDiffPayloadIdentity(diff));
+}
+
+function releaseDeltaSources(diff: CommitFileDiffResponse) {
+	decodedSourceCache.delete(getCompactDiffPayloadIdentity(diff));
 }
 
 function isOversizedDecodedPayload(diff: CommitFileDiffResponse) {

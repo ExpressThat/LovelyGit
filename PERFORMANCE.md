@@ -103,6 +103,8 @@ Mixed reflog reset now skips Git's immediate index refresh because LovelyGit fol
 
 Startup now reconciles a persisted current-repository ID against the successfully loaded repository list before graph consumers use it. A removed/stale ID previously left the desktop in a permanent Detached HEAD graph skeleton: it still retained 1,508 DOM nodes and 33.42 MB page heap after 12.47 seconds and required a manual tab switch. The same stale database now reaches New Tab by the first CMG attachment in 350.3-474.0 ms, with 673 nodes and 9.52-9.61 MB page heap, removing 835 retained nodes / at least 23.81 MB from the broken state and persisting the repair. A valid 601-ref repository remains fast, reaching usable branch controls at 455.5 ms, 24.2 ms after attachment. Failed repository-list reads deliberately preserve the stored ID. The root chunk grows only 0.19 kB minified / 0.05 kB gzip.
 
+Partial line and hunk staging now releases decoded full-source arrays as soon as compact delta rows have been projected. A staged four-line diff backed by two 100,000-line sources previously retained 75.53 MB of observed page heap because the release policy considered only the four rendered changes; the same desktop flow now settles at 33.94 MB, saving 41.59 MB / 55.1%. Interaction feedback remains immediate: Stage Line/Hunk paints in 28.5/27.1 ms and Unstage Line/Hunk in 25.0/26.4 ms; the measured line operations settle in 179.3/97.4 ms. Direct Git patch cost remains the floor at 59-72 ms on the 20,001-file index. Failed untracked line staging now also rolls back its temporary intent-to-add entry, matching the existing hunk safety contract.
+
 ## Measurement Rules
 
 - Measure from a healthy runner state and use disposable repositories only.
@@ -137,6 +139,7 @@ Measured through the same Git commands LovelyGit uses, primarily in a disposable
 | Stage 1,000 of 20,000 tracked files | 7.18 s cold CMG completion; 0.70-0.90 s warm service runs |
 | Unstage 1,000 of 20,000 tracked files | 749 ms CMG completion; 0.31-0.47 s warm service runs |
 | Discard 1,000 of 20,000 tracked files | 87 ms warm CMG completion; 0.65-0.67 s cold service runs |
+| Stage / unstage a line or hunk in a 100,000-line file | Busy paint 25.0-28.5 ms; line settlement 97.4-179.3 ms; direct Git patch 59-72 ms; staged four-line view heap 75.53 to 33.94 MB |
 | Commit / Amend 2,001 staged files plus one 100,000-line file | Commit 260.8 to 195.9 ms direct and 46.75 to 19.08 MB Git peak; optimized desktop 203.4 ms; Amend 214.2 ms |
 | Commit 1,000 staged files in a 20,000-file repository | 0.23-0.34 s service; 439.2 ms CMG control settlement after deferring auto-maintenance |
 | Fetch / Pull / Push completion contract | Disabled feedback in 1-5 ms; awaited 3.37-3.50 s delayed transport process |

@@ -143,7 +143,7 @@ public sealed class WorkingTreeHunkStagingTests
     }
 
     [Fact]
-    public async Task StageHunk_FailedUntrackedPatchRemovesTemporaryIntentToAddEntry()
+    public async Task FailedUntrackedPatchesRemoveTemporaryIntentToAddEntries()
     {
         using var repository = TestRepository.Create();
         var service = new WorkingTreeIndexService(repository.Git);
@@ -164,6 +164,26 @@ public sealed class WorkingTreeHunkStagingTests
                 CancellationToken.None));
 
         var status = await repository.Git.ExecuteBufferedAsync(
+            ["status", "--short", "--", "new.txt"],
+            repository.Path,
+            cancellationToken: CancellationToken.None);
+        Assert.Equal("?? new.txt", status.StandardOutput.Trim());
+
+        await Assert.ThrowsAnyAsync<Exception>(() =>
+            service.StageLineAsync(
+                repository.Path,
+                "new.txt",
+                "Untracked",
+                "Deleted",
+                1,
+                null,
+                "missing",
+                string.Empty,
+                null,
+                null,
+                CancellationToken.None));
+
+        status = await repository.Git.ExecuteBufferedAsync(
             ["status", "--short", "--", "new.txt"],
             repository.Path,
             cancellationToken: CancellationToken.None);
