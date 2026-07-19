@@ -8,10 +8,7 @@ public sealed class GitObjectStoreCacheTests
     [Fact]
     public async Task ReadObjectWithoutCachingAsync_DoesNotPolluteSharedCache()
     {
-        using var directory = TemporaryDirectory.Create("lovelygit-object-cache-");
-        await GitTestProcess.RunAsync(directory.Path, "init");
-        await GitTestProcess.RunAsync(directory.Path, "config", "user.email", "test@example.com");
-        await GitTestProcess.RunAsync(directory.Path, "config", "user.name", "Test User");
+        using var directory = CreateRepository("lovelygit-object-cache-");
         await File.WriteAllTextAsync(
             Path.Combine(directory.Path, "unique.txt"),
             Guid.NewGuid().ToString("N"));
@@ -49,10 +46,7 @@ public sealed class GitObjectStoreCacheTests
     [Fact]
     public async Task ReadObjectWithoutCachingAsync_DoesNotRetainPackedBlobBytes()
     {
-        using var directory = TemporaryDirectory.Create("lovelygit-packed-cache-");
-        await GitTestProcess.RunAsync(directory.Path, "init");
-        await GitTestProcess.RunAsync(directory.Path, "config", "user.email", "test@example.com");
-        await GitTestProcess.RunAsync(directory.Path, "config", "user.name", "Test User");
+        using var directory = CreateRepository("lovelygit-packed-cache-");
         var path = Path.Combine(directory.Path, "packed.txt");
         await File.WriteAllTextAsync(path, string.Concat(Enumerable.Repeat(Guid.NewGuid().ToString("N"), 8_192)));
         await GitTestProcess.RunAsync(directory.Path, "add", ".");
@@ -73,10 +67,7 @@ public sealed class GitObjectStoreCacheTests
     [Fact]
     public async Task ReadObjectWithTransientPackCacheAsync_DoesNotPolluteSharedCache()
     {
-        using var directory = TemporaryDirectory.Create("lovelygit-transient-pack-cache-");
-        await GitTestProcess.RunAsync(directory.Path, "init");
-        await GitTestProcess.RunAsync(directory.Path, "config", "user.email", "test@example.com");
-        await GitTestProcess.RunAsync(directory.Path, "config", "user.name", "Test User");
+        using var directory = CreateRepository("lovelygit-transient-pack-cache-");
         await GitTestProcess.RunAsync(
             directory.Path, "commit", "--allow-empty", "-m", "transient cache fixture");
         var hash = (await GitTestProcess.RunAsync(directory.Path, "rev-parse", "HEAD")).Trim();
@@ -94,10 +85,7 @@ public sealed class GitObjectStoreCacheTests
     [Fact]
     public async Task RepeatedRepacks_RetireEveryStalePackGeneration()
     {
-        using var directory = TemporaryDirectory.Create("lovelygit-pack-retirement-");
-        await GitTestProcess.RunAsync(directory.Path, "init");
-        await GitTestProcess.RunAsync(directory.Path, "config", "user.email", "test@example.com");
-        await GitTestProcess.RunAsync(directory.Path, "config", "user.name", "Test User");
+        using var directory = CreateRepository("lovelygit-pack-retirement-");
         await File.WriteAllTextAsync(Path.Combine(directory.Path, "packed.txt"), "first");
         await GitTestProcess.RunAsync(directory.Path, "add", ".");
         await GitTestProcess.RunAsync(directory.Path, "commit", "-m", "first pack");
@@ -130,5 +118,12 @@ public sealed class GitObjectStoreCacheTests
             Assert.Equal(1, store.OpenPackFileCount);
             Assert.Equal(1, store.OpenPackIndexCount);
         }
+    }
+
+    private static TemporaryDirectory CreateRepository(string prefix)
+    {
+        var directory = TemporaryDirectory.Create(prefix);
+        InitializedRepositoryTemplate.CopyInto(new DirectoryInfo(directory.Path), "master");
+        return directory;
     }
 }

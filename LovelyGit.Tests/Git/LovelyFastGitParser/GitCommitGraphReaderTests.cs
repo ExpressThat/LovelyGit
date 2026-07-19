@@ -202,7 +202,12 @@ public sealed class GitCommitGraphReaderTests
         {
             var repository = new TestRepository(
                 Directory.CreateTempSubdirectory("lovelygit-commit-graph-"));
-            repository.Run(sha256 ? ["init", "--object-format=sha256"] : ["init"]);
+            if (!sha256)
+            {
+                InitializedRepositoryTemplate.CopyInto(repository._directory, "master");
+                return repository;
+            }
+            repository.Run("init", "--object-format=sha256");
             repository.Run("config", "user.name", "LovelyGit Test");
             repository.Run("config", "user.email", "test@example.invalid");
             repository.Run("config", "core.autocrlf", "false");

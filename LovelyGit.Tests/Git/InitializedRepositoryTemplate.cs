@@ -25,6 +25,7 @@ internal static class InitializedRepositoryTemplate
         Run(git, directory, ["init", "--initial-branch", branchName]);
         Run(git, directory, ["config", "user.name", "LovelyGit Test"]);
         Run(git, directory, ["config", "user.email", "test@example.invalid"]);
+        Run(git, directory, ["config", "core.autocrlf", "false"]);
         Run(git, directory, ["commit", "--allow-empty", "-m", "Initial"]);
         return true;
     }
