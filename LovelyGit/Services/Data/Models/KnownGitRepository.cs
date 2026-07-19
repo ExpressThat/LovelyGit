@@ -19,4 +19,12 @@ namespace ExpressThat.LovelyGit.Services.Data.Models
         [Column("path")]
         public string? Path { get; set; }
     }
+
+    [TypeSharp]
+    public sealed record KnownGitRepositoriesResponse
+    {
+        public List<KnownGitRepository> Repositories { get; init; } = [];
+
+        public string? CompactRepositoriesGzipBase64 { get; init; }
+    }
 }

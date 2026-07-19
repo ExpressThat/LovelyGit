@@ -9,6 +9,7 @@ import {
 } from "react";
 import type { KnownGitRepository } from "@/generated/types";
 import { sendRequestWithResponse } from "@/lib/commands";
+import { expandKnownRepositories } from "@/lib/knownRepositoriesPayload";
 import {
 	initSettingsStore,
 	setSetting,
@@ -37,10 +38,10 @@ export function RepositoryProvider({ children }: { children: ReactNode }) {
 	const reloadRepositories = useCallback(async () => {
 		setIsLoadingRepositories(true);
 		try {
-			const knownRepositories =
-				(await sendRequestWithResponse({
-					commandType: "KnownGitRepositorys",
-				})) ?? [];
+			const response = await sendRequestWithResponse({
+				commandType: "KnownGitRepositorys",
+			});
+			const knownRepositories = await expandKnownRepositories(response);
 			setRepositories(knownRepositories);
 			setHasLoadedRepositories(true);
 		} finally {
@@ -70,7 +71,7 @@ export function RepositoryProvider({ children }: { children: ReactNode }) {
 
 	useEffect(() => {
 		void initSettingsStore();
-		void reloadRepositories();
+		void reloadRepositories().catch(() => undefined);
 	}, [reloadRepositories]);
 
 	const currentRepository = useMemo(

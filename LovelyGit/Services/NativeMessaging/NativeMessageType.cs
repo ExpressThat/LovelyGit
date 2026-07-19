@@ -43,7 +43,7 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging
     public enum NativeMessageType
     {
         // Repository discovery, tabs, local launching, and cloning.
-        [NativeMessageContract(typeof(EmptyCommandArguments), typeof(List<KnownGitRepository>))]
+        [NativeMessageContract(typeof(EmptyCommandArguments), typeof(KnownGitRepositoriesResponse))]
         KnownGitRepositorys,
         [NativeMessageContract(typeof(EmptyCommandArguments), typeof(KnownGitRepository))]
         AddKnownGitRepositorys,

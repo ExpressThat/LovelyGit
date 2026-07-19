@@ -29,12 +29,12 @@ namespace ExpressThat.LovelyGit.Services.NativeMessaging.CommandResolvers.KnownR
         {
             var knownGitRepositorys = await _knownGitRepositorysRepository.GetAllAsync();
 
-            return new CommandResponse<List<KnownGitRepository>>
+            return new CommandResponse<KnownGitRepositoriesResponse>
             {
                 CommandUniqueId = command.CommandUniqueId,
                 CommandType = command.CommandType,
                 IsSuccess = true,
-                Result = knownGitRepositorys
+                Result = KnownRepositoriesPayloadCompactor.Compact(knownGitRepositorys)
             };
         }
     }

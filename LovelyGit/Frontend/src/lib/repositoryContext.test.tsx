@@ -34,10 +34,14 @@ describe("RepositoryProvider", () => {
 	});
 
 	it("clears a persisted repository id that is absent after loading", async () => {
-		let finishLoading: (repositories: KnownGitRepository[]) => void = () => {};
+		let finishLoading: () => void = () => {};
 		state.sendRequestWithResponse.mockReturnValueOnce(
-			new Promise<KnownGitRepository[]>((resolve) => {
-				finishLoading = resolve;
+			new Promise((resolve) => {
+				finishLoading = () =>
+					resolve({
+						compactRepositoriesGzipBase64: null,
+						repositories: [],
+					});
 			}),
 		);
 		renderProvider();
@@ -45,7 +49,7 @@ describe("RepositoryProvider", () => {
 		expect(screen.getByTestId("current-repository")).toHaveTextContent(
 			"missing",
 		);
-		await act(async () => finishLoading([]));
+		await act(async () => finishLoading());
 
 		await waitFor(() =>
 			expect(screen.getByTestId("current-repository")).toHaveTextContent(
@@ -60,15 +64,32 @@ describe("RepositoryProvider", () => {
 
 	it("retains a persisted repository id that resolves successfully", async () => {
 		state.currentRepositoryId = "repository-1";
-		state.sendRequestWithResponse.mockResolvedValueOnce([
-			repository("repository-1"),
-		]);
+		state.sendRequestWithResponse.mockResolvedValueOnce({
+			compactRepositoriesGzipBase64: null,
+			repositories: [repository("repository-1")],
+		});
 		renderProvider();
 
 		await waitFor(() =>
 			expect(screen.getByTestId("current-repository")).toHaveTextContent(
 				"repository-1",
 			),
+		);
+		expect(state.setSetting).not.toHaveBeenCalled();
+	});
+
+	it("retains the stored id without leaking an initial list failure", async () => {
+		state.currentRepositoryId = "repository-1";
+		state.sendRequestWithResponse.mockRejectedValueOnce(
+			new Error("Repository list unavailable"),
+		);
+		renderProvider();
+
+		await waitFor(() =>
+			expect(state.sendRequestWithResponse).toHaveBeenCalledOnce(),
+		);
+		expect(screen.getByTestId("current-repository")).toHaveTextContent(
+			"repository-1",
 		);
 		expect(state.setSetting).not.toHaveBeenCalled();
 	});
