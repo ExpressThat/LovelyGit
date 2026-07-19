@@ -163,7 +163,7 @@ Measured through the same Git commands LovelyGit uses, primarily in a disposable
 | Interactive rebase of 100 commits / 1,010 files | Busy DOM 3.5 ms; visibly painted by 8.9 ms; completed in 273.5 ms versus 294.7 ms direct Git |
 | Interactive rebase paused by 1,001 conflicts | Busy DOM 7.1-8.7 ms; visibly painted by 13.3-16.2 ms; 11,031.1 ms desktop completion with 10,903.7 ms inside Git and 50.9 MB transient Git peak |
 | Git LFS Track / Untrack / Prune with 50,500 attributes | Busy paint 8.7-17.4 ms; desktop completion 739 / 612 / 416-450 ms; direct Git 645 / 472 / 352 ms |
-| Merge / rebase 1,000 files plus one 100,000-line file | Busy paint 19.4-26.9 ms / 22.8 ms; desktop completion 4.40-4.59 s / 6.52 s; exact direct Git 0.95-1.12 s / 1.72 s |
+| Merge / rebase 1,000 files plus one 100,000-line file | Busy paint 19.4-26.9 ms / 22.8 ms; desktop completion 4.40-4.59 s / 6.52 s; exact direct Git 0.95-1.12 s / 1.72 s. A separate 20,000-file/2,001-change merge painted busy in 4.3-5.7 ms and completed in 9.79-10.23 s versus 2.40-2.63 s direct. |
 | Cherry-pick / revert / hard reset 1,000 files plus one 100,000-line file | Busy paint 19.2 ms / 20.9 ms / 16.2 ms; native completion 4.54 s / 1.18 s / 1.09-4.30 s; exact direct Git 0.99 s / 0.76 s / 0.67 s |
 | Mixed reflog reset across 1,001 changed files | 289.9 ms to 254.8 ms direct; busy DOM 16.3 ms, next frame 21.5 ms, exact desktop settlement 545.3 ms |
 | Bisect across 2,001 files plus one 100,000-line file | Failure busy/paint 4.6/14.8 ms and safe rejection 216.3 ms; retry 6.57 s; reset 8.37 s with visible branch refresh 11.1 ms later |
@@ -194,6 +194,7 @@ Measured through the same Git commands LovelyGit uses, primarily in a disposable
 
 | Experiment | Observed benefit | Reason not shipped |
 | --- | --- | --- |
+| Add `--quiet` to large merges | Desktop merge remained 10.11 s versus its 9.79-10.23 s baseline | Success output is not the bottleneck; reverted. |
 | Replace the existing ref-view helpers with one maximum-ref projection pass | 0.3143 ms to 0.0497 ms per isolated 10,601-ref projection, saving only 0.2646 ms | The real context menu, dialog, and picker already open in 8.7, 31.1, and 11.1 ms, so the small absolute saving does not justify changing established grouping semantics. |
 | Enable Git FSMonitor for checkout | Chromium checkout improved from about 2.1 s to 0.85–0.90 s warm | Persistent daemon retained about 37.8 MB per repository and the first full status scan regressed to about 3.5 s. |
 | Enable Git untracked cache automatically | Warm status reached about 0.41–0.44 s | Initial warm-up was about 3.6 s and mutating user repository configuration was not justified. |
