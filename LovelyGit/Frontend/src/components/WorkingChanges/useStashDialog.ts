@@ -134,6 +134,8 @@ export function useStashDialog(
 			}
 			if (action === StashAction.Create) {
 				onCreateSuccess?.(createSelectedOnly, createPaths, includeUntracked);
+			}
+			if (action === StashAction.Create || action === StashAction.Branch) {
 				reconcileWithoutBlocking(onRepositoryChanged);
 			} else {
 				await onRepositoryChanged();

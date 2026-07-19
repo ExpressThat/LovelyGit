@@ -167,6 +167,31 @@ describe("useStashDialog responsiveness", () => {
 		});
 		expect(toast.error).not.toHaveBeenCalled();
 	});
+
+	it("publishes branch success without waiting for repository reconciliation", async () => {
+		const reconciliation = deferred<void>();
+		const onRepositoryChanged = vi.fn(() => reconciliation.promise);
+		send.mockResolvedValueOnce({ refs: [], stashes: [] });
+		const { result } = renderHook(() =>
+			useStashDialog("repo", onRepositoryChanged),
+		);
+		act(() => result.current.setBranchTarget(stash));
+
+		await act(() =>
+			result.current.runAction(StashAction.Branch, stash, "recover/work"),
+		);
+
+		expect(result.current.branchTarget).toBeNull();
+		expect(result.current.busyAction).toBeNull();
+		expect(onRepositoryChanged).toHaveBeenCalledOnce();
+		expect(toast.success).toHaveBeenCalledWith(
+			"Create branch from stash complete",
+			{ id: "stash-toast" },
+		);
+		reconciliation.reject(new Error("status refresh failed"));
+		await act(async () => Promise.resolve());
+		expect(toast.error).not.toHaveBeenCalled();
+	});
 });
 
 function deferred<T>() {
