@@ -84,8 +84,11 @@ describe("useBisectSession", () => {
 	});
 
 	it("loads native state and marks the current revision good", async () => {
+		const onRepositoryChanged = vi.fn();
 		vi.mocked(sendRequestWithResponse).mockResolvedValue(activeState);
-		const { result } = renderHook(() => useBisectSession("repo"));
+		const { result } = renderHook(() =>
+			useBisectSession("repo", onRepositoryChanged),
+		);
 		await waitFor(() => expect(result.current.state).toEqual(activeState));
 
 		await act(() => result.current.run("MarkGood"));
@@ -106,6 +109,7 @@ describe("useBisectSession", () => {
 			expect.any(Function),
 		);
 		expect(getCachedBisectState("repo")).toEqual(activeState);
+		expect(onRepositoryChanged).toHaveBeenCalledOnce();
 	});
 
 	it("refreshes immediately after a graph invalidation", () => {
@@ -143,11 +147,14 @@ describe("useBisectSession", () => {
 	});
 
 	it("failed progression preserves state, re-enables controls, and permits retry", async () => {
+		const onRepositoryChanged = vi.fn();
 		vi.mocked(sendRequestWithResponse)
 			.mockResolvedValueOnce(activeState)
 			.mockRejectedValueOnce(new Error("Git bisect failed"))
 			.mockResolvedValueOnce(activeState);
-		const { result } = renderHook(() => useBisectSession("repo"));
+		const { result } = renderHook(() =>
+			useBisectSession("repo", onRepositoryChanged),
+		);
 		await waitFor(() => expect(result.current.state).toEqual(activeState));
 
 		await act(() => result.current.run("MarkBad"));
@@ -157,9 +164,11 @@ describe("useBisectSession", () => {
 		expect(toast.error).toHaveBeenCalledWith("Git bisect failed", {
 			id: "toast",
 		});
+		expect(onRepositoryChanged).not.toHaveBeenCalled();
 
 		await act(() => result.current.run("MarkBad"));
 		expect(sendRequestWithResponse).toHaveBeenCalledTimes(3);
 		expect(toast.success).toHaveBeenCalled();
+		expect(onRepositoryChanged).toHaveBeenCalledOnce();
 	});
 });

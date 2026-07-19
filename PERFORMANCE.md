@@ -21,6 +21,8 @@ The 1,006-test backend runner now caps xUnit collection parallelism at 12 thread
 
 Interactive-rebase conflict handling is now measured at the maximum 100-commit plan against 1,001 unmerged files, including a 100,000-line file. The real desktop commits its disabled state in 7.1-8.7 ms, paints it in 13.3-16.2 ms, and reaches the paused Working Changes surface in 11,031.1 ms on the traced warm run. Its exact Git child consumes 10,903.7 ms, leaving 127.4 ms / 1.2% for LovelyGit validation, IPC, operation-state detection, and presentation. Git itself varies from 3,754.8 to 10,903.7 ms as the filesystem cache changes; the four-worker trace peak remains 50.9 MB. A real conflict regression now proves the paused state retains its recovery plan, abort restores the exact branch, HEAD, worktree, and pre-existing status, and the operation can immediately be retried. No speculative engine or worker change was retained.
 
+Bisect failure and recovery are now measured against 2,001 changed files and a 100,000-line file. A checkout-blocking local edit fails safely in 216.3 ms, after disabled feedback at 4.6 ms and paint at 14.8 ms; Git consumes 156.3 ms, no bisect state is left behind, HEAD and the edit remain exact, and the confirmation stays retryable. After restoring the file, Start completes in 6,565.6 ms with 6,516.5 ms inside Git. The audit found that successful Start and later Good/Bad/Skip/Reset mutations left the visible graph and branch control stale; they now invalidate the repository immediately. Reset completes in 8,374.5 ms, restores `main` visibly 11.1 ms later, and spends 8,321.5 ms inside Git. The post-journey seven-process tree was 336.63 MB private with a 61.16 MB host; the refresh fix adds no retained model or cache.
+
 Successful branch pushes now request the same authoritative repository refresh as other ref mutations. In the delayed local-transport fixture, the pushed remote branch appeared 62 ms after completion instead of 278 ms while busy feedback remained visible in 18-21 ms.
 
 Maximum-ref local mutations remain inexpensive: cold Create Tag opens in 12.9 ms, paints busy in 13.1 ms, completes Git in 55.5 ms, and presents the ref 60.7 ms later. Branch Rename opens in 22.4 ms, paints busy in 12.2 ms, completes in 88.8 ms, and presents the renamed ref 64.9 ms later. The audit also corrected native WebView input handling that had left Rename disabled despite visible text.
@@ -94,7 +96,7 @@ Measured through the same Git commands LovelyGit uses, primarily in a disposable
 | Merge / rebase 1,000 files plus one 100,000-line file | Busy paint 19.4-26.9 ms / 22.8 ms; desktop completion 4.40-4.59 s / 6.52 s; exact direct Git 0.95-1.12 s / 1.72 s |
 | Cherry-pick / revert / hard reset 1,000 files plus one 100,000-line file | Busy paint 19.2 ms / 20.9 ms / 16.2 ms; native completion 4.54 s / 1.18 s / 1.09-4.30 s; exact direct Git 0.99 s / 0.76 s / 0.67 s |
 | Mixed reflog reset across 1,001 changed files | 289.9 ms to 254.8 ms direct; busy DOM 16.3 ms, next frame 21.5 ms, exact desktop settlement 545.3 ms |
-| Bisect across 1,001 files plus one 100,000-line file | Busy paint 1.1-1.9 ms; start 177-188 ms; checkout-heavy good step 4.38 s cold / 921 ms warm; final bad step 85 ms; reset 1.09-1.16 s |
+| Bisect across 2,001 files plus one 100,000-line file | Failure busy/paint 4.6/14.8 ms and safe rejection 216.3 ms; retry 6.57 s; reset 8.37 s with visible branch refresh 11.1 ms later |
 | Apply 3.97 MB / 1,001-file patch | 2,169.4 ms with redundant preflight to 2,025.2 ms atomic apply; 144.3 ms / 6.7% faster and one fewer Git process |
 | Stage 1,000 of 20,000 tracked files | 7.18 s cold CMG completion; 0.70-0.90 s warm service runs |
 | Unstage 1,000 of 20,000 tracked files | 749 ms CMG completion; 0.31-0.47 s warm service runs |
@@ -152,5 +154,4 @@ Measured through the same Git commands LovelyGit uses, primarily in a disposable
 
 ## Next Measurement Areas
 
-- Failure-path timing for bisect execution; interactive rebase, submodule, and LFS failure, no-mutation, and immediate retry timing is now measured alongside their successful large workflows.
 - Packaged cold/warm startup across slower storage tiers and repository activation after operating-system file-cache eviction.

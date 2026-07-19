@@ -19,10 +19,12 @@ import { shortHash } from "../utils/format";
 export function StartBisectDialog({
 	commit,
 	onOpenChange,
+	onRepositoryChanged,
 	repositoryId,
 }: {
 	commit: CommitGraphRow | null;
 	onOpenChange: (open: boolean) => void;
+	onRepositoryChanged: () => void;
 	repositoryId: string | null;
 }) {
 	const [isStarting, setIsStarting] = useState(false);
@@ -42,6 +44,7 @@ export function StartBisectDialog({
 				},
 				{ timeoutMs: 30_000 },
 			);
+			onRepositoryChanged();
 			toast.success("Bisect started at the midpoint", { id: toastId });
 			onOpenChange(false);
 		} catch (error) {

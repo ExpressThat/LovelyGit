@@ -68,6 +68,7 @@ export function CommitGraphOperationDialogs({
 				<StartBisectDialog
 					commit={bisectCommit}
 					onOpenChange={(open) => !open && setBisectCommit(null)}
+					onRepositoryChanged={onRepositoryChanged}
 					repositoryId={repositoryId}
 				/>
 			) : null}

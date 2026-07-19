@@ -20,12 +20,14 @@ const bisectSessionLoader = createDeferredLoader(() =>
 );
 
 export function BisectControl({
+	onRepositoryChanged,
 	repositoryId,
 }: {
+	onRepositoryChanged: () => void;
 	repositoryId: string | null;
 }) {
 	const [open, setOpen] = useState(false);
-	const session = useBisectSession(repositoryId);
+	const session = useBisectSession(repositoryId, onRepositoryChanged);
 	return (
 		<Dialog
 			onOpenChange={(nextOpen) => {

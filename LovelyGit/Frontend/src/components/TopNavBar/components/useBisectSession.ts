@@ -9,7 +9,10 @@ import { getCachedBisectState, setCachedBisectState } from "./bisectStateCache";
 
 export const CACHED_BISECT_REFRESH_DELAY_MS = 500;
 
-export function useBisectSession(repositoryId: string | null) {
+export function useBisectSession(
+	repositoryId: string | null,
+	onRepositoryChanged?: () => void,
+) {
 	const [state, setState] = useState<GitBisectState | null>(null);
 	const [isLoading, setIsLoading] = useState(false);
 	const [busyAction, setBusyAction] = useState<GitBisectAction | null>(null);
@@ -83,6 +86,7 @@ export function useBisectSession(repositoryId: string | null) {
 			);
 			setCachedBisectState(repositoryId, response);
 			setState(response);
+			onRepositoryChanged?.();
 			toast.success(successLabel(action, response), { id: toastId });
 		} catch (error) {
 			toast.error(message(error, "Git could not update the bisect session"), {

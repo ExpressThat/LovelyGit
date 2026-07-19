@@ -79,7 +79,10 @@ export function TopNavBar({
 					>
 						<Command aria-hidden="true" className="size-5" />
 					</button>
-					<BisectControl repositoryId={repositoryId} />
+					<BisectControl
+						onRepositoryChanged={onRepositoryChanged}
+						repositoryId={repositoryId}
+					/>
 					<LfsManager repositoryId={repositoryId} />
 					<SparseCheckoutManager repositoryId={repositoryId} />
 					<SubmoduleManager repositoryId={repositoryId} />

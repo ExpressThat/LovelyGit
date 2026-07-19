@@ -29,7 +29,7 @@ describe("BisectControl", () => {
 
 	it("reveals meaningful bisect content without a suspense throttle", async () => {
 		const user = userEvent.setup();
-		render(<BisectControl repositoryId="repo" />);
+		render(<BisectControl onRepositoryChanged={vi.fn()} repositoryId="repo" />);
 
 		await user.click(screen.getByRole("button", { name: "Manage bisect" }));
 
@@ -38,7 +38,7 @@ describe("BisectControl", () => {
 	});
 
 	it("stays disabled when no repository is selected", () => {
-		render(<BisectControl repositoryId={null} />);
+		render(<BisectControl onRepositoryChanged={vi.fn()} repositoryId={null} />);
 
 		expect(
 			screen.getByRole("button", { name: "Manage bisect" }),
