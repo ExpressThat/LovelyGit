@@ -113,7 +113,7 @@ public sealed class GitTagCommandServiceFailureTests
     }
 
     [Fact]
-    public async Task DeleteTagAsync_MissingTagPreservesExistingTags()
+    public async Task DeleteTagAsync_MissingTagPreservesExistingTagsAndAllowsRetry()
     {
         using var repository = TemporaryGitRepository.Create();
         var service = new GitTagCommandService(
@@ -126,6 +126,10 @@ public sealed class GitTagCommandServiceFailureTests
             repository.Path, "v-missing", CancellationToken.None));
 
         Assert.Equal(["v-keep"], await ReadTagsAsync(repository));
+
+        await service.DeleteTagAsync(repository.Path, "v-keep", CancellationToken.None);
+
+        Assert.Empty(await ReadTagsAsync(repository));
     }
 
     [Fact]
