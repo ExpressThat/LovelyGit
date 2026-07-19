@@ -128,14 +128,7 @@ public sealed partial class NativeCommitSearchReaderTests
     {
         using var repository = TemporaryGitRepository.Create();
         await CommitAsync(repository, "2024-01-01T00:00:00Z", "head-history needle");
-        var main = (await RunGitAsync(repository, "branch", "--show-current")).Trim();
-        for (var index = 0; index < 12; index++)
-        {
-            await RunGitAsync(repository, "switch", "--orphan", $"tag-source-{index}");
-            await RunGitAsync(repository, "commit", "--allow-empty", "-m", $"tag history {index}");
-            await RunGitAsync(repository, "tag", $"history-tag-{index}");
-        }
-        await RunGitAsync(repository, "switch", main);
+        await GitFastImportFixtureSeeder.SeedIndependentTagTipsAsync(repository.Path, 12);
 
         var response = await NativeCommitSearchReader.SearchAsync(
             repository.Path,

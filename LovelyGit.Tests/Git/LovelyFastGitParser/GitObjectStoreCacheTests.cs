@@ -86,11 +86,10 @@ public sealed class GitObjectStoreCacheTests
     public async Task RepeatedRepacks_RetireEveryStalePackGeneration()
     {
         using var directory = CreateRepository("lovelygit-pack-retirement-");
-        await File.WriteAllTextAsync(Path.Combine(directory.Path, "packed.txt"), "first");
-        await GitTestProcess.RunAsync(directory.Path, "add", ".");
-        await GitTestProcess.RunAsync(directory.Path, "commit", "-m", "first pack");
-        var firstCommit = GitObjectId.Parse(
-            (await GitTestProcess.RunAsync(directory.Path, "rev-parse", "HEAD")).Trim());
+        var parent = (await GitTestProcess.RunAsync(
+            directory.Path, "rev-parse", "HEAD")).Trim();
+        var firstCommit = GitObjectId.Parse(await GitFastImportFixtureSeeder
+            .AppendPackedGenerationAsync(directory.Path, parent, 1));
         await GitTestProcess.RunAsync(directory.Path, "gc", "--prune=now");
         var gitDirectory = Path.Combine(directory.Path, ".git");
         using var store = new GitObjectStore(gitDirectory, GitObjectFormat.Sha1);
@@ -101,22 +100,17 @@ public sealed class GitObjectStoreCacheTests
 
         for (var generation = 2; generation <= 6; generation++)
         {
-            await File.WriteAllTextAsync(
-                Path.Combine(directory.Path, $"packed-{generation}.txt"),
-                $"generation {generation}");
-            await GitTestProcess.RunAsync(directory.Path, "add", ".");
-            await GitTestProcess.RunAsync(
-                directory.Path,
-                "commit",
-                "-m",
-                $"pack generation {generation}");
-            var currentCommit = GitObjectId.Parse(
-                (await GitTestProcess.RunAsync(directory.Path, "rev-parse", "HEAD")).Trim());
+            var currentCommit = GitObjectId.Parse(await GitFastImportFixtureSeeder
+                .AppendPackedGenerationAsync(
+                    directory.Path,
+                    firstCommit.Value,
+                    generation));
             await GitTestProcess.RunAsync(directory.Path, "gc", "--prune=now");
             await store.ReadObjectWithoutCachingAsync(currentCommit, CancellationToken.None);
 
             Assert.Equal(1, store.OpenPackFileCount);
             Assert.Equal(1, store.OpenPackIndexCount);
+            firstCommit = currentCommit;
         }
     }
 

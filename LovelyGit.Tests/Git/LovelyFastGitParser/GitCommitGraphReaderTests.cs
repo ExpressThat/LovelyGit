@@ -65,14 +65,8 @@ public sealed class GitCommitGraphReaderTests
     public async Task OctopusMerge_ReadsEveryExtraParentInGitOrder()
     {
         using var repository = TestRepository.Create();
-        repository.Commit("Base", "base.txt");
-        foreach (var branch in new[] { "one", "two", "three" })
-        {
-            repository.Run("checkout", "-b", branch, "master");
-            repository.Commit(branch, branch + ".txt");
-        }
-        repository.Run("checkout", "master");
-        repository.Run("merge", "--no-ff", "--no-edit", "one", "two", "three");
+        var baseHash = repository.Run("rev-parse", "HEAD");
+        await GitFastImportFixtureSeeder.SeedOctopusAsync(repository.Path, baseHash);
         var head = repository.Run("rev-parse", "HEAD");
         var expected = repository.Run("show", "-s", "--format=%P", head)
             .Split(' ', StringSplitOptions.RemoveEmptyEntries);

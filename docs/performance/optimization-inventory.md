@@ -196,6 +196,7 @@ This ledger records shipped performance work by feature area. Update it in the s
 - Kept the official backend suite below one minute without weakening assertions (`021c0ee`).
 - Added application dependency-graph validation without launching the desktop host (`525a3c2`).
 - Isolated frontend wall-clock performance files from ordinary parallel workers while retaining parallel execution for the rest of the suite. Two complete 709-test gates passed in 50.69 and 49.76 seconds with every latency ceiling unchanged (`43b1057`).
+- Replaced 63 repeated Git fixture commands across tagged-history search, octopus commit-graph, and repeated pack-retirement setup with real `fast-import` streams. Contended tagged-history/octopus time falls from 9.88 to 1.22 seconds and repacking from 5.48 to 3.95 seconds; the 1,024-test testhost falls from 62.81 to 55.71 seconds and two exact wrappers pass in 59.36/58.93 seconds with every object/ref/order/pack assertion intact (current backend-gate checkpoint).
 
 ### Runtime Memory and Resource Lifetime
 
