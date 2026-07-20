@@ -23,6 +23,23 @@ describe("expandRemotePayload", () => {
 		);
 	});
 
+	it("normalizes omitted null push URLs in compact responses", async () => {
+		const compactResponse = await compressed([
+			{
+				name: "origin",
+				url: "https://example.invalid/origin.git",
+			},
+		]);
+
+		await expect(expandRemotePayload(compactResponse)).resolves.toEqual([
+			{
+				name: "origin",
+				pushUrl: null,
+				url: "https://example.invalid/origin.git",
+			},
+		]);
+	});
+
 	it("preserves an ordinary response list by identity", async () => {
 		const response = ordinary();
 

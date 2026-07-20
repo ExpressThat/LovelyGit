@@ -19,16 +19,21 @@ export async function expandRemotePayload(
 }
 
 function isRemoteList(value: unknown): value is GitRemote[] {
-	return (
-		Array.isArray(value) &&
-		value.length <= maximumRemoteCount &&
-		value.every(
-			(remote) =>
-				typeof remote === "object" &&
-				remote !== null &&
-				typeof remote.name === "string" &&
-				typeof remote.url === "string" &&
-				(remote.pushUrl === null || typeof remote.pushUrl === "string"),
-		)
-	);
+	if (!Array.isArray(value) || value.length > maximumRemoteCount) return false;
+	for (const candidate of value) {
+		if (typeof candidate !== "object" || candidate === null) return false;
+		const remote = candidate as Record<string, unknown>;
+		if (
+			typeof remote.name !== "string" ||
+			typeof remote.url !== "string" ||
+			(remote.pushUrl !== undefined &&
+				remote.pushUrl !== null &&
+				typeof remote.pushUrl !== "string")
+		) {
+			return false;
+		}
+		// Null properties are intentionally omitted by the compact C# serializer.
+		if (remote.pushUrl === undefined) remote.pushUrl = null;
+	}
+	return true;
 }
