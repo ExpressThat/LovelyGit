@@ -90,7 +90,7 @@ public sealed class GitObjectStoreCacheTests
             directory.Path, "rev-parse", "HEAD")).Trim();
         var firstCommit = GitObjectId.Parse(await GitFastImportFixtureSeeder
             .AppendPackedGenerationAsync(directory.Path, parent, 1));
-        await GitTestProcess.RunAsync(directory.Path, "gc", "--prune=now");
+        await GitTestProcess.RunAsync(directory.Path, "repack", "-ad");
         var gitDirectory = Path.Combine(directory.Path, ".git");
         using var store = new GitObjectStore(gitDirectory, GitObjectFormat.Sha1);
 
@@ -105,7 +105,7 @@ public sealed class GitObjectStoreCacheTests
                     directory.Path,
                     firstCommit.Value,
                     generation));
-            await GitTestProcess.RunAsync(directory.Path, "gc", "--prune=now");
+            await GitTestProcess.RunAsync(directory.Path, "repack", "-ad");
             await store.ReadObjectWithoutCachingAsync(currentCommit, CancellationToken.None);
 
             Assert.Equal(1, store.OpenPackFileCount);
