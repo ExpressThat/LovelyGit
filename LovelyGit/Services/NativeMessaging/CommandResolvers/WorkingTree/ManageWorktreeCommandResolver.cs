@@ -69,37 +69,44 @@ internal sealed class ManageWorktreeCommandResolver : CommandResponder<ManageWor
         string repositoryPath,
         ManageWorktreeCommandArguments arguments)
     {
-        var allowCurrent = arguments.Action is WorktreeMutationAction.Open
-            or WorktreeMutationAction.Reveal
-            or WorktreeMutationAction.Terminal;
-        var target = await _worktrees.ValidateExistingAsync(
-            repositoryPath,
-            arguments.WorktreePath,
-            allowCurrent,
-            CancellationToken.None).ConfigureAwait(false);
-
         switch (arguments.Action)
         {
             case WorktreeMutationAction.Open:
-                return await RegisterAsync(target).ConfigureAwait(false);
+                var openTarget = await ValidateAsync(repositoryPath, arguments, allowCurrent: true)
+                    .ConfigureAwait(false);
+                return await RegisterAsync(openTarget).ConfigureAwait(false);
             case WorktreeMutationAction.Reveal:
-                await _reveal.RevealAsync(target).ConfigureAwait(false);
+                await _reveal.RevealAsync(
+                    await ValidateAsync(repositoryPath, arguments, allowCurrent: true)
+                        .ConfigureAwait(false)).ConfigureAwait(false);
                 return null;
             case WorktreeMutationAction.Terminal:
-                await _terminal.OpenAsync(target).ConfigureAwait(false);
+                await _terminal.OpenAsync(
+                    await ValidateAsync(repositoryPath, arguments, allowCurrent: true)
+                        .ConfigureAwait(false)).ConfigureAwait(false);
                 return null;
             case WorktreeMutationAction.Lock:
                 await _worktrees.LockAsync(
-                    repositoryPath, target, arguments.LockReason, CancellationToken.None).ConfigureAwait(false);
+                    repositoryPath,
+                    arguments.WorktreePath,
+                    arguments.LockReason,
+                    CancellationToken.None).ConfigureAwait(false);
                 return null;
             case WorktreeMutationAction.Unlock:
                 await _worktrees.UnlockAsync(
-                    repositoryPath, target, CancellationToken.None).ConfigureAwait(false);
+                    repositoryPath,
+                    arguments.WorktreePath,
+                    CancellationToken.None).ConfigureAwait(false);
                 return null;
             case WorktreeMutationAction.Remove:
+                var removeTarget = await ValidateAsync(repositoryPath, arguments, allowCurrent: false)
+                    .ConfigureAwait(false);
                 await _worktrees.RemoveAsync(
-                    repositoryPath, target, arguments.Force, CancellationToken.None).ConfigureAwait(false);
-                var registered = await _repositories.FindByPathAsync(target).ConfigureAwait(false);
+                    repositoryPath,
+                    removeTarget,
+                    arguments.Force,
+                    CancellationToken.None).ConfigureAwait(false);
+                var registered = await _repositories.FindByPathAsync(removeTarget).ConfigureAwait(false);
                 if (registered != null)
                 {
                     await _repositories.RemoveAsync(registered.Id).ConfigureAwait(false);
@@ -109,6 +116,16 @@ internal sealed class ManageWorktreeCommandResolver : CommandResponder<ManageWor
                 throw new ArgumentOutOfRangeException(nameof(arguments), "Worktree action is not supported.");
         }
     }
+
+    private Task<string> ValidateAsync(
+        string repositoryPath,
+        ManageWorktreeCommandArguments arguments,
+        bool allowCurrent) =>
+        _worktrees.ValidateExistingAsync(
+            repositoryPath,
+            arguments.WorktreePath,
+            allowCurrent,
+            CancellationToken.None);
 
     private async Task<KnownGitRepository> RegisterAsync(string path)
     {

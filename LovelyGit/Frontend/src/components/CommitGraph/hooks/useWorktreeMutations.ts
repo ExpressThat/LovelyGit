@@ -12,9 +12,15 @@ import { useRepositoryContext } from "@/lib/repositoryContext";
 
 export function useWorktreeMutations({
 	onRepositoryChanged,
+	onWorktreeLockChanged,
 	repositoryId,
 }: {
 	onRepositoryChanged: () => void;
+	onWorktreeLockChanged: (
+		path: string,
+		isLocked: boolean,
+		lockReason: string,
+	) => void;
 	repositoryId: string | null;
 }) {
 	const {
@@ -92,7 +98,14 @@ export function useWorktreeMutations({
 			);
 			if (action === "Lock") setLockTarget(null);
 			if (action === "Remove") setRemoveTarget(null);
-			if (action === "Lock" || action === "Unlock" || action === "Remove") {
+			if (action === "Lock" || action === "Unlock") {
+				onWorktreeLockChanged(
+					worktree.path,
+					action === "Lock",
+					action === "Lock" ? options.lockReason?.trim() || "" : "",
+				);
+			}
+			if (action === "Remove") {
 				onRepositoryChanged();
 			}
 			toast.success(successMessage(action, worktree), { id: toastId });

@@ -7,6 +7,7 @@ import { subscribeToServerEvent } from "@/lib/commands";
 import {
 	getCachedRepositoryRefs,
 	loadRepositoryRefs,
+	setCachedRepositoryRefs,
 } from "@/lib/repositoryRefsCache";
 import {
 	CACHED_REFS_REFRESH_DELAY_MS,
@@ -24,6 +25,7 @@ vi.mock("@/lib/repositoryRefsCache", () => ({
 
 const getCached = vi.mocked(getCachedRepositoryRefs);
 const load = vi.mocked(loadRepositoryRefs);
+const setCached = vi.mocked(setCachedRepositoryRefs);
 const subscribe = vi.mocked(subscribeToServerEvent);
 
 describe("useRepositoryRefs", () => {
@@ -113,6 +115,25 @@ describe("useRepositoryRefs", () => {
 		expect(result.current.status).toBe("loaded");
 		expect(result.current.refs?.currentBranchName).toBe("retry");
 	});
+
+	it("updates one worktree lock in state and the shared cache", () => {
+		const response = refs("main");
+		response.worktrees = [worktree("C:/one"), worktree("C:/two")];
+		getCached.mockReturnValue(response);
+		const { result } = renderHook(() => useRepositoryRefs("repo", 0));
+
+		act(() =>
+			result.current.updateWorktreeLock("C:/two", true, "External drive"),
+		);
+
+		expect(result.current.refs?.worktrees[0]).toBe(response.worktrees[0]);
+		expect(result.current.refs?.worktrees[1]).toEqual({
+			...response.worktrees[1],
+			isLocked: true,
+			lockReason: "External drive",
+		});
+		expect(setCached).toHaveBeenCalledWith("repo", result.current.refs);
+	});
 });
 
 async function flushPromises() {
@@ -128,5 +149,15 @@ function refs(branch: string): RepositoryRefsResponse {
 		remotePrefixes: [],
 		stashes: [],
 		worktrees: [],
+	};
+}
+
+function worktree(path: string) {
+	return {
+		branchName: null,
+		isCurrent: false,
+		isLocked: false,
+		lockReason: "",
+		path,
 	};
 }

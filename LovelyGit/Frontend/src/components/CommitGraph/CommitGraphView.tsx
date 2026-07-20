@@ -73,6 +73,7 @@ export function CommitGraphView({
 		onCurrentBranchNameChange: (name) => onCurrentBranchNameChange?.(name),
 		onRepositoryChanged,
 		onUpstreamChanged: repositoryRefs.updateBranchUpstream,
+		onWorktreeLockChanged: repositoryRefs.updateWorktreeLock,
 		onWorktreesChanged: repositoryRefs.refresh,
 		remoteName: tagRemoteName,
 		repositoryId,

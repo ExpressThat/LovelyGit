@@ -91,7 +91,25 @@ export function useRepositoryRefs(
 			return { ...current, refs };
 		});
 	};
+	const updateWorktreeLock = (
+		path: string,
+		isLocked: boolean,
+		lockReason: string,
+	) => {
+		setState((current) => {
+			if (!current.refs || !repositoryId) return current;
+			const index = current.refs.worktrees.findIndex(
+				(worktree) => worktree.path === path,
+			);
+			if (index < 0) return current;
+			const worktrees = current.refs.worktrees.slice();
+			worktrees[index] = { ...worktrees[index], isLocked, lockReason };
+			const refs = { ...current.refs, worktrees };
+			setCachedRepositoryRefs(repositoryId, refs);
+			return { ...current, refs };
+		});
+	};
 	const refresh = () => setInvalidationToken((token) => token + 1);
 
-	return { ...state, refresh, updateBranchUpstream };
+	return { ...state, refresh, updateBranchUpstream, updateWorktreeLock };
 }

@@ -10,6 +10,7 @@ export function useBranchWorktreeControllers({
 	onCurrentBranchNameChange,
 	onRepositoryChanged,
 	onUpstreamChanged,
+	onWorktreeLockChanged,
 	onWorktreesChanged,
 	remoteName,
 	repositoryId,
@@ -18,6 +19,11 @@ export function useBranchWorktreeControllers({
 	onCurrentBranchNameChange: (branchName: string) => void;
 	onRepositoryChanged: () => void;
 	onUpstreamChanged: (branchName: string, upstreamName: string | null) => void;
+	onWorktreeLockChanged: (
+		path: string,
+		isLocked: boolean,
+		lockReason: string,
+	) => void;
 	onWorktreesChanged: () => void;
 	remoteName: string | null;
 	repositoryId: string | null;
@@ -32,6 +38,7 @@ export function useBranchWorktreeControllers({
 	});
 	const worktreeController = useWorktreeMutations({
 		onRepositoryChanged: onWorktreesChanged,
+		onWorktreeLockChanged,
 		repositoryId,
 	});
 	const reflogController = useReflogManagement();

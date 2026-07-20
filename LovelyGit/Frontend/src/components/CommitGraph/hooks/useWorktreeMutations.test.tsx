@@ -63,7 +63,12 @@ describe("useWorktreeMutations", () => {
 	it("locks with a reason and closes the lifecycle dialog", async () => {
 		vi.mocked(sendRequestWithResponse).mockResolvedValueOnce(null);
 		const worktree = linkedWorktree();
-		const { result } = renderController(vi.fn());
+		const onRepositoryChanged = vi.fn();
+		const onWorktreeLockChanged = vi.fn();
+		const { result } = renderController(
+			onRepositoryChanged,
+			onWorktreeLockChanged,
+		);
 		act(() => result.current.manage("Lock", worktree));
 
 		await act(() =>
@@ -82,6 +87,54 @@ describe("useWorktreeMutations", () => {
 			expect.anything(),
 		);
 		expect(result.current.lockTarget).toBeNull();
+		expect(onWorktreeLockChanged).toHaveBeenCalledWith(
+			worktree.path,
+			true,
+			"External drive",
+		);
+		expect(onRepositoryChanged).not.toHaveBeenCalled();
+	});
+
+	it("keeps failed locking retryable and reconciles only after success", async () => {
+		vi.mocked(sendRequestWithResponse)
+			.mockRejectedValueOnce(new Error("already locked"))
+			.mockResolvedValueOnce(null);
+		const worktree = linkedWorktree();
+		const onWorktreeLockChanged = vi.fn();
+		const { result } = renderController(vi.fn(), onWorktreeLockChanged);
+		act(() => result.current.manage("Lock", worktree));
+
+		await act(() => result.current.mutate("Lock", worktree));
+		expect(result.current.lockTarget).toEqual(worktree);
+		expect(onWorktreeLockChanged).not.toHaveBeenCalled();
+
+		await act(() => result.current.mutate("Lock", worktree));
+		expect(result.current.lockTarget).toBeNull();
+		expect(onWorktreeLockChanged).toHaveBeenCalledWith(worktree.path, true, "");
+	});
+
+	it("unlocks locally without requesting a broad refs refresh", async () => {
+		vi.mocked(sendRequestWithResponse).mockResolvedValueOnce(null);
+		const worktree = {
+			...linkedWorktree(),
+			isLocked: true,
+			lockReason: "Away",
+		};
+		const onRepositoryChanged = vi.fn();
+		const onWorktreeLockChanged = vi.fn();
+		const { result } = renderController(
+			onRepositoryChanged,
+			onWorktreeLockChanged,
+		);
+
+		await act(() => result.current.mutate("Unlock", worktree));
+
+		expect(onWorktreeLockChanged).toHaveBeenCalledWith(
+			worktree.path,
+			false,
+			"",
+		);
+		expect(onRepositoryChanged).not.toHaveBeenCalled();
 	});
 
 	it("reconciles and selects a worktree without reloading all repositories", async () => {
@@ -133,9 +186,16 @@ describe("useWorktreeMutations", () => {
 	});
 });
 
-function renderController(onRepositoryChanged: () => void) {
+function renderController(
+	onRepositoryChanged: () => void,
+	onWorktreeLockChanged = vi.fn(),
+) {
 	return renderHook(() =>
-		useWorktreeMutations({ onRepositoryChanged, repositoryId: "repo" }),
+		useWorktreeMutations({
+			onRepositoryChanged,
+			onWorktreeLockChanged,
+			repositoryId: "repo",
+		}),
 	);
 }
 
