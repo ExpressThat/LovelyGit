@@ -55,9 +55,13 @@ export function useUndoLastCommit({
 				{ timeoutMs: gitMutationTimeoutMs },
 			);
 			if (!message) throw new Error("Git did not return the undone commit.");
-			await onSuccess(message);
 			setIsOpen(false);
 			toast.success(`Undid “${message.title}” and kept its changes staged`);
+			try {
+				await onSuccess(message);
+			} catch {
+				// The undo is already authoritative. Refresh state owns its own error UI.
+			}
 		} catch (reason) {
 			setError(errorMessage(reason, "Failed to undo the last commit."));
 		} finally {

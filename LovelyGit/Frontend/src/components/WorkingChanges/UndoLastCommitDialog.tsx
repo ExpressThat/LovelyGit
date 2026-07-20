@@ -36,6 +36,7 @@ export function UndoLastCommitDialog({
 }) {
 	const reduceMotion = useReducedMotion();
 	const canUndo = Boolean(preview?.firstParentHash);
+	const contentTransition = { duration: reduceMotion ? 0 : 0.1 };
 	return (
 		<AlertDialog onOpenChange={(open) => !open && onClose()} open={isOpen}>
 			<AlertDialogContent>
@@ -56,6 +57,7 @@ export function UndoLastCommitDialog({
 							className="flex items-center gap-2 rounded-md border bg-card p-3 text-sm text-muted-foreground"
 							exit={{ opacity: 0 }}
 							key="loading"
+							transition={contentTransition}
 						>
 							<LoaderCircle className="size-4 animate-spin" /> Loading last
 							commit…
@@ -66,6 +68,7 @@ export function UndoLastCommitDialog({
 							className="grid gap-1 rounded-md border bg-card p-3"
 							initial={{ opacity: 0, y: reduceMotion ? 0 : 4 }}
 							key={preview.hash}
+							transition={contentTransition}
 						>
 							<div className="flex min-w-0 items-center gap-2">
 								<GitCommitHorizontal className="size-4 shrink-0 text-primary" />
