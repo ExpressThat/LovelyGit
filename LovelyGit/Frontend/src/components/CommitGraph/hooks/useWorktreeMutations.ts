@@ -13,6 +13,7 @@ import { useRepositoryContext } from "@/lib/repositoryContext";
 export function useWorktreeMutations({
 	onRepositoryChanged,
 	onWorktreeLockChanged,
+	onWorktreeRemoved,
 	repositoryId,
 }: {
 	onRepositoryChanged: () => void;
@@ -21,6 +22,7 @@ export function useWorktreeMutations({
 		isLocked: boolean,
 		lockReason: string,
 	) => void;
+	onWorktreeRemoved: (path: string) => void;
 	repositoryId: string | null;
 }) {
 	const {
@@ -106,7 +108,7 @@ export function useWorktreeMutations({
 				);
 			}
 			if (action === "Remove") {
-				onRepositoryChanged();
+				onWorktreeRemoved(worktree.path);
 			}
 			toast.success(successMessage(action, worktree), { id: toastId });
 		} catch (error) {

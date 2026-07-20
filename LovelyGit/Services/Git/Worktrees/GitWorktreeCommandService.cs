@@ -55,12 +55,12 @@ internal sealed class GitWorktreeCommandService
     internal static IReadOnlyList<string> CreateArguments(string destination, string branch) =>
         ["-c", WorktreeCheckoutWorkerCount, "worktree", "add", "--", destination, branch];
 
-    public Task LockAsync(
+    public async Task LockAsync(
         string repositoryPath,
         string worktreePath,
         string? reason,
         CancellationToken cancellationToken) =>
-        MutateExistingAsync(
+        await MutateExistingAsync(
             repositoryPath,
             worktreePath,
             "Lock worktree",
@@ -69,22 +69,22 @@ internal sealed class GitWorktreeCommandService
                 : ["worktree", "lock", "--reason", reason.Trim(), "--", target],
             "Unlock the worktree before trying to lock it again.",
             allowCurrent: false,
-            cancellationToken);
+            cancellationToken).ConfigureAwait(false);
 
-    public Task UnlockAsync(
+    public async Task UnlockAsync(
         string repositoryPath,
         string worktreePath,
         CancellationToken cancellationToken) =>
-        MutateExistingAsync(
+        await MutateExistingAsync(
             repositoryPath,
             worktreePath,
             "Unlock worktree",
             target => ["worktree", "unlock", "--", target],
             "The worktree may already be unlocked or may no longer exist.",
             allowCurrent: false,
-            cancellationToken);
+            cancellationToken).ConfigureAwait(false);
 
-    public Task RemoveAsync(
+    public Task<string> RemoveAsync(
         string repositoryPath,
         string worktreePath,
         bool force,
@@ -111,6 +111,16 @@ internal sealed class GitWorktreeCommandService
         var paths = await GitRepositoryDiscovery
             .ResolveRepositoryPathsAsync(repositoryPath, cancellationToken)
             .ConfigureAwait(false);
+        return await ValidateExistingAsync(paths, worktreePath, allowCurrent, cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    private static async Task<string> ValidateExistingAsync(
+        GitRepositoryPaths paths,
+        string worktreePath,
+        bool allowCurrent,
+        CancellationToken cancellationToken)
+    {
         var target = NormalizePath(worktreePath);
         var worktrees = await GitWorktreeReader
             .ReadAsync(paths.WorktreeGitDirectory, paths.WorkTreeDirectory, cancellationToken)
@@ -125,7 +135,7 @@ internal sealed class GitWorktreeCommandService
         return target;
     }
 
-    private async Task MutateExistingAsync(
+    private async Task<string> MutateExistingAsync(
         string repositoryPath,
         string worktreePath,
         string operationName,
@@ -138,13 +148,14 @@ internal sealed class GitWorktreeCommandService
             .ResolveRepositoryPathsAsync(repositoryPath, cancellationToken)
             .ConfigureAwait(false);
         var target = await ValidateExistingAsync(
-            repositoryPath, worktreePath, allowCurrent, cancellationToken).ConfigureAwait(false);
+            paths, worktreePath, allowCurrent, cancellationToken).ConfigureAwait(false);
         await _operations.ExecuteRequiredBufferedAsync(
             operationName,
             createArguments(target),
             paths.WorkTreeDirectory,
             recoveryHint,
             cancellationToken).ConfigureAwait(false);
+        return target;
     }
 
     private static string NormalizePath(string path)

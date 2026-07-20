@@ -134,6 +134,18 @@ describe("useRepositoryRefs", () => {
 		});
 		expect(setCached).toHaveBeenCalledWith("repo", result.current.refs);
 	});
+
+	it("removes only the completed worktree from state and cache", () => {
+		const response = refs("main");
+		response.worktrees = [worktree("C:/one"), worktree("C:/two")];
+		getCached.mockReturnValue(response);
+		const { result } = renderHook(() => useRepositoryRefs("repo", 0));
+
+		act(() => result.current.removeWorktree("C:/one"));
+
+		expect(result.current.refs?.worktrees).toEqual([response.worktrees[1]]);
+		expect(setCached).toHaveBeenCalledWith("repo", result.current.refs);
+	});
 });
 
 async function flushPromises() {

@@ -109,7 +109,25 @@ export function useRepositoryRefs(
 			return { ...current, refs };
 		});
 	};
+	const removeWorktree = (path: string) => {
+		setState((current) => {
+			if (!current.refs || !repositoryId) return current;
+			const worktrees = current.refs.worktrees.filter(
+				(worktree) => worktree.path !== path,
+			);
+			if (worktrees.length === current.refs.worktrees.length) return current;
+			const refs = { ...current.refs, worktrees };
+			setCachedRepositoryRefs(repositoryId, refs);
+			return { ...current, refs };
+		});
+	};
 	const refresh = () => setInvalidationToken((token) => token + 1);
 
-	return { ...state, refresh, updateBranchUpstream, updateWorktreeLock };
+	return {
+		...state,
+		refresh,
+		removeWorktree,
+		updateBranchUpstream,
+		updateWorktreeLock,
+	};
 }

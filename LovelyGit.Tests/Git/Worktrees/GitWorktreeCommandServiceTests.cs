@@ -34,12 +34,14 @@ public sealed class GitWorktreeCommandServiceTests
 
         await service.UnlockAsync(repository.Path, linkedPath, CancellationToken.None);
         var unlocked = Assert.Single(await ReadAsync(repository.Path), item => !item.IsCurrent);
-        await service.RemoveAsync(repository.Path, linkedPath, force: false, CancellationToken.None);
+        var removedPath = await service.RemoveAsync(
+            repository.Path, linkedPath, force: false, CancellationToken.None);
 
         Assert.Equal("feature/worktree", locked.BranchName);
         Assert.True(locked.IsLocked);
         Assert.Equal("Portable drive", locked.LockReason);
         Assert.False(unlocked.IsLocked);
+        Assert.Equal(Path.GetFullPath(linkedPath), removedPath);
         Assert.False(Directory.Exists(linkedPath));
         Assert.Single(await ReadAsync(repository.Path));
     }

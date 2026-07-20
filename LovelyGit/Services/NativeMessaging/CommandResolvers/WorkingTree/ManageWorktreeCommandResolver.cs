@@ -99,11 +99,9 @@ internal sealed class ManageWorktreeCommandResolver : CommandResponder<ManageWor
                     CancellationToken.None).ConfigureAwait(false);
                 return null;
             case WorktreeMutationAction.Remove:
-                var removeTarget = await ValidateAsync(repositoryPath, arguments, allowCurrent: false)
-                    .ConfigureAwait(false);
-                await _worktrees.RemoveAsync(
+                var removeTarget = await _worktrees.RemoveAsync(
                     repositoryPath,
-                    removeTarget,
+                    arguments.WorktreePath,
                     arguments.Force,
                     CancellationToken.None).ConfigureAwait(false);
                 var registered = await _repositories.FindByPathAsync(removeTarget).ConfigureAwait(false);

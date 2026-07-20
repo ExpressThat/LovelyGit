@@ -159,12 +159,20 @@ describe("useWorktreeMutations", () => {
 			path: "C:/repo-demo",
 		});
 		const worktree = linkedWorktree();
-		const { result } = renderController(vi.fn());
+		const onRepositoryChanged = vi.fn();
+		const onWorktreeRemoved = vi.fn();
+		const { result } = renderController(
+			onRepositoryChanged,
+			vi.fn(),
+			onWorktreeRemoved,
+		);
 		act(() => result.current.manage("Remove", worktree));
 
 		await act(() => result.current.mutate("Remove", worktree));
 
 		expect(reconcileRepositoryRemoval).toHaveBeenCalledWith("linked-id");
+		expect(onWorktreeRemoved).toHaveBeenCalledWith(worktree.path);
+		expect(onRepositoryChanged).not.toHaveBeenCalled();
 		expect(result.current.removeTarget).toBeNull();
 	});
 
@@ -173,27 +181,32 @@ describe("useWorktreeMutations", () => {
 			.mockRejectedValueOnce(new Error("worktree is dirty"))
 			.mockResolvedValueOnce(null);
 		const worktree = linkedWorktree();
-		const { result } = renderController(vi.fn());
+		const onWorktreeRemoved = vi.fn();
+		const { result } = renderController(vi.fn(), vi.fn(), onWorktreeRemoved);
 		act(() => result.current.manage("Remove", worktree));
 
 		await act(() => result.current.mutate("Remove", worktree));
 
 		expect(reconcileRepositoryRemoval).not.toHaveBeenCalled();
+		expect(onWorktreeRemoved).not.toHaveBeenCalled();
 		expect(result.current.removeTarget).toEqual(worktree);
 		expect(result.current.busyPath).toBeNull();
 		await act(() => result.current.mutate("Remove", worktree, { force: true }));
 		expect(sendRequestWithResponse).toHaveBeenCalledTimes(2);
+		expect(onWorktreeRemoved).toHaveBeenCalledWith(worktree.path);
 	});
 });
 
 function renderController(
 	onRepositoryChanged: () => void,
 	onWorktreeLockChanged = vi.fn(),
+	onWorktreeRemoved = vi.fn(),
 ) {
 	return renderHook(() =>
 		useWorktreeMutations({
 			onRepositoryChanged,
 			onWorktreeLockChanged,
+			onWorktreeRemoved,
 			repositoryId: "repo",
 		}),
 	);
