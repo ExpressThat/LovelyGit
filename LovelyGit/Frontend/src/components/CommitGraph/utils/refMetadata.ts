@@ -51,3 +51,33 @@ export function withBranchUpstream(
 		],
 	};
 }
+
+export function withLocalBranchChange(
+	response: RepositoryRefsResponse,
+	oldName: string,
+	newName: string | null,
+) {
+	const index = response.refs.findIndex(
+		(ref) => ref.kind === "Local" && ref.name === oldName,
+	);
+	if (index < 0) return response;
+	const refs = response.refs.slice();
+	if (newName) refs[index] = { ...refs[index], name: newName };
+	else refs.splice(index, 1);
+	const branchUpstreams = response.branchUpstreams.flatMap((upstream) =>
+		upstream.branchName !== oldName
+			? [upstream]
+			: newName
+				? [{ ...upstream, branchName: newName }]
+				: [],
+	);
+	return {
+		...response,
+		branchUpstreams,
+		currentBranchName:
+			response.currentBranchName === oldName
+				? newName
+				: response.currentBranchName,
+		refs,
+	};
+}

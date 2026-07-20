@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { CommitGraphRow } from "@/generated/types";
 import {
 	activateCommitGraphSession,
 	CACHED_REFRESH_DELAY_MS,
@@ -6,6 +7,7 @@ import {
 	MAX_CACHED_ROWS,
 	resetCommitGraphSessionCacheForTests,
 	session,
+	updateLocalBranchRefInSession,
 } from "./commitGraphSession";
 
 describe("commitGraphSession tab cache", () => {
@@ -69,4 +71,40 @@ describe("commitGraphSession tab cache", () => {
 		activateCommitGraphSession("b");
 		expect(session.totalRows).toBe(2);
 	});
+
+	it("renames and removes a local branch without rebuilding graph rows", () => {
+		activateCommitGraphSession("repo");
+		const original = row();
+		session.currentBranchName = "main";
+		session.rows = [original];
+		session.refRowsByHash.set(original.commit.hash, original);
+
+		expect(updateLocalBranchRefInSession("main", "trunk")).toBe(true);
+		expect(session.currentBranchName).toBe("trunk");
+		expect(session.rows[0]?.commit.refs.map((ref) => ref.name)).toEqual([
+			"trunk",
+			"origin/main",
+		]);
+
+		expect(updateLocalBranchRefInSession("trunk", null)).toBe(true);
+		expect(session.currentBranchName).toBeNull();
+		expect(session.rows[0]?.commit.refs.map((ref) => ref.name)).toEqual([
+			"origin/main",
+		]);
+		expect(session.rows[0]?.isBranchTip).toBe(true);
+	});
 });
+
+function row(): CommitGraphRow {
+	return {
+		commit: {
+			hash: "abc",
+			refs: [
+				{ kind: "Local", name: "main" },
+				{ kind: "Remote", name: "origin/main" },
+			],
+		},
+		isBranchTip: true,
+		rowIndex: 0,
+	} as CommitGraphRow;
+}

@@ -6,7 +6,10 @@ import {
 	loadRepositoryRefs,
 	setCachedRepositoryRefs,
 } from "@/lib/repositoryRefsCache";
-import { withBranchUpstream } from "../utils/refMetadata";
+import {
+	withBranchUpstream,
+	withLocalBranchChange,
+} from "../utils/refMetadata";
 
 type RepositoryRefsState =
 	| { status: "idle"; refs: null; message?: string }
@@ -121,6 +124,15 @@ export function useRepositoryRefs(
 			return { ...current, refs };
 		});
 	};
+	const updateLocalBranch = (oldName: string, newName: string | null) => {
+		setState((current) => {
+			if (!current.refs || !repositoryId) return current;
+			const refs = withLocalBranchChange(current.refs, oldName, newName);
+			if (refs === current.refs) return current;
+			setCachedRepositoryRefs(repositoryId, refs);
+			return { ...current, refs };
+		});
+	};
 	const refresh = () => setInvalidationToken((token) => token + 1);
 
 	return {
@@ -128,6 +140,7 @@ export function useRepositoryRefs(
 		refresh,
 		removeWorktree,
 		updateBranchUpstream,
+		updateLocalBranch,
 		updateWorktreeLock,
 	};
 }

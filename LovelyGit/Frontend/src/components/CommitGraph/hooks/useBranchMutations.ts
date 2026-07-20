@@ -8,6 +8,7 @@ import { useRemoteBranchMutations } from "./useRemoteBranchMutations";
 export function useBranchMutations({
 	currentBranchName,
 	onCurrentBranchNameChange,
+	onLocalBranchChanged,
 	onRepositoryChanged,
 	onUpstreamChanged,
 	remoteName,
@@ -15,6 +16,7 @@ export function useBranchMutations({
 }: {
 	currentBranchName: string | null;
 	onCurrentBranchNameChange: (branchName: string) => void;
+	onLocalBranchChanged: (oldName: string, newName: string | null) => void;
 	onRepositoryChanged: () => void;
 	onUpstreamChanged: (branchName: string, upstreamName: string | null) => void;
 	remoteName: string | null;
@@ -130,7 +132,7 @@ export function useBranchMutations({
 				if (oldBranchName === currentBranchName) {
 					onCurrentBranchNameChange(newBranchName);
 				}
-				onRepositoryChanged();
+				onLocalBranchChanged(oldBranchName, newBranchName);
 			},
 		);
 	};
@@ -147,7 +149,7 @@ export function useBranchMutations({
 			},
 			() => {
 				setDeleteBranchName(null);
-				onRepositoryChanged();
+				onLocalBranchChanged(branchName, null);
 			},
 		);
 	};

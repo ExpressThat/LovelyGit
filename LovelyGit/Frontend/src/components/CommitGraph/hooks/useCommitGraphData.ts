@@ -17,6 +17,7 @@ import {
 	currentSessionRepositoryId,
 	deferCachedCommitGraphRefresh,
 	session,
+	updateLocalBranchRefInSession,
 } from "./commitGraphSession";
 import { applyCommitGraphResponse } from "./commitGraphSessionUpdates";
 
@@ -125,6 +126,11 @@ export function useCommitGraphData(externalRefreshToken = 0) {
 			void runLoader();
 		},
 	);
+	const updateLocalBranchRef = (oldName: string, newName: string | null) => {
+		if (updateLocalBranchRefInSession(oldName, newName)) {
+			setState(readSessionState());
+		}
+	};
 	useEffect(() => {
 		const previous = lifecycleRef.current;
 		const repositoryChanged = previous.repositoryId !== currentGitRepositoryId;
@@ -171,6 +177,7 @@ export function useCommitGraphData(externalRefreshToken = 0) {
 	return {
 		...state,
 		ensureRangeLoaded,
+		updateLocalBranchRef,
 	};
 }
 function resetSession(

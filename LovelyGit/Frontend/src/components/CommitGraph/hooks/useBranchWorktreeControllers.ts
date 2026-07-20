@@ -8,6 +8,7 @@ import { useWorktreeMutations } from "./useWorktreeMutations";
 export function useBranchWorktreeControllers({
 	currentBranchName,
 	onCurrentBranchNameChange,
+	onLocalBranchChanged,
 	onRepositoryChanged,
 	onUpstreamChanged,
 	onWorktreeLockChanged,
@@ -18,6 +19,7 @@ export function useBranchWorktreeControllers({
 }: {
 	currentBranchName: string | null;
 	onCurrentBranchNameChange: (branchName: string) => void;
+	onLocalBranchChanged: (oldName: string, newName: string | null) => void;
 	onRepositoryChanged: () => void;
 	onUpstreamChanged: (branchName: string, upstreamName: string | null) => void;
 	onWorktreeLockChanged: (
@@ -33,6 +35,7 @@ export function useBranchWorktreeControllers({
 	const branchController = useBranchMutations({
 		currentBranchName,
 		onCurrentBranchNameChange,
+		onLocalBranchChanged,
 		onRepositoryChanged,
 		onUpstreamChanged,
 		remoteName,

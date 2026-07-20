@@ -76,6 +76,7 @@ describe("useBranchMutations upstream reconciliation", () => {
 function createCallbacks() {
 	return {
 		onCurrentBranchNameChange: vi.fn(),
+		onLocalBranchChanged: vi.fn(),
 		onRepositoryChanged: vi.fn(),
 		onUpstreamChanged: vi.fn(),
 	};

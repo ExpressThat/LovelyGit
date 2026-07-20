@@ -146,6 +146,35 @@ describe("useRepositoryRefs", () => {
 		expect(result.current.refs?.worktrees).toEqual([response.worktrees[1]]);
 		expect(setCached).toHaveBeenCalledWith("repo", result.current.refs);
 	});
+
+	it("reconciles a local branch in state and cache without reloading refs", () => {
+		const response = refs("main");
+		response.refs = [
+			{ commitHash: "abc", kind: "Local", name: "main", remoteUrl: null },
+			{
+				commitHash: "def",
+				kind: "Remote",
+				name: "origin/main",
+				remoteUrl: null,
+			},
+		];
+		response.branchUpstreams = [
+			{ branchName: "main", upstreamName: "origin/main" },
+		];
+		getCached.mockReturnValue(response);
+		const { result } = renderHook(() => useRepositoryRefs("repo", 0));
+
+		act(() => result.current.updateLocalBranch("main", "trunk"));
+
+		expect(result.current.refs?.currentBranchName).toBe("trunk");
+		expect(result.current.refs?.refs.map((ref) => ref.name)).toEqual([
+			"trunk",
+			"origin/main",
+		]);
+		expect(result.current.refs?.branchUpstreams[0]?.branchName).toBe("trunk");
+		expect(setCached).toHaveBeenCalledWith("repo", result.current.refs);
+		expect(load).not.toHaveBeenCalled();
+	});
 });
 
 async function flushPromises() {

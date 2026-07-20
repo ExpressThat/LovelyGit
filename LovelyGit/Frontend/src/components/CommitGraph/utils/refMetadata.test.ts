@@ -4,6 +4,7 @@ import {
 	branchTrackingMetadata,
 	refCommitHash,
 	withBranchUpstream,
+	withLocalBranchChange,
 } from "./refMetadata";
 
 describe("branchTrackingMetadata", () => {
@@ -58,5 +59,26 @@ describe("withBranchUpstream", () => {
 		expect(response.branchUpstreams).toEqual([
 			{ branchName: "main", upstreamName: "origin/main" },
 		]);
+	});
+});
+
+describe("withLocalBranchChange", () => {
+	it("renames and removes local refs with their tracking metadata", () => {
+		const response = {
+			branchUpstreams: [{ branchName: "main", upstreamName: "origin/main" }],
+			currentBranchName: "main",
+			refs: [{ commitHash: "abc", kind: "Local", name: "main" }],
+		} as RepositoryRefsResponse;
+
+		const renamed = withLocalBranchChange(response, "main", "trunk");
+		expect(renamed.currentBranchName).toBe("trunk");
+		expect(renamed.refs[0]?.name).toBe("trunk");
+		expect(renamed.branchUpstreams).toEqual([
+			{ branchName: "trunk", upstreamName: "origin/main" },
+		]);
+
+		const removed = withLocalBranchChange(renamed, "trunk", null);
+		expect(removed.refs).toEqual([]);
+		expect(removed.branchUpstreams).toEqual([]);
 	});
 });

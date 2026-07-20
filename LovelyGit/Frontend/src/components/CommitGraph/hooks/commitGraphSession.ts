@@ -48,6 +48,50 @@ export function currentSessionRepositoryId() {
 	return session.repositoryId;
 }
 
+export function updateLocalBranchRefInSession(
+	oldName: string,
+	newName: string | null,
+) {
+	let row: CommitGraphRow | undefined;
+	for (const candidate of session.refRowsByHash.values()) {
+		if (
+			candidate.commit.refs.some(
+				(ref) => ref.kind === "Local" && ref.name === oldName,
+			)
+		) {
+			row = candidate;
+			break;
+		}
+	}
+	if (!row) return false;
+	const refs = newName
+		? row.commit.refs.map((ref) =>
+				ref.kind === "Local" && ref.name === oldName
+					? { ...ref, name: newName }
+					: ref,
+			)
+		: row.commit.refs.filter(
+				(ref) => ref.kind !== "Local" || ref.name !== oldName,
+			);
+	const nextRow = {
+		...row,
+		commit: { ...row.commit, refs },
+		isBranchTip: refs.some((ref) =>
+			["Local", "Remote", "Stash"].includes(ref.kind),
+		),
+	};
+	const rows = session.rows.slice();
+	rows[row.rowIndex] = nextRow;
+	const refRowsByHash = new Map(session.refRowsByHash);
+	if (refs.length > 0) refRowsByHash.set(row.commit.hash, nextRow);
+	else refRowsByHash.delete(row.commit.hash);
+	session.rows = rows;
+	session.refRowsByHash = refRowsByHash;
+	if (session.currentBranchName === oldName)
+		session.currentBranchName = newName;
+	return true;
+}
+
 export function deferCachedCommitGraphRefresh(runLoader: () => void) {
 	const repositoryId = session.repositoryId;
 	const generation = session.generation;

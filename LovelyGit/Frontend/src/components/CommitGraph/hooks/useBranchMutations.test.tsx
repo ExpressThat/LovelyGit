@@ -29,6 +29,7 @@ describe("useBranchMutations", () => {
 			id: "toast",
 		});
 		expect(callbacks.onCurrentBranchNameChange).not.toHaveBeenCalled();
+		expect(callbacks.onLocalBranchChanged).not.toHaveBeenCalled();
 		expect(callbacks.onRepositoryChanged).not.toHaveBeenCalled();
 
 		send.mockResolvedValueOnce(undefined);
@@ -39,6 +40,7 @@ describe("useBranchMutations", () => {
 			),
 		);
 		expect(callbacks.onRepositoryChanged).toHaveBeenCalledOnce();
+		expect(callbacks.onLocalBranchChanged).not.toHaveBeenCalled();
 	});
 
 	it("failed destructive delete keeps confirmation target and retry clears it", async () => {
@@ -50,6 +52,7 @@ describe("useBranchMutations", () => {
 		await act(() => result.current.deleteBranch(false));
 
 		expect(result.current.deleteBranchName).toBe("feature");
+		expect(callbacks.onLocalBranchChanged).not.toHaveBeenCalled();
 		expect(callbacks.onRepositoryChanged).not.toHaveBeenCalled();
 		expect(send).toHaveBeenLastCalledWith(
 			{
@@ -66,7 +69,32 @@ describe("useBranchMutations", () => {
 		send.mockResolvedValueOnce(undefined);
 		await act(() => result.current.deleteBranch(true));
 		expect(result.current.deleteBranchName).toBeNull();
-		expect(callbacks.onRepositoryChanged).toHaveBeenCalledOnce();
+		expect(callbacks.onLocalBranchChanged).toHaveBeenCalledWith(
+			"feature",
+			null,
+		);
+		expect(callbacks.onRepositoryChanged).not.toHaveBeenCalled();
+	});
+
+	it("reconciles a renamed branch only after a successful retry", async () => {
+		const callbacks = createCallbacks();
+		send.mockRejectedValueOnce(new Error("Branch already exists"));
+		const { result } = renderHook(() => useTestBranchMutations(callbacks));
+		act(() => result.current.manageBranch("rename", "main"));
+
+		await act(() => result.current.renameBranch("trunk"));
+		expect(result.current.renameBranchName).toBe("main");
+		expect(callbacks.onLocalBranchChanged).not.toHaveBeenCalled();
+
+		send.mockResolvedValueOnce(undefined);
+		await act(() => result.current.renameBranch("trunk"));
+		expect(result.current.renameBranchName).toBeNull();
+		expect(callbacks.onLocalBranchChanged).toHaveBeenCalledWith(
+			"main",
+			"trunk",
+		);
+		expect(callbacks.onCurrentBranchNameChange).toHaveBeenCalledWith("trunk");
+		expect(callbacks.onRepositoryChanged).not.toHaveBeenCalled();
 	});
 
 	it("blocks overlapping mutations until the active request settles", async () => {
@@ -172,6 +200,7 @@ describe("useBranchMutations", () => {
 function createCallbacks() {
 	return {
 		onCurrentBranchNameChange: vi.fn(),
+		onLocalBranchChanged: vi.fn(),
 		onRepositoryChanged: vi.fn(),
 		onUpstreamChanged: vi.fn(),
 	};

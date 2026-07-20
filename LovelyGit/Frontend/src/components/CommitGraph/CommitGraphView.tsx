@@ -42,6 +42,7 @@ export function CommitGraphView({
 		refRowsByHash,
 		rows,
 		totalRows,
+		updateLocalBranchRef,
 	} = useCommitGraphData(refreshToken);
 	const repositoryRefs = useRepositoryRefs(repositoryId, refreshToken);
 	const commitSelection = useCommitMultiSelection(repositoryId, rows);
@@ -71,6 +72,10 @@ export function CommitGraphView({
 	} = useBranchWorktreeControllers({
 		currentBranchName,
 		onCurrentBranchNameChange: (name) => onCurrentBranchNameChange?.(name),
+		onLocalBranchChanged: (oldName, newName) => {
+			repositoryRefs.updateLocalBranch(oldName, newName);
+			updateLocalBranchRef(oldName, newName);
+		},
 		onRepositoryChanged,
 		onUpstreamChanged: repositoryRefs.updateBranchUpstream,
 		onWorktreeLockChanged: repositoryRefs.updateWorktreeLock,
